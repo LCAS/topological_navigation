@@ -145,6 +145,8 @@ class TopologicalNavServer(object):
                 print rampgoal
                 self.rampClient.send_goal(rampgoal)
                 self.rampClient.wait_for_result()
+                #if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
+                #    nav_ok=False
             rindex=rindex+1
         result=nav_ok
         return result

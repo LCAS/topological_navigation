@@ -9,6 +9,7 @@ import sys
 from topological_node import *
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
+from std_msgs.msg import String
 import scitos_apps_msgs.msg
 import strands_datacentre.util
 import topological_navigation.msg
@@ -21,11 +22,12 @@ class TopologicalNavServer(object):
     def __init__(self, name, filename) :
 
         self.cancelled = False
+        self.current_node = "Unknown"
         
         self._action_name = name
-        print "loading file from map %s" %filename
+        rospy.loginfo("Loading file from map %s", filename)
         self.lnodes = self.loadMap(filename)
-        print "Done"
+        rospy.loginfo(" ...done")
         
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.GotoNodeAction, execute_cb = self.executeCallback, auto_start = False)
@@ -43,7 +45,12 @@ class TopologicalNavServer(object):
         self.rampClient = actionlib.SimpleActionClient('rampClimbingServer', scitos_apps_msgs.msg.RampClimbingAction)
         self.rampClient.wait_for_server()
         rospy.loginfo(" ...done")
-
+        
+        rospy.loginfo("Subscribing to Topic")
+        rospy.Subscriber('/current_node', String, self.NodeCallback)
+        rospy.loginfo(" ...done")
+        
+        
         rospy.loginfo("All Done ...")
         rospy.spin()
 
@@ -51,8 +58,8 @@ class TopologicalNavServer(object):
         self.cancelled = False
         self._feedback.route = 'Starting...'
         self._as.publish_feedback(self._feedback)
-        rospy.loginfo('%s: Navigating From %s to %s' %(self._action_name, goal.origin, goal.target))
-        Onode = get_node(goal.origin, self.lnodes)
+        rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.current_node, goal.target)
+        Onode = get_node(self.current_node, self.lnodes)
         Gnode = get_node(goal.target, self.lnodes)
         if (Gnode is not None) and (Onode is not None) :
             exp_index=0
@@ -69,14 +76,14 @@ class TopologicalNavServer(object):
                     print "Goal NOT found"
                     update_to_expand(to_expand, children, self.lnodes, to_expand[exp_index].name)
                     exp_index=exp_index+1
-                    print "nodos para expandir %d:" %len(to_expand)
+                    print "nodes to expand %d:" %len(to_expand)
                     for m in to_expand :
                         print m.name
-                    print "expandiendo nodo %d: (%s)" %(exp_index,to_expand[exp_index].name)
+                    print "expanding node %d: (%s)" %(exp_index,to_expand[exp_index].name)
                     if exp_index >= len(to_expand) :
                         not_goal=False
                     children=to_expand[exp_index]._get_Children()
-                    print "nodos en la lista:"
+                    print "nodes in list:"
                     print children
         
             print "fixing Father %s for goal %s" %(to_expand[exp_index].name,Gnode.name)
@@ -84,7 +91,7 @@ class TopologicalNavServer(object):
             print "Father for Gnode %s" %(Gnode.father)
             route=[Gnode]
             #del route[:]
-            print "Ruta actual %d" %len(route)
+            print "Current Route %d" %len(route)
             rindex=0
             print route[rindex].father
             while route[rindex].father is not 'none' :
@@ -105,7 +112,10 @@ class TopologicalNavServer(object):
             self._as.publish_feedback(self._feedback)
             self._as.set_succeeded(self._result)
         #del to_expand[:]
-        
+    
+    def NodeCallback(self, msg):
+        self.current_node=msg.data
+        #print self.current_node
 
     def followRoute(self, route):
         rospy.loginfo("%d Nodes on route" %len(route))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import math
 
 def findInList(name,List):
     found = name in List
@@ -8,7 +8,7 @@ def findInList(name,List):
     else :
         pos = -1
     return pos
-
+   
 
 def update_to_expand(to_expand, new_nodes, maptree, father) :
     for i in new_nodes :
@@ -36,9 +36,20 @@ class topological_node(object):
         self.name = name
         self.expanded=False
         self.father='none'
+        self.px=0.0
+        self.py=0.0
 
     def _insert_waypoint(self, waypoint):
         self.waypoint=waypoint
+        self._get_coords()
+
+    def _get_coords(self):
+        self.px=float(self.waypoint[0])
+        self.py=float(self.waypoint[1])
+
+    def _get_distance(self, cx, cy):
+        dist=math.hypot((cx-self.px),(cy-self.py))
+        return dist
 
     def _insert_edges(self, edges):
         self.edges=edges

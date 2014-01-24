@@ -7,7 +7,7 @@ import actionlib
 import topological_navigation.msg
 
 
-def topol_nav_client(orig, targ):
+def topol_nav_client(targ):
     
     client = actionlib.SimpleActionClient('topological_navigation', topological_navigation.msg.GotoNodeAction)
     
@@ -16,10 +16,10 @@ def topol_nav_client(orig, targ):
 
     navgoal = topological_navigation.msg.GotoNodeGoal()
 
-    print "Requesting Navigation From %s to %s" %(orig, targ)
+    print "Requesting Navigation to %s" %targ
 
     navgoal.target = targ
-    navgoal.origin = orig
+    #navgoal.origin = orig
 
     # Sends the goal to the action server.
     client.send_goal(navgoal)
@@ -32,8 +32,8 @@ def topol_nav_client(orig, targ):
 
 if __name__ == '__main__':
     print 'Argument List:',str(sys.argv)
-    if len(sys.argv) < 3 :
+    if len(sys.argv) < 2 :
 	sys.exit(2)
     rospy.init_node('topol_nav_test')
-    ps = topol_nav_client(sys.argv[1], sys.argv[2])
+    ps = topol_nav_client(sys.argv[1])
     print ps

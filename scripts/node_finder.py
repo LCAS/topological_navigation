@@ -112,5 +112,5 @@ class TopologicalNavLoc(object):
 
 if __name__ == '__main__':
     filename=str(sys.argv[1])
-    rospy.init_node('WayPoint_Analysis')
+    rospy.init_node('topological_localisation')
     server = TopologicalNavLoc(rospy.get_name(),filename)

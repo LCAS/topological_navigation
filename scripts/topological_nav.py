@@ -61,7 +61,7 @@ class TopologicalNavServer(object):
         rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.current_node, goal.target)
         Onode = get_node(self.current_node, self.lnodes)
         Gnode = get_node(goal.target, self.lnodes)
-        if (Gnode is not None) and (Onode is not None) :
+        if (Gnode is not None) and (Onode is not None) and (Gnode != Onode) :
             exp_index=0
             to_expand=[Onode]
             to_expand[exp_index]._set_Father('none')
@@ -103,8 +103,12 @@ class TopologicalNavServer(object):
             result=self.followRoute(route)
 
         else :
-            rospy.loginfo("Target or Origin Nodes were not found on Map")  
-            result=False #self._send_tweet(goal.text)
+            if(Gnode == Onode) :
+                rospy.loginfo("Target and Origin Nodes are the same")  
+                result=self.goto_waypoint(Gnode.waypoint)
+            else:
+                rospy.loginfo("Target or Origin Nodes were not found on Map")  
+                result=False #self._send_tweet(goal.text)
             
         if not self.cancelled :
             self._result.success = result
@@ -155,10 +159,31 @@ class TopologicalNavServer(object):
                 print rampgoal
                 self.rampClient.send_goal(rampgoal)
                 self.rampClient.wait_for_result()
-                #if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
-                #    nav_ok=False
+                if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
+                    nav_ok=False
             rindex=rindex+1
         result=nav_ok
+        return result
+
+    def goto_waypoint(self, inf):
+        result = True
+        movegoal = MoveBaseGoal()
+        movegoal.target_pose.header.frame_id = "map"
+        movegoal.target_pose.header.stamp = rospy.get_rostime()
+        movegoal.target_pose.pose.position.x = float(inf[0])
+        movegoal.target_pose.pose.position.y = float(inf[1])
+        movegoal.target_pose.pose.orientation.x = 0
+        movegoal.target_pose.pose.orientation.y = 0
+        movegoal.target_pose.pose.orientation.z = float(inf[5])
+        movegoal.target_pose.pose.orientation.w = float(inf[6])
+        self.baseClient.cancel_all_goals()
+        rospy.sleep(rospy.Duration.from_sec(1))
+        print movegoal
+        self.baseClient.send_goal(movegoal)
+        self.baseClient.wait_for_result()
+        if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
+            result = False
+        rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 
     def preemptCallback(self):

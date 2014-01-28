@@ -29,7 +29,7 @@ class TopologicalNavLoc(object):
     _result   = topological_navigation.msg.GotoNodeResult()
     
     def __init__(self, name, filename) :
-        self.throttle=1
+        self.throttle=5
         self.cancelled = False
         self.node="Unknown"
         
@@ -49,23 +49,19 @@ class TopologicalNavLoc(object):
         rospy.spin()
 
     def PoseCallback(self, msg):
-        #print "robot pose (%f, %f)" %(msg.position.x,msg.position.y)
-        a = float('1000.0')
-        for i in self.lnodes:
-            d=i._get_distance(msg.position.x, msg.position.y)
-            if d < a:
-                b=i
-                a=d
-        if b.name != self.node:
-            self.node=b.name
+        if(self.throttle%5==0):
+            #print "robot pose (%f, %f)" %(msg.position.x,msg.position.y)
+            a = float('1000.0')
+            for i in self.lnodes:
+                d=i._get_distance(msg.position.x, msg.position.y)
+                if d < a:
+                    b=i
+                    a=d
             self.wp_pub.publish(String(b.name))
-        else :
-            if(self.throttle%5==0):
-                self.wp_pub.publish(String(b.name))
-                self.throttle=1
-            else:
-                self.throttle +=1
-                
+            self.throttle=1
+        else:
+            self.throttle +=1
+
 
     def loadMap(self, pointset):
         pointset=str(sys.argv[1])

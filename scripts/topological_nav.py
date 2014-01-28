@@ -106,6 +106,8 @@ class TopologicalNavServer(object):
             if(Gnode == Onode) :
                 rospy.loginfo("Target and Origin Nodes are the same")  
                 result=self.goto_waypoint(Gnode.waypoint)
+                rospy.loginfo("going to waypoint in node resulted in")
+                print result
             else:
                 rospy.loginfo("Target or Origin Nodes were not found on Map")  
                 result=False #self._send_tweet(goal.text)

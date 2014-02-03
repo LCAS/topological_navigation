@@ -6,7 +6,8 @@ import pymongo
 import json
 import sys
 
-from topological_node import *
+
+from topological_navigation.topological_node import *
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from std_msgs.msg import String
@@ -179,13 +180,13 @@ class TopologicalNavServer(object):
         movegoal.target_pose.pose.orientation.z = float(inf[5])
         movegoal.target_pose.pose.orientation.w = float(inf[6])
         self.baseClient.cancel_all_goals()
-        rospy.sleep(rospy.Duration.from_sec(1))
+        rospy.sleep(rospy.Duration.from_sec(2))
         print movegoal
         self.baseClient.send_goal(movegoal)
         self.baseClient.wait_for_result()
         if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
             result = False
-        rospy.sleep(rospy.Duration.from_sec(0.3))
+        rospy.sleep(rospy.Duration.from_sec(1))
         return result
 
     def preemptCallback(self):

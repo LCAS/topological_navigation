@@ -2,7 +2,7 @@
 	<!-- declare arg to be passed in -->
 	<arg name="map" default="tmap_II"/> 
 
-	<node pkg="topological_navigation" name="topological_navigation" type="topological_nav.py" output="screen" args="$(arg map)"/>
-	<node pkg="topological_navigation" name="topological_localisation" type="node_finder.py" output="screen" args="$(arg map)"/>
+	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" args="$(arg map)"/>
+	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" args="$(arg map)"/>
 
 </launch>

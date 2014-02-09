@@ -16,20 +16,24 @@ import strands_datacentre.util
 import topological_navigation.msg
 
 
+
+""" Class for Topological Navigation """
+
 class TopologicalNavServer(object):
     _feedback = topological_navigation.msg.GotoNodeFeedback()
     _result   = topological_navigation.msg.GotoNodeResult()
 
     def __init__(self, name, filename) :
-
         self.cancelled = False
         self.current_node = "Unknown"
+        self.actions_needed=[]
         
         self._action_name = name
         rospy.loginfo("Loading file from map %s", filename)
         self.lnodes = self.loadMap(filename)
         rospy.loginfo(" ...done")
-        
+
+       
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.GotoNodeAction, execute_cb = self.executeCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
@@ -37,21 +41,25 @@ class TopologicalNavServer(object):
         self._as.start()
         rospy.loginfo(" ...done")
 
-        rospy.loginfo("Creating base movement client.")
-        self.baseClient = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-        self.baseClient.wait_for_server()
-        rospy.loginfo(" ...done")
-        
-        rospy.loginfo("Creating Ramp Client")
-        self.rampClient = actionlib.SimpleActionClient('rampClimbingServer', scitos_apps_msgs.msg.RampClimbingAction)
-        self.rampClient.wait_for_server()
-        rospy.loginfo(" ...done")
+        if 'move_base' in self.actions_needed:
+            #print "move_base needed"
+            rospy.loginfo("Creating base movement client.")
+            self.baseClient = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+            self.baseClient.wait_for_server()
+            rospy.loginfo(" ...done")
+
+        if 'ramp_climb' in self.actions_needed:
+            #print "ramp_climb needed"        
+            rospy.loginfo("Creating Ramp Client")
+            self.rampClient = actionlib.SimpleActionClient('rampClimbingServer', scitos_apps_msgs.msg.RampClimbingAction)
+            self.rampClient.wait_for_server()
+            rospy.loginfo(" ...done")
         
         rospy.loginfo("Subscribing to Topic")
-        rospy.Subscriber('/current_node', String, self.NodeCallback)
+        rospy.Subscriber('/closest_node', String, self.NodeCallback)
         rospy.loginfo(" ...done")
         
-        
+
         rospy.loginfo("All Done ...")
         rospy.spin()
 
@@ -106,27 +114,27 @@ class TopologicalNavServer(object):
         else :
             if(Gnode == Onode) :
                 rospy.loginfo("Target and Origin Nodes are the same")  
-                result=self.goto_waypoint(Gnode.waypoint)
+                result=self.move_base_to_waypoint(Gnode.waypoint)
                 rospy.loginfo("going to waypoint in node resulted in")
                 print result
             else:
                 rospy.loginfo("Target or Origin Nodes were not found on Map")  
-                result=False #self._send_tweet(goal.text)
+                result=False
             
         if not self.cancelled :
             self._result.success = result
             self._feedback.route = goal.target
             self._as.publish_feedback(self._feedback)
             self._as.set_succeeded(self._result)
-        #del to_expand[:]
+
     
     def NodeCallback(self, msg):
         self.current_node=msg.data
-        #print self.current_node
+
 
     def followRoute(self, route):
         rospy.loginfo("%d Nodes on route" %len(route))
-        movegoal = MoveBaseGoal()
+        #movegoal = MoveBaseGoal()
         rindex=0
         nav_ok=True
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
@@ -134,26 +142,10 @@ class TopologicalNavServer(object):
             print "From %s do (%s) to %s" %(route[rindex].name, a, route[rindex+1].name)
 
             if a == 'move_base' :
-                print "move_base to:" 
-                #inf = route[rindex+1].waypoint.split(',',7)
+                print "move_base to:"
                 inf = route[rindex+1].waypoint
                 print inf
-                movegoal.target_pose.header.frame_id = "map"
-                movegoal.target_pose.header.stamp = rospy.get_rostime()
-                movegoal.target_pose.pose.position.x = float(inf[0])
-                movegoal.target_pose.pose.position.y = float(inf[1])
-                movegoal.target_pose.pose.orientation.x = 0
-                movegoal.target_pose.pose.orientation.y = 0
-                movegoal.target_pose.pose.orientation.z = float(inf[5])
-                movegoal.target_pose.pose.orientation.w = float(inf[6])
-                self.baseClient.cancel_all_goals()
-                rospy.sleep(rospy.Duration.from_sec(1))
-                print movegoal
-                self.baseClient.send_goal(movegoal)
-                self.baseClient.wait_for_result()
-                if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
-                    nav_ok=False
-                rospy.sleep(rospy.Duration.from_sec(0.3))
+                nav_ok=self.move_base_to_waypoint(inf)
             elif a == 'ramp_climbing' :
                 print "ramp_climbing"
                 rampgoal = scitos_apps_msgs.msg.RampClimbingGoal()
@@ -162,13 +154,13 @@ class TopologicalNavServer(object):
                 print rampgoal
                 self.rampClient.send_goal(rampgoal)
                 self.rampClient.wait_for_result()
-                if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
+                if self.rampClient.get_state() != GoalStatus.SUCCEEDED:
                     nav_ok=False
             rindex=rindex+1
         result=nav_ok
         return result
 
-    def goto_waypoint(self, inf):
+    def move_base_to_waypoint(self, inf):
         result = True
         movegoal = MoveBaseGoal()
         movegoal.target_pose.header.frame_id = "map"
@@ -180,13 +172,13 @@ class TopologicalNavServer(object):
         movegoal.target_pose.pose.orientation.z = float(inf[5])
         movegoal.target_pose.pose.orientation.w = float(inf[6])
         self.baseClient.cancel_all_goals()
-        rospy.sleep(rospy.Duration.from_sec(2))
+        rospy.sleep(rospy.Duration.from_sec(1))
         print movegoal
         self.baseClient.send_goal(movegoal)
         self.baseClient.wait_for_result()
         if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
             result = False
-        rospy.sleep(rospy.Duration.from_sec(1))
+        rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 
     def preemptCallback(self):
@@ -195,6 +187,7 @@ class TopologicalNavServer(object):
         self._as.set_preempted(self._result)
         
     def loadMap(self, pointset):
+
         pointset=str(sys.argv[1])
         host = rospy.get_param("datacentre_host")
         port = rospy.get_param("datacentre_port")
@@ -203,13 +196,13 @@ class TopologicalNavServer(object):
         db=client.autonomous_patrolling
         points_db=db["waypoints"]
         available = points_db.find().distinct("meta.pointset")
-        print available
+        #print available
+        
         if pointset not in available :
             rospy.logerr("Desired pointset '"+pointset+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
             raise Exception("Can't find waypoints.")
         
-        #points = self._get_points(waypoints_name) 
         points = []
         search =  {"meta.pointset": pointset}
         for point in points_db.find(search) :
@@ -217,11 +210,16 @@ class TopologicalNavServer(object):
             b = topological_node(a)
             b.edges = point["meta"]["edges"]
             b.waypoint = point["meta"]["waypoint"]
-            print b.name
-            #if point["meta"]["name"] != "charging_point":
             points.append(b)
 
+        #print "Actions Needed"
+        for i in points:
+            for k in i.edges :
+                j = k['action']
+                if j not in self.actions_needed:
+                    self.actions_needed.append(j)
         return points
+
 
 if __name__ == '__main__':
     filename=str(sys.argv[1])

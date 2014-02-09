@@ -34,16 +34,16 @@ class TopologicalNavLoc(object):
         self.node="Unknown"
         
         self._action_name = name
-        print "loading file from map %s" %filename
+        #print "loading file from map %s" %filename
         self.lnodes = self.loadMap(filename)
-        print "Done"
+        #print "Done"
 
-        self.wp_pub = rospy.Publisher('/current_node', String)
-
+        self.wp_pub = rospy.Publisher('/closest_node', String)
+        self.cn_pub = rospy.Publisher('/current_node', String)
+            
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
 
-
-        self.run_analysis()
+        #self.run_analysis()
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -58,26 +58,28 @@ class TopologicalNavLoc(object):
                     b=i
                     a=d
             self.wp_pub.publish(String(b.name))
+            if a < 1.5 :
+                self.cn_pub.publish(String(b.name))
+            else :
+                self.cn_pub.publish('none')
             self.throttle=1
         else:
             self.throttle +=1
-
 
     def loadMap(self, pointset):
         pointset=str(sys.argv[1])
         host = rospy.get_param("datacentre_host")
         port = rospy.get_param("datacentre_port")
-        print "Using datacentre  ",host,":", port
+        #print "Using datacentre  ",host,":", port
         client = pymongo.MongoClient(host, port)
         db=client.autonomous_patrolling
         points_db=db["waypoints"]
         available = points_db.find().distinct("meta.pointset")
-        print available
+        #print available
         if pointset not in available :
             rospy.logerr("Desired pointset '"+pointset+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
-            raise Exception("Can't find waypoints.")
-        
+            raise Exception("Can't find waypoints.")      
         #points = self._get_points(waypoints_name) 
         points = []
         search =  {"meta.pointset": pointset}
@@ -87,10 +89,9 @@ class TopologicalNavLoc(object):
             b.edges = point["meta"]["edges"]
             b.waypoint = point["meta"]["waypoint"]
             b._get_coords()
-            print b.name
+            #print b.name
             #if point["meta"]["name"] != "charging_point":
             points.append(b)
-
         return points
 
 
@@ -105,6 +106,8 @@ class TopologicalNavLoc(object):
                 if b :
                     dist=b._get_distance(ox, oy)
                     print ("%s: %f") %(b.name,dist)
+
+
 
 if __name__ == '__main__':
     filename=str(sys.argv[1])

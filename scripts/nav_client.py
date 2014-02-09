@@ -9,6 +9,7 @@ import topological_navigation.msg
 
 def topol_nav_client(targ):
     
+    
     client = actionlib.SimpleActionClient('topological_navigation', topological_navigation.msg.GotoNodeAction)
     
     client.wait_for_server()
@@ -22,7 +23,7 @@ def topol_nav_client(targ):
     #navgoal.origin = orig
 
     # Sends the goal to the action server.
-    client.send_goal(navgoal)
+    client.send_goal(navgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
 
     # Waits for the server to finish performing the action.
     client.wait_for_result()

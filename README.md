@@ -101,8 +101,8 @@ The first step is to insert a topological map on the strands_datacentre, this ca
 1. Once your map is inserted in the DB you can launch your topological navigation nodes using:
   `roslaunch topological_navigation topological_navigation.launch map:=topological_map_name`
 
-*note:* scitos ramp HAS to be running (in future versions this won't be necessary), you can run it using:
-`rosrun scitos_ramp_climb ramp_climb`
+~~*note:* scitos ramp HAS to be running (in future versions this won't be necessary), you can run it using:~~
+~~`rosrun scitos_ramp_climb ramp_climb`~~
 
 
 ## Navigate

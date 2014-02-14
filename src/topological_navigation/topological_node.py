@@ -38,6 +38,7 @@ class topological_node(object):
         self.father='none'
         self.px=0.0
         self.py=0.0
+        self.influence_radius=1.5
 
     def _insert_waypoint(self, waypoint):
         self.waypoint=waypoint
@@ -53,6 +54,9 @@ class topological_node(object):
 
     def _insert_edges(self, edges):
         self.edges=edges
+
+    def _insert_vertices(self, vertices):
+        self.vertices=vertices
         
     def _get_Children(self) :
         self.expanded=True

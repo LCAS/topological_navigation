@@ -52,14 +52,17 @@ class TopologicalNavLoc(object):
         if(self.throttle%5==0):
             #print "robot pose (%f, %f)" %(msg.position.x,msg.position.y)
             a = float('1000.0')
+            x=msg.position.x
+            y=msg.position.y
             for i in self.lnodes:
-                d=i._get_distance(msg.position.x, msg.position.y)
+                d=i._get_distance(x, y)
                 if d < a:
                     b=i
                     a=d
             self.wp_pub.publish(String(b.name))
-            if a < 1.5 :
-                self.cn_pub.publish(String(b.name))
+            if a < b.influence_radius :
+                if self.point_in_poly(x,y,b) :
+                    self.cn_pub.publish(String(b.name))
             else :
                 self.cn_pub.publish('none')
             self.throttle=1
@@ -92,7 +95,7 @@ class TopologicalNavLoc(object):
             b.edges = point["meta"]["edges"]
             b.waypoint = point["meta"]["waypoint"]
             b._get_coords()
-
+            b._insert_vertices(point["meta"]["vertices"])
             points.append(b)
         return points
 
@@ -100,14 +103,28 @@ class TopologicalNavLoc(object):
     def run_analysis(self):
         for i in self.lnodes:
             print ("%s:") %i.name
-            ox=float(i.waypoint[0])
-            oy=float(i.waypoint[1])
-            print ("%.2f,%.2f") %(ox,oy)
-            for j in i.edges:
-                b = get_node(j["node"],self.lnodes)
-                if b :
-                    dist=b._get_distance(ox, oy)
-                    print ("%s: %f") %(b.name,dist)
+            print ("%s:") %i.influence_radius
+
+    def point_in_poly(self,x,y,node):
+        x=x-node.px
+        y=y-node.py
+   
+        n = len(node.vertices)
+        inside = False
+    
+        p1x,p1y = node.vertices[0]
+        for i in range(n+1):
+            p2x,p2y = node.vertices[i % n]
+            if y > min(p1y,p2y):
+                if y <= max(p1y,p2y):
+                    if x <= max(p1x,p2x):
+                        if p1y != p2y:
+                            xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                        if p1x == p2x or x <= xints:
+                            inside = not inside
+            p1x,p1y = p2x,p2y
+            
+        return inside
 
 
 if __name__ == '__main__':

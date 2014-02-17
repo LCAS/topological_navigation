@@ -57,6 +57,12 @@ class topological_node(object):
 
     def _insert_vertices(self, vertices):
         self.vertices=vertices
+        a=0
+        for i in self.vertices :
+            dist=math.hypot(i[0],i[1])
+            if dist > a :
+                a=dist
+        self.influence_radius=a
         
     def _get_Children(self) :
         self.expanded=True

@@ -26,7 +26,8 @@ class TopologicalNavServer(object):
     _result   = topological_navigation.msg.GotoNodeResult()
 
 
-    def __init__(self, name, filename) :
+    def __init__(self, name, filename, mode) :
+        self.node_by_node = False
         self.cancelled = False
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -38,6 +39,8 @@ class TopologicalNavServer(object):
         self.lnodes = self.loadMap(filename)
         rospy.loginfo(" ...done")
 
+        if mode == "Node_by_Node" :
+            self.node_by_node = True
        
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.GotoNodeAction, execute_cb = self.executeCallback, auto_start = False)
@@ -135,7 +138,11 @@ class TopologicalNavServer(object):
             self._feedback.route = target
             self._as.publish_feedback(self._feedback)
             self._as.set_succeeded(self._result)
-
+        else :
+            self._result.success = result
+            self._feedback.route = self.current_node
+            self._as.publish_feedback(self._feedback)
+            self._as.set_aborted(self._result)
     
     def closestNodeCallback(self, msg):
         self.closest_node=msg.data
@@ -147,6 +154,10 @@ class TopologicalNavServer(object):
             print "new node reached %s" %self.current_node
             if self.navigation_activated :
                 self.stat.set_at_node()
+                if self.current_node != self.stat.target and self.node_by_node :
+                    self.baseClient.cancel_all_goals()
+                    self.cancelled = True
+                  
 
     def followRoute(self, route):
         nnodes=len(route)
@@ -180,20 +191,31 @@ class TopologicalNavServer(object):
                 if self.rampClient.get_state() != GoalStatus.SUCCEEDED:
                     nav_ok=False
             rindex=rindex+1
+        if self.cancelled :
+            nav_ok=False
+            nodewp = get_node(self.current_node, self.lnodes)
+            not_fatal=self.move_base_to_waypoint(nodewp.waypoint)
+
         self.stat.set_ended(self.current_node)
         dt_text=self.stat.get_finish_time_str()
         operation_time = self.stat.operation_time
         time_to_wp = self.stat.time_to_wp
         result=nav_ok
+      
         if nav_ok :
             self.stat.status= "success"
             rospy.loginfo("navigation finished on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
         else :
-            rospy.loginfo("navigation failed on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
-            self.stat.status= "failed"
+            if not_fatal :
+                rospy.loginfo("navigation failed on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                self.stat.status= "failed"
+            else :
+                rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                self.stat.status= "fatal"
         
         val=self.stat.__dict__#json.loads(vala)
-        print val        
+        print val
+        self._stats_collection.insert(val)
         self.navigation_activated=False
         return result
 
@@ -229,9 +251,12 @@ class TopologicalNavServer(object):
         host = rospy.get_param("datacentre_host")
         port = rospy.get_param("datacentre_port")
         print "Using datacentre  ",host,":", port
-        client = pymongo.MongoClient(host, port)
-        db=client.autonomous_patrolling
+        self.mongo_client = pymongo.MongoClient(host, port)
+        db=self.mongo_client.autonomous_patrolling
         points_db=db["waypoints"]
+        
+        self._stats_collection = db.nav_stats
+        
         available = points_db.find().distinct("meta.pointset")
         #print available
         
@@ -260,5 +285,9 @@ class TopologicalNavServer(object):
 
 if __name__ == '__main__':
     filename=str(sys.argv[1])
+    mode="normal"
+    if len(sys.argv) > 2:
+        if sys.argv[2] == "true":
+            mode="Node_by_Node"
     rospy.init_node('topological_navigation')
-    server = TopologicalNavServer(rospy.get_name(),filename)
+    server = TopologicalNavServer(rospy.get_name(),filename,mode)

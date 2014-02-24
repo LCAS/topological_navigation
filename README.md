@@ -157,10 +157,14 @@ The first step is to insert a topological map on the strands_datacentre, this ca
 ## Launching Topological Localisation and Navigation
 
 1. Once your map is inserted in the DB you can launch your topological navigation nodes using:
-  `roslaunch topological_navigation topological_navigation.launch map:=topological_map_name`
+  `roslaunch topological_navigation topological_navigation.launch map:=topological_map_name node_by_node:=false`
 
-~~*note:* scitos ramp HAS to be running (in future versions this won't be necessary), you can run it using:~~
-~~`rosrun scitos_ramp_climb ramp_climb`~~
+*note:* When Node by node navigation is active the robot will cancel the topological navigation when it reaches the influence zone of a node and it will navigate to its waypoint aborting the action.
+
+*note:* Statiscs are being recorded in the nav_stats collection within the autonomous_patrolling
+
+*note:* every action server for the actions stored in the topological map have to be running, for example if the ramp_climb action is required you will need the scitos_ramp_climb server running, you can run it using:
+`rosrun scitos_ramp_climb ramp_climb`
 
 
 ## Navigate

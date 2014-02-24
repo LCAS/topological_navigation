@@ -37,6 +37,7 @@ class TopologicalNavServer(object):
         self._action_name = name
         rospy.loginfo("Loading file from map %s", filename)
         self.lnodes = self.loadMap(filename)
+        self.topol_map = filename
         rospy.loginfo(" ...done")
 
         if mode == "Node_by_Node" :
@@ -163,7 +164,7 @@ class TopologicalNavServer(object):
         nnodes=len(route)
         Orig = route[0].name
         Targ = route[nnodes-1].name
-        self.stat=nav_stats(Orig, Targ)
+        self.stat=nav_stats(Orig, Targ, self.topol_map)
         dt_text=self.stat.get_start_time_str()
         rospy.loginfo("%d Nodes on route" %nnodes)
         rospy.loginfo("navigation started on %s" %dt_text)

@@ -4,10 +4,11 @@ from datetime import datetime
 
 class nav_stats(object):
     
-    def __init__(self, origin, target):
+    def __init__(self, origin, target, topol_map):
         self.status= "active"
         self.origin=origin
         self.target=target
+        self.topological_map = topol_map
         self.set_start()
     
     def set_start(self):

@@ -3,7 +3,6 @@
 	<arg name="map" default="tmap_II"/> 
 	<arg name="node_by_node" default="false"/> 
 
-	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" args="$(arg map)"/>
-	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" args="$(arg map) $(arg node_by_node)"/>
-
+	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" args="$(arg map)"/>
+	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" args="$(arg map) $(arg node_by_node)"/>
 </launch>

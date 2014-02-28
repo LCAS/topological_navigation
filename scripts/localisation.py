@@ -14,7 +14,7 @@ from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
-import strands_datacentre.util
+import ros_datacentre.util
 import topological_navigation.msg
 
 

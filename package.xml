@@ -39,6 +39,7 @@
   <run_depend>scitos_msgs</run_depend>
   <run_depend>actionlib</run_depend>
   <run_depend>actionlib_msgs</run_depend>
+  <run_depend>ros_datacentre</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

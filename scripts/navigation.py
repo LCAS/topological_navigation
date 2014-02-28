@@ -14,7 +14,7 @@ from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
-import strands_datacentre.util
+import ros_datacentre.util
 import topological_navigation.msg
 
 
@@ -42,7 +42,10 @@ class TopologicalNavServer(object):
 
         if mode == "Node_by_Node" :
             self.node_by_node = True
-       
+
+        print "MODE: "
+        print mode
+        print self.node_by_node
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.GotoNodeAction, execute_cb = self.executeCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
@@ -288,7 +291,9 @@ if __name__ == '__main__':
     filename=str(sys.argv[1])
     mode="normal"
     if len(sys.argv) > 2:
-        if sys.argv[2] == "true":
+        print str(sys.argv[2])
+        if str(sys.argv[2]) == "true":
             mode="Node_by_Node"
+            print "Node_by_Node"
     rospy.init_node('topological_navigation')
     server = TopologicalNavServer(rospy.get_name(),filename,mode)

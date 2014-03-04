@@ -6,7 +6,7 @@ import rospy
 from geometry_msgs.msg import Pose
 
 import pymongo
-import strands_datacentre.util
+import ros_datacentre.util
 
 class topological_node(object):
     def __init__(self,node_name, dataset_name, map_name):
@@ -119,5 +119,5 @@ if __name__ == '__main__':
         p.orientation.z=i.waypoint[5]
         p.orientation.w=i.waypoint[6]
 
-        strands_datacentre.util.store_message(points_db,p,val)
+        ros_datacentre.util.store_message(points_db,p,val)
     

@@ -10,6 +10,9 @@ from time import sleep
 from datetime import datetime
 from topological_navigation.topological_node import *
 from topological_navigation.navigation_stats import *
+from strands_navigation_msgs.msg import MonitoredNavigationAction
+from strands_navigation_msgs.msg import MonitoredNavigationGoal
+
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from std_msgs.msg import String
@@ -53,6 +56,11 @@ class TopologicalNavServer(object):
         self._as.start()
         rospy.loginfo(" ...done")
 
+        rospy.loginfo("Creating monitored navigation client.")
+        self.monNavClient= actionlib.SimpleActionClient('monitored_navigation', MonitoredNavigationAction)
+        self.monNavClient.wait_for_server()
+        rospy.loginfo(" ...done")
+            
         if 'move_base' in self.actions_needed:
             #print "move_base needed"
             rospy.loginfo("Creating base movement client.")
@@ -134,7 +142,7 @@ class TopologicalNavServer(object):
         else :
             if(Gnode == Onode) :
                 rospy.loginfo("Target and Origin Nodes are the same")  
-                result=self.move_base_to_waypoint(Gnode.waypoint)
+                result= self.monitored_navigation(inf, 'move_base')
                 rospy.loginfo("going to waypoint in node resulted in")
                 print result
             else:
@@ -192,7 +200,7 @@ class TopologicalNavServer(object):
                 print "move_base to:"
                 inf = route[rindex+1].waypoint
                 print inf
-                nav_ok=self.move_base_to_waypoint(inf)
+                nav_ok= self.monitored_navigation(inf, 'move_base')
                 #self.dyt = config['yaw_goal_tolerance']
                 params = { 'yaw_goal_tolerance' : self.dyt }
                 config = self.client.update_configuration(params)
@@ -202,7 +210,8 @@ class TopologicalNavServer(object):
                 rampgoal.timeOut = 1000
                 print "sending goal"
                 print rampgoal
-                self.rampClient.send_goal(rampgoal)
+                inf = route[rindex+1].waypoint
+                self.monitored_navigation(inf, 'ramp_climb')
                 self.rampClient.wait_for_result()
                 if self.rampClient.get_state() != GoalStatus.SUCCEEDED:
                     nav_ok=False
@@ -212,11 +221,13 @@ class TopologicalNavServer(object):
         if self.cancelled :
             nav_ok=False
             nodewp = get_node(self.current_node, self.lnodes)
-            params = { 'yaw_goal_tolerance' : 6.283 }
-            config = self.client.update_configuration(params)
-            not_fatal=self.move_base_to_waypoint(nodewp.waypoint)
-            params = { 'yaw_goal_tolerance' : self.dyt }
-            config = self.client.update_configuration(params)
+            #params = { 'yaw_goal_tolerance' : 6.283 }
+            #config = self.client.update_configuration(params)
+            #not_fatal=self.move_base_to_waypoint(nodewp.waypoint)
+            
+            not_fatal = self.monitored_navigation(nodewp.waypoint, 'move_base')
+            #params = { 'yaw_goal_tolerance' : self.dyt }
+            #config = self.client.update_configuration(params)
         else :
             not_fatal=nav_ok
         
@@ -263,6 +274,28 @@ class TopologicalNavServer(object):
             result = False
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
+
+
+    def monitored_navigation(self, inf, command):
+        result = True
+        goal=MonitoredNavigationGoal()
+        goal.action_server=command
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.get_rostime()
+        goal.target_pose.pose.position.x = float(inf[0])
+        goal.target_pose.pose.position.y = float(inf[1])
+        goal.target_pose.pose.orientation.x = 0
+        goal.target_pose.pose.orientation.y = 0
+        goal.target_pose.pose.orientation.z = float(inf[5])
+        goal.target_pose.pose.orientation.w = float(inf[6])
+        
+        self.monNavClient.send_goal(goal)
+        self.monNavClient.wait_for_result()
+        if self.monNavClient.get_state() != GoalStatus.SUCCEEDED:
+            result = False
+        rospy.sleep(rospy.Duration.from_sec(0.3))
+        return result
+
 
     def preemptCallback(self):
         self.cancelled = True

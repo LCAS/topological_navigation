@@ -8,6 +8,8 @@ from geometry_msgs.msg import Pose
 import pymongo
 import ros_datacentre.util
 
+
+
 class topological_node(object):
     def __init__(self,node_name, dataset_name, map_name):
         self.name=node_name

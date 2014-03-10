@@ -78,7 +78,7 @@ class TopologicalNavLoc(object):
         client = pymongo.MongoClient(host, port)
         db=client.autonomous_patrolling
         points_db=db["waypoints"]
-        available = points_db.find().distinct("meta.pointset")
+        available = points_db.find().distinct("_meta.pointset")
         
         #print available
         if pointset not in available :
@@ -88,14 +88,14 @@ class TopologicalNavLoc(object):
 
         #points = self._get_points(waypoints_name) 
         points = []
-        search =  {"meta.pointset": pointset}
+        search =  {"_meta.pointset": pointset}
         for point in points_db.find(search) :
-            a= point["meta"]["name"]
+            a= point["_meta"]["name"]
             b = topological_node(a)
-            b.edges = point["meta"]["edges"]
-            b.waypoint = point["meta"]["waypoint"]
+            b.edges = point["_meta"]["edges"]
+            b.waypoint = point["_meta"]["waypoint"]
             b._get_coords()
-            b._insert_vertices(point["meta"]["vertices"])
+            b._insert_vertices(point["_meta"]["vertices"])
             points.append(b)
         return points
 

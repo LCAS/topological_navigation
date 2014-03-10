@@ -16,7 +16,7 @@ from std_msgs.msg import String
 import scitos_apps_msgs.msg
 import ros_datacentre.util
 import topological_navigation.msg
-
+import dynamic_reconfigure.client
 
 
 """ Class for Topological Navigation """
@@ -72,6 +72,10 @@ class TopologicalNavServer(object):
         rospy.Subscriber('/current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
         
+        rospy.loginfo("Creating Reconfigure Client")
+        self.client = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
+        config = self.client.get_configuration()
+        self.dyt = config['yaw_goal_tolerance']
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -175,15 +179,23 @@ class TopologicalNavServer(object):
         #movegoal = MoveBaseGoal()
         rindex=0
         nav_ok=True
+        route_len = len(route)-2
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
             a = route[rindex]._get_action(route[rindex+1].name)
             print "From %s do (%s) to %s" %(route[rindex].name, a, route[rindex+1].name)
 
             if a == 'move_base' :
+                if rindex < route_len:
+                    #self.dyt = config['yaw_goal_tolerance']
+                    params = { 'yaw_goal_tolerance' : 6.283 }
+                    config = self.client.update_configuration(params)
                 print "move_base to:"
                 inf = route[rindex+1].waypoint
                 print inf
                 nav_ok=self.move_base_to_waypoint(inf)
+                #self.dyt = config['yaw_goal_tolerance']
+                params = { 'yaw_goal_tolerance' : self.dyt }
+                config = self.client.update_configuration(params)
             elif a == 'ramp_climbing' :
                 print "ramp_climbing"
                 rampgoal = scitos_apps_msgs.msg.RampClimbingGoal()
@@ -194,12 +206,20 @@ class TopologicalNavServer(object):
                 self.rampClient.wait_for_result()
                 if self.rampClient.get_state() != GoalStatus.SUCCEEDED:
                     nav_ok=False
+            
             rindex=rindex+1
+            
         if self.cancelled :
             nav_ok=False
             nodewp = get_node(self.current_node, self.lnodes)
+            params = { 'yaw_goal_tolerance' : 6.283 }
+            config = self.client.update_configuration(params)
             not_fatal=self.move_base_to_waypoint(nodewp.waypoint)
-
+            params = { 'yaw_goal_tolerance' : self.dyt }
+            config = self.client.update_configuration(params)
+        else :
+            not_fatal=nav_ok
+        
         self.stat.set_ended(self.current_node)
         dt_text=self.stat.get_finish_time_str()
         operation_time = self.stat.operation_time
@@ -261,7 +281,8 @@ class TopologicalNavServer(object):
         
         self._stats_collection = db.nav_stats
         
-        available = points_db.find().distinct("meta.pointset")
+        #available = points_db.find().distinct("meta.pointset")
+        available = points_db.find().distinct("_meta.pointset")
         #print available
         
         if pointset not in available :
@@ -270,12 +291,12 @@ class TopologicalNavServer(object):
             raise Exception("Can't find waypoints.")
         
         points = []
-        search =  {"meta.pointset": pointset}
+        search =  {"_meta.pointset": pointset}
         for point in points_db.find(search) :
-            a= point["meta"]["name"]
+            a= point["_meta"]["name"]
             b = topological_node(a)
-            b.edges = point["meta"]["edges"]
-            b.waypoint = point["meta"]["waypoint"]
+            b.edges = point["_meta"]["edges"]
+            b.waypoint = point["_meta"]["waypoint"]
             points.append(b)
 
         #print "Actions Needed"

@@ -9,10 +9,12 @@ class nav_stats(object):
         self.origin=origin
         self.target=target
         self.topological_map = topol_map
+        #self.date_at_node = datetime.now()
         self.set_start()
     
     def set_start(self):
         self.date_started = datetime.now()
+        self.date_at_node = self.date_started
 
     def set_ended(self, node):
         self.final_node=node
@@ -29,8 +31,11 @@ class nav_stats(object):
         return self.operation_time
 
     def get_time_to_wp(self):
-        operation_delta = self.date_finished - self.date_at_node
-        self.time_to_wp = operation_delta.total_seconds()
+        if self.date_at_node != self.date_started :
+            operation_delta = self.date_finished - self.date_at_node
+            self.time_to_wp = operation_delta.total_seconds()
+        else :
+            self.time_to_wp = 0
         return self.time_to_wp
         
     def get_start_time_str(self):

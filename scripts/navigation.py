@@ -12,6 +12,7 @@ from topological_navigation.topological_node import *
 from topological_navigation.navigation_stats import *
 from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
+from strands_navigation_msgs.msg import NavStatistics
 
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
@@ -46,9 +47,6 @@ class TopologicalNavServer(object):
         if mode == "Node_by_Node" :
             self.node_by_node = True
 
-        print "MODE: "
-        print mode
-        print self.node_by_node
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.GotoNodeAction, execute_cb = self.executeCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
@@ -60,20 +58,7 @@ class TopologicalNavServer(object):
         self.monNavClient= actionlib.SimpleActionClient('monitored_navigation', MonitoredNavigationAction)
         self.monNavClient.wait_for_server()
         rospy.loginfo(" ...done")
-            
-        if 'move_base' in self.actions_needed:
-            #print "move_base needed"
-            rospy.loginfo("Creating base movement client.")
-            self.baseClient = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-            self.baseClient.wait_for_server()
-            rospy.loginfo(" ...done")
-
-        if 'ramp_climb' in self.actions_needed:
-            #print "ramp_climb needed"        
-            rospy.loginfo("Creating Ramp Client")
-            self.rampClient = actionlib.SimpleActionClient('rampClimbingServer', scitos_apps_msgs.msg.RampClimbingAction)
-            self.rampClient.wait_for_server()
-            rospy.loginfo(" ...done")
+        
         
         rospy.loginfo("Subscribing to Topics")
         rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
@@ -84,6 +69,8 @@ class TopologicalNavServer(object):
         self.client = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
         config = self.client.get_configuration()
         self.dyt = config['yaw_goal_tolerance']
+
+        self.stats_pub = rospy.Publisher('/TopologicalNavigation/Statistics', NavStatistics)
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -142,7 +129,7 @@ class TopologicalNavServer(object):
         else :
             if(Gnode == Onode) :
                 rospy.loginfo("Target and Origin Nodes are the same")  
-                result= self.monitored_navigation(inf, 'move_base')
+                result= self.monitored_navigation(Onode.waypoint, 'move_base')
                 rospy.loginfo("going to waypoint in node resulted in")
                 print result
             else:
@@ -171,7 +158,7 @@ class TopologicalNavServer(object):
             if self.navigation_activated :
                 self.stat.set_at_node()
                 if self.current_node != self.stat.target and self.node_by_node :
-                    self.baseClient.cancel_all_goals()
+                    self.monNavClient.cancel_all_goals()
                     self.cancelled = True
                   
 
@@ -192,29 +179,17 @@ class TopologicalNavServer(object):
             a = route[rindex]._get_action(route[rindex+1].name)
             print "From %s do (%s) to %s" %(route[rindex].name, a, route[rindex+1].name)
 
-            if a == 'move_base' :
-                if rindex < route_len:
-                    #self.dyt = config['yaw_goal_tolerance']
-                    params = { 'yaw_goal_tolerance' : 6.283 }
-                    config = self.client.update_configuration(params)
-                print "move_base to:"
-                inf = route[rindex+1].waypoint
-                print inf
-                nav_ok= self.monitored_navigation(inf, 'move_base')
+            if rindex < route_len:
                 #self.dyt = config['yaw_goal_tolerance']
-                params = { 'yaw_goal_tolerance' : self.dyt }
+                params = { 'yaw_goal_tolerance' : 6.283 }
                 config = self.client.update_configuration(params)
-            elif a == 'ramp_climbing' :
-                print "ramp_climbing"
-                rampgoal = scitos_apps_msgs.msg.RampClimbingGoal()
-                rampgoal.timeOut = 1000
-                print "sending goal"
-                print rampgoal
-                inf = route[rindex+1].waypoint
-                self.monitored_navigation(inf, 'ramp_climb')
-                self.rampClient.wait_for_result()
-                if self.rampClient.get_state() != GoalStatus.SUCCEEDED:
-                    nav_ok=False
+            print "move_base to:"
+            inf = route[rindex+1].waypoint
+            print inf
+            nav_ok= self.monitored_navigation(inf, a)
+            #self.dyt = config['yaw_goal_tolerance']
+            params = { 'yaw_goal_tolerance' : self.dyt }
+            config = self.client.update_configuration(params)
             
             rindex=rindex+1
             
@@ -248,10 +223,25 @@ class TopologicalNavServer(object):
                 rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
                 self.stat.status= "fatal"
         
-        val=self.stat.__dict__#json.loads(vala)
-        print val
+        val=self.stat.__dict__
+        #rospy.loginfo("%s" %val)
+        #print val
         self._stats_collection.insert(val)
         self.navigation_activated=False
+        
+        pubst = NavStatistics()
+        pubst.status = self.stat.status
+        pubst.origin = self.stat.origin
+        pubst.target = self.stat.target
+        pubst.topological_map = self.stat.topological_map
+        pubst.final_node = self.stat.final_node
+        pubst.time_to_waypoint = self.stat.time_to_wp
+        pubst.operation_time = self.stat.operation_time
+        pubst.date_started = self.stat.get_start_time_str()
+        pubst.date_at_node = self.stat.date_at_node.strftime('%A, %B %d, at %H:%M:%S hours')
+        pubst.date_finished = self.stat.get_finish_time_str()
+        self.stats_pub.publish(pubst)
+        
         return result
 
     def move_base_to_waypoint(self, inf):

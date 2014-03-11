@@ -23,7 +23,6 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>scitos_apps_msgs</build_depend>
-  <build_depend>ap_msgs</build_depend>
   <build_depend>scitos_msgs</build_depend>
   <build_depend>actionlib</build_depend>
   <build_depend>actionlib_msgs</build_depend>
@@ -35,7 +34,6 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <run_depend>ap_msgs</run_depend>
   <run_depend>scitos_apps_msgs</run_depend>
   <run_depend>scitos_msgs</run_depend>
   <run_depend>actionlib</run_depend>

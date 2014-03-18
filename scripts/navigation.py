@@ -70,7 +70,7 @@ class TopologicalNavServer(object):
         config = self.client.get_configuration()
         self.dyt = config['yaw_goal_tolerance']
 
-        self.stats_pub = rospy.Publisher('/TopologicalNavigation/Statistics', NavStatistics)
+        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
 
         rospy.loginfo("All Done ...")
         rospy.spin()

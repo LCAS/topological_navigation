@@ -18,7 +18,9 @@ from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
-import ros_datacentre.util
+from topological_utils.msg import node
+from ros_datacentre.message_store import MessageStoreProxy
+
 import topological_navigation.msg
 import dynamic_reconfigure.client
 
@@ -94,30 +96,30 @@ class TopologicalNavServer(object):
             while not_goal :
                 pos=findInList(target, children)
                 if pos>=0 :
-                    print "Goal found in Pos %d" %pos
+                    #print "Goal found in Pos %d" %pos
                     not_goal=False
                 else :
-                    print "Goal NOT found"
+                    #print "Goal NOT found"
                     update_to_expand(to_expand, children, self.lnodes, to_expand[exp_index].name)
                     exp_index=exp_index+1
-                    print "nodes to expand %d:" %len(to_expand)
-                    for m in to_expand :
-                        print m.name
-                    print "expanding node %d: (%s)" %(exp_index,to_expand[exp_index].name)
+                    #print "nodes to expand %d:" %len(to_expand)
+                    #for m in to_expand :
+                    #    print m.name
+                    #print "expanding node %d: (%s)" %(exp_index,to_expand[exp_index].name)
                     if exp_index >= len(to_expand) :
                         not_goal=False
                     children=to_expand[exp_index]._get_Children()
-                    print "nodes in list:"
-                    print children
+                    #print "nodes in list:"
+                    #print children
         
-            print "fixing Father %s for goal %s" %(to_expand[exp_index].name,Gnode.name)
+            #print "fixing Father %s for goal %s" %(to_expand[exp_index].name,Gnode.name)
             Gnode._set_Father(to_expand[exp_index].name)
-            print "Father for Gnode %s" %(Gnode.father)
+            #print "Father for Gnode %s" %(Gnode.father)
             #del route[:]
             route=[Gnode]
-            print "Current Route %d" %len(route)
+            #print "Current Route %d" %len(route)
             rindex=0
-            print route[rindex].father
+            #print route[rindex].father
             while route[rindex].father is not 'none' :
                 nwnode = get_node(route[rindex].father, to_expand)
                 route.append(nwnode)
@@ -292,37 +294,55 @@ class TopologicalNavServer(object):
         self._result.success = False
         self._as.set_preempted(self._result)
         
-    def loadMap(self, pointset):
+    def loadMap(self, point_set):
 
-        pointset=str(sys.argv[1])
-        host = rospy.get_param("datacentre_host")
-        port = rospy.get_param("datacentre_port")
-        print "Using datacentre  ",host,":", port
-        self.mongo_client = pymongo.MongoClient(host, port)
-        db=self.mongo_client.autonomous_patrolling
-        points_db=db["waypoints"]
-        
-        self._stats_collection = db.nav_stats
-        
-        #available = points_db.find().distinct("meta.pointset")
-        available = points_db.find().distinct("_meta.pointset")
-        #print available
-        
-        if pointset not in available :
-            rospy.logerr("Desired pointset '"+pointset+"' not in datacentre")
+        point_set=str(sys.argv[1])
+        #map_name=str(sys.argv[3])
+    
+        msg_store = MessageStoreProxy()
+    
+        query_meta = {}
+        query_meta["pointset"] = point_set
+        available = len(msg_store.query(node._type, {}, query_meta)) > 0
+    
+        if available <= 0 :
+            rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
             raise Exception("Can't find waypoints.")
+    
+        else :
+            query_meta = {}
+            query_meta["pointset"] = point_set
+            message_list = msg_store.query(node._type, {}, query_meta)
+    
+            points = []
+            for i in message_list:
+                #print i[0].name
+                b = topological_node(i[0].name)
+                edges = []
+                for j in i[0].edges :
+                    data = {}
+                    data["node"]=j.node
+                    data["action"]=j.action
+                    edges.append(data)
+                b.edges = edges
+                
+                verts = []
+                for j in i[0].verts :
+                    data = [j.x,j.y]
+                    verts.append(data)
+                b._insert_vertices(verts)
+    
+                c=i[0].pose
+                waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
+                b.waypoint = waypoint
+                b._get_coords()
+    
+                points.append(b)        #print "Actions Needed"
         
-        points = []
-        search =  {"_meta.pointset": pointset}
-        for point in points_db.find(search) :
-            a= point["_meta"]["name"]
-            b = topological_node(a)
-            b.edges = point["_meta"]["edges"]
-            b.waypoint = point["_meta"]["waypoint"]
-            points.append(b)
-
-        #print "Actions Needed"
+            for point in points :
+                print point.name
+        
         for i in points:
             for k in i.edges :
                 j = k['action']

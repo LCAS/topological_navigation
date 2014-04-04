@@ -8,13 +8,16 @@ import json
 import sys
 import math
 
+
+
 from topological_navigation.topological_node import *
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
-import ros_datacentre.util
+from topological_utils.msg import node
+from ros_datacentre.message_store import MessageStoreProxy
 import topological_navigation.msg
 
 
@@ -70,34 +73,53 @@ class TopologicalNavLoc(object):
             self.throttle +=1
 
 
-    def loadMap(self, pointset):
+    def loadMap(self, point_set):
 
-        #pointset=str(sys.argv[1])
-        host = rospy.get_param("datacentre_host")
-        port = rospy.get_param("datacentre_port")
-        client = pymongo.MongoClient(host, port)
-        db=client.autonomous_patrolling
-        points_db=db["waypoints"]
-        available = points_db.find().distinct("_meta.pointset")
-        
-        #print available
-        if pointset not in available :
-            rospy.logerr("Desired pointset '"+pointset+"' not in datacentre")
+        point_set=str(sys.argv[1])
+        #map_name=str(sys.argv[3])
+    
+        msg_store = MessageStoreProxy()
+    
+        query_meta = {}
+        query_meta["pointset"] = point_set
+        available = len(msg_store.query(node._type, {}, query_meta)) > 0
+    
+        if available <= 0 :
+            rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
-            raise Exception("Can't find waypoints.")      
-
-        #points = self._get_points(waypoints_name) 
-        points = []
-        search =  {"_meta.pointset": pointset}
-        for point in points_db.find(search) :
-            a= point["_meta"]["name"]
-            b = topological_node(a)
-            b.edges = point["_meta"]["edges"]
-            b.waypoint = point["_meta"]["waypoint"]
-            b._get_coords()
-            b._insert_vertices(point["_meta"]["vertices"])
-            points.append(b)
-        return points
+            raise Exception("Can't find waypoints.")
+    
+        else :
+            query_meta = {}
+            query_meta["pointset"] = point_set
+            message_list = msg_store.query(node._type, {}, query_meta)
+    
+            points = []
+            for i in message_list:
+                #print i[0].name
+                b = topological_node(i[0].name)
+                edges = []
+                for j in i[0].edges :
+                    data = {}
+                    data["node"]=j.node
+                    data["action"]=j.action
+                    edges.append(data)
+                b.edges = edges
+                
+                verts = []
+                for j in i[0].verts :
+                    data = [j.x,j.y]
+                    verts.append(data)
+                b._insert_vertices(verts)
+    
+                c=i[0].pose
+                waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
+                b.waypoint = waypoint
+                b._get_coords()
+    
+                points.append(b)
+            
+            return points
 
 
     def run_analysis(self):

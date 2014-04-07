@@ -42,9 +42,8 @@ find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generat
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   edge.msg
-   vertex.msg
-   node.msg
+   Edge.msg
+   Vertex.msg
  )
 
 ## Generate services in the 'srv' folder

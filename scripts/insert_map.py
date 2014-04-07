@@ -4,9 +4,9 @@ import json
 import sys
 import rospy
 from geometry_msgs.msg import Pose
-from topological_utils.msg import node
-from topological_utils.msg import vertex
-from topological_utils.msg import edge
+from strands_navigation_msgs.msg import TopologicalNode
+from topological_utils.msg import Vertex
+from topological_utils.msg import Edge
 
 import pymongo
 #import ros_datacentre.util
@@ -118,7 +118,7 @@ if __name__ == '__main__':
         
     for i in lnodes:
         #val=i.__dict__#json.loads(vala)        print val #+ '\n'
-        n = node()
+        n = TopologicalNode()
         n.name = i.name
         n.map = i.map
         n.pointset = i.pointset
@@ -132,12 +132,12 @@ if __name__ == '__main__':
         p.orientation.w=float(i.waypoint[6])
         n.pose = p
         for j in i.vertices :
-            v = vertex()
+            v = Vertex()
             v.x = float(j[0])
             v.y = float(j[1])
             n.verts.append(v)
         for k in i.edges :
-            e = edge()
+            e = Edge()
             e.node = k['node']
             e.action = k['action']
             n.edges.append(e)

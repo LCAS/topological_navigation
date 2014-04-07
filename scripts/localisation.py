@@ -16,7 +16,9 @@ from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
-from topological_utils.msg import node
+
+from strands_navigation_msgs.msg import TopologicalNode
+
 from ros_datacentre.message_store import MessageStoreProxy
 import topological_navigation.msg
 
@@ -82,8 +84,10 @@ class TopologicalNavLoc(object):
     
         query_meta = {}
         query_meta["pointset"] = point_set
-        available = len(msg_store.query(node._type, {}, query_meta)) > 0
-    
+        available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
+
+        print available
+
         if available <= 0 :
             rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
@@ -92,7 +96,7 @@ class TopologicalNavLoc(object):
         else :
             query_meta = {}
             query_meta["pointset"] = point_set
-            message_list = msg_store.query(node._type, {}, query_meta)
+            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
     
             points = []
             for i in message_list:

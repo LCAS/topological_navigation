@@ -6,6 +6,7 @@ import pymongo
 import json
 import sys
 
+import calendar
 from time import sleep
 from datetime import datetime
 from topological_navigation.topological_node import *
@@ -18,8 +19,9 @@ from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
-from topological_utils.msg import node
+from strands_navigation_msgs.msg import TopologicalNode
 from ros_datacentre.message_store import MessageStoreProxy
+
 
 import topological_navigation.msg
 import dynamic_reconfigure.client
@@ -230,7 +232,7 @@ class TopologicalNavServer(object):
         val=self.stat.__dict__
         #rospy.loginfo("%s" %val)
         #print val
-        self._stats_collection.insert(val)
+        #self._stats_collection.insert(val)
         self.navigation_activated=False
         
         pubst = NavStatistics()
@@ -245,7 +247,14 @@ class TopologicalNavServer(object):
         pubst.date_at_node = self.stat.date_at_node.strftime('%A, %B %d, at %H:%M:%S hours')
         pubst.date_finished = self.stat.get_finish_time_str()
         self.stats_pub.publish(pubst)
+
+        meta = {}
+        meta["type"] = "Topological Navigation Stat"
+        meta["epoch"] = calendar.timegm(self.stat.date_at_node.timetuple())
+        meta["date"] = self.stat.date_at_node.strftime('%A, %B %d, at %H:%M:%S hours')
         
+        msg_store = MessageStoreProxy()
+        msg_store.insert(pubst,meta)
         return result
 
     def move_base_to_waypoint(self, inf):
@@ -305,7 +314,7 @@ class TopologicalNavServer(object):
     
         query_meta = {}
         query_meta["pointset"] = point_set
-        available = len(msg_store.query(node._type, {}, query_meta)) > 0
+        available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
     
         if available <= 0 :
             rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
@@ -315,7 +324,7 @@ class TopologicalNavServer(object):
         else :
             query_meta = {}
             query_meta["pointset"] = point_set
-            message_list = msg_store.query(node._type, {}, query_meta)
+            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
     
             points = []
             for i in message_list:

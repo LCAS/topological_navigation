@@ -48,6 +48,8 @@ class TopologicalNavServer(object):
         self.topol_map = filename
         rospy.loginfo(" ...done")
 
+        rospy.set_param('topological_map_name', self.topol_map)
+
         if mode == "Node_by_Node" :
             self.node_by_node = True
 

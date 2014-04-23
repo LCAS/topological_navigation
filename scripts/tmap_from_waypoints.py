@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import math
 
 class Topo_node(object):
     def __init__(self,node_name,waypoint):
@@ -12,16 +13,34 @@ class Topo_node(object):
 
     def _insert_vertices(self, vertices):
         self.vertices=vertices
+        
+
+        
+def node_dist(waypoint1,waypoint2):
+    vector1=waypoint1.split(',')
+    vector2=waypoint2.split(',')
+    print vector1[1]
+    dist = math.sqrt( (float(vector1[0]) - float(vector2[0]))**2 + (float(vector1[1]) - float(vector2[1]))**2 )
+    return dist
 
 
 if __name__ == '__main__':
     if len(sys.argv) < 3 :
-        print "usage: tmap_from_waypoint input_file output_file"
+        print "usage: tmap_from_waypoint input_file output_file [max_dist_connect]"
         sys.exit(2)
-        
+    
+    
+    
     filename=str(sys.argv[1])
     outfile=str(sys.argv[2])
 
+    
+    if len(sys.argv) == 4:
+        max_dist_connect=float(sys.argv[3])
+    else:
+        max_dist_connect=1000
+    
+    
     fin = open(filename, 'r')
 
     #Inserting charging point
@@ -46,7 +65,8 @@ if __name__ == '__main__':
         edge = {'node':"empty", 'action':"move_base"}
         edges=[edge]
         for j in lnodes :
-            if i.node_name is not j.node_name :
+            if i.node_name is not j.node_name and node_dist(i.waypoint,j.waypoint)<max_dist_connect:
+                node_dist(i.waypoint,j.waypoint)
                 edge = {'node':j.node_name, 'action':"move_base"}
                 edges.append(edge)
                 i._insert_edges(edges)

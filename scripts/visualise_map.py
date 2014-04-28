@@ -14,8 +14,9 @@ from geometry_msgs.msg import Pose
 from ros_datacentre.message_store import MessageStoreProxy
 
 from strands_navigation_msgs.msg import TopologicalNode
-from visualization_msgs.msg import Marker
-from visualization_msgs.msg import MarkerArray
+
+from interactive_markers.interactive_marker_server import *
+from visualization_msgs.msg import *
 
 
 class TopologicalMapVis(object):
@@ -23,6 +24,9 @@ class TopologicalMapVis(object):
     _killall_timers=True
     
     def __init__(self, name, filename) :
+
+        self._point_set=filename
+        self._marker_server = InteractiveMarkerServer(self._point_set+"_markers")
         
         print "loading file from map %s" %filename
         self.lnodes = self.loadMap(filename)
@@ -33,7 +37,7 @@ class TopologicalMapVis(object):
         self.map_nodes = MarkerArray()
         
         for i in self.lnodes :
-            print i
+            #print i
             marker = Marker()
             marker.header.frame_id = "/map"
             #marker.header.stamp = rospy.now()
@@ -64,6 +68,82 @@ class TopologicalMapVis(object):
 
         rospy.loginfo("All Done ...")
         rospy.spin()
+
+
+
+    def _create_marker(self, marker_name, pose, marker_description="waypoint marker"):
+        # create an interactive marker for our server
+        marker = InteractiveMarker()
+        marker.header.frame_id = "/map"
+        marker.name = marker_name
+        marker.description = marker_description
+
+        # the marker in the middle
+        box_marker = Marker()
+        box_marker.type = Marker.ARROW
+        box_marker.scale.x = 0.45
+        box_marker.scale.y = 0.25
+        box_marker.scale.z = 0.15
+        box_marker.color.r = 0.0
+        box_marker.color.g = 0.5
+        box_marker.color.b = 0.5
+        box_marker.color.a = 1.0
+
+        # create a non-interactive control which contains the box
+        box_control = InteractiveMarkerControl()
+        box_control.always_visible = True
+        box_control.markers.append( box_marker )
+        marker.controls.append( box_control )
+
+        # move x
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 1
+        control.orientation.y = 0
+        control.orientation.z = 0
+        control.name = "move_x"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        marker.controls.append(control)
+
+        #move y
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 0
+        control.orientation.z = 1
+        control.name = "move_y"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        marker.controls.append(control)
+
+        #rotate z
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 1
+        control.orientation.z = 0
+        control.name = "rotate_z"
+        control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+        marker.controls.append(control)
+
+        self._marker_server.insert(marker, self._marker_feedback)
+        self._marker_server.applyChanges()
+
+        if pose is not None:
+            self._marker_server.setPose( marker.name, pose )
+            self._marker_server.applyChanges()
+
+
+    def _marker_feedback(self, feedback):
+        #update={}
+        p = feedback.pose.position
+        q = feedback.pose.orientation
+        #self.msg_store.update_named(feedback.marker_name, feedback.pose, upsert=True);
+        
+        rospy.loginfo(feedback)
+       # print feedback.marker_name + " is now at x:" + str(p.x) + ", y:" + str(p.y) + ", z:" + str(p.z) + ", w:" + str(p.w)
+
+        
+
 
     def timer_callback(self):
         self.map_pub.publish(self.map_nodes)
@@ -99,6 +179,7 @@ class TopologicalMapVis(object):
             for i in message_list:
                 c=i[0].pose
                 points.append(c)
+                self._create_marker(i[0].name, c, i[0].name)
                 #print c
             return points
 

@@ -84,6 +84,7 @@ class TopologicalNavLoc(object):
     
         query_meta = {}
         query_meta["pointset"] = point_set
+
         available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
 
         print available
@@ -96,6 +97,7 @@ class TopologicalNavLoc(object):
         else :
             query_meta = {}
             query_meta["pointset"] = point_set
+            
             message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
     
             points = []

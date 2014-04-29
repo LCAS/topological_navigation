@@ -252,6 +252,7 @@ class TopologicalNavServer(object):
         meta["type"] = "Topological Navigation Stat"
         meta["epoch"] = calendar.timegm(self.stat.date_at_node.timetuple())
         meta["date"] = self.stat.date_at_node.strftime('%A, %B %d, at %H:%M:%S hours')
+        meta["pointset"] = self.stat.topological_map
         
         msg_store = MessageStoreProxy()
         msg_store.insert(pubst,meta)

@@ -10,13 +10,16 @@ import math
 
 from threading import Timer
 from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Point
 
 from ros_datacentre.message_store import MessageStoreProxy
 
-from strands_navigation_msgs.msg import TopologicalNode
-
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
+
+from strands_navigation_msgs.msg import TopologicalNode
+
+from topological_navigation.topological_map import *
 
 
 class TopologicalMapVis(object):
@@ -27,16 +30,34 @@ class TopologicalMapVis(object):
 
         self._point_set=filename
         self._marker_server = InteractiveMarkerServer(self._point_set+"_markers")
-        
-        print "loading file from map %s" %filename
-        self.lnodes = self.loadMap(filename)
-        print "Done"
 
         self.map_pub = rospy.Publisher('/topological_nodes_array', MarkerArray)
-
         self.map_nodes = MarkerArray()
+
+
+        self.map_edge_pub = rospy.Publisher('/topological_edges_array', MarkerArray)
+        self.map_edges = MarkerArray()
         
-        for i in self.lnodes :
+        print "loading file from map %s" %filename
+        self.topo_map = topological_map(filename)
+        print "Done"
+
+        self._create_interactive_markers()
+        self._create_marker_array()
+        self._create_edges_array()
+
+        self.map_pub.publish(self.map_nodes)
+        t = Timer(1.0, self.timer_callback)
+        t.start()       
+        #self.run_analysis()
+
+        rospy.loginfo("All Done ...")
+        rospy.spin()
+
+
+    def _create_marker_array(self):
+             
+        for i in self.topo_map.nodes :
             #print i
             marker = Marker()
             marker.header.frame_id = "/map"
@@ -50,10 +71,8 @@ class TopologicalMapVis(object):
             marker.color.g = 0.2
             marker.color.b = 0.7
             #marker.lifetime=0
-            marker.pose.position.x = i.position.x
-            marker.pose.position.y = i.position.y
-            marker.pose.position.z = i.position.z+0.05
-            marker.pose.orientation = i.orientation
+            marker.pose = i._get_pose()
+            marker.pose.position.z = marker.pose.position.z+0.1
             self.map_nodes.markers.append(marker)
 
         idn = 0
@@ -61,14 +80,43 @@ class TopologicalMapVis(object):
             m.id = idn
             idn += 1
     
-        self.map_pub.publish(self.map_nodes)
-        t = Timer(1.0, self.timer_callback)
-        t.start()
-        #self.run_analysis()
 
-        rospy.loginfo("All Done ...")
-        rospy.spin()
+    def _create_edges_array(self):
+        #node=self.topo_map.nodes[0]
+        for node in self.topo_map.nodes :
+            for i in node.edges :
+                marker = Marker()
+                marker.header.frame_id = "/map"
+                #marker.header.stamp = rospy.now()
+                marker.type = marker.LINE_LIST
+                #marker.lifetime=0
+                ind = self.topo_map._get_node_index(i['node'])
+                #print "%s -> %s" %(node.name, self.topo_map.nodes[ind].name)
+                V1=Point()
+                V2=Point()
+                V1= (node._get_pose()).position
+                V2= (self.topo_map.nodes[ind]._get_pose()).position
+                marker.scale.x = 0.1
+                #marker.scale.y = 0.15
+                #marker.scale.z = 0.1
+                marker.color.a = 1.0
+                marker.color.r = 0.2
+                marker.color.g = 0.8
+                marker.color.b = 0.2
+                marker.points.append(V1)
+                marker.points.append(V2)
+                self.map_edges.markers.append(marker)
 
+        idn = 0
+        for m in self.map_edges.markers:
+            m.id = idn
+            idn += 1            
+
+
+
+    def _create_interactive_markers(self):
+        for i in self.topo_map.nodes :
+            self._create_marker(i.name, i._get_pose(), i.name)
 
 
     def _create_marker(self, marker_name, pose, marker_description="waypoint marker"):
@@ -129,59 +177,29 @@ class TopologicalMapVis(object):
         self._marker_server.applyChanges()
 
         if pose is not None:
+            pose.position.z=pose.position.z+0.15
             self._marker_server.setPose( marker.name, pose )
             self._marker_server.applyChanges()
 
 
     def _marker_feedback(self, feedback):
         #update={}
-        p = feedback.pose.position
-        q = feedback.pose.orientation
-        #self.msg_store.update_named(feedback.marker_name, feedback.pose, upsert=True);
+        #msg_store = MessageStoreProxy()
+        
+        #p = feedback.pose.position
+        #q = feedback.pose.orientation
+        #msg_store.update_named(feedback.marker_name, feedback.pose, upsert=True);
         
         rospy.loginfo(feedback)
-       # print feedback.marker_name + " is now at x:" + str(p.x) + ", y:" + str(p.y) + ", z:" + str(p.z) + ", w:" + str(p.w)
-
-        
-
+        #print feedback.marker_name + " is now at x:" + str(p.x) + ", y:" + str(p.y) + ", z:" + str(p.z) + ", w:" + str(q.w)
+      
 
     def timer_callback(self):
         self.map_pub.publish(self.map_nodes)
+        self.map_edge_pub.publish(self.map_edges)
         if not self._killall_timers :
             t = Timer(1.0, self.timer_callback)
             t.start()
-
-
-    def loadMap(self, point_set):
-
-        point_set=str(sys.argv[1])
-        #map_name=str(sys.argv[3])
-    
-        msg_store = MessageStoreProxy()
-    
-        query_meta = {}
-        query_meta["pointset"] = point_set
-        available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
-
-        print available
-
-        if available <= 0 :
-            rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
-            rospy.logerr("Available pointsets: "+str(available))
-            raise Exception("Can't find waypoints.")
-    
-        else :
-            query_meta = {}
-            query_meta["pointset"] = point_set
-            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
-    
-            points = []
-            for i in message_list:
-                c=i[0].pose
-                points.append(c)
-                self._create_marker(i[0].name, c, i[0].name)
-                #print c
-            return points
 
     def _on_node_shutdown(self):
         self._killall_timers=True

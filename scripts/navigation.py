@@ -242,9 +242,7 @@ class TopologicalNavServer(object):
         #print val
         #self._stats_collection.insert(val)
         self.navigation_activated=False
-        
-
-        
+                
         result=nav_ok
         return result
 
@@ -377,8 +375,8 @@ class TopologicalNavServer(object):
     
                 points.append(b)        #print "Actions Needed"
         
-            for point in points :
-                print point.name
+            #for point in points :
+            #    print point.name
         
         for i in points:
             for k in i.edges :

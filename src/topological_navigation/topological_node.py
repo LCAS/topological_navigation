@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+from geometry_msgs.msg import Pose
 
 def findInList(name,List):
     found = name in List
@@ -79,3 +80,14 @@ class topological_node(object):
     
     def _set_Father(self,father) :
         self.father=father
+        
+    def _get_pose(self):
+        p = Pose()
+        p.position.x=float(self.waypoint[0])
+        p.position.y=float(self.waypoint[1])
+        p.position.z=float(self.waypoint[2])
+        p.orientation.x=float(self.waypoint[3])
+        p.orientation.y=float(self.waypoint[4])
+        p.orientation.z=float(self.waypoint[5])
+        p.orientation.w=float(self.waypoint[6])
+        return p

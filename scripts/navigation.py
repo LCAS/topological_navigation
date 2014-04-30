@@ -193,17 +193,26 @@ class TopologicalNavServer(object):
 
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
+            #current action
             a = route[rindex]._get_action(route[rindex+1].name)
+            #next action
+            if rindex < route_len :
+                a1 = route[rindex+1]._get_action(route[rindex+2].name)
+            else :
+                a1 = 'none'
+            
             rospy.loginfo("From %s do (%s) to %s" %(route[rindex].name, a, route[rindex+1].name))
 
             self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map)
             dt_text=self.stat.get_start_time_str()
 
-
-            if rindex < route_len:
+            # do not care for the orientation of the waypoint if is not the last waypoint AND 
+            # the current and following action are move_base
+            if rindex < route_len and a1 == 'move_base' and a == 'move_base' :
                 #self.dyt = config['yaw_goal_tolerance']
                 params = { 'yaw_goal_tolerance' : 6.283 }
                 config = self.rcnfclient.update_configuration(params)
+
             print "move_base to:"
             inf = route[rindex+1].waypoint
             print inf
@@ -313,7 +322,7 @@ class TopologicalNavServer(object):
         status=self.monNavClient.get_state()
         if status != GoalStatus.SUCCEEDED:
             result = False
-            if status is GoalStatus.PREEMTED:
+            if status is GoalStatus.PREEMPTED:
                 self.preempted = True
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result

@@ -28,6 +28,21 @@ class topological_map(object):
         return ind
 
 
+    def update_node_waypoint(self, node_name, new_pose) :
+        
+        msg_store = MessageStoreProxy()
+        query = {"name" : node_name, "pointset": self.name}
+        query_meta = {}
+        query_meta["pointset"] = self.name
+        query_meta["map"] = 'mht'
+        available = msg_store.query(TopologicalNode._type, query, query_meta)
+        
+        available[0][0].pose = new_pose
+        msg_store.update(available[0][0], query_meta, query, upsert=True)
+
+
+
+
     def loadMap(self, point_set):
    
         msg_store = MessageStoreProxy()

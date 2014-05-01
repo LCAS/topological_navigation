@@ -282,26 +282,26 @@ class TopologicalNavServer(object):
 
 
 
-    def move_base_to_waypoint(self, inf):
-        result = True
-        movegoal = MoveBaseGoal()
-        movegoal.target_pose.header.frame_id = "map"
-        movegoal.target_pose.header.stamp = rospy.get_rostime()
-        movegoal.target_pose.pose.position.x = float(inf[0])
-        movegoal.target_pose.pose.position.y = float(inf[1])
-        movegoal.target_pose.pose.orientation.x = 0
-        movegoal.target_pose.pose.orientation.y = 0
-        movegoal.target_pose.pose.orientation.z = float(inf[5])
-        movegoal.target_pose.pose.orientation.w = float(inf[6])
-        self.baseClient.cancel_all_goals()
-        rospy.sleep(rospy.Duration.from_sec(1))
-        #print movegoal
-        self.baseClient.send_goal(movegoal)
-        self.baseClient.wait_for_result()
-        if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
-            result = False
-        rospy.sleep(rospy.Duration.from_sec(0.3))
-        return result
+#    def move_base_to_waypoint(self, inf):
+#        result = True
+#        movegoal = MoveBaseGoal()
+#        movegoal.target_pose.header.frame_id = "map"
+#        movegoal.target_pose.header.stamp = rospy.get_rostime()
+#        movegoal.target_pose.pose.position.x = float(inf[0])
+#        movegoal.target_pose.pose.position.y = float(inf[1])
+#        movegoal.target_pose.pose.orientation.x = 0
+#        movegoal.target_pose.pose.orientation.y = 0
+#        movegoal.target_pose.pose.orientation.z = float(inf[5])
+#        movegoal.target_pose.pose.orientation.w = float(inf[6])
+#        self.baseClient.cancel_all_goals()
+#        rospy.sleep(rospy.Duration.from_sec(1))
+#        #print movegoal
+#        self.baseClient.send_goal(movegoal)
+#        self.baseClient.wait_for_result()
+#        if self.baseClient.get_state() != GoalStatus.SUCCEEDED:
+#            result = False
+#        rospy.sleep(rospy.Duration.from_sec(0.3))
+#        return result
 
 
     def monitored_navigation(self, inf, command):

@@ -8,6 +8,8 @@ import sys
 import math
 
 
+from time import sleep
+
 from threading import Timer
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import Point
@@ -24,29 +26,24 @@ from topological_navigation.topological_map import *
 
 class TopologicalMapVis(object):
 
-    _killall_timers=True
-    
+    _killall_timers=False
+
+
     def __init__(self, name, filename) :
 
+        rospy.on_shutdown(self._on_node_shutdown)
+
+        self.update_needed=False
+        self.in_feedback=False
+        
         self._point_set=filename
-        self._marker_server = InteractiveMarkerServer(self._point_set+"_markers")
 
         self.map_pub = rospy.Publisher('/topological_nodes_array', MarkerArray)
-        self.map_nodes = MarkerArray()
-
-
+        self.map_zone_pub = rospy.Publisher('/topological_node_zones_array', MarkerArray)
         self.map_edge_pub = rospy.Publisher('/topological_edges_array', MarkerArray)
-        self.map_edges = MarkerArray()
         
-        print "loading file from map %s" %filename
-        self.topo_map = topological_map(filename)
-        print "Done"
-
-        self._create_interactive_markers()
-        self._create_marker_array()
-        self._create_edges_array()
-
-        self.map_pub.publish(self.map_nodes)
+        self._update_everything()
+      
         t = Timer(1.0, self.timer_callback)
         t.start()       
         #self.run_analysis()
@@ -54,6 +51,36 @@ class TopologicalMapVis(object):
         rospy.loginfo("All Done ...")
         rospy.spin()
 
+    def _update_everything(self) :
+
+        print "loading file from map %s" %self._point_set
+        self.topo_map = topological_map(self._point_set)
+        print "Done"
+        
+        self._marker_server = InteractiveMarkerServer(self._point_set+"_markers")      
+        self._vertex_server = InteractiveMarkerServer(self._point_set+"_zones")
+
+        self.map_edges = MarkerArray()
+        self.map_nodes = MarkerArray()
+        self.node_zone = MarkerArray()
+
+        self._create_interactive_markers()
+        self._create_marker_array()
+        self._create_edges_array()
+        self._create_vertices_array()
+        
+        
+        self.update_needed=False
+        
+    def _delete_everything(self) :
+        
+        del self._marker_server
+        del self._vertex_server
+
+        del self.map_edges
+        del self.map_nodes
+        del self.node_zone
+        del self.topo_map        
 
     def _create_marker_array(self):
              
@@ -70,7 +97,7 @@ class TopologicalMapVis(object):
             marker.color.r = 0.2
             marker.color.g = 0.2
             marker.color.b = 0.7
-            #marker.lifetime=0
+            #marker.lifetime=2
             marker.pose = i._get_pose()
             marker.pose.position.z = marker.pose.position.z+0.1
             self.map_nodes.markers.append(marker)
@@ -82,14 +109,13 @@ class TopologicalMapVis(object):
     
 
     def _create_edges_array(self):
-        #node=self.topo_map.nodes[0]
         for node in self.topo_map.nodes :
             for i in node.edges :
                 marker = Marker()
                 marker.header.frame_id = "/map"
                 #marker.header.stamp = rospy.now()
                 marker.type = marker.LINE_LIST
-                #marker.lifetime=0
+                #marker.lifetime=2
                 ind = self.topo_map._get_node_index(i['node'])
                 #print "%s -> %s" %(node.name, self.topo_map.nodes[ind].name)
                 V1=Point()
@@ -97,21 +123,52 @@ class TopologicalMapVis(object):
                 V1= (node._get_pose()).position
                 V2= (self.topo_map.nodes[ind]._get_pose()).position
                 marker.scale.x = 0.1
-                #marker.scale.y = 0.15
-                #marker.scale.z = 0.1
-                marker.color.a = 1.0
+                marker.color.a = 0.8
                 marker.color.r = 0.2
                 marker.color.g = 0.8
                 marker.color.b = 0.2
                 marker.points.append(V1)
                 marker.points.append(V2)
                 self.map_edges.markers.append(marker)
-
         idn = 0
         for m in self.map_edges.markers:
             m.id = idn
             idn += 1            
 
+
+    def _create_vertices_array(self) :
+
+        for node in self.topo_map.nodes :
+            marker = Marker()
+            marker.header.frame_id = "/map"
+            marker.type = marker.LINE_STRIP
+            #marker.lifetime=2
+            marker.scale.x = 0.1
+            marker.color.a = 0.8
+            marker.color.r = 0.7
+            marker.color.g = 0.1
+            marker.color.b = 0.2
+            node._get_coords()
+            count=0
+            for i in node.vertices :
+                #print i[0], i[1]
+                Vert = Point()
+                Vert.z = 0.05
+                Vert.x = node.px + i[0]
+                Vert.y = node.py + i[1]
+                marker.points.append(Vert)
+                vertname = "%s-%d" %(node.name, count)
+                Pos = Pose()
+                Pos.position = Vert
+                self._vertex_marker(vertname, Pos, vertname)
+                count+=1
+            marker.points.append(marker.points[0])
+            self.node_zone.markers.append(marker)
+        
+        idn = 0
+        for m in self.node_zone.markers:
+            m.id = idn
+            idn += 1 
 
 
     def _create_interactive_markers(self):
@@ -182,27 +239,80 @@ class TopologicalMapVis(object):
             self._marker_server.applyChanges()
 
 
+    def _vertex_marker(self, marker_name, pose, marker_description="vertex marker"):
+        # create an interactive marker for our server
+        marker = InteractiveMarker()
+        marker.header.frame_id = "/map"
+        marker.name = marker_name
+        marker.description = marker_description
+
+        # the marker in the middle
+        box_marker = Marker()
+        box_marker.type = Marker.SPHERE
+        box_marker.scale.x = 0.25
+        box_marker.scale.y = 0.25
+        box_marker.scale.z = 0.25
+        box_marker.color.r = 0.5
+        box_marker.color.g = 0.0
+        box_marker.color.b = 0.5
+        box_marker.color.a = 0.8
+
+        # create a non-interactive control which contains the box
+        box_control = InteractiveMarkerControl()
+        box_control.always_visible = True
+        #box_control.always_visible = False
+        box_control.markers.append( box_marker )
+        marker.controls.append( box_control )
+
+        # move x
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 1
+        control.orientation.z = 0
+        control.always_visible = False
+#        control.name = "move_x"
+#        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.name = "move_plane"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_PLANE
+        marker.controls.append(control)
+
+
+        self._vertex_server.insert(marker, self._marker_feedback)
+        self._vertex_server.applyChanges()
+
+        if pose is not None:
+            pose.position.z=pose.position.z+0.15
+            self._vertex_server.setPose( marker.name, pose )
+            self._vertex_server.applyChanges()
+
+
     def _marker_feedback(self, feedback):
-        #update={}
-        #msg_store = MessageStoreProxy()
+        self.in_feedback=True
+        self.topo_map.update_node_waypoint(feedback.marker_name, feedback.pose)
+        self.update_needed=True
         
-        #p = feedback.pose.position
-        #q = feedback.pose.orientation
-        #msg_store.update_named(feedback.marker_name, feedback.pose, upsert=True);
-        
-        rospy.loginfo(feedback)
-        #print feedback.marker_name + " is now at x:" + str(p.x) + ", y:" + str(p.y) + ", z:" + str(p.z) + ", w:" + str(q.w)
       
 
     def timer_callback(self):
-        self.map_pub.publish(self.map_nodes)
-        self.map_edge_pub.publish(self.map_edges)
+        
+        if self.update_needed and not self.in_feedback :
+            self._delete_everything()
+            self._update_everything()
+        else :
+            if self.in_feedback :
+                self.in_feedback=False
+            self.map_pub.publish(self.map_nodes)
+            self.map_edge_pub.publish(self.map_edges)
+            self.map_zone_pub.publish(self.node_zone)
+        
         if not self._killall_timers :
             t = Timer(1.0, self.timer_callback)
             t.start()
 
     def _on_node_shutdown(self):
         self._killall_timers=True
+        #sleep(2)
 
 
 if __name__ == '__main__':

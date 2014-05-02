@@ -80,7 +80,7 @@ class TopologicalNavLoc(object):
         point_set=str(sys.argv[1])
         #map_name=str(sys.argv[3])
     
-        msg_store = MessageStoreProxy()
+        msg_store = MessageStoreProxy(collection='topological_maps')
     
         query_meta = {}
         query_meta["pointset"] = point_set

@@ -17,7 +17,6 @@ class topological_map(object):
 
 
     def _get_node_index(self, node_name):
-        #print "looking for %s" %(node_name)
         ind = -1
         counter = 0
        
@@ -28,16 +27,16 @@ class topological_map(object):
         return ind
 
 
-    def update_node_waypoint(self, node_name, new_pose) :
-        
-        msg_store = MessageStoreProxy()
+    def update_node_waypoint(self, node_name, new_pose) :      
+        msg_store = MessageStoreProxy(collection='topological_maps')
         query = {"name" : node_name, "pointset": self.name}
         query_meta = {}
         query_meta["pointset"] = self.name
         query_meta["map"] = 'mht'
         available = msg_store.query(TopologicalNode._type, query, query_meta)
-        
+        positionZ=available[0][0].pose.position.z
         available[0][0].pose = new_pose
+        available[0][0].pose.position.z = positionZ
         msg_store.update(available[0][0], query_meta, query, upsert=True)
 
 
@@ -45,7 +44,7 @@ class topological_map(object):
 
     def loadMap(self, point_set):
    
-        msg_store = MessageStoreProxy()
+        msg_store = MessageStoreProxy(collection='topological_maps')
     
         query_meta = {}
         query_meta["pointset"] = point_set

@@ -102,7 +102,7 @@ if __name__ == '__main__':
     dataset_name=str(sys.argv[2])
     map_name=str(sys.argv[3])
 
-    msg_store = MessageStoreProxy()
+    msg_store = MessageStoreProxy(collection='topological_maps')
     #host = rospy.get_param("datacentre_host")
     #port = rospy.get_param("datacentre_port")
     #print "Using datacentre  ",host,":", port
@@ -120,6 +120,7 @@ if __name__ == '__main__':
         #val=i.__dict__#json.loads(vala)        print val #+ '\n'
         n = TopologicalNode()
         n.name = i.name
+        meta["node"] = i.name
         n.map = i.map
         n.pointset = i.pointset
         p = Pose()

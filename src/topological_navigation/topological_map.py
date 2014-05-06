@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+import rospy
 
 from topological_navigation.topological_node import *
 from strands_navigation_msgs.msg import TopologicalNode
@@ -27,18 +28,17 @@ class topological_map(object):
         return ind
 
 
-    def update_node_waypoint(self, node_name, new_pose) :      
+    def update_node_waypoint(self, node_name, new_pose) :
         msg_store = MessageStoreProxy(collection='topological_maps')
         query = {"name" : node_name, "pointset": self.name}
         query_meta = {}
         query_meta["pointset"] = self.name
-        query_meta["map"] = 'mht'
+        query_meta["map"] = self.map
         available = msg_store.query(TopologicalNode._type, query, query_meta)
         positionZ=available[0][0].pose.position.z
         available[0][0].pose = new_pose
         available[0][0].pose.position.z = positionZ
         msg_store.update(available[0][0], query_meta, query, upsert=True)
-
 
 
 
@@ -66,7 +66,7 @@ class topological_map(object):
     
             points = []
             for i in message_list:
-                #print i[0].name
+                self.map = i[0].map
                 b = topological_node(i[0].name)
                 edges = []
                 for j in i[0].edges :

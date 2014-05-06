@@ -42,7 +42,7 @@ class topological_map(object):
             msg_store.update(available[0][0], query_meta, query, upsert=True)
         else :
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
-            #rospy.logerr("Available pointsets: "+str(available))
+            rospy.logerr("Available data: "+str(available))
 
 
 

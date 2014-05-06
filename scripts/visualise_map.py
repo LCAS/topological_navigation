@@ -17,6 +17,7 @@ from geometry_msgs.msg import Point
 from ros_datacentre.message_store import MessageStoreProxy
 
 from interactive_markers.interactive_marker_server import *
+from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 
 from strands_navigation_msgs.msg import TopologicalNode
@@ -25,7 +26,6 @@ from topological_navigation.topological_map import *
 
 
 class TopologicalMapVis(object):
-
     _killall_timers=False
 
 
@@ -41,46 +41,18 @@ class TopologicalMapVis(object):
         self.map_pub = rospy.Publisher('/topological_nodes_array', MarkerArray)
         self.map_zone_pub = rospy.Publisher('/topological_node_zones_array', MarkerArray)
         self.map_edge_pub = rospy.Publisher('/topological_edges_array', MarkerArray)
+
+        self.menu_handler = MenuHandler()
         
         self._update_everything()
       
         t = Timer(1.0, self.timer_callback)
         t.start()       
         #self.run_analysis()
-
         rospy.loginfo("All Done ...")
         rospy.spin()
 
-    def _update_everything(self) :
 
-        print "loading file from map %s" %self._point_set
-        self.topo_map = topological_map(self._point_set)
-        print "Done"
-        
-        self._marker_server = InteractiveMarkerServer(self._point_set+"_markers")      
-        self._vertex_server = InteractiveMarkerServer(self._point_set+"_zones")
-
-        self.map_edges = MarkerArray()
-        self.map_nodes = MarkerArray()
-        self.node_zone = MarkerArray()
-
-        self._create_interactive_markers()
-        self._create_marker_array()
-        self._create_edges_array()
-        self._create_vertices_array()
-        
-        
-        self.update_needed=False
-        
-    def _delete_everything(self) :
-        
-        del self._marker_server
-        del self._vertex_server
-
-        del self.map_edges
-        del self.map_nodes
-        del self.node_zone
-        del self.topo_map        
 
     def _create_marker_array(self):
              
@@ -108,6 +80,7 @@ class TopologicalMapVis(object):
             idn += 1
     
 
+
     def _create_edges_array(self):
         for node in self.topo_map.nodes :
             for i in node.edges :
@@ -130,10 +103,13 @@ class TopologicalMapVis(object):
                 marker.points.append(V1)
                 marker.points.append(V2)
                 self.map_edges.markers.append(marker)
+                edge_name=node.name+"_"+self.topo_map.nodes[ind].name
+                self._edge_marker(edge_name, V1, V2, edge_name)
         idn = 0
         for m in self.map_edges.markers:
             m.id = idn
             idn += 1            
+
 
 
     def _create_vertices_array(self) :
@@ -171,12 +147,80 @@ class TopologicalMapVis(object):
             idn += 1 
 
 
+
     def _create_interactive_markers(self):
         for i in self.topo_map.nodes :
             self._create_marker(i.name, i._get_pose(), i.name)
 
 
-    def _create_marker(self, marker_name, pose, marker_description="waypoint marker"):
+
+    def _initMenu(self):
+        self.h_first_entry = self.menu_handler.insert( "First Entry" )
+        entry = self.menu_handler.insert( "deep", parent=h_first_entry)
+        entry = self.menu_handler.insert( "sub", parent=entry );
+        entry = self.menu_handler.insert( "menu", parent=entry, callback=deepCb );
+    
+        self.menu_handler.setCheckState( self.menu_handler.insert( "Show First Entry", callback=enableCb ), MenuHandler.CHECKED )
+    
+        self.sub_menu_handle = self.menu_handler.insert( "Switch" )
+        for i in range(5):
+            s = "Mode " + str(i)
+            self.h_mode_last = self.menu_handler.insert( s, parent=sub_menu_handle, callback=modeCb )
+            self.menu_handler.setCheckState( self.h_mode_last, MenuHandler.UNCHECKED)
+        # check the very last entry
+        menu_handler.setCheckState( self.h_mode_last, MenuHandler.CHECKED )
+
+
+
+    def _edge_marker(self, marker_name, point1, point2, marker_description="edge marker") :
+        # create an interactive marker for our server
+        marker = InteractiveMarker()
+        marker.header.frame_id = "/map"
+        marker.name = marker_name
+        marker.description = marker_description
+
+        # the marker in the middle
+        box_marker = Marker()
+        box_marker.type = Marker.CYLINDER
+        box_marker.scale.x = 0.45
+        box_marker.scale.y = 0.25
+        box_marker.scale.z = 0.15
+        box_marker.color.r = 0.0
+        box_marker.color.g = 0.5
+        box_marker.color.b = 0.5
+        box_marker.color.a = 1.0
+
+        # create a non-interactive control which contains the box
+        box_control = InteractiveMarkerControl()
+        box_control.always_visible = True
+        box_control.markers.append( box_marker )
+        marker.controls.append( box_control )
+        
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 1
+        control.orientation.y = 0
+        control.orientation.z = 0
+        control.name = "context_menu"
+        control.interaction_mode = InteractiveMarkerControl.MENU
+        marker.controls.append(control)
+
+        self._edge_server.insert(marker, self._menu_feedback)
+        self._edge_server.applyChanges()
+
+        pose = Pose()
+        
+        pose.position.x = (point1.x+point2.x)/2
+        pose.position.y = (point1.y+point2.y)/2
+        pose.position.z = (point1.z+point2.z)/2
+
+        if pose is not None:
+            pose.position.z=pose.position.z+0.15
+            self._edge_server.setPose( marker.name, pose )
+            self._edge_server.applyChanges()
+
+
+    def _create_marker(self, marker_name, pose, marker_description="waypoint marker") :
         # create an interactive marker for our server
         marker = InteractiveMarker()
         marker.header.frame_id = "/map"
@@ -239,6 +283,7 @@ class TopologicalMapVis(object):
             self._marker_server.applyChanges()
 
 
+
     def _vertex_marker(self, marker_name, pose, marker_description="vertex marker"):
         # create an interactive marker for our server
         marker = InteractiveMarker()
@@ -278,7 +323,7 @@ class TopologicalMapVis(object):
         marker.controls.append(control)
 
 
-        self._vertex_server.insert(marker, self._marker_feedback)
+        self._vertex_server.insert(marker, self._vertex_feedback)
         self._vertex_server.applyChanges()
 
         if pose is not None:
@@ -287,12 +332,21 @@ class TopologicalMapVis(object):
             self._vertex_server.applyChanges()
 
 
+
     def _marker_feedback(self, feedback):
         self.in_feedback=True
         self.topo_map.update_node_waypoint(feedback.marker_name, feedback.pose)
         self.update_needed=True
-        
-      
+
+
+    def _menu_feedback(self, feedback):
+        print feedback
+
+
+    def _vertex_feedback(self, feedback):
+        print feedback
+
+
 
     def timer_callback(self):
         
@@ -309,6 +363,43 @@ class TopologicalMapVis(object):
         if not self._killall_timers :
             t = Timer(1.0, self.timer_callback)
             t.start()
+
+
+
+    def _update_everything(self) :
+
+        print "loading file from map %s" %self._point_set
+        self.topo_map = topological_map(self._point_set)
+        print "Done"
+        
+        self._marker_server = InteractiveMarkerServer(self._point_set+"_markers")      
+        self._vertex_server = InteractiveMarkerServer(self._point_set+"_zones")
+        self._edge_server = InteractiveMarkerServer(self._point_set+"_edges")
+
+        self.map_edges = MarkerArray()
+        self.map_nodes = MarkerArray()
+        self.node_zone = MarkerArray()
+
+        self._create_interactive_markers()
+        self._create_marker_array()
+        self._create_edges_array()
+        self._create_vertices_array()
+        
+        self.update_needed=False
+
+
+        
+    def _delete_everything(self) :
+        
+        del self._marker_server
+        del self._vertex_server
+
+        del self.map_edges
+        del self.map_nodes
+        del self.node_zone
+        del self.topo_map        
+
+
 
     def _on_node_shutdown(self):
         self._killall_timers=True

@@ -35,10 +35,14 @@ class topological_map(object):
         query_meta["pointset"] = self.name
         query_meta["map"] = self.map
         available = msg_store.query(TopologicalNode._type, query, query_meta)
-        positionZ=available[0][0].pose.position.z
-        available[0][0].pose = new_pose
-        available[0][0].pose.position.z = positionZ
-        msg_store.update(available[0][0], query_meta, query, upsert=True)
+        if len(available) == 1 :
+            positionZ=available[0][0].pose.position.z
+            available[0][0].pose = new_pose
+            available[0][0].pose.position.z = positionZ
+            msg_store.update(available[0][0], query_meta, query, upsert=True)
+        else :
+            rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
+            #rospy.logerr("Available pointsets: "+str(available))
 
 
 

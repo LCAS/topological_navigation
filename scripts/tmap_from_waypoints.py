@@ -45,11 +45,13 @@ if __name__ == '__main__':
 
     #Inserting charging point
     nnodes=0
+    #line = fin.readline()
+    line = "0,0,0,0,0,0,0\n"
+    cnode=Topo_node("ChargingPoint",line)
+    #lnodes=[node]
+    
+    lnodes=[]
     line = fin.readline()
-    node=Topo_node("ChargingPoint",line)
-    lnodes=[node]
-    line = fin.readline()
-
     #Inserting waypoints
     while line:
         nnodes=nnodes+1
@@ -60,23 +62,39 @@ if __name__ == '__main__':
     fin.close()
     
     #inserting edges
+    cedges=[]
+    cedge = {'node':lnodes[0].node_name, 'action':"docking"}
+    cedges.append(cedge)
+    cnode._insert_edges(cedges)
+    
     nnodes=len(lnodes)
+    eind=0
     for i in lnodes :
         edge = {'node':"empty", 'action':"move_base"}
         edges=[edge]
+        if eind == 0:
+            edge = {'node':cnode.node_name, 'action':"docking"}
+            edges.append(edge)
         for j in lnodes :
             if i.node_name is not j.node_name and node_dist(i.waypoint,j.waypoint)<max_dist_connect:
                 node_dist(i.waypoint,j.waypoint)
                 edge = {'node':j.node_name, 'action':"move_base"}
                 edges.append(edge)
                 i._insert_edges(edges)
+        eind+=1
         i.edges.pop(0)
 
+
     #inserting corners
+    cvertices=[(0.5, 1.38), (-0.574, 1.38), (-1.38, 0.574), (-1.38, -0.574), (-0.574, -1.38), (0.5, -1.38)]
+    cnode._insert_vertices(cvertices)
+
     for i in lnodes :
         vertices=[(1.38, 0.574), (0.574, 1.38), (-0.574, 1.38), (-1.38, 0.574), (-1.38, -0.574), (-0.574, -1.38), (0.574, -1.38), (1.38, -0.574)]
         i._insert_vertices(vertices)
 
+    lnodes.insert(0,cnode)
+    
     #Clean the file in case it existed
     fh = open(outfile, "w")
     fh.close

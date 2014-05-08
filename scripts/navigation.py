@@ -154,13 +154,12 @@ class TopologicalNavServer(object):
                 result=False
         
         
-        if not self.cancelled :
+        if (not self.cancelled) and (not self.preempted) :
             self._result.success = result
             self._feedback.route = target
             self._as.publish_feedback(self._feedback)
             self._as.set_succeeded(self._result)
         else :
-            #if self.preempted == False :
             if self.preempted == False :
                 self._result.success = result
                 self._feedback.route = self.current_node
@@ -240,7 +239,7 @@ class TopologicalNavServer(object):
             nav_ok= self.monitored_navigation(inf, a)
             params = { 'yaw_goal_tolerance' : self.dyt }
             config = self.rcnfclient.update_configuration(params)
-
+            not_fatal=nav_ok
             if self.cancelled :
                 if self.nav_mode == 'Node_by_Node' :
                     nav_ok=False
@@ -252,8 +251,9 @@ class TopologicalNavServer(object):
                         nav_ok=False
                     else :
                         nav_ok=True
-            else :
-                not_fatal=nav_ok            
+            if self.preempted :
+                not_fatal = False
+                nav_ok = False
 
             self.stat.set_ended(self.current_node)
             dt_text=self.stat.get_finish_time_str()
@@ -343,7 +343,7 @@ class TopologicalNavServer(object):
         self.preempted = True
         self._result.success = False
         #self.monNavClient.cancel_all_goals()
-        self._as.set_preempted(self._result)
+        #self._as.set_preempted(self._result)
 
         
     def loadMap(self, point_set):

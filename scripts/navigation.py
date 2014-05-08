@@ -342,7 +342,7 @@ class TopologicalNavServer(object):
         self.cancelled = True
         self.preempted = True
         self._result.success = False
-        #self.monNavClient.cancel_all_goals()
+        self.monNavClient.cancel_all_goals()
         #self._as.set_preempted(self._result)
 
         

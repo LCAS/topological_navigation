@@ -63,7 +63,7 @@ if __name__ == '__main__':
     
     #inserting edges
     cedges=[]
-    cedge = {'node':lnodes[0].node_name, 'action':"docking"}
+    cedge = {'node':lnodes[0].node_name, 'action':"undocking"}
     cedges.append(cedge)
     cnode._insert_edges(cedges)
     

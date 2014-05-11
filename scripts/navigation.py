@@ -227,8 +227,8 @@ class TopologicalNavServer(object):
             dt_text=self.stat.get_start_time_str()
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND 
-            # the current and following action are move_base
-            if rindex < route_len and a1 == 'move_base' and a == 'move_base' :
+            # the current and following action are move_base or human_aware_navigation
+            if rindex < route_len and (a1 == 'move_base' or a1 == 'human_aware_navigation') and (a == 'move_base' or a == 'human_aware_navigation') :
                 params = { 'yaw_goal_tolerance' : 6.283 }
                 config = self.rcnfclient.update_configuration(params)
 

@@ -45,9 +45,27 @@ class topological_map(object):
             rospy.logerr("Available data: "+str(available))
 
 
+    def update_node_vertex(self, node_name, vertex_index, vertex_pose) :
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"name" : node_name, "pointset": self.name}
+        query_meta = {}
+        query_meta["pointset"] = self.name
+        query_meta["map"] = self.map
+        available = msg_store.query(TopologicalNode._type, query, query_meta)
+        if len(available) == 1 :
+            #vertex_to_edit=available[0][0].verts[vertex_index]
+            new_x_pos = -(available[0][0].pose.position.x - vertex_pose.position.x)
+            new_y_pos = -(available[0][0].pose.position.y - vertex_pose.position.y)
+            available[0][0].verts[vertex_index].x = new_x_pos
+            available[0][0].verts[vertex_index].y = new_y_pos
+            msg_store.update(available[0][0], query_meta, query, upsert=True)
+        else :
+            rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
+            rospy.logerr("Available data: "+str(available))
+
+
 
     def loadMap(self, point_set):
-   
         msg_store = MessageStoreProxy(collection='topological_maps')
     
         query_meta = {}

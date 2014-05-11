@@ -344,8 +344,12 @@ class TopologicalMapVis(object):
 
 
     def _vertex_feedback(self, feedback):
-        print feedback
-
+        self.in_feedback=True
+        vertex_name = feedback.marker_name.rsplit('-', 1)
+        node_name = vertex_name[0]
+        vertex_index = int(vertex_name[1])
+        self.topo_map.update_node_vertex(node_name, vertex_index, feedback.pose)
+        self.update_needed=True
 
 
     def timer_callback(self):

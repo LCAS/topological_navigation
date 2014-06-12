@@ -9,8 +9,7 @@ import sys
 import calendar
 from time import sleep
 from datetime import datetime
-from topological_navigation.topological_node import *
-from topological_navigation.navigation_stats import *
+
 from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
@@ -21,7 +20,8 @@ from std_msgs.msg import String
 import scitos_apps_msgs.msg
 from strands_navigation_msgs.msg import TopologicalNode
 from ros_datacentre.message_store import MessageStoreProxy
-
+from topological_navigation.topological_node import *
+from topological_navigation.navigation_stats import *
 
 import topological_navigation.msg
 import dynamic_reconfigure.client
@@ -163,7 +163,8 @@ class TopologicalNavServer(object):
                     rospy.loginfo("going to waypoint in node resulted in")
                     print result
             else:
-                rospy.loginfo("Target or Origin Nodes were not found on Map")  
+                rospy.loginfo("Target or Origin Nodes were not found on Map")
+                self.cancelled = True
                 result=False
         
         

@@ -145,10 +145,10 @@ include_directories(
 # )
 
 
-install(PROGRAMS scripts/navigation.py
+#install(PROGRAMS scripts/navigation.py
 		 #scripts/localisation.py
-         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
 
 #############

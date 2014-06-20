@@ -10,7 +10,6 @@ import math
 
 
 
-from topological_navigation.topological_node import *
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
@@ -18,8 +17,9 @@ from std_msgs.msg import String
 import scitos_apps_msgs.msg
 
 from strands_navigation_msgs.msg import TopologicalNode
-
 from ros_datacentre.message_store import MessageStoreProxy
+from topological_navigation.topological_node import *
+
 import topological_navigation.msg
 
 

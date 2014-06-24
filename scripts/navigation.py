@@ -224,6 +224,9 @@ class TopologicalNavServer(object):
             
             rospy.loginfo("From %s do (%s) to %s" %(route[rindex].name, a, route[rindex+1].name))
 
+            self._feedback.route = '%s to %s using %s' % (route[rindex].name, route[rindex+1].name, a)
+            self._as.publish_feedback(self._feedback)
+
             self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map)
             dt_text=self.stat.get_start_time_str()
 

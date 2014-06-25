@@ -145,10 +145,23 @@ class TopologicalNavServer(object):
 
         else :
             if(Gnode == Onode) :
-                rospy.loginfo("Target and Origin Nodes are the same")  
-                result= self.monitored_navigation(Onode.waypoint, 'move_base')
-                rospy.loginfo("going to waypoint in node resulted in")
-                print result
+                n_edges=len(Gnode.edges) 
+                for i in range(0,n_edges):
+                    action_server=Gnode.edges[i]["action"]
+                    if  action_server == 'move_base' or  action_server == 'human_aware_navigation':
+                        break
+                    action_server=None
+                        
+                    
+                rospy.loginfo("Target and Origin Nodes are the same")
+                if action_server is None:
+                    rospy.loginfo("Action not taken, outputing success")
+                    result=True
+                else:
+                    rospy.loginfo("Getting to exact pose")
+                    result= self.monitored_navigation(Onode.waypoint, action_server)
+                    rospy.loginfo("going to waypoint in node resulted in")
+                    print result
             else:
                 rospy.loginfo("Target or Origin Nodes were not found on Map")
                 self.cancelled = True

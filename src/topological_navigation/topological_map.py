@@ -64,6 +64,29 @@ class topological_map(object):
             rospy.logerr("Available data: "+str(available))
 
 
+    def remove_edge(self, edge_name) :
+        print 'removing edge: '+edge_name
+        edged = edge_name.split('_')
+        print edged
+        node_name = edged[0]
+        #nodeindx = self._get_node_index(edged[0])
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"name" : node_name, "pointset": self.name}
+        query_meta = {}
+        query_meta["pointset"] = self.name
+        query_meta["map"] = self.map
+        available = msg_store.query(TopologicalNode._type, query, query_meta)
+        if len(available) == 1 :
+            for i in available[0][0].edges :
+                print i.node
+                if i.node == edged[1] :
+                    available[0][0].edges.remove(i)
+            msg_store.update(available[0][0], query_meta, query, upsert=True)
+        else :
+            rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
+            rospy.logerr("Available data: "+str(available))        
+        
+        
 
     def loadMap(self, point_set):
         msg_store = MessageStoreProxy(collection='topological_maps')

@@ -9,5 +9,6 @@
 
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" args="$(arg map)"/>
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" args="$(arg map) $(arg node_by_node)"/>
-	<node pkg="topological_utils" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>
+	<!--<node pkg="topological_utils" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>-->
+	<node pkg="topological_map_manager" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>
 </launch>

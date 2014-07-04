@@ -78,7 +78,7 @@ if __name__ == '__main__':
         for j in lnodes :
             if i.node_name is not j.node_name and node_dist(i.waypoint,j.waypoint)<max_dist_connect:
                 node_dist(i.waypoint,j.waypoint)
-                edge = {'node':j.node_name, 'action':"move_base"}
+                edge = {'node':j.node_name, 'action':"human_aware_navigation"}
                 edges.append(edge)
                 i._insert_edges(edges)
         eind+=1
@@ -86,11 +86,11 @@ if __name__ == '__main__':
 
 
     #inserting corners
-    cvertices=[(0.5, 1.38), (-0.574, 1.38), (-1.38, 0.574), (-1.38, -0.574), (-0.574, -1.38), (0.5, -1.38)]
+    cvertices=[(0.25, 0.69), (-0.287, 0.69), (-0.69, 0.287), (-0.69, -0.287), (-0.287, -0.69), (0.25, -0.69)]
     cnode._insert_vertices(cvertices)
 
     for i in lnodes :
-        vertices=[(1.38, 0.574), (0.574, 1.38), (-0.574, 1.38), (-1.38, 0.574), (-1.38, -0.574), (-0.574, -1.38), (0.574, -1.38), (1.38, -0.574)]
+        vertices=[(0.69, 0.287), (0.287, 0.69), (-0.287, 0.69), (-0.69, 0.287), (-0.69, -0.287), (-0.287, -0.69), (0.287, -0.69), (0.69, -0.287)]
         i._insert_vertices(vertices)
 
     lnodes.insert(0,cnode)

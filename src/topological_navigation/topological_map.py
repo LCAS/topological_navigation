@@ -65,9 +65,10 @@ class topological_map(object):
 
 
     def remove_edge(self, edge_name) :
-        print 'removing edge: '+edge_name
+        #print 'removing edge: '+edge_name
+        rospy.loginfo('Removing Edge: '+edge_name)
         edged = edge_name.split('_')
-        print edged
+        #print edged
         node_name = edged[0]
         #nodeindx = self._get_node_index(edged[0])
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -78,15 +79,67 @@ class topological_map(object):
         available = msg_store.query(TopologicalNode._type, query, query_meta)
         if len(available) == 1 :
             for i in available[0][0].edges :
-                print i.node
+                #print i.node
                 if i.node == edged[1] :
                     available[0][0].edges.remove(i)
             msg_store.update(available[0][0], query_meta, query, upsert=True)
         else :
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available))        
+
+
+
+
+    def remove_node(self, node_name) :
+        rospy.loginfo('Removing Node: '+node_name)
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"name" : node_name, "pointset": self.name}
+        query_meta = {}
+        query_meta["pointset"] = self.name
+        query_meta["map"] = self.map
+
+        available = msg_store.query(TopologicalNode._type, query, query_meta)
         
+        if len(available) == 1 :
+            node_found = True
+            rm_id = str(available[0][1]['_id'])
+            print rm_id
+
+        else :
+            rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
+            rospy.logerr("Available data: "+str(available))
         
+        if node_found :
+            query_meta = {}
+            query_meta["pointset"] = self.name
+            edges_to_rm = []
+            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
+            for i in message_list:
+                for j in i[0].edges :
+                    if j.node == node_name :
+                        edge_rm = i[0].name+'_'+node_name
+                        edges_to_rm.append(edge_rm)
+            
+            for k in edges_to_rm :
+                print 'remove: '+k
+                self.remove_edge(k)
+            msg_store.delete(rm_id)
+
+
+    def delete_map(self) :
+
+        rospy.loginfo('Deleting map: '+self.name)
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        
+        query_meta = {}
+        query_meta["pointset"] = self.name
+
+        message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
+        for i in message_list:
+            rm_id = str(i[1]['_id'])
+            msg_store.delete(rm_id)
+            
+
 
     def loadMap(self, point_set):
         msg_store = MessageStoreProxy(collection='topological_maps')

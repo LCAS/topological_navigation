@@ -17,6 +17,7 @@ from std_msgs.msg import String
 import scitos_apps_msgs.msg
 
 from strands_navigation_msgs.msg import TopologicalNode
+from strands_navigation_msgs.msg import TopologicalMap
 from ros_datacentre.message_store import MessageStoreProxy
 from topological_navigation.topological_node import *
 
@@ -29,45 +30,50 @@ def get_node(name, clist):
             return i
 
 
+def get_distance_to_node(node, pose):
+    dist=math.hypot((pose.position.x-node.pose.position.x),(pose.position.y-node.pose.position.y))
+    return dist
+
+
 class TopologicalNavLoc(object):
-    _feedback = topological_navigation.msg.GotoNodeFeedback()
-    _result   = topological_navigation.msg.GotoNodeResult()
+       
     
-    def __init__(self, name, filename) :
-        self.throttle=5
-        self.cancelled = False
+    def __init__(self, name) :
+        self.throttle_val = rospy.get_param("~LocalisationThrottle", 5)
+        self.throttle = self.throttle_val
         self.node="Unknown"
         
-        self._action_name = name
-        #print "loading file from map %s" %filename
-        self.lnodes = self.loadMap(filename)
-        #print "Done"
-
+        #self._action_name = name
         self.wp_pub = rospy.Publisher('/closest_node', String)
         self.cn_pub = rospy.Publisher('/current_node', String)
+        
+        self.lnodes = []
+
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        
+        rospy.loginfo("Waiting for Topological map ...")
+        
+        while len(self.lnodes) == 0:
+            pass
             
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
-
         #self.run_analysis()
 
         rospy.loginfo("All Done ...")
         rospy.spin()
 
+
     def PoseCallback(self, msg):
-        if(self.throttle%5==0):
-            #print "robot pose (%f, %f)" %(msg.position.x,msg.position.y)
+        if(self.throttle%self.throttle_val==0):
             a = float('1000.0')
-            x=msg.position.x
-            y=msg.position.y
             for i in self.lnodes:
-                d=i._get_distance(x, y)
+                d=get_distance_to_node(i, msg)
                 if d < a:
                     b=i
                     a=d
             self.wp_pub.publish(String(b.name))
-            if a < b.influence_radius :
-                if self.point_in_poly(x,y,b) :
-                    self.cn_pub.publish(String(b.name))
+            if self.point_in_poly(b, msg) :
+                self.cn_pub.publish(String(b.name))
             else :
                 self.cn_pub.publish('none')
             self.throttle=1
@@ -75,74 +81,24 @@ class TopologicalNavLoc(object):
             self.throttle +=1
 
 
-    def loadMap(self, point_set):
-
-        point_set=str(sys.argv[1])
-        #map_name=str(sys.argv[3])
-    
-        msg_store = MessageStoreProxy(collection='topological_maps')
-    
-        query_meta = {}
-        query_meta["pointset"] = point_set
-
-        available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
-
-        print available
-
-        if available <= 0 :
-            rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
-            rospy.logerr("Available pointsets: "+str(available))
-            raise Exception("Can't find waypoints.")
-    
-        else :
-            query_meta = {}
-            query_meta["pointset"] = point_set
-            
-            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
-    
-            points = []
-            for i in message_list:
-                #print i[0].name
-                b = topological_node(i[0].name)
-                edges = []
-                for j in i[0].edges :
-                    data = {}
-                    data["node"]=j.node
-                    data["action"]=j.action
-                    edges.append(data)
-                b.edges = edges
-                
-                verts = []
-                for j in i[0].verts :
-                    data = [j.x,j.y]
-                    verts.append(data)
-                b._insert_vertices(verts)
-    
-                c=i[0].pose
-                waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
-                b.waypoint = waypoint
-                b._get_coords()
-    
-                points.append(b)
-            
-            return points
+    def MapCallback(self, msg) :
+        self.lnodes = msg.nodes
+        for i in self.lnodes : 
+            print i
 
 
-    def run_analysis(self):
-        for i in self.lnodes:
-            print ("%s:") %i.name
-            print ("%s:") %i.influence_radius
-
-    def point_in_poly(self,x,y,node):
-        x=x-node.px
-        y=y-node.py
-   
-        n = len(node.vertices)
+    def point_in_poly(self,node,pose):
+        x=pose.position.x-node.pose.position.x
+        y=pose.position.y-node.pose.position.y
+        
+        n = len(node.verts)
         inside = False
     
-        p1x,p1y = node.vertices[0]
+        p1x = node.verts[0].x
+        p1y = node.verts[0].y
         for i in range(n+1):
-            p2x,p2y = node.vertices[i % n]
+            p2x = node.verts[i % n].x
+            p2y = node.verts[i % n].y
             if y > min(p1y,p2y):
                 if y <= max(p1y,p2y):
                     if x <= max(p1x,p2x):
@@ -156,6 +112,5 @@ class TopologicalNavLoc(object):
 
 
 if __name__ == '__main__':
-    filename=str(sys.argv[1])
     rospy.init_node('topological_localisation')
-    server = TopologicalNavLoc(rospy.get_name(),filename)
+    server = TopologicalNavLoc(rospy.get_name())

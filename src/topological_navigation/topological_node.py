@@ -25,6 +25,7 @@ def update_to_expand(to_expand, new_nodes, maptree, father) :
                     to_expand.append(new_el)
     return to_expand
 
+
 def get_node(name, maptree) :
     for i in maptree :
         if i.name == name :

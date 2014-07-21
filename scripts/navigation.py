@@ -18,13 +18,16 @@ from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
+
 from strands_navigation_msgs.msg import TopologicalNode
+from strands_navigation_msgs.msg import TopologicalMap
 from ros_datacentre.message_store import MessageStoreProxy
 from topological_navigation.topological_node import *
 from topological_navigation.navigation_stats import *
 
 import topological_navigation.msg
 import dynamic_reconfigure.client
+
 
 
 """ Class for Topological Navigation """
@@ -34,7 +37,7 @@ class TopologicalNavServer(object):
     _result   = topological_navigation.msg.GotoNodeResult()
 
 
-    def __init__(self, name, filename, mode) :
+    def __init__(self, name, mode) :
         self.node_by_node = False
         self.cancelled = False
         self.preempted = False
@@ -43,13 +46,19 @@ class TopologicalNavServer(object):
         self.closest_node = "Unknown"
         self.actions_needed=[]
         self.navigation_activated=False
-        
-        self._action_name = name
-        rospy.loginfo("Loading file from map %s", filename)
-        self.lnodes = self.loadMap(filename)
-        self.topol_map = filename
-        rospy.loginfo(" ...done")
 
+        self._action_name = name
+        
+        
+        #Waiting for Topological Map        
+        self.lnodes = []
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.loginfo("Waiting for Topological map ...")        
+        while len(self.lnodes) == 0:
+            pass
+
+
+        rospy.loginfo(" ...done")
         rospy.set_param('topological_map_name', self.topol_map)
 
  
@@ -61,12 +70,14 @@ class TopologicalNavServer(object):
             rospy.set_param('/topological_navigation/mode','Normal')
             self.nav_mode = "Normal"
 
+
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.GotoNodeAction, execute_cb = self.executeCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
         rospy.loginfo(" ...starting")
         self._as.start()
         rospy.loginfo(" ...done")
+
 
         rospy.loginfo("Creating monitored navigation client.")
         self.monNavClient= actionlib.SimpleActionClient('monitored_navigation', MonitoredNavigationAction)
@@ -78,16 +89,54 @@ class TopologicalNavServer(object):
         rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
         rospy.Subscriber('/current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
+
         
         rospy.loginfo("Creating Reconfigure Client")
         self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
         config = self.rcnfclient.get_configuration()
         self.dyt = config['yaw_goal_tolerance']
 
+
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
 
         rospy.loginfo("All Done ...")
         rospy.spin()
+
+
+    def MapCallback(self, msg) :
+        self.topol_map = msg.pointset
+        points = []
+        for i in msg.nodes : 
+            b = topological_node(i.name)
+            edges = []
+            for j in i.edges :
+                data = {}
+                data["node"]=j.node
+                data["action"]=j.action
+                edges.append(data)
+            b.edges = edges
+
+            verts = []
+            for j in i.verts :
+                data = [j.x,j.y]
+                verts.append(data)
+            b._insert_vertices(verts)
+  
+            c=i.pose
+            waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
+            b.waypoint = waypoint
+            b._get_coords()
+
+            points.append(b)
+
+        
+        for i in points:
+            for k in i.edges :
+                j = k['action']
+                if j not in self.actions_needed:
+                    self.actions_needed.append(j)
+        self.lnodes = points
+
 
 
 
@@ -104,6 +153,8 @@ class TopologicalNavServer(object):
     def navigate(self, target):
         Onode = get_node(self.closest_node, self.lnodes)
         Gnode = get_node(target, self.lnodes)
+        
+
         if (Gnode is not None) and (Onode is not None) and (Gnode != Onode) :
             exp_index=0
             to_expand=[Onode]
@@ -362,73 +413,16 @@ class TopologicalNavServer(object):
         self.monNavClient.cancel_all_goals()
         #self._as.set_preempted(self._result)
 
-        
-    def loadMap(self, point_set):
 
-        point_set=str(sys.argv[1])
-        #map_name=str(sys.argv[3])
-    
-        msg_store = MessageStoreProxy(collection='topological_maps')
-    
-        query_meta = {}
-        query_meta["pointset"] = point_set
-        #query_meta["stored_type"] = "strands_navigation_msgs/TopologicalNode"
-        
-        available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
-    
-        if available <= 0 :
-            rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
-            rospy.logerr("Available pointsets: "+str(available))
-            raise Exception("Can't find waypoints.")
-    
-        else :
-            query_meta = {}
-            query_meta["pointset"] = point_set
-            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
-    
-            points = []
-            for i in message_list:
-                #print i[0].name
-                b = topological_node(i[0].name)
-                edges = []
-                for j in i[0].edges :
-                    data = {}
-                    data["node"]=j.node
-                    data["action"]=j.action
-                    edges.append(data)
-                b.edges = edges
-                
-                verts = []
-                for j in i[0].verts :
-                    data = [j.x,j.y]
-                    verts.append(data)
-                b._insert_vertices(verts)
-    
-                c=i[0].pose
-                waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
-                b.waypoint = waypoint
-                b._get_coords()
-    
-                points.append(b)        #print "Actions Needed"
-        
-            #for point in points :
-            #    print point.name
-        
-        for i in points:
-            for k in i.edges :
-                j = k['action']
-                if j not in self.actions_needed:
-                    self.actions_needed.append(j)
-        return points
 
 
 if __name__ == '__main__':
-    filename=str(sys.argv[1])
+    #filename=str(sys.argv[1])
     mode="normal"
-    if len(sys.argv) > 2:
-        print str(sys.argv[2])
-        if str(sys.argv[2]) == "true":
-            mode="Node_by_Node"
-            print "Node_by_Node"
+#    if len(sys.argv) > 2:
+#        print str(sys.argv[2])
+#        if str(sys.argv[2]) == "true":
+#            mode="Node_by_Node"
+#            print "Node_by_Node"
     rospy.init_node('topological_navigation')
-    server = TopologicalNavServer(rospy.get_name(),filename,mode)
+    server = TopologicalNavServer(rospy.get_name(),mode)

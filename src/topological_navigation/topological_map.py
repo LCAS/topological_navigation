@@ -12,10 +12,14 @@ from ros_datacentre.message_store import MessageStoreProxy
 
 class topological_map(object):
 
-    def __init__(self, name):
-        self.name = name
-        self.nodes = self.loadMap(name)
-
+    def __init__(self, name, msg = None):
+        if msg is None :
+            self.name = name
+            self.nodes = self.loadMap(name)
+        else :
+            self.name = msg.pointset
+            self.nodes = self.map_from_msg(msg.nodes)
+            
 
     def _get_node_index(self, node_name):
         ind = -1
@@ -139,6 +143,37 @@ class topological_map(object):
             rm_id = str(i[1]['_id'])
             msg_store.delete(rm_id)
             
+
+    def map_from_msg(self, nodes):
+        #self.topol_map = msg.pointset
+        points = []
+        for i in nodes : 
+            self.map = i.map
+            b = topological_node(i.name)
+            edges = []
+            for j in i.edges :
+                data = {}
+                data["node"]=j.node
+                data["action"]=j.action
+                edges.append(data)
+            b.edges = edges
+            verts = []
+            for j in i.verts :
+                data = [j.x,j.y]
+                verts.append(data)
+            b._insert_vertices(verts)  
+            c=i.pose
+            waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
+            b.waypoint = waypoint
+            b._get_coords()
+            points.append(b)
+        
+#        for i in points:
+#            for k in i.edges :
+#                j = k['action']
+#                if j not in self.actions_needed:
+#                    self.actions_needed.append(j)
+        return points
 
 
     def loadMap(self, point_set):

@@ -30,13 +30,19 @@ import dynamic_reconfigure.client
 
 
 
-""" Class for Topological Navigation """
+"""
+ Class for Topological Navigation 
+
+"""
 
 class TopologicalNavServer(object):
     _feedback = topological_navigation.msg.GotoNodeFeedback()
     _result   = topological_navigation.msg.GotoNodeResult()
 
-
+    """
+     Initialization for Topological Navigation Class
+    
+    """
     def __init__(self, name, mode) :
         self.node_by_node = False
         self.cancelled = False
@@ -46,9 +52,8 @@ class TopologicalNavServer(object):
         self.closest_node = "Unknown"
         self.actions_needed=[]
         self.navigation_activated=False
-
         self._action_name = name
-        
+        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
         
         #Waiting for Topological Map        
         self.lnodes = []
@@ -56,12 +61,11 @@ class TopologicalNavServer(object):
         rospy.loginfo("Waiting for Topological map ...")        
         while len(self.lnodes) == 0:
             pass
-
-
         rospy.loginfo(" ...done")
         rospy.set_param('topological_map_name', self.topol_map)
 
- 
+
+        #Choosing operation mode 
         if mode == "Node_by_Node" :
             #self.node_by_node = True
             rospy.set_param('/topological_navigation/mode','Node_by_Node')
@@ -71,6 +75,7 @@ class TopologicalNavServer(object):
             self.nav_mode = "Normal"
 
 
+        #Creating Action Server
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.GotoNodeAction, execute_cb = self.executeCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
@@ -78,31 +83,36 @@ class TopologicalNavServer(object):
         self._as.start()
         rospy.loginfo(" ...done")
 
-
+        #Creating monitored navigation client
         rospy.loginfo("Creating monitored navigation client.")
         self.monNavClient= actionlib.SimpleActionClient('monitored_navigation', MonitoredNavigationAction)
         self.monNavClient.wait_for_server()
         rospy.loginfo(" ...done")
         
         
-        rospy.loginfo("Subscribing to Topics")
+        #Subscribing to Localisation Topics
+        rospy.loginfo("Subscribing to Localisation Topics")
         rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
         rospy.Subscriber('/current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
 
         
+        #Creating Reconfigure Client
         rospy.loginfo("Creating Reconfigure Client")
         self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
         config = self.rcnfclient.get_configuration()
         self.dyt = config['yaw_goal_tolerance']
 
 
-        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
-
         rospy.loginfo("All Done ...")
         rospy.spin()
 
 
+    """
+     Update Map CallBack
+     
+     This Functions updates the Topological Map everytime it is called
+    """
     def MapCallback(self, msg) :
         self.topol_map = msg.pointset
         points = []
@@ -115,20 +125,16 @@ class TopologicalNavServer(object):
                 data["action"]=j.action
                 edges.append(data)
             b.edges = edges
-
             verts = []
             for j in i.verts :
                 data = [j.x,j.y]
                 verts.append(data)
-            b._insert_vertices(verts)
-  
+            b._insert_vertices(verts)  
             c=i.pose
             waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
             b.waypoint = waypoint
             b._get_coords()
-
             points.append(b)
-
         
         for i in points:
             for k in i.edges :
@@ -138,8 +144,11 @@ class TopologicalNavServer(object):
         self.lnodes = points
 
 
-
-
+    """
+     Execute CallBack
+     
+     This Functions is called when the Action Server is called
+    """
     def executeCallback(self, goal):
         self.cancelled = False
         self.preempted = False
@@ -147,51 +156,59 @@ class TopologicalNavServer(object):
         self._as.publish_feedback(self._feedback)
         rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
         self.navigate(goal.target)
- 
 
-       
+
+    """
+     Preempt CallBack
+    """
+    def preemptCallback(self):
+        self.cancelled = True
+        self.preempted = True
+        self._result.success = False
+        self.monNavClient.cancel_all_goals()
+        #self._as.set_preempted(self._result)
+
+
+    """
+     Closest Node CallBack
+     
+    """
+    def closestNodeCallback(self, msg):
+        self.closest_node=msg.data
+
+
+
+    """
+     Current Node CallBack
+     
+    """
+    def currentNodeCallback(self, msg):
+        if self.current_node != msg.data and msg.data != 'none' :
+            self.current_node = msg.data
+            print "new node reached %s" %self.current_node
+            if self.navigation_activated :
+                self.stat.set_at_node()
+                if self.nav_mode != 'Normal' :
+                    if self.current_node != self._target or self.nav_mode == 'Node_to_IZ':
+                        self.cancelled = True
+                        if self.nav_mode != 'Node_to_IZ':
+                            self.monNavClient.cancel_all_goals()
+
+
+ 
+    """
+     Navigate
+     
+     This function takes the taget node and plans the actions that are required
+     to reach it
+    """       
     def navigate(self, target):
         Onode = get_node(self.closest_node, self.lnodes)
         Gnode = get_node(target, self.lnodes)
         
-
+        
         if (Gnode is not None) and (Onode is not None) and (Gnode != Onode) :
-            exp_index=0
-            to_expand=[Onode]
-            to_expand[exp_index]._set_Father('none')
-            children=to_expand[exp_index]._get_Children()
-            not_goal=True
-            while not_goal :
-                pos=findInList(target, children)
-                if pos>=0 :
-                    not_goal=False
-                else :
-                    #print "Goal NOT found"
-                    update_to_expand(to_expand, children, self.lnodes, to_expand[exp_index].name)
-                    exp_index=exp_index+1
-                    #print "nodes to expand %d:" %len(to_expand)
-                    #for m in to_expand :
-                    #    print m.name
-                    #print "expanding node %d: (%s)" %(exp_index,to_expand[exp_index].name)
-                    if exp_index >= len(to_expand) :
-                        not_goal=False
-                    children=to_expand[exp_index]._get_Children()
-                    #print "nodes in list:"
-                    #print children
-                    
-            Gnode._set_Father(to_expand[exp_index].name)
-            #print "Father for Gnode %s" %(Gnode.father)
-            #del route[:]
-            route=[Gnode]
-            #print "Current Route %d" %len(route)
-            rindex=0
-            #print route[rindex].father
-            while route[rindex].father is not 'none' :
-                nwnode = get_node(route[rindex].father, to_expand)
-                route.append(nwnode)
-                rindex=rindex+1
-            
-            route.reverse()
+            route = self.search_route(Onode, target)
             result=self.followRoute(route)
 
         else :
@@ -242,23 +259,50 @@ class TopologicalNavServer(object):
                     self._as.set_preempted(self._result)
 
 
-    
-    def closestNodeCallback(self, msg):
-        self.closest_node=msg.data
-
-
-
-    def currentNodeCallback(self, msg):
-        if self.current_node != msg.data and msg.data != 'none' :
-            self.current_node = msg.data
-            print "new node reached %s" %self.current_node
-            if self.navigation_activated :
-                self.stat.set_at_node()
-                if self.nav_mode != 'Normal' :
-                    if self.current_node != self._target or self.nav_mode == 'Node_to_IZ':
-                        self.cancelled = True
-                        if self.nav_mode != 'Node_to_IZ':
-                            self.monNavClient.cancel_all_goals()
+    """
+     search_route
+     
+     This function takes the search the route to reach the goal
+    """       
+    def search_route(self, Origin, target):
+        Gnode = get_node(target, self.lnodes)
+        exp_index=0
+        to_expand=[Origin]
+        to_expand[exp_index]._set_Father('none')
+        children=to_expand[exp_index]._get_Children()
+        not_goal=True
+        while not_goal :
+            pos=findInList(target, children)
+            if pos>=0 :
+                not_goal=False
+            else :
+                #print "Goal NOT found"
+                update_to_expand(to_expand, children, self.lnodes, to_expand[exp_index].name)
+                exp_index=exp_index+1
+                #print "nodes to expand %d:" %len(to_expand)
+                #for m in to_expand :
+                #    print m.name
+                #print "expanding node %d: (%s)" %(exp_index,to_expand[exp_index].name)
+                if exp_index >= len(to_expand) :
+                    not_goal=False
+                children=to_expand[exp_index]._get_Children()
+                #print "nodes in list:"
+                #print children
+                
+        Gnode._set_Father(to_expand[exp_index].name)
+        #print "Father for Gnode %s" %(Gnode.father)
+        #del route[:]
+        route=[Gnode]
+        #print "Current Route %d" %len(route)
+        rindex=0
+        #print route[rindex].father
+        while route[rindex].father is not 'none' :
+            nwnode = get_node(route[rindex].father, to_expand)
+            route.append(nwnode)
+            rindex=rindex+1
+        
+        route.reverse()
+        return route
                   
 
     def followRoute(self, route):
@@ -353,7 +397,6 @@ class TopologicalNavServer(object):
 
 
     def publish_stats(self):
-        
         pubst = NavStatistics()
         pubst.status = self.stat.status
         pubst.origin = self.stat.origin
@@ -404,15 +447,6 @@ class TopologicalNavServer(object):
                 self.preempted = True
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
-
-
-    def preemptCallback(self):
-        self.cancelled = True
-        self.preempted = True
-        self._result.success = False
-        self.monNavClient.cancel_all_goals()
-        #self._as.set_preempted(self._result)
-
 
 
 

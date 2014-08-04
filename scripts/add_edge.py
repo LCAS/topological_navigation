@@ -2,9 +2,9 @@
 
 import sys
 import rospy
-import pymongo
+#import pymongo
 
-import std_msgs.msg
+
 #from strands_navigation_msgs.msg import TopologicalNode
 #from ros_datacentre.message_store import MessageStoreProxy
 #from topological_navigation.topological_node import *
@@ -14,22 +14,19 @@ from topological_navigation.topological_map import *
 
 
 
-class topologicalNodeRM(object):
+class topologicalEdgeAdd(object):
 
-    def __init__(self, pointset, waypoint) :
+    def __init__(self, pointset, or_waypoint, de_waypoint, action) :
 
         self.topo_map = topological_map(pointset)
-        self.topo_map.remove_node(waypoint)    
-        
-        
-        map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)        
-        map_update.publish(rospy.Time.now())
-
+        self.topo_map.add_edge(or_waypoint, de_waypoint, action)           
         rospy.loginfo("All Done ...")
 
 
 if __name__ == '__main__':
     pointset=str(sys.argv[1])
-    waypoint=str(sys.argv[2])
-    rospy.init_node('node_rm')
-    server = topologicalNodeRM(pointset,waypoint)
+    or_waypoint=str(sys.argv[2])
+    de_waypoint=str(sys.argv[3])
+    action = str(sys.argv[4])
+    rospy.init_node('add_edge')
+    server = topologicalEdgeAdd(pointset,or_waypoint, de_waypoint, action)

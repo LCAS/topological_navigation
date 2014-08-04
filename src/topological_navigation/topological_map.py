@@ -4,6 +4,8 @@ import rospy
 
 from topological_navigation.topological_node import *
 from strands_navigation_msgs.msg import TopologicalNode
+from topological_utils.msg import Edge
+from topological_utils.msg import Vertex
 
 
 from ros_datacentre.message_store import MessageStoreProxy
@@ -92,6 +94,35 @@ class topological_map(object):
             rospy.logerr("Available data: "+str(available))        
 
 
+    def add_edge(self, or_waypoint, de_waypoint, action) :
+        #print 'removing edge: '+edge_name
+        rospy.loginfo('Adding Edge from '+or_waypoint+' to '+de_waypoint+' using '+action)
+        node_name = or_waypoint
+        #nodeindx = self._get_node_index(edged[0])
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"name" : node_name, "pointset": self.name}
+        query_meta = {}
+        query_meta["pointset"] = self.name
+        query_meta["map"] = self.map
+        available = msg_store.query(TopologicalNode._type, query, query_meta)
+        if len(available) == 1 :
+            found =False
+            for i in available[0][0].edges :
+                #print i.node
+                if i.node == de_waypoint :
+                    found=True
+                    break
+            if not found :
+                edge = Edge()
+                edge.node = de_waypoint
+                edge.action = action
+                available[0][0].edges.append(edge)
+                msg_store.update(available[0][0], query_meta, query, upsert=True)
+            else :
+                rospy.logerr("Edge already exist: Try deleting it first")
+        else :
+            rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
+            rospy.logerr("Available data: "+str(available))
 
 
     def remove_node(self, node_name) :
@@ -104,14 +135,15 @@ class topological_map(object):
 
         available = msg_store.query(TopologicalNode._type, query, query_meta)
         
+        node_found = False
         if len(available) == 1 :
             node_found = True
             rm_id = str(available[0][1]['_id'])
             print rm_id
-
         else :
-            rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
-            rospy.logerr("Available data: "+str(available))
+            rospy.logerr("Node not found "+str(len(available))+" waypoints found after query")
+            #rospy.logerr("Available data: "+str(available))
+        
         
         if node_found :
             query_meta = {}
@@ -129,6 +161,59 @@ class topological_map(object):
                 self.remove_edge(k)
             msg_store.delete(rm_id)
 
+
+    def add_node(self, name, dist, pos, std_action) :
+        rospy.loginfo('Creating Node: '+name)
+        msg_store = MessageStoreProxy(collection='topological_maps')
+
+        found = False
+        for i in self.nodes :
+            if i.name == name :
+                found = True
+        
+        if found :
+            rospy.logerr("Node already exists, try another name")
+        else :
+            rospy.loginfo('Adding node: '+name)
+
+            meta = {}
+            meta["map"] = self.map
+            meta["pointset"] = self.name
+            meta["node"] = name
+
+            node = TopologicalNode()
+            node.name = name
+            node.map = self.map
+            node.pointset = self.name
+            node.pose = pos
+            vertices=[(0.69, 0.287), (0.287, 0.69), (-0.287, 0.69), (-0.69, 0.287), (-0.69, -0.287), (-0.287, -0.69), (0.287, -0.69), (0.69, -0.287)]
+            for j in vertices :
+                v = Vertex()
+                v.x = float(j[0])
+                v.y = float(j[1])
+                node.verts.append(v)
+
+            
+            cx = node.pose.position.x
+            cy = node.pose.position.y
+            close_nodes = []
+            for i in self.nodes :
+                ndist = i._get_distance(cx, cy)
+                if ndist < dist :
+                    if i.name != 'ChargingPoint' :
+                        close_nodes.append(i.name)
+            
+            for i in close_nodes :
+                edge = Edge()
+                edge.node = i
+                edge.action = std_action
+                node.edges.append(edge)
+               
+            msg_store.insert(node,meta)
+            
+            for i in close_nodes :
+                self.add_edge(i, name, std_action)
+            
 
     def delete_map(self) :
 
@@ -168,11 +253,6 @@ class topological_map(object):
             b._get_coords()
             points.append(b)
         
-#        for i in points:
-#            for k in i.edges :
-#                j = k['action']
-#                if j not in self.actions_needed:
-#                    self.actions_needed.append(j)
         return points
 
 

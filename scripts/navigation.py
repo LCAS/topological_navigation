@@ -406,14 +406,14 @@ class TopologicalNavServer(object):
         pubst.time_to_waypoint = self.stat.time_to_wp
         pubst.operation_time = self.stat.operation_time
         pubst.date_started = self.stat.get_start_time_str()
-        pubst.date_at_node = self.stat.date_at_node.strftime('%A, %B %d, at %H:%M:%S hours')
+        pubst.date_at_node = self.stat.date_at_node.strftime('%A, %B %d %Y, at %H:%M:%S hours')
         pubst.date_finished = self.stat.get_finish_time_str()
         self.stats_pub.publish(pubst)
 
         meta = {}
         meta["type"] = "Topological Navigation Stat"
         meta["epoch"] = calendar.timegm(self.stat.date_at_node.timetuple())
-        meta["date"] = self.stat.date_at_node.strftime('%A, %B %d, at %H:%M:%S hours')
+        meta["date"] = self.stat.date_at_node.strftime('%A, %B %d %Y, at %H:%M:%S hours')
         meta["pointset"] = self.stat.topological_map
         
         msg_store = MessageStoreProxy()

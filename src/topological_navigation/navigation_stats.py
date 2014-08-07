@@ -39,9 +39,9 @@ class nav_stats(object):
         return self.time_to_wp
         
     def get_start_time_str(self):
-        dt_text=self.date_started.strftime('%A, %B %d, at %H:%M:%S hours')
+        dt_text=self.date_started.strftime('%A, %B %d %Y, at %H:%M:%S hours')
         return dt_text
         
     def get_finish_time_str(self):
-        dt_text=self.date_finished.strftime('%A, %B %d, at %H:%M:%S hours')
+        dt_text=self.date_finished.strftime('%A, %B %d %Y, at %H:%M:%S hours')
         return dt_text

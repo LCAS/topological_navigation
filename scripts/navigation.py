@@ -19,7 +19,7 @@ from move_base_msgs.msg import *
 from std_msgs.msg import String
 import scitos_apps_msgs.msg
 from strands_navigation_msgs.msg import TopologicalNode
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.topological_node import *
 from topological_navigation.navigation_stats import *
 

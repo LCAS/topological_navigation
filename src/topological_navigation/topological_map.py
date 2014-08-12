@@ -6,7 +6,7 @@ from topological_navigation.topological_node import *
 from strands_navigation_msgs.msg import TopologicalNode
 
 
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 #import topological_navigation.msg
 
 

@@ -10,7 +10,7 @@ from strands_navigation_msgs.msg import TopologicalNode
 #from topological_utils.msg import vertex
 #from topological_utils.msg import edge
 #from geometry_msgs.msg import Pose
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 
 
 if __name__ == '__main__':

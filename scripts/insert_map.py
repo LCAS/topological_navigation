@@ -103,8 +103,8 @@ if __name__ == '__main__':
     map_name=str(sys.argv[3])
 
     msg_store = MessageStoreProxy(collection='topological_maps')
-    #host = rospy.get_param("datacentre_host")
-    #port = rospy.get_param("datacentre_port")
+    #host = rospy.get_param("mongodb_host")
+    #port = rospy.get_param("mongodb_port")
     #print "Using datacentre  ",host,":", port
     #client = pymongo.MongoClient(host, port)
     #db=client.autonomous_patrolling

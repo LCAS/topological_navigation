@@ -14,7 +14,6 @@ from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-import scitos_apps_msgs.msg
 
 from strands_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
@@ -32,12 +31,12 @@ def get_node(name, clist):
 class TopologicalNavLoc(object):
     _feedback = topological_navigation.msg.GotoNodeFeedback()
     _result   = topological_navigation.msg.GotoNodeResult()
-    
+
     def __init__(self, name, filename) :
         self.throttle=5
         self.cancelled = False
         self.node="Unknown"
-        
+
         self._action_name = name
         #print "loading file from map %s" %filename
         self.lnodes = self.loadMap(filename)
@@ -45,7 +44,7 @@ class TopologicalNavLoc(object):
 
         self.wp_pub = rospy.Publisher('/closest_node', String)
         self.cn_pub = rospy.Publisher('/current_node', String)
-            
+
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
 
         #self.run_analysis()
@@ -79,9 +78,9 @@ class TopologicalNavLoc(object):
 
         point_set=str(sys.argv[1])
         #map_name=str(sys.argv[3])
-    
+
         msg_store = MessageStoreProxy(collection='topological_maps')
-    
+
         query_meta = {}
         query_meta["pointset"] = point_set
 
@@ -93,13 +92,13 @@ class TopologicalNavLoc(object):
             rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
             raise Exception("Can't find waypoints.")
-    
+
         else :
             query_meta = {}
             query_meta["pointset"] = point_set
-            
+
             message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
-    
+
             points = []
             for i in message_list:
                 #print i[0].name
@@ -111,20 +110,20 @@ class TopologicalNavLoc(object):
                     data["action"]=j.action
                     edges.append(data)
                 b.edges = edges
-                
+
                 verts = []
                 for j in i[0].verts :
                     data = [j.x,j.y]
                     verts.append(data)
                 b._insert_vertices(verts)
-    
+
                 c=i[0].pose
                 waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
                 b.waypoint = waypoint
                 b._get_coords()
-    
+
                 points.append(b)
-            
+
             return points
 
 
@@ -136,10 +135,10 @@ class TopologicalNavLoc(object):
     def point_in_poly(self,x,y,node):
         x=x-node.px
         y=y-node.py
-   
+
         n = len(node.vertices)
         inside = False
-    
+
         p1x,p1y = node.vertices[0]
         for i in range(n+1):
             p2x,p2y = node.vertices[i % n]
@@ -151,7 +150,7 @@ class TopologicalNavLoc(object):
                         if p1x == p2x or x <= xints:
                             inside = not inside
             p1x,p1y = p2x,p2y
-            
+
         return inside
 
 

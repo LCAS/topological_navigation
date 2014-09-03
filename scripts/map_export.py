@@ -15,7 +15,6 @@ from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-import scitos_apps_msgs.msg
 
 from strands_navigation_msgs.msg import TopologicalNode
 
@@ -25,7 +24,7 @@ import topological_navigation.msg
 
 
 class TopologicalNavLoc(object):
-    
+
     def __init__(self, dataset_name, filename) :
         #print "loading file from map %s" %filename
         self.lnodes = self.loadMap(dataset_name)
@@ -36,7 +35,7 @@ class TopologicalNavLoc(object):
         #Clean the file in case it existed
         fh = open(filename, "w")
         fh.close
-    
+
         #Write File
         for i in self.lnodes :
             fh = open(filename, "a")
@@ -67,9 +66,9 @@ class TopologicalNavLoc(object):
 
         point_set=str(sys.argv[1])
         #map_name=str(sys.argv[3])
-    
+
         msg_store = MessageStoreProxy(collection='topological_maps')
-    
+
         query_meta = {}
         query_meta["pointset"] = point_set
 
@@ -81,13 +80,13 @@ class TopologicalNavLoc(object):
             rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
             raise Exception("Can't find waypoints.")
-    
+
         else :
             query_meta = {}
             query_meta["pointset"] = point_set
-            
+
             message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
-    
+
             points = []
             for i in message_list:
                 #print i[0].name
@@ -99,20 +98,20 @@ class TopologicalNavLoc(object):
                     data["action"]=j.action
                     edges.append(data)
                 b.edges = edges
-                
+
                 verts = []
                 for j in i[0].verts :
                     data = [j.x,j.y]
                     verts.append(data)
                 b._insert_vertices(verts)
-    
+
                 c=i[0].pose
                 waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
                 b.waypoint = waypoint
                 b._get_coords()
-    
+
                 points.append(b)
-            
+
             return points
 
 

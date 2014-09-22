@@ -6,7 +6,7 @@ This node provides support for topological navigation in the STRANDS system.
 This module requires:
  * move_base
  * strands_datacentre
- * scitos_ramp_climb
+ * ramp_climb
 
 
 ## Creation of the Topological map
@@ -163,8 +163,8 @@ The first step is to insert a topological map on the strands_datacentre, this ca
 
 *note:* Statiscs are being recorded in the nav_stats collection within the autonomous_patrolling
 
-*note:* every action server for the actions stored in the topological map have to be running, for example if the ramp_climb action is required you will need the scitos_ramp_climb server running, you can run it using:
-`rosrun scitos_ramp_climb ramp_climb`
+*note:* every action server for the actions stored in the topological map have to be running, for example if the ramp_climb action is required you will need the ramp_climb server running, you can run it using:
+`rosrun ramp_climb ramp_climb`
 
 
 ## Navigate

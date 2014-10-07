@@ -111,7 +111,7 @@ class TopologicalNavServer(object):
     """
      Update Map CallBack
      
-     This Functions updates the Topological Map everytime it is called
+     This Function updates the Topological Map everytime it is called
     """
     def MapCallback(self, msg) :
         self.topol_map = msg.pointset

@@ -9,8 +9,8 @@ from topological_utils.msg import Vertex
 from topological_utils.msg import Edge
 
 import pymongo
-#import ros_datacentre.util
-from ros_datacentre.message_store import MessageStoreProxy
+#import mongodb_store.util
+from mongodb_store.message_store import MessageStoreProxy
 
 
 

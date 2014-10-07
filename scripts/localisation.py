@@ -17,8 +17,8 @@ from std_msgs.msg import String
 import scitos_apps_msgs.msg
 
 from strands_navigation_msgs.msg import TopologicalNode
-from strands_navigation_msgs.msg import TopologicalMap
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
+
 from topological_navigation.topological_node import *
 
 import topological_navigation.msg
@@ -93,6 +93,7 @@ class TopologicalNavLoc(object):
         
         n = len(node.verts)
         inside = False
+
     
         p1x = node.verts[0].x
         p1y = node.verts[0].y
@@ -107,7 +108,7 @@ class TopologicalNavLoc(object):
                         if p1x == p2x or x <= xints:
                             inside = not inside
             p1x,p1y = p2x,p2y
-            
+
         return inside
 
 

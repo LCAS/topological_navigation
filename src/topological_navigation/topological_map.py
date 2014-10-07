@@ -8,7 +8,7 @@ from topological_utils.msg import Edge
 from topological_utils.msg import Vertex
 
 
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 #import topological_navigation.msg
 
 

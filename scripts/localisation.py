@@ -14,11 +14,12 @@ from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-import scitos_apps_msgs.msg
+#import scitos_apps_msgs.msg
 
 from strands_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
 
+from strands_navigation_msgs.msg import TopologicalMap
 from topological_navigation.topological_node import *
 
 import topological_navigation.msg

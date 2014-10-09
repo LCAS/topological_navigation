@@ -155,11 +155,12 @@ class PolicyExecutionServer(object):
             if msg.data != 'none' :
                 print "new node reached %s" %self.current_node
                 
-                if self.navigation_activated and self.current_action in self.move_base_actions and self.current_node in self.current_route.source :
-                    nod_ind = self.current_route.source(self.current_node)
-                    next_action = self.find_action(self.current_route.source[nod_ind], self.current_route.target[nod_ind])
-                    if next_action in self.move_base_actions :
-                        self.goal_reached=True
+                if self.navigation_activated :
+                    if self.current_action in self.move_base_actions and self.current_node in self.current_route.source :
+                        nod_ind = self.current_route.source(self.current_node)
+                        next_action = self.find_action(self.current_route.source[nod_ind], self.current_route.target[nod_ind])
+                        if next_action in self.move_base_actions :
+                            self.goal_reached=True
                     #print "goal reached %s" %self.current_node
 
 

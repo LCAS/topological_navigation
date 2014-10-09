@@ -255,17 +255,20 @@ class PolicyExecutionServer(object):
         #print status
         if status != GoalStatus.SUCCEEDED :
             if not self.goal_reached:
-                if status is GoalStatus.PREEMPTED:
-                    self.preempted = True
-                    result = False
-                ps = self.monNavClient.get_result()
-                if ps.outcome != 'succeded' :
-                    result = False
-                else:
-                    result = True
+                result = False
+#                if status is GoalStatus.PREEMPTED:
+#                    self.preempted = True
+#                    result = False
+#                else:
+#                    result = True
             else:
                 result = True
-
+        else :
+            ps = self.monNavClient.get_result()
+            if ps.outcome != 'succeded' :
+                result = False
+            else :
+                result = True
         #rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 

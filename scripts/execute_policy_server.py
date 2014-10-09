@@ -50,7 +50,7 @@ class PolicyExecutionServer(object):
         
 #        self._target = "None"
         self.move_base_actions = ['move_base','human_aware_navigation']
-#        self.navigation_activated=False
+        self.navigation_activated=False
         self._action_name = '/topological_navigation/execute_policy_mode'
 #        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
 
@@ -125,17 +125,50 @@ class PolicyExecutionServer(object):
 
     """
      Preempt CallBack
+     
     """
     def preemptCallback(self):
         self.cancelled = True
         self.preempted = True
         self._result.success = False
+        self.navigation_activated = False
         self.monNavClient.cancel_all_goals()
         self._as.set_preempted(self._result)
     
-    
-    
 
+    """
+     Closest Node CallBack
+     
+    """
+    def closestNodeCallback(self, msg):
+        self.closest_node=msg.data
+
+
+
+    """
+     Current Node CallBack
+     
+    """
+    def currentNodeCallback(self, msg):
+        if self.current_node != msg.data :
+            self.current_node = msg.data
+            if msg.data != 'none' :
+                print "new node reached %s" %self.current_node
+                
+                if self.navigation_activated and self.current_action in self.move_base_actions and self.current_node in self.current_route.source :
+                    nod_ind = self.current_route.source(self.current_node)
+                    next_action = self.find_action(self.current_route.source[nod_ind], self.current_route.target[nod_ind])
+                    if next_action in self.move_base_actions :
+                        self.goal_reached=True
+                    #print "goal reached %s" %self.current_node
+
+
+
+    
+    """
+     Follow Route
+     
+    """
     def followRoute(self, route):
         self.navigation_activated=True
 
@@ -150,15 +183,19 @@ class PolicyExecutionServer(object):
         
         result=self.execute_policy(route)
         
-
+        self.navigation_activated = False
         #result=True
         return result
 
 
-
+    """
+     Execute Policy
+     
+    """
     def execute_policy(self, route):
         keep_executing=True
         success = True
+        self.current_route = route
         while keep_executing :
             if self.current_node in route.source and not self.cancelled :
                 if success :
@@ -208,7 +245,10 @@ class PolicyExecutionServer(object):
         return success
 
 
-
+    """
+     Find Action
+         
+    """
     def find_action(self, source, target):
         #print 'Searching for action between: %s -> %s' %(source, target)
         found = False
@@ -223,30 +263,6 @@ class PolicyExecutionServer(object):
             print "source node not found"
         return action
 
-
-
-
-    """
-     Closest Node CallBack
-     
-    """
-    def closestNodeCallback(self, msg):
-        self.closest_node=msg.data
-
-
-
-    """
-     Current Node CallBack
-     
-    """
-    def currentNodeCallback(self, msg):
-        if self.current_node != msg.data :
-            self.current_node = msg.data
-            if msg.data != 'none' :
-                print "new node reached %s" %self.current_node
-                if self.current_action in self.move_base_actions :
-                    self.goal_reached=True
-                    #print "goal reached %s" %self.current_node
 
 
     """

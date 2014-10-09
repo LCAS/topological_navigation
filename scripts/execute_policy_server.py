@@ -157,7 +157,7 @@ class PolicyExecutionServer(object):
                 
                 if self.navigation_activated :
                     if self.current_action in self.move_base_actions and self.current_node in self.current_route.source :
-                        nod_ind = self.current_route.source(self.current_node)
+                        nod_ind = self.current_route.source.index(self.current_node)
                         next_action = self.find_action(self.current_route.source[nod_ind], self.current_route.target[nod_ind])
                         if next_action in self.move_base_actions :
                             self.goal_reached=True

@@ -104,15 +104,19 @@ class PolicyExecutionServer(object):
         
         #print self.current_node
         result = self.followRoute(goal.route)
-      
-        self._result.success = result
-        self._feedback.route_status = self.current_node
-        self._as.publish_feedback(self._feedback)
-        if result:
-            self._as.set_succeeded(self._result)
-        else :
-            self._as.set_aborted(self._result)
-      
+    
+        if not self.cancelled :       
+            self._result.success = result
+            self._feedback.route_status = self.current_node
+            self._as.publish_feedback(self._feedback)
+            if result:
+                self._as.set_succeeded(self._result)
+            else :
+                self._as.set_aborted(self._result)
+        else:
+            self._result.success = False
+            self._as.set_preempted(self._result)
+
         #self._feedback.route_status = 'Starting...'
         #self._as.publish_feedback(self._feedback)
         #rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
@@ -155,21 +159,37 @@ class PolicyExecutionServer(object):
     def execute_policy(self, route):
         keep_executing=True
         while keep_executing :
-            if self.current_node in route.source:
+            if self.current_node in route.source and not self.cancelled :
                 nod_ind = route.source.index(self.current_node)
                 self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                 print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
                 success=self.navigate_to(self.current_action,route.target[nod_ind])
             else :
-                print "%s not in:" %self.current_node 
-                print route.source
-                if self.current_node == 'none' :
-                    print 'Do move_base to %s' %self.closest_node#(route.source[0])
-                    self.current_action = 'move_base'
-                    success=self.navigate_to(self.current_action,self.closest_node)
-                else :
-                    success = True
+                if self.cancelled:
+                    success = False
                     keep_executing = False
+                else :
+                    print "%s not in:" %self.current_node 
+                    print route.source
+                    if self.current_node == 'none' :
+                        if self.closest_node in route.source :
+                            nod_ind = route.source.index(self.closest_node)
+                            action = self.find_action(route.source[nod_ind], route.target[nod_ind])
+                            if action in self.move_base_actions :
+                                self.current_action = action
+                                print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                                success=self.navigate_to(self.current_action,route.target[nod_ind])
+                            else:                           
+                                print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                                self.current_action = 'move_base'
+                                success=self.navigate_to(self.current_action,self.closest_node)
+                        else :
+                            print 'Do move_base to %s' %self.closest_node
+                            self.current_action = 'move_base'
+                            success=self.navigate_to(self.current_action,self.closest_node)
+                    else :
+                        success = True
+                        keep_executing = False
         
         return success
 

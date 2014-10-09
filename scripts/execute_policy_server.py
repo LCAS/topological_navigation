@@ -303,11 +303,12 @@ class PolicyExecutionServer(object):
             else:
                 result = True
         else :
-            ps = self.monNavClient.get_result()
-            if ps.outcome != 'succeded' :
-                result = False
-            else :
-                result = True
+            result = True
+#            ps = self.monNavClient.get_result()
+#            if ps.outcome != 'succeded' :
+#                result = False
+#            else :
+#                result = True
         #rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 

@@ -49,7 +49,7 @@ class PolicyExecutionServer(object):
         self.current_action = 'none'
         
 #        self._target = "None"
-#        self.actions_needed=[]
+        self.move_base_actions = ['move_base','human_aware_navigation']
 #        self.navigation_activated=False
         self._action_name = '/topological_navigation/execute_policy_mode'
 #        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
@@ -199,7 +199,7 @@ class PolicyExecutionServer(object):
             self.current_node = msg.data
             if msg.data != 'none' :
                 print "new node reached %s" %self.current_node
-                if self.current_action == 'move_base' :
+                if self.current_action in self.move_base_actions :
                     self.goal_reached=True
                     #print "goal reached %s" %self.current_node
 
@@ -239,17 +239,11 @@ class PolicyExecutionServer(object):
 
         self.goal_reached=False
         self.monNavClient.send_goal(goal)
-                #        self.monNavClient.wait_for_result()
         status=self.monNavClient.get_state()
-#        while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled :
-#            status=self.monNavClient.get_state()
-
-        #rospy.loginfo(str(status))
-        #print status
         
         while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
             status=self.monNavClient.get_state()
-            #print self.goal_reached
+
 
         #rospy.loginfo(str(status))
         #print status
@@ -259,10 +253,9 @@ class PolicyExecutionServer(object):
                 if status is GoalStatus.PREEMPTED:
                     self.preempted = True
             else:
-                #print "I'm here"
                 result = True
 
-        rospy.sleep(rospy.Duration.from_sec(0.3))
+        #rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 
 

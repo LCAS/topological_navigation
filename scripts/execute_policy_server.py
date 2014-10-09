@@ -158,6 +158,7 @@ class PolicyExecutionServer(object):
 
     def execute_policy(self, route):
         keep_executing=True
+        success = True
         while keep_executing :
             if self.current_node in route.source and not self.cancelled :
                 if success :

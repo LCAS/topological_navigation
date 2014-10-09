@@ -192,6 +192,10 @@ class TopologicalNavServer(object):
                         self.cancelled = True
                         if self.nav_mode != 'Node_to_IZ':
                             self.monNavClient.cancel_all_goals()
+                else :
+                    if self.current_node == self.current_target and self._target != self.current_target :
+                        self.goal_reached=True
+                        
 
 
  
@@ -320,6 +324,7 @@ class TopologicalNavServer(object):
         nav_ok=True
         route_len = len(route)-2
 
+        #self.final_node = Targ
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
             #current action
@@ -347,7 +352,7 @@ class TopologicalNavServer(object):
             #print "move_base to:"
             inf = route[rindex+1].waypoint
             #print inf
-
+            self.current_target = route[rindex+1].name
             nav_ok= self.monitored_navigation(inf, a)
             params = { 'yaw_goal_tolerance' : self.dyt }
             config = self.rcnfclient.update_configuration(params)
@@ -433,18 +438,23 @@ class TopologicalNavServer(object):
         goal.target_pose.pose.orientation.z = float(inf[5])
         goal.target_pose.pose.orientation.w = float(inf[6])
 
+        self.goal_reached=False
         self.monNavClient.send_goal(goal)
                 #        self.monNavClient.wait_for_result()
         status=self.monNavClient.get_state()
-        while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled :
+        while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
             status=self.monNavClient.get_state()
 
         #rospy.loginfo(str(status))
         #print status
-        if status != GoalStatus.SUCCEEDED:
-            result = False
-            if status is GoalStatus.PREEMPTED:
-                self.preempted = True
+        if status != GoalStatus.SUCCEEDED :
+            if not self.goal_reached:
+                result = False
+                if status is GoalStatus.PREEMPTED:
+                    self.preempted = True
+            else:
+                result = True
+
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 

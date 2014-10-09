@@ -158,6 +158,7 @@ class PolicyExecutionServer(object):
             if self.current_node in route.source:
                 nod_ind = route.source.index(self.current_node)
                 self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
+                print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
                 success=self.navigate_to(self.current_action,route.target[nod_ind])
             else :
                 success = True
@@ -255,7 +256,7 @@ class PolicyExecutionServer(object):
                 if status is GoalStatus.PREEMPTED:
                     self.preempted = True
                     result = False
-                ps = self.monNavClient.get_state()
+                ps = self.monNavClient.get_result()
                 if ps.outcome != 'succeded' :
                     result = False
                 else:

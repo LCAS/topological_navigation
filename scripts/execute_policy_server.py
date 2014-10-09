@@ -163,8 +163,13 @@ class PolicyExecutionServer(object):
             else :
                 print "%s not in:" %self.current_node 
                 print route.source
-                success = True
-                keep_executing = False
+                if self.current_node == 'none' :
+                    print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                    self.current_action = 'move_base'
+                    success=self.navigate_to(self.current_action,self.closest_node)
+                else :
+                    success = True
+                    keep_executing = False
         
         return success
 

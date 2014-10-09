@@ -160,10 +160,22 @@ class PolicyExecutionServer(object):
         keep_executing=True
         while keep_executing :
             if self.current_node in route.source and not self.cancelled :
-                nod_ind = route.source.index(self.current_node)
-                self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
-                print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
-                success=self.navigate_to(self.current_action,route.target[nod_ind])
+                if success :
+                    nod_ind = route.source.index(self.current_node)
+                    self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
+                    print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                    success=self.navigate_to(self.current_action,route.target[nod_ind])
+                else :
+                    nod_ind = route.source.index(self.current_node)
+                    action = self.find_action(route.source[nod_ind], route.target[nod_ind])
+                    if action in self.move_base_actions :
+                        self.current_action = action
+                        print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                        success=self.navigate_to(self.current_action,route.target[nod_ind])
+                    else:                           
+                        print 'Do move_base to %s' %self.current_node#(route.source[0])
+                        self.current_action = 'move_base'
+                        success=self.navigate_to(self.current_action,self.current_node)
             else :
                 if self.cancelled:
                     success = False
@@ -190,7 +202,8 @@ class PolicyExecutionServer(object):
                     else :
                         success = True
                         keep_executing = False
-        
+            self._feedback.route_status = self.current_node
+            self._as.publish_feedback(self._feedback)
         return success
 
 

@@ -102,19 +102,35 @@ class PolicyExecutionServer(object):
         self.cancelled = False
         self.preempted = False
         
-        print self.current_node
+        #print self.current_node
         result = self.followRoute(goal.route)
       
         self._result.success = result
         self._feedback.route_status = self.current_node
         self._as.publish_feedback(self._feedback)
-        self._as.set_succeeded(self._result)
+        if result:
+            self._as.set_succeeded(self._result)
+        else :
+            self._as.set_aborted(self._result)
+      
         #self._feedback.route_status = 'Starting...'
         #self._as.publish_feedback(self._feedback)
         #rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
         #self.navigate(goal.target)
 
 
+    """
+     Preempt CallBack
+    """
+    def preemptCallback(self):
+        self.cancelled = True
+        self.preempted = True
+        self._result.success = False
+        self.monNavClient.cancel_all_goals()
+        self._as.set_preempted(self._result)
+    
+    
+    
 
     def followRoute(self, route):
         self.navigation_activated=True
@@ -165,19 +181,6 @@ class PolicyExecutionServer(object):
             print "source node not found"
         return action
 
-
-
-
-
-    """
-     Preempt CallBack
-    """
-    def preemptCallback(self):
-        self.cancelled = True
-        self.preempted = True
-        self._result.success = False
-        self.monNavClient.cancel_all_goals()
-        self._as.set_preempted(self._result)
 
 
 
@@ -249,9 +252,14 @@ class PolicyExecutionServer(object):
         #print status
         if status != GoalStatus.SUCCEEDED :
             if not self.goal_reached:
-                result = False
                 if status is GoalStatus.PREEMPTED:
                     self.preempted = True
+                    result = False
+                ps = self.monNavClient.get_state()
+                if ps.outcome != 'succeded' :
+                    result = False
+                else:
+                    result = True
             else:
                 result = True
 

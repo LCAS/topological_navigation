@@ -44,8 +44,8 @@ class PolicyExecutionServer(object):
     def __init__(self) :
         self.cancelled = False
         self.preempted = False
-        self.current_node = "Unknown"
-        self.closest_node = "Unknown"
+        self.current_node = 'none'
+        self.closest_node = 'none'
         self.current_action = 'none'
         
 #        self._target = "None"

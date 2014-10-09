@@ -161,6 +161,8 @@ class PolicyExecutionServer(object):
                 print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
                 success=self.navigate_to(self.current_action,route.target[nod_ind])
             else :
+                print "%s not in:" %self.current_node 
+                print route.source
                 success = True
                 keep_executing = False
         

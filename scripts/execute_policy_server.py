@@ -274,6 +274,7 @@ class PolicyExecutionServer(object):
                         nfails=0
                         success = True
                         keep_executing = False
+            rospy.sleep(rospy.Duration.from_sec(0.3))
             self._feedback.route_status = self.current_node
             self._as.publish_feedback(self._feedback)
         self.navigation_activated = False
@@ -295,6 +296,8 @@ class PolicyExecutionServer(object):
                         action = j.action
                 found = True
         if not found:
+            self._feedback.route_status = self.current_node
+            self._as.publish_feedback(self._feedback)
             print "source node not found"
         return action
 
@@ -339,6 +342,7 @@ class PolicyExecutionServer(object):
         
         while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
             status=self.monNavClient.get_state()
+            rospy.sleep(rospy.Duration.from_sec(0.1))
 
 
         #rospy.loginfo(str(status))

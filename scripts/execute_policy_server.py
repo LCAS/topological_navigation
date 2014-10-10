@@ -47,6 +47,7 @@ class PolicyExecutionServer(object):
         self.current_node = 'unknown'
         self.closest_node = 'unknown'
         self.current_action = 'none'
+        self.n_tries = 3        
         
 #        self._target = "None"
         self.move_base_actions = ['move_base','human_aware_navigation']
@@ -132,8 +133,8 @@ class PolicyExecutionServer(object):
         self.preempted = True
         self._result.success = False
         self.navigation_activated = False
-        self.monNavClient.cancel_all_goals()
-        self._as.set_preempted(self._result)
+        #self.monNavClient.cancel_all_goals()
+        #self._as.set_preempted(self._result)
     
 
     """
@@ -197,24 +198,31 @@ class PolicyExecutionServer(object):
         keep_executing=True
         success = True
         self.current_route = route
+        nfails=0
         while keep_executing :
             if self.current_node in route.source and not self.cancelled :
                 if success :
+                    nfails=0
                     nod_ind = route.source.index(self.current_node)
                     self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                     print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
                     success=self.navigate_to(self.current_action,route.target[nod_ind])
                 else :
-                    nod_ind = route.source.index(self.current_node)
-                    action = self.find_action(route.source[nod_ind], route.target[nod_ind])
-                    if action in self.move_base_actions :
-                        self.current_action = action
-                        print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
-                        success=self.navigate_to(self.current_action,route.target[nod_ind])
-                    else:                           
-                        print 'Do move_base to %s' %self.current_node#(route.source[0])
-                        self.current_action = 'move_base'
-                        success=self.navigate_to(self.current_action,self.current_node)
+                    nfails+=1
+                    if nfails < self.n_tries :
+                        nod_ind = route.source.index(self.current_node)
+                        action = self.find_action(route.source[nod_ind], route.target[nod_ind])
+                        if action in self.move_base_actions :
+                            self.current_action = action
+                            print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                            success=self.navigate_to(self.current_action,route.target[nod_ind])
+                        else:                           
+                            print 'Do move_base to %s' %self.current_node#(route.source[0])
+                            self.current_action = 'move_base'
+                            success=self.navigate_to(self.current_action,self.current_node)
+                    else:
+                        success = False
+                        keep_executing = False
             else :
                 if self.cancelled:
                     success = False
@@ -223,22 +231,28 @@ class PolicyExecutionServer(object):
                     print "%s not in:" %self.current_node 
                     print route.source
                     if self.current_node == 'none' :
-                        if self.closest_node in route.source :
-                            nod_ind = route.source.index(self.closest_node)
-                            action = self.find_action(route.source[nod_ind], route.target[nod_ind])
-                            if action in self.move_base_actions :
-                                self.current_action = action
-                                print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
-                                success=self.navigate_to(self.current_action,route.target[nod_ind])
-                            else:                           
-                                print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                        nfails+=1
+                        if nfails < self.n_tries :
+                            if self.closest_node in route.source :
+                                nod_ind = route.source.index(self.closest_node)
+                                action = self.find_action(route.source[nod_ind], route.target[nod_ind])
+                                if action in self.move_base_actions :
+                                    self.current_action = action
+                                    print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                                    success=self.navigate_to(self.current_action,route.target[nod_ind])
+                                else:                           
+                                    print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                                    self.current_action = 'move_base'
+                                    success=self.navigate_to(self.current_action,self.closest_node)
+                            else :
+                                print 'Do move_base to %s' %self.closest_node
                                 self.current_action = 'move_base'
                                 success=self.navigate_to(self.current_action,self.closest_node)
-                        else :
-                            print 'Do move_base to %s' %self.closest_node
-                            self.current_action = 'move_base'
-                            success=self.navigate_to(self.current_action,self.closest_node)
+                        else:
+                            success = False
+                            keep_executing = False
                     else :
+                        nfails=0
                         success = True
                         keep_executing = False
             self._feedback.route_status = self.current_node

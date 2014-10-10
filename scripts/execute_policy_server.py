@@ -176,7 +176,7 @@ class PolicyExecutionServer(object):
      
     """
     def followRoute(self, route):
-        self.navigation_activated=True
+        
 
         for i in range(0, len(route.source)):
             action = self.find_action(route.source[i], route.target[i])
@@ -189,7 +189,7 @@ class PolicyExecutionServer(object):
         
         result=self.execute_policy(route)
         
-        self.navigation_activated = False
+        
         #result=True
         return result
 
@@ -202,6 +202,7 @@ class PolicyExecutionServer(object):
         keep_executing=True
         success = True
         self.current_route = route
+        self.navigation_activated=True
         nfails=0
         while keep_executing :
             if self.current_node in route.source and not self.cancelled :
@@ -275,6 +276,7 @@ class PolicyExecutionServer(object):
                         keep_executing = False
             self._feedback.route_status = self.current_node
             self._as.publish_feedback(self._feedback)
+        self.navigation_activated = False
         return success
 
 

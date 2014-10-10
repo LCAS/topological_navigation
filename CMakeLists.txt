@@ -58,7 +58,7 @@ add_action_files(
   DIRECTORY action
   FILES 
   GotoNode.action
-  ExecutePolicy.action
+#  ExecutePolicy.action
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -67,7 +67,7 @@ generate_messages(
    std_msgs 
    actionlib_msgs 
    sensor_msgs
-   strands_navigation_msgs
+#   strands_navigation_msgs
 )
 
 ###################################

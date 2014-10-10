@@ -10,13 +10,17 @@ import calendar
 from time import sleep
 from datetime import datetime
 
-from strands_navigation_msgs.msg import MonitoredNavigationAction
-from strands_navigation_msgs.msg import MonitoredNavigationGoal
-from strands_navigation_msgs.msg import NavStatistics
 
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from std_msgs.msg import String
+
+from strands_navigation_msgs.msg import MonitoredNavigationAction
+from strands_navigation_msgs.msg import MonitoredNavigationGoal
+from strands_navigation_msgs.msg import MonitoredNavigationGoal
+
+from strands_navigation_msgs.msg import NavStatistics
+
 
 #from strands_navigation_msgs.msg import TopologicalNode
 from strands_navigation_msgs.msg import TopologicalMap
@@ -25,6 +29,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.navigation_stats import *
 
 import topological_navigation.msg
+import strands_navigation_msgs.msg
 #import dynamic_reconfigure.client
 
 
@@ -34,8 +39,8 @@ import topological_navigation.msg
 """
 
 class PolicyExecutionServer(object):
-    _feedback = topological_navigation.msg.ExecutePolicyFeedback()
-    _result   = topological_navigation.msg.ExecutePolicyResult()
+    _feedback = strands_navigation_msgs.msg.ExecutePolicyModeFeedback()
+    _result   = strands_navigation_msgs.msg.ExecutePolicyModeResult()
 
     """
      Initialization for Policy Execution Class
@@ -64,7 +69,7 @@ class PolicyExecutionServer(object):
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.ExecutePolicyAction, execute_cb = self.executeCallback, auto_start = False)
+        self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
         rospy.loginfo(" ...starting")
         self._as.start()
@@ -370,11 +375,8 @@ class PolicyExecutionServer(object):
 
     def _on_node_shutdown(self):
         self.cancelled = True
-        #self.preempted = True
-        #self._result.success = False
-        #self.navigation_activated = False
-        #self.monNavClient.cancel_all_goals()
-        #self._as.set_preempted(self._result)
+
+
 
 if __name__ == '__main__':
     mode="normal"

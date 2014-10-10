@@ -1,8 +1,0 @@
-#goal definition
-strands_navigation_msgs/NavRoute route
----
-#result definition
-bool success
----
-#feedback
-string route_status

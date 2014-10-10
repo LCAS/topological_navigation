@@ -56,7 +56,6 @@ class PolicyExecutionServer(object):
         self.n_tries = 3        
         
         rospy.on_shutdown(self._on_node_shutdown)
-#        self._target = "None"
         self.move_base_actions = ['move_base','human_aware_navigation']
         self.navigation_activated=False
         self._action_name = '/topological_navigation/execute_policy_mode'
@@ -69,7 +68,7 @@ class PolicyExecutionServer(object):
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(self._action_name, topological_navigation.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
+        self._as = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
         rospy.loginfo(" ...starting")
         self._as.start()
@@ -216,12 +215,14 @@ class PolicyExecutionServer(object):
                     nod_ind = route.source.index(self.current_node)
                     self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                     if self.current_action != 'none':
+                        # There is an edge between these two nodes
                         print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
                         success=self.navigate_to(self.current_action,route.target[nod_ind])
                     else:
+                        # There is NO edge between these two nodes so abort the exctution
                         success = False
                         keep_executing = False
-                    
+                        rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])                    
                 else :
                     nfails+=1
                     if nfails < self.n_tries :
@@ -286,6 +287,7 @@ class PolicyExecutionServer(object):
         return success
 
 
+
     """
      Find Action
          
@@ -308,16 +310,11 @@ class PolicyExecutionServer(object):
 
 
 
+
     """
-     Map CallBack
+     Navigate to
      
     """
-    def MapCallback(self, msg) :
-        self.lnodes = msg.nodes
-#        for i in self.lnodes : 
-#            print i
-
-
     def navigate_to(self, action, node):
         found = False
         for i in self.lnodes:
@@ -331,8 +328,12 @@ class PolicyExecutionServer(object):
         else :
             result = False
         return result
-        
-    
+
+
+    """
+     Monitored Navigation
+     
+    """
     def monitored_navigation(self, pose, command):
         result = True
         goal=MonitoredNavigationGoal()
@@ -350,29 +351,29 @@ class PolicyExecutionServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.1))
 
 
-        #rospy.loginfo(str(status))
-        #print status
         if status != GoalStatus.SUCCEEDED :
             if not self.goal_reached:
                 result = False
-#                if status is GoalStatus.PREEMPTED:
-#                    self.preempted = True
-#                    result = False
-#                else:
-#                    result = True
             else:
                 result = True
         else :
             result = True
-#            ps = self.monNavClient.get_result()
-#            if ps.outcome != 'succeded' :
-#                result = False
-#            else :
-#                result = True
-        #rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 
 
+    """
+     Map CallBack
+     
+    """
+    def MapCallback(self, msg) :
+        self.lnodes = msg.nodes
+
+
+
+    """
+     Node Shutdown CallBack
+     
+    """
     def _on_node_shutdown(self):
         self.cancelled = True
 
@@ -380,10 +381,5 @@ class PolicyExecutionServer(object):
 
 if __name__ == '__main__':
     mode="normal"
-#    if len(sys.argv) > 2:
-#        print str(sys.argv[2])
-#        if str(sys.argv[2]) == "true":
-#            mode="Node_by_Node"
-#            print "Node_by_Node"
     rospy.init_node('execute_policy_mode')
     server = PolicyExecutionServer()

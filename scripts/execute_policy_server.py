@@ -97,36 +97,6 @@ class PolicyExecutionServer(object):
 
 
     """
-     Execute CallBack
-     
-     This Functions is called when the Action Server is called
-    """
-    def executeCallback(self, goal):
-        self.cancelled = False
-        self.preempted = False
-        
-        #print self.current_node
-        result = self.followRoute(goal.route)
-    
-        if not self.cancelled :       
-            self._result.success = result
-            self._feedback.route_status = self.current_node
-            self._as.publish_feedback(self._feedback)
-            if result:
-                self._as.set_succeeded(self._result)
-            else :
-                self._as.set_aborted(self._result)
-        else:
-            self._result.success = False
-            self._as.set_preempted(self._result)
-
-        #self._feedback.route_status = 'Starting...'
-        #self._as.publish_feedback(self._feedback)
-        #rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
-        #self.navigate(goal.target)
-
-
-    """
      Preempt CallBack
      
     """
@@ -166,6 +136,38 @@ class PolicyExecutionServer(object):
                             self.goal_reached=True
                     #print "goal reached %s" %self.current_node
 
+
+    """
+     Execute CallBack
+     
+     This Functions is called when the Action Server is called
+    """
+    def executeCallback(self, goal):
+        self.cancelled = False
+        self.preempted = False
+        
+        #print self.current_node
+        result = self.followRoute(goal.route)
+    
+        if not self.cancelled :       
+            self._result.success = result
+            self._feedback.route_status = self.current_node
+            self._as.publish_feedback(self._feedback)
+            if result:
+                self._as.set_succeeded(self._result)
+            else :
+                self._as.set_aborted(self._result)
+        else:
+            if self.preempted :
+                self._result.success = False
+                self._as.set_preempted(self._result)
+            else : 
+                self._result.success = False
+                self._as.set_aborted(self._result)
+        #self._feedback.route_status = 'Starting...'
+        #self._as.publish_feedback(self._feedback)
+        #rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
+        #self.navigate(goal.target)
 
 
     
@@ -362,11 +364,11 @@ class PolicyExecutionServer(object):
 
     def _on_node_shutdown(self):
         self.cancelled = True
-        self.preempted = True
-        self._result.success = False
-        self.navigation_activated = False
-        self.monNavClient.cancel_all_goals()
-        self._as.set_preempted(self._result)
+        #self.preempted = True
+        #self._result.success = False
+        #self.navigation_activated = False
+        #self.monNavClient.cancel_all_goals()
+        #self._as.set_preempted(self._result)
 
 if __name__ == '__main__':
     mode="normal"

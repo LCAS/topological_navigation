@@ -44,11 +44,13 @@ class PolicyExecutionServer(object):
     def __init__(self) :
         self.cancelled = False
         self.preempted = False
+        #self.aborted = False
         self.current_node = 'unknown'
         self.closest_node = 'unknown'
         self.current_action = 'none'
         self.n_tries = 3        
         
+        rospy.on_shutdown(self._on_node_shutdown)
 #        self._target = "None"
         self.move_base_actions = ['move_base','human_aware_navigation']
         self.navigation_activated=False
@@ -133,7 +135,7 @@ class PolicyExecutionServer(object):
         self.preempted = True
         self._result.success = False
         self.navigation_activated = False
-        #self.monNavClient.cancel_all_goals()
+        self.monNavClient.cancel_all_goals()
         #self._as.set_preempted(self._result)
     
 
@@ -205,21 +207,30 @@ class PolicyExecutionServer(object):
                     nfails=0
                     nod_ind = route.source.index(self.current_node)
                     self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
-                    print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
-                    success=self.navigate_to(self.current_action,route.target[nod_ind])
+                    if self.current_action != 'none':
+                        print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                        success=self.navigate_to(self.current_action,route.target[nod_ind])
+                    else:
+                        success = False
+                        keep_executing = False
+                    
                 else :
                     nfails+=1
                     if nfails < self.n_tries :
                         nod_ind = route.source.index(self.current_node)
                         action = self.find_action(route.source[nod_ind], route.target[nod_ind])
-                        if action in self.move_base_actions :
-                            self.current_action = action
-                            print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
-                            success=self.navigate_to(self.current_action,route.target[nod_ind])
-                        else:                           
-                            print 'Do move_base to %s' %self.current_node#(route.source[0])
-                            self.current_action = 'move_base'
-                            success=self.navigate_to(self.current_action,self.current_node)
+                        if action != 'none':
+                            if action in self.move_base_actions :
+                                self.current_action = action
+                                print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                                success=self.navigate_to(self.current_action,route.target[nod_ind])
+                            else:                           
+                                print 'Do move_base to %s' %self.current_node#(route.source[0])
+                                self.current_action = 'move_base'
+                                success=self.navigate_to(self.current_action,self.current_node)
+                        else:
+                            success = False
+                            keep_executing = False
                     else:
                         success = False
                         keep_executing = False
@@ -227,6 +238,7 @@ class PolicyExecutionServer(object):
                 if self.cancelled:
                     success = False
                     keep_executing = False
+                    break
                 else :
                     print "%s not in:" %self.current_node 
                     print route.source
@@ -236,14 +248,18 @@ class PolicyExecutionServer(object):
                             if self.closest_node in route.source :
                                 nod_ind = route.source.index(self.closest_node)
                                 action = self.find_action(route.source[nod_ind], route.target[nod_ind])
-                                if action in self.move_base_actions :
-                                    self.current_action = action
-                                    print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
-                                    success=self.navigate_to(self.current_action,route.target[nod_ind])
-                                else:                           
-                                    print 'Do move_base to %s' %self.closest_node#(route.source[0])
-                                    self.current_action = 'move_base'
-                                    success=self.navigate_to(self.current_action,self.closest_node)
+                                if action != 'none':
+                                    if action in self.move_base_actions :
+                                        self.current_action = action
+                                        print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
+                                        success=self.navigate_to(self.current_action,route.target[nod_ind])
+                                    else:                           
+                                        print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                                        self.current_action = 'move_base'
+                                        success=self.navigate_to(self.current_action,self.closest_node)
+                                else:
+                                    success = False
+                                    keep_executing = False
                             else :
                                 print 'Do move_base to %s' %self.closest_node
                                 self.current_action = 'move_base'
@@ -344,8 +360,13 @@ class PolicyExecutionServer(object):
         return result
 
 
-
-
+    def _on_node_shutdown(self):
+        self.cancelled = True
+        self.preempted = True
+        self._result.success = False
+        self.navigation_activated = False
+        self.monNavClient.cancel_all_goals()
+        self._as.set_preempted(self._result)
 
 if __name__ == '__main__':
     mode="normal"

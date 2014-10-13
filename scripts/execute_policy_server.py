@@ -131,8 +131,9 @@ class PolicyExecutionServer(object):
             self.current_node = msg.data
             if msg.data != 'none' :
                 print "new node reached %s" %self.current_node
-                
                 if self.navigation_activated :
+                    self._feedback.route_status = self.current_node
+                    self._as.publish_feedback(self._feedback)
                     if self.current_action in self.move_base_actions and self.current_node in self.current_route.source :
                         nod_ind = self.current_route.source.index(self.current_node)
                         next_action = self.find_action(self.current_route.source[nod_ind], self.current_route.target[nod_ind])
@@ -155,8 +156,8 @@ class PolicyExecutionServer(object):
     
         if not self.cancelled :       
             self._result.success = result
-            self._feedback.route_status = self.current_node
-            self._as.publish_feedback(self._feedback)
+            #self._feedback.route_status = self.current_node
+            #self._as.publish_feedback(self._feedback)
             if result:
                 self._as.set_succeeded(self._result)
             else :
@@ -281,8 +282,6 @@ class PolicyExecutionServer(object):
                         success = True
                         keep_executing = False
             rospy.sleep(rospy.Duration.from_sec(0.3))
-            self._feedback.route_status = self.current_node
-            self._as.publish_feedback(self._feedback)
         self.navigation_activated = False
         return success
 

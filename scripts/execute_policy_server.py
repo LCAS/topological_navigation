@@ -12,11 +12,10 @@ from datetime import datetime
 
 
 from actionlib_msgs.msg import *
-from move_base_msgs.msg import *
+#from move_base_msgs.msg import *
 from std_msgs.msg import String
 
 from strands_navigation_msgs.msg import MonitoredNavigationAction
-from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
 
 from strands_navigation_msgs.msg import NavStatistics
@@ -42,6 +41,7 @@ class PolicyExecutionServer(object):
     _feedback = strands_navigation_msgs.msg.ExecutePolicyModeFeedback()
     _result   = strands_navigation_msgs.msg.ExecutePolicyModeResult()
 
+
     """
      Initialization for Policy Execution Class
     
@@ -59,7 +59,7 @@ class PolicyExecutionServer(object):
         self.move_base_actions = ['move_base','human_aware_navigation']
         self.navigation_activated=False
         self._action_name = '/topological_navigation/execute_policy_mode'
-#        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
+        self.stats_pub = rospy.Publisher('/execute_policy_mode/Statistics', NavStatistics)
 
 
         self.lnodes = []
@@ -127,19 +127,23 @@ class PolicyExecutionServer(object):
      
     """
     def currentNodeCallback(self, msg):
-        if self.current_node != msg.data :
-            self.current_node = msg.data
-            if msg.data != 'none' :
-                print "new node reached %s" %self.current_node
-                if self.navigation_activated :
-                    self._feedback.route_status = self.current_node
-                    self._as.publish_feedback(self._feedback)
-                    if self.current_action in self.move_base_actions and self.current_node in self.current_route.source :
+        if self.current_node != msg.data :  #is there any change on this topic?
+            self.current_node = msg.data    #we are at this new node
+            if msg.data != 'none' :         #are we at a node?
+                rospy.loginfo('new node reached %s', self.current_node)
+                #print "new node reached %s" %self.current_node
+                if self.navigation_activated :  #is the action server active?
+                    self.stat.set_at_node()
+                    self._feedback.route_status = self.current_node 
+                    self._as.publish_feedback(self._feedback)       #Publish Feedback
+                    # If the current action is a move_base type action and there is a new node in the route connected 
+                    # by another move_base type action the goal will be set as reached so a new goal can be called in
+                    # execute_policy
+                    if self.current_action in self.move_base_actions and self.current_node in self.current_route.source : 
                         nod_ind = self.current_route.source.index(self.current_node)
                         next_action = self.find_action(self.current_route.source[nod_ind], self.current_route.target[nod_ind])
                         if next_action in self.move_base_actions :
                             self.goal_reached=True
-                    #print "goal reached %s" %self.current_node
 
 
     """
@@ -150,11 +154,11 @@ class PolicyExecutionServer(object):
     def executeCallback(self, goal):
         self.cancelled = False
         self.preempted = False
-        
-        #print self.current_node
+
+                
         result = self.followRoute(goal.route)
     
-        if not self.cancelled :       
+        if not self.cancelled :     
             self._result.success = result
             #self._feedback.route_status = self.current_node
             #self._as.publish_feedback(self._feedback)
@@ -181,17 +185,20 @@ class PolicyExecutionServer(object):
      
     """
     def followRoute(self, route):
-        
 
-        for i in range(0, len(route.source)):
-            action = self.find_action(route.source[i], route.target[i])
-            print '%s -(%s)-> %s' %(route.source[i], action, route.target[i])
+#        for i in range(0, len(route.source)):
+#            action = self.find_action(route.source[i], route.target[i])
+#            print '%s -(%s)-> %s' %(route.source[i], action, route.target[i])
 
-        #If the robot is not on a node navigate to closest node
+
+        # If the robot is not on a node navigate to closest node
         if self.current_node == 'none' :
             print 'Do move_base to %s' %self.closest_node#(route.source[0])
             result=self.navigate_to('move_base',self.closest_node)
-        
+
+        #if self.current_node in route.source:
+                
+        # execute policies
         result=self.execute_policy(route)
         
         
@@ -204,13 +211,19 @@ class PolicyExecutionServer(object):
      
     """
     def execute_policy(self, route):
-        keep_executing=True
+        keep_executing=True  # Flag Variable to remain in loop until all conditions are met
         success = True
+        
         self.current_route = route
         self.navigation_activated=True
-        nfails=0
+
+        nfails=0            # number of continous failures
+        
         while keep_executing :
+
             if self.current_node in route.source and not self.cancelled :
+                # If there is an action associated to the current node and action server not preempted or aborted
+
                 if success :
                     nfails=0
                     nod_ind = route.source.index(self.current_node)
@@ -220,10 +233,10 @@ class PolicyExecutionServer(object):
                         print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
                         success=self.navigate_to(self.current_action,route.target[nod_ind])
                     else:
-                        # There is NO edge between these two nodes so abort the exctution
+                        # There is NO edge between these two nodes so abort the execution
                         success = False
                         keep_executing = False
-                        rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])                    
+                        rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
                 else :
                     nfails+=1
                     if nfails < self.n_tries :
@@ -244,40 +257,53 @@ class PolicyExecutionServer(object):
                     else:
                         success = False
                         keep_executing = False
+
             else :
                 if self.cancelled:
+                    # Execution was preempted or aborted
                     success = False
                     keep_executing = False
                     break
                 else :
-                    print "%s not in:" %self.current_node 
-                    print route.source
+                    # No action associated with current node
+                    #print "%s not in:" %self.current_node 
+                    #print route.source
                     if self.current_node == 'none' :
+                        # if current_node is none then is a failure
                         nfails+=1
                         if nfails < self.n_tries :
                             if self.closest_node in route.source :
+                                # Retry using policy from closest node
                                 nod_ind = route.source.index(self.closest_node)
                                 action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                                 if action != 'none':
                                     if action in self.move_base_actions :
+                                        # If closest_node and its target are connected by move_base type action nvigate to target
                                         self.current_action = action
                                         print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, route.target[nod_ind])
                                         success=self.navigate_to(self.current_action,route.target[nod_ind])
-                                    else:                           
+                                    else:
+                                        # If closest_node and its target are not connected by move_base type action nvigate to closest_node
                                         print 'Do move_base to %s' %self.closest_node#(route.source[0])
                                         self.current_action = 'move_base'
                                         success=self.navigate_to(self.current_action,self.closest_node)
                                 else:
+                                    # No edge between Closest Node and its target Abort execution
                                     success = False
                                     keep_executing = False
+                                    rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
+                                    break
                             else :
+                                # Closest node not in route navigate to it (if it suceeds policy execution will be successful)
                                 print 'Do move_base to %s' %self.closest_node
                                 self.current_action = 'move_base'
                                 success=self.navigate_to(self.current_action,self.closest_node)
                         else:
+                            #Maximun number of failures exceeded
                             success = False
                             keep_executing = False
                     else :
+                        # Current node not in route so policy execution was successful
                         nfails=0
                         success = True
                         keep_executing = False
@@ -321,12 +347,36 @@ class PolicyExecutionServer(object):
                 found = True
                 target_pose = i.pose
                 break
+        
         if found:
             self.current_action = action
+            
+            # Creating Navigation Object
+            self.stat=nav_stats(self.current_node, node, self.topol_map)
+            #dt_text=self.stat.get_start_time_str()
+
             result = self.monitored_navigation(target_pose, action)
+
+
+            self.stat.set_ended(self.current_node)
+
+            if result :
+                self.stat.status= "success"
+                #rospy.loginfo("navigation finished on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+            else :
+                if self.current_node != 'none' :
+                    #rospy.loginfo("navigation failed on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                    self.stat.status= "failed"
+                else :
+                    #rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                    self.stat.status= "fatal"
+            self.publish_stats()
+
         else :
+            # That node is not on the map
             result = False
         return result
+
 
 
     """
@@ -361,10 +411,39 @@ class PolicyExecutionServer(object):
 
 
     """
+     Publish Stats
+     
+    """
+    def publish_stats(self):
+        pubst = NavStatistics()
+        pubst.status = self.stat.status
+        pubst.origin = self.stat.origin
+        pubst.target = self.stat.target
+        pubst.topological_map = self.stat.topological_map
+        pubst.final_node = self.stat.final_node
+        pubst.time_to_waypoint = self.stat.time_to_wp
+        pubst.operation_time = self.stat.operation_time
+        pubst.date_started = self.stat.get_start_time_str()
+        pubst.date_at_node = self.stat.date_at_node.strftime('%A, %B %d %Y, at %H:%M:%S hours')
+        pubst.date_finished = self.stat.get_finish_time_str()
+        self.stats_pub.publish(pubst)
+
+        meta = {}
+        meta["type"] = "Topological Navigation Stat"
+        meta["epoch"] = calendar.timegm(self.stat.date_at_node.timetuple())
+        meta["date"] = self.stat.date_at_node.strftime('%A, %B %d %Y, at %H:%M:%S hours')
+        meta["pointset"] = self.stat.topological_map
+
+        msg_store = MessageStoreProxy()
+        msg_store.insert(pubst,meta)
+
+
+    """
      Map CallBack
      
     """
     def MapCallback(self, msg) :
+        self.topol_map = msg.name
         self.lnodes = msg.nodes
 
 

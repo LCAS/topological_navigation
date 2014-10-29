@@ -2,8 +2,17 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.1 (2014-10-29)
+Forthcoming
+-----------
+* Merge pull request `#94 <https://github.com/strands-project/strands_navigation/issues/94>`_ from Jailander/hydro-devel
+  fixing mongodb_store deps
+* fixing mongodb_store deps
+* Contributors: Jaime Pulido Fentanes, Marc Hanheide
+
+0.0.2 (2014-10-29)
 ------------------
+* 0.0.1
+* added changelogs
 * Adding install targets
 * including visualization_msgs in package xml to sort `#83 <https://github.com/strands-project/strands_navigation/issues/83>`_
 * Adding Missing TopologicalMap.msg and changing maintainer emails, names and Licences for Packages
@@ -40,4 +49,4 @@ Changelog for package topological_utils
 * adding node message and move base reconfigure
 * preliminary switch to ros_datacentre
 * Adding Topological_Utils to repository
-* Contributors: Bruno Lacerda, Christian Dondrup, Jaime Pulido Fentanes, Nick Hawes
+* Contributors: Bruno Lacerda, Christian Dondrup, Jaime Pulido Fentanes, Marc Hanheide, Nick Hawes

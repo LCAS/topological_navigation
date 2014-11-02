@@ -125,6 +125,8 @@ include_directories(
    scripts/localisation.py
    scripts/nav_client.py
    scripts/navigation.py
+   scripts/visualise_map.py 
+   scripts/map_publisher.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

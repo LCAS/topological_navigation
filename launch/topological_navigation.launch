@@ -6,10 +6,10 @@
 
 	<machine name="$(arg machine)" address="$(arg machine)" env-loader="/opt/strands/strands_catkin_ws/devel/env.sh" user="$(arg user)" default="true"/>
 
-	<node pkg="topological_map_manager" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/>
+	<node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/>
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen"/>
 	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen"/>
-	<node pkg="topological_map_manager" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>
+	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>
 
 </launch>

@@ -4,7 +4,10 @@
   <version>0.0.4</version>
   <description>The topological_navigation package</description>
 
+
   <maintainer email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</maintainer>
+
+  <author>Jaime Pulido Fentanes</author>
 
   <license>MIT</license>
 
@@ -21,6 +24,7 @@
   <build_depend>actionlib_msgs</build_depend>
   <build_depend>strands_navigation_msgs</build_depend>
   <build_depend>mongodb_store</build_depend>
+  <build_depend>visualization_msgs</build_depend>
 
   <run_depend>rospy</run_depend>
   <run_depend>message_runtime</run_depend>
@@ -33,6 +37,7 @@
   <run_depend>actionlib_msgs</run_depend>
   <run_depend>mongodb_store</run_depend>
   <run_depend>strands_navigation_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
 
 
 

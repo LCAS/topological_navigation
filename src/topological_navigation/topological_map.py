@@ -3,9 +3,7 @@ import math
 import rospy
 
 from topological_navigation.topological_node import *
-from strands_navigation_msgs.msg import TopologicalNode
-from topological_utils.msg import Edge
-from topological_utils.msg import Vertex
+from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 
 
 from mongodb_store.message_store import MessageStoreProxy

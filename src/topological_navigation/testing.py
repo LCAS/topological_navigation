@@ -5,10 +5,9 @@ import sys
 
 import std_msgs.msg
 from topological_navigation.topological_node import *
-from strands_navigation_msgs.msg import TopologicalNode
-from strands_navigation_msgs.msg import TopologicalMap
+from strands_navigation_msgs.msg import TopologicalNode, TopologicalMap, Edge
 from geometry_msgs.msg import Pose, Point
-from topological_utils.msg import Edge
+
 
 def create_cross_map(width, height, nodeSeparation):
     """ Creates a vertical cross with 5 nodes in each line, with the middle at 0,0 """

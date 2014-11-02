@@ -22,7 +22,7 @@ class TestTravelTimeEstimator(unittest.TestCase):
         # create a test topological map
         width = 5 
         height = 5 
-        nodeSeparation = 10
+        nodeSeparation = 10.0
 
         test_nodes = topological_navigation.testing.create_cross_map(width = width, height = height, nodeSeparation = nodeSeparation)
         self.assertEqual(len(test_nodes), width + height - 1)
@@ -57,8 +57,9 @@ class TestTravelTimeEstimator(unittest.TestCase):
         time_srv_name = 'topological_navigation/travel_time_estimator'
         rospy.wait_for_service(time_srv_name, timeout=10)
         time_srv = rospy.ServiceProxy(time_srv_name, EstimateTravelTime)
-        time_estimate = time_srv(startNode.name, endNode.name)
-        print time_estimate
+        time_estimate = time_srv(startNode.name, endNode.name).travel_time
+        # the time should be (at least for now) at least as long as the straight-line distance at 1m/s
+        self.assertGreaterEqual(time_estimate.to_sec(), (width - 1) * nodeSeparation)
 
 
 if __name__ == '__main__':

@@ -1,2 +1,0 @@
-string node
-string action

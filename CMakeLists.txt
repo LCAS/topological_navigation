@@ -8,24 +8,6 @@ find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generat
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 # catkin_python_setup()
 
-################################################
-## Declare ROS messages, services and actions ##
-################################################
-
-## Generate messages in the 'msg' folder
- add_message_files(
-   FILES
-   Edge.msg
-   Vertex.msg
- )
-
-
-## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   std_msgs
-   geometry_msgs
- )
 
 
 ###################################

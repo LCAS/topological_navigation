@@ -72,9 +72,13 @@ catkin_package(
    scripts/node_rm.py
    scripts/rm_map_from_db.py
    scripts/tmap_from_waypoints.py
+   scripts/dummy_topological_navigation
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
+install(DIRECTORY launch
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
 
 
 ## Mark executables and/or libraries for installation

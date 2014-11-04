@@ -17,7 +17,7 @@ def create_cross_map(width, height, nodeSeparation):
 
     nodes = dict()
 
-    originNode = TopologicalNode(name='origin', pose=Pose(position=Point(xOrigin, yOrigin, 0)))
+    originNode = TopologicalNode(name='ChargingPoint', pose=Pose(position=Point(xOrigin, yOrigin, 0)))
     nodes['origin'] = originNode
 
 

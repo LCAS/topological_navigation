@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.5 (2014-11-05)
+------------------
 * adding joystick creation of topological map
 * Added dummy script to stand in for topological navigation when missing a robot or proper simulation.
   Useful for testing.

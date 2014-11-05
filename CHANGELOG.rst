@@ -2,6 +2,21 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'hydro-devel' of https://github.com/strands-project/strands_navigation into hydro-devel
+  Conflicts:
+  topological_utils/CMakeLists.txt
+* adding install targets
+* adding joystick creation of topological map
+* Added launch file for dummy topological navigation and install targets.
+* Added dummy script to stand in for topological navigation when missing a robot or proper simulation.
+  Useful for testing.
+* Adding licences and bug fix
+* Moved Vertex and Edge into strands_navigation_msgs.
+  Basic test for travel_time_tester passes.
+* Contributors: Jaime Pulido Fentanes, Nick Hawes
+
 0.0.4 (2014-10-30)
 ------------------
 

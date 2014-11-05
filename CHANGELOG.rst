@@ -2,6 +2,20 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* adding joystick creation of topological map
+* Added dummy script to stand in for topological navigation when missing a robot or proper simulation.
+  Useful for testing.
+* Adding licences and bug fix
+* Added launch file for test, and test passing locally.
+* Moved Vertex and Edge into strands_navigation_msgs.
+  Basic test for travel_time_tester passes.
+* Added travel_time_estimator to standard launch file.
+* Merge topological_navigation and topological_map_manager packages.
+  Added the EstimateTravelTime service to provide a clean way of getting travel times of the topological map.
+* Contributors: Jaime Pulido Fentanes, Nick Hawes
+
 0.0.4 (2014-10-30)
 ------------------
 

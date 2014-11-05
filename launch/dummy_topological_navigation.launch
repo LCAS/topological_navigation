@@ -1,0 +1,10 @@
+<launch>
+	
+	<node pkg="topological_utils" type="dummy_topological_navigation" name="dummy_topological_navigation">
+		<param name="simulate_time" value="false"/>
+	</node>
+
+	<node pkg="topological_navigation" type="travel_time_estimator" name="travel_time_estimator"/>
+
+
+</launch>

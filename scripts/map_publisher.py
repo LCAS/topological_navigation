@@ -12,6 +12,7 @@ from mongodb_store.message_store import MessageStoreProxy
 
 from topological_navigation.publisher import map_publisher
 
+
 if __name__ == '__main__' :
     point_set = sys.argv[1]
     rospy.init_node("topological_map_publisher")

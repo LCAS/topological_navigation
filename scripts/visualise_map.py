@@ -47,19 +47,26 @@ class TopologicalMapVis(object):
         self.in_feedback=False
         self._point_set=filename
         
+        rospy.loginfo("Creating Publishers ...")
         self.map_pub = rospy.Publisher('/topological_nodes_array', MarkerArray)
         self.map_zone_pub = rospy.Publisher('/topological_node_zones_array', MarkerArray)
         self.map_edge_pub = rospy.Publisher('/topological_edges_array', MarkerArray)
         self.map_edge_std_pub = rospy.Publisher('/topological_edges_deviation', MarkerArray)
         self.policies_pub = rospy.Publisher('/topological_edges_policies', MarkerArray)
-
-
+        rospy.loginfo("Done ...")
+        
+        rospy.loginfo("Edge Controllers ...")
         self.edge_cont = edge_controllers(self._point_set)
+        rospy.loginfo("Vertex Controllers ...")
         self.vert_cont = vertex_controllers(self._point_set)
+        rospy.loginfo("Waypoint Controllers ...")
         self.node_cont = waypoint_controllers(self._point_set)
+        rospy.loginfo("Go To Controllers ...")
         self.goto_cont = go_to_controllers(self._point_set)
+        rospy.loginfo("Node Manager Controllers ...")
         self.add_rm_node = node_manager(self._point_set)
-
+        rospy.loginfo("Done ...")
+        
         
         self.subs = rospy.Subscriber("/top_nodes_std", NavRoute, self.route_callback)
         self.subs3 = rospy.Subscriber("/mdp_plan_exec/current_policy_mode", NavRoute, self.policies_callback)       

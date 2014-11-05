@@ -10,8 +10,8 @@ from strands_navigation_msgs.msg import TopologicalMap
 
 from mongodb_store.message_store import MessageStoreProxy
 
-class map_publisher(object):
 
+class map_publisher(object):
 
     def __init__(self, name) :
         self.name = name
@@ -29,35 +29,45 @@ class map_publisher(object):
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)        
 
+
+
     def loadMap(self, point_set) :
         msg_store = MessageStoreProxy(collection='topological_maps')
     
         query_meta = {}
         query_meta["pointset"] = point_set
 
-        available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
+        # waiting for the map to be in the mongodb_store
+        ntries=1
+        map_found=False
+        
+        while not map_found :
+            available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
+            #print available
+            if available <= 0 :
+                rospy.logerr("Desired pointset '"+point_set+"' not in datacentre, try :"+str(ntries))
+                #rospy.logerr("Available pointsets: "+str(available))
+                if ntries <=10 :
+                    ntries+=1
+                    rospy.sleep(rospy.Duration.from_sec(6))
+                else :
+                    raise Exception("Can't find waypoints.")
+            else:
+                map_found=True
+ 
+ 
+        query_meta = {}
+        query_meta["pointset"] = point_set
+              
+        message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
 
-        #print available
-
-        if available <= 0 :
-            rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
-            rospy.logerr("Available pointsets: "+str(available))
-            raise Exception("Can't find waypoints.")
-
-        else :
-            query_meta = {}
-            query_meta["pointset"] = point_set
+        points = TopologicalMap()
+        points.name = self.name
+        points.map = self.name
+        points.pointset = point_set
+        #string last_updated
+        for i in message_list:
+            b = i[0]
+            points.nodes.append(b)
             
-            
-            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
-    
-            points = TopologicalMap()
-            points.name = self.name
-            points.map = self.name
-            points.pointset = point_set
-            #string last_updated
-            for i in message_list:
-                b = i[0]
-                points.nodes.append(b)
-                
-            return points
+        return points

@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Corrected install locations.
+* Contributors: Nick Hawes
+
 0.0.5 (2014-11-05)
 ------------------
 * Merge branch 'hydro-devel' of https://github.com/strands-project/strands_navigation into hydro-devel

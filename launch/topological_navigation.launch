@@ -4,7 +4,7 @@
 	<arg name="machine" default="localhost" />
 	<arg name="user" default="" />
 
-	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(env ROS_ENV_LOADER)" user="$(arg user)" default="true"/>
+	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
 	<node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/>
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>

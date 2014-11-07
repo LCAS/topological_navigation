@@ -128,6 +128,7 @@ include_directories(
    scripts/visualise_map.py 
    scripts/map_publisher.py
    scripts/travel_time_estimator
+   scripts/execute_policy_server.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

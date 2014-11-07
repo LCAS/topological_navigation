@@ -4,7 +4,7 @@
     <arg name="user" default="" />
 	<arg name="map" default="empty"/> 
 
-    <machine name="$(arg machine)" address="$(arg machine)" env-loader="/opt/strands/strands_catkin_ws/devel/env.sh" user="$(arg user)" default="true"/>
+    <machine name="$(arg machine)" address="$(arg machine)" env-loader="(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
 
 	<node pkg="topological_utils" type="insert_map.py" name="insert_map" output="screen" args="$(find topological_utils)/support/empty.tmap $(arg map) $(arg map)"/>

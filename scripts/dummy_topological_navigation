@@ -12,8 +12,11 @@ from std_msgs.msg import String
 
 class DummyTopologicalNavigator():
 
-    def __init__(self, size, simulate_time):
-        self.map_name = self.create_and_insert_map(size = size)
+    def __init__(self, size, simulate_time, map_name=None):
+        if map_name:
+            self.map_name = map_name
+        else:
+            self.map_name = self.create_and_insert_map(size = size)
         self.publisher = map_publisher(self.map_name)
         self.nav_result   =  GotoNodeResult()   
         self.nav_feedback = GotoNodeFeedback() 
@@ -98,7 +101,10 @@ if __name__ == '__main__':
     rospy.init_node('dummy_topological_navigator')
     size = rospy.get_param('~size', 5)
     sim_times = rospy.get_param('~simulate_time', False)
-    navigator = DummyTopologicalNavigator(size, sim_times)        
+    map_name =  rospy.get_param('~map', None)
+    if map_name:
+        rospy.loginfo('simulating map: %s' % map_name)
+    navigator = DummyTopologicalNavigator(size, sim_times, map_name)        
     navigator.start()
 
 

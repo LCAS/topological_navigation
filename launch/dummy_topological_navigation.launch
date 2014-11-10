@@ -1,10 +1,14 @@
 <launch>
 	
-	<node pkg="topological_utils" type="dummy_topological_navigation" name="dummy_topological_navigation">
+	<!-- which topological map to simulate. if undefined one will be created -->
+  	<arg name="map" default="" />
+
+	<node pkg="topological_utils" type="dummy_topological_navigation" name="dummy_topological_navigation" output="screen">
 		<param name="simulate_time" value="false"/>
+		<param name="map" value="$(arg map)" />
 	</node>
 
-	<node pkg="topological_navigation" type="travel_time_estimator" name="travel_time_estimator"/>
+	<node pkg="topological_navigation" type="travel_time_estimator" name="travel_time_estimator" output="screen"/>
 
 
 </launch>

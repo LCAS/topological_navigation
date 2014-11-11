@@ -1,11 +1,14 @@
 <launch>
 	<!-- declare arg to be passed in -->
-	<arg name="map" default="tmap_II"/> 
+	<arg name="map"/> 
+        <arg name="mon_nav_config_file"  default="" />
 	<arg name="machine" default="localhost" />
 	<arg name="user" default="" />
 
 	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
+ 	<node pkg="monitored_navigation" type="monitored_nav.py" name="monitored_nav" output="screen" args="$(arg mon_nav_config_file)"/> 
+	
 	<node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/>
  
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>

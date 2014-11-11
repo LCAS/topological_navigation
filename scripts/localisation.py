@@ -84,8 +84,8 @@ class TopologicalNavLoc(object):
 
     def MapCallback(self, msg) :
         self.lnodes = msg.nodes
-        for i in self.lnodes : 
-            print i
+#        for i in self.lnodes : 
+#            print i
 
 
     def point_in_poly(self,node,pose):

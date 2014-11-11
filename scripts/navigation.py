@@ -47,9 +47,15 @@ class TopologicalNavServer(object):
         self.cancelled = False
         self.preempted = False
         self._target = "None"
+        self.current_action = 'none'
+        self.next_action = 'none'
+        
+
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
         self.actions_needed=[]
+
+        self.move_base_actions = ['move_base','human_aware_navigation']        
         self.navigation_activated=False
         self._action_name = name
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
@@ -62,16 +68,6 @@ class TopologicalNavServer(object):
             pass
         rospy.loginfo(" ...done")
         rospy.set_param('topological_map_name', self.topol_map)
-
-
-        #Choosing operation mode 
-        if mode == "Node_by_Node" :
-            #self.node_by_node = True
-            rospy.set_param('/topological_navigation/mode','Node_by_Node')
-            self.nav_mode = "Node_by_Node"
-        else:
-            rospy.set_param('/topological_navigation/mode','Normal')
-            self.nav_mode = "Normal"
 
 
         #Creating Action Server
@@ -164,6 +160,7 @@ class TopologicalNavServer(object):
         self.cancelled = True
         self.preempted = True
         self._result.success = False
+        self.navigation_activated = False
         self.monNavClient.cancel_all_goals()
         #self._as.set_preempted(self._result)
 
@@ -182,18 +179,16 @@ class TopologicalNavServer(object):
      
     """
     def currentNodeCallback(self, msg):
-        if self.current_node != msg.data and msg.data != 'none' :
-            self.current_node = msg.data
-            print "new node reached %s" %self.current_node
-            if self.navigation_activated :
-                self.stat.set_at_node()
-                if self.nav_mode != 'Normal' :
-                    if self.current_node != self._target or self.nav_mode == 'Node_to_IZ':
-                        self.cancelled = True
-                        if self.nav_mode != 'Node_to_IZ':
-                            self.monNavClient.cancel_all_goals()
-                else :
-                    if self.current_node == self.current_target and self._target != self.current_target :
+        if self.current_node != msg.data :  #is there any change on this topic?
+            self.current_node = msg.data    #we are at this new node
+            if msg.data != 'none' :         #are we at a node?
+                rospy.loginfo('new node reached %s', self.current_node)
+                #print "new node reached %s" %self.current_node
+                if self.navigation_activated :  #is the action server active?
+                    self.stat.set_at_node()
+                    # if the robot reached and intermediate node and the next action is move base goal has been reached
+                    if self.current_node == self.current_target and self._target != self.current_target and self.next_action in self.move_base_actions :
+                        rospy.loginfo('intermediate node reached %s', self.current_node)
                         self.goal_reached=True
                         
 
@@ -202,24 +197,28 @@ class TopologicalNavServer(object):
     """
      Navigate
      
-     This function takes the taget node and plans the actions that are required
+     This function takes the target node and plans the actions that are required
      to reach it
     """       
     def navigate(self, target):
         Onode = get_node(self.closest_node, self.lnodes)
         Gnode = get_node(target, self.lnodes)
         
-        
+        # Everything is Awesome!!!
+        # Target and Origin are Different and none of them is None
         if (Gnode is not None) and (Onode is not None) and (Gnode != Onode) :
             route = self.search_route(Onode, target)
             result=self.followRoute(route)
-
         else :
+            # Target and Origin are the same
             if(Gnode == Onode) :
                 n_edges=len(Gnode.edges)
                 for i in range(0,n_edges):
                     action_server=Gnode.edges[i]["action"]
-                    if  action_server == 'move_base' or  action_server == 'human_aware_navigation':
+                    #if  action_server == 'move_base' or  action_server == 'human_aware_navigation':
+                    # Check if there is a move_base action in the edages of this node
+                    # if not is dangerous to move
+                    if  action_server in self.move_base_actions :
                         break
                     action_server=None
 
@@ -252,21 +251,15 @@ class TopologicalNavServer(object):
                 #self._as.set_succeeded(self._result)
                 self._as.set_aborted(self._result)
             else :
-                if self.nav_mode == 'Node_to_IZ' :
-                    self._result.success = result
-                    self._feedback.route = self.current_node
-                    self._as.publish_feedback(self._feedback)
-                    self._as.set_succeeded(self._result)
-                else :
-                    self._result.success = False
-                    self._as.set_preempted(self._result)
+                self._result.success = False
+                self._as.set_preempted(self._result)
 
 
     """
      search_route
      
      This function takes the search the route to reach the goal
-    """       
+    """
     def search_route(self, Origin, target):
         Gnode = get_node(target, self.lnodes)
         exp_index=0
@@ -307,24 +300,37 @@ class TopologicalNavServer(object):
         route.reverse()
         return route
 
-                  
-
+                
+    """
+     Follow Route
+     
+     This function takes the follows the chosen route to reach the goal
+    """
     def followRoute(self, route):
         nnodes=len(route)
-        self.nav_mode = rospy.get_param('/topological_navigation/mode')
 
         self.navigation_activated=True
         Orig = route[0].name
         Targ = route[nnodes-1].name
         self._target = Targ
 
+        # move base original config
+        config = self.rcnfclient.get_configuration()
+        self.dyt = config['yaw_goal_tolerance']
+
         rospy.loginfo("%d Nodes on route" %nnodes)
 
         rindex=0
         nav_ok=True
         route_len = len(route)-2
+        
+        # If the robot is not on a node navigate to closest node
+        if self.current_node == 'none' :
+            a = route[rindex]._get_action(route[rindex+1].name)
+            if a not in self.move_base_actions:
+                print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                result=self.navigate_to('move_base',self.closest_node)
 
-        #self.final_node = Targ
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
             #current action
@@ -334,6 +340,9 @@ class TopologicalNavServer(object):
                 a1 = route[rindex+1]._get_action(route[rindex+2].name)
             else :
                 a1 = 'none'
+
+            self.current_action = a
+            self.next_action = a1
 
             rospy.loginfo("From %s do (%s) to %s" %(route[rindex].name, a, route[rindex+1].name))
 
@@ -345,29 +354,20 @@ class TopologicalNavServer(object):
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND
             # the current and following action are move_base or human_aware_navigation
-            if rindex < route_len and (a1 == 'move_base' or a1 == 'human_aware_navigation') and (a == 'move_base' or a == 'human_aware_navigation') :
-                params = { 'yaw_goal_tolerance' : 6.283 }
-                config = self.rcnfclient.update_configuration(params)
+            if rindex < route_len and a1 in self.move_base_actions and a in self.move_base_actions :
+                params = { 'yaw_goal_tolerance' : 6.283 }   # No orientation restrictions
+                self.rcnfclient.update_configuration(params)
 
-            #print "move_base to:"
+
             inf = route[rindex+1].waypoint
-            #print inf
             self.current_target = route[rindex+1].name
             nav_ok= self.monitored_navigation(inf, a)
-            params = { 'yaw_goal_tolerance' : self.dyt }
-            config = self.rcnfclient.update_configuration(params)
+            params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
+            self.rcnfclient.update_configuration(params)
+            rospy.loginfo('setting parameters back')
             not_fatal=nav_ok
             if self.cancelled :
-                if self.nav_mode == 'Node_by_Node' :
-                    nav_ok=False
-                    nodewp = get_node(self.current_node, self.lnodes)
-                    not_fatal = self.monitored_navigation(nodewp.waypoint, 'move_base')
-                if self.nav_mode == 'Node_to_IZ' :
-                    not_fatal = False
-                    if self.current_node != self._target :
-                        nav_ok=False
-                    else :
-                        nav_ok=True
+                nav_ok=True
             if self.preempted :
                 not_fatal = False
                 nav_ok = False
@@ -389,12 +389,15 @@ class TopologicalNavServer(object):
                     self.stat.status= "fatal"
 
             self.publish_stats()
+            self.current_action = 'none'
+            self.next_action = 'none'
             rindex=rindex+1
 
-        #val=self.stat.__dict__
-        #rospy.loginfo("%s" %val)
-        #print val
-        #self._stats_collection.insert(val)
+
+        params = { 'yaw_goal_tolerance' : self.dyt }   #setting original config back
+        self.rcnfclient.update_configuration(params)
+
+
         self.navigation_activated=False
 
         result=nav_ok
@@ -440,7 +443,7 @@ class TopologicalNavServer(object):
 
         self.goal_reached=False
         self.monNavClient.send_goal(goal)
-                #        self.monNavClient.wait_for_result()
+        #self.monNavClient.wait_for_result()
         status=self.monNavClient.get_state()
         while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
             status=self.monNavClient.get_state()
@@ -461,12 +464,6 @@ class TopologicalNavServer(object):
 
 
 if __name__ == '__main__':
-    #filename=str(sys.argv[1])
     mode="normal"
-#    if len(sys.argv) > 2:
-#        print str(sys.argv[2])
-#        if str(sys.argv[2]) == "true":
-#            mode="Node_by_Node"
-#            print "Node_by_Node"
     rospy.init_node('topological_navigation')
     server = TopologicalNavServer(rospy.get_name(),mode)

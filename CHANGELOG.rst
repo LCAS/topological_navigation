@@ -2,6 +2,16 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.9 (2014-11-12)
+------------------
+* Merge pull request `#120 <https://github.com/strands-project/strands_navigation/issues/120>`_ from BFALacerda/hydro-devel
+  adding monitored_nav to topological_navigation.launch.
+* adding monitored_nav to topological_navigation.launch. default is monitored_nav without recovery behaviours
+* Contributors: BFALacerda, Bruno Lacerda
+
+0.0.8 (2014-11-11)
+------------------
+
 0.0.6 (2014-11-06)
 ------------------
 * Corrected install locations.

@@ -13,6 +13,7 @@ from datetime import datetime
 from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
+from strands_navigation_msgs.msg import CurrentEdge
 
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
@@ -49,7 +50,7 @@ class TopologicalNavServer(object):
         self._target = "None"
         self.current_action = 'none'
         self.next_action = 'none'
-        
+        self.n_tries = 3
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -59,6 +60,7 @@ class TopologicalNavServer(object):
         self.navigation_activated=False
         self._action_name = name
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
+        self.edge_pub = rospy.Publisher('/topological_navigation/current_edge', CurrentEdge)
         
         #Waiting for Topological Map        
         self.lnodes = []
@@ -329,7 +331,10 @@ class TopologicalNavServer(object):
             a = route[rindex]._get_action(route[rindex+1].name)
             if a not in self.move_base_actions:
                 print 'Do move_base to %s' %self.closest_node#(route.source[0])
-                result=self.navigate_to('move_base',self.closest_node)
+                inf = route[0].waypoint
+                nav_ok=monitored_navigation(inf,'move_base')
+                
+
 
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
@@ -346,6 +351,16 @@ class TopologicalNavServer(object):
 
             rospy.loginfo("From %s do (%s) to %s" %(route[rindex].name, a, route[rindex+1].name))
 
+            pubedg = CurrentEdge()
+            pubedg.header.stamp = rospy.Time.now()
+            pubedg.origin = route[rindex].name
+            pubedg.target = route[rindex+1].name
+            pubedg.action = a
+            pubedg.active = True
+            pubedg.result = True
+            self.edge_pub.publish(pubedg)
+            
+            
             self._feedback.route = '%s to %s using %s' % (route[rindex].name, route[rindex+1].name, a)
             self._as.publish_feedback(self._feedback)
 
@@ -365,6 +380,9 @@ class TopologicalNavServer(object):
             params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
             self.rcnfclient.update_configuration(params)
             rospy.loginfo('setting parameters back')
+            
+            
+            
             not_fatal=nav_ok
             if self.cancelled :
                 nav_ok=True
@@ -389,6 +407,12 @@ class TopologicalNavServer(object):
                     self.stat.status= "fatal"
 
             self.publish_stats()
+
+            pubedg.header.stamp = rospy.Time.now()
+            pubedg.active = False
+            pubedg.result = nav_ok
+            self.edge_pub.publish(pubedg)
+            
             self.current_action = 'none'
             self.next_action = 'none'
             rindex=rindex+1
@@ -441,23 +465,32 @@ class TopologicalNavServer(object):
         goal.target_pose.pose.orientation.z = float(inf[5])
         goal.target_pose.pose.orientation.w = float(inf[6])
 
-        self.goal_reached=False
-        self.monNavClient.send_goal(goal)
-        #self.monNavClient.wait_for_result()
-        status=self.monNavClient.get_state()
-        while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
+        ntries=0
+        final = False
+        while not final:
+            self.goal_reached=False
+            self.monNavClient.send_goal(goal)
+            #self.monNavClient.wait_for_result()
             status=self.monNavClient.get_state()
-
-        #rospy.loginfo(str(status))
-        #print status
-        if status != GoalStatus.SUCCEEDED :
-            if not self.goal_reached:
-                result = False
-                if status is GoalStatus.PREEMPTED:
-                    self.preempted = True
+            while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
+                status=self.monNavClient.get_state()
+    
+            #rospy.loginfo(str(status))
+            #print status
+            if status != GoalStatus.SUCCEEDED :
+                if not self.goal_reached:
+                    result = False
+                    if status is GoalStatus.PREEMPTED:
+                        self.preempted = True
+                else:
+                    result = True
+            if not result :
+                ntries+=1
+                if ntries > self.n_tries:
+                    final = True
             else:
-                result = True
-
+                final = True
+            
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result
 

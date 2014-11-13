@@ -6,14 +6,51 @@ This node provides support for topological navigation in the STRANDS system.
 This module requires:
  * move_base
  * strands_datacentre
- * ramp_climb
+ * monitored_navigation
+
+You will also need to create a [topological map](#Create-Topological-Maps)
+
+## Launching Topological Localisation and Navigation
+
+1. Once your map is inserted in the DB you can launch your topological navigation nodes using:
+  `roslaunch topological_navigation topological_navigation.launch map:=topological_map_name node_by_node:=false`
+
+*note:* When Node by node navigation is active the robot will cancel the topological navigation when it reaches the influence zone of a node and it will navigate to its waypoint aborting the action.
+
+*note:* Statiscs are being recorded in the nav_stats collection within the autonomous_patrolling
+
+*note:* every action server for the actions stored in the topological map have to be running, for example if the ramp_climb action is required you will need the ramp_climb server running, you can run it using:
+`rosrun ramp_climb ramp_climb`
 
 
-## Creation of the Topological map
+## Navigate
 
-The first step is to insert a topological map on the strands_datacentre, this can be done from a waypoint file created by the waypoint recorder (see https://github.com/strands-project/autonomous_patrolling), following these simple steps:
+1. You can test the topological navigation using:
+  `rosrun topological_navigation nav_client.py Destination`
+  Where destination is the name of the node you want to reach.
 
-1. First create a topological map file from the waypoint file using:
+
+#Create Topological Maps
+
+There are different ways of creating **topological maps**:
+
+1. [Simultaneous Metic and Topological Mapping](https://github.com/strands-project/strands_navigation/tree/hydro-devel/joy_map_saver)
+
+2. [From WayPoint File](#creation-of-the-topological-map-from-waypoint-file)
+
+3. Using RViz 
+
+4. Using Gamepad
+
+## Simultaneous Metic and Topological Mapping
+
+
+## Creation of the Topological map From WayPoint File
+
+1. (**Modified**) The first step is to create the waypoint file by running:
+ `rosrun topological_utils joy_add_waypoint.py name_of_the_waypoint_file`
+
+1. Next create a topological map file from the waypoint file using:
 `rosrun topological_utils tmap_from_waypoints.py input_file.csv output_file.txt` this will create a topological tree on which every waypoint in the file is a node and each waypoint is conected to every other waypoint using move_base and an octagonal influence area, for example,
 
   From a normal waypoint file like this:
@@ -154,22 +191,6 @@ The first step is to insert a topological map on the strands_datacentre, this ca
 1. Once you are happy with your topological map you have to insert it in the strands_datacentre using:
   `rosrun topological_utils insert_map.py topological_map.txt topological_map_name map_name`
 
-## Launching Topological Localisation and Navigation
+## Using RViz 
 
-1. Once your map is inserted in the DB you can launch your topological navigation nodes using:
-  `roslaunch topological_navigation topological_navigation.launch map:=topological_map_name node_by_node:=false`
-
-*note:* When Node by node navigation is active the robot will cancel the topological navigation when it reaches the influence zone of a node and it will navigate to its waypoint aborting the action.
-
-*note:* Statiscs are being recorded in the nav_stats collection within the autonomous_patrolling
-
-*note:* every action server for the actions stored in the topological map have to be running, for example if the ramp_climb action is required you will need the ramp_climb server running, you can run it using:
-`rosrun ramp_climb ramp_climb`
-
-
-## Navigate
-
-1. You can test the topological navigation using:
-  `rosrun topological_navigation nav_client.py Destination`
-  Where destination is the name of the node you want to reach.
-
+## Using Gamepad

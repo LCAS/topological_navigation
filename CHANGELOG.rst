@@ -2,6 +2,11 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* bug fix
+* Contributors: Jaime Pulido Fentanes
+
 0.0.10 (2014-11-14)
 -------------------
 * replanning when failing

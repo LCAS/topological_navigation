@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.10 (2014-11-14)
+-------------------
 * replanning when failing
 * Adding retries to topological navigation and current edge publisher
 * Update README.md

@@ -2,6 +2,13 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.10 (2014-11-14)
+-------------------
+* replanning when failing
+* Adding retries to topological navigation and current edge publisher
+* Update README.md
+* Contributors: Jaime Pulido Fentanes
+
 0.0.9 (2014-11-12)
 ------------------
 * Merge pull request `#120 <https://github.com/strands-project/strands_navigation/issues/120>`_ from BFALacerda/hydro-devel

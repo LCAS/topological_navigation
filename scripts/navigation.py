@@ -342,7 +342,7 @@ class TopologicalNavServer(object):
                 inf = route[0].waypoint
                 params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
                 self.rcnfclient.update_configuration(params)
-                nav_ok=monitored_navigation(inf,'move_base')
+                nav_ok= self.monitored_navigation(inf,'move_base')
         
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :

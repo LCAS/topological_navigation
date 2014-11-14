@@ -25,6 +25,8 @@ class topologicalNodeAdd(object):
         rospy.Subscriber('/joy', sensor_msgs.msg.Joy, self.JoyCallback)      
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
 
+        self.button = rospy.get_param('~button', 1)
+
         rospy.loginfo("Waiting for Topological map ...")        
         while not self.map_received :
             pass
@@ -34,8 +36,8 @@ class topologicalNodeAdd(object):
 
 
     def JoyCallback(self, msg) :
-        if msg.buttons[1]:
-            print "JOY"
+        if msg.buttons[self.button]:
+            #print "JOY"
             self.add_node()
 
     def MapCallback(self, msg) :

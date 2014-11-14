@@ -2,6 +2,13 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* mapping launch files
+* replanning when failing
+* fixing influence areas on empty map
+* Contributors: Jaime Pulido Fentanes
+
 0.0.9 (2014-11-12)
 ------------------
 

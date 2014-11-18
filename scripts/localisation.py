@@ -41,12 +41,16 @@ class TopologicalNavLoc(object):
     
     def __init__(self, name) :
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 5)
+        self.only_latched = rospy.get_param("~OnlyLatched", True)
         self.throttle = self.throttle_val
         self.node="Unknown"
+        self.wpstr="Unknown"
+        self.cnstr="Unknown"
+        
         
         #self._action_name = name
-        self.wp_pub = rospy.Publisher('/closest_node', String)
-        self.cn_pub = rospy.Publisher('/current_node', String)
+        self.wp_pub = rospy.Publisher('/closest_node', String, latch=True)
+        self.cn_pub = rospy.Publisher('/current_node', String, latch=True)
         
         self.lnodes = []
 
@@ -72,15 +76,32 @@ class TopologicalNavLoc(object):
                 if d < a:
                     b=i
                     a=d
-            self.wp_pub.publish(String(b.name))
+            wpstr=str(b.name)
+            #self.wp_pub.publish(String(b.name))
             if self.point_in_poly(b, msg) :
-                self.cn_pub.publish(String(b.name))
+                cnstr=str(b.name)
+                #self.cn_pub.publish(String(b.name))
             else :
-                self.cn_pub.publish('none')
+                cnstr='none'
+                #self.cn_pub.publish('none')
+
+            self.publishTopics(wpstr, cnstr)           
             self.throttle=1
         else:
             self.throttle +=1
 
+
+    def publishTopics(self, wpstr, cnstr) :
+        if self.only_latched :
+            if self.wpstr != wpstr:
+                self.wp_pub.publish(wpstr)
+            if self.cnstr != cnstr:
+                self.cn_pub.publish(cnstr)
+        else:
+            self.wp_pub.publish(wpstr)
+            self.cn_pub.publish(cnstr)
+        self.wpstr=wpstr
+        self.cnstr=cnstr
 
     def MapCallback(self, msg) :
         self.lnodes = msg.nodes

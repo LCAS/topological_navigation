@@ -63,6 +63,8 @@ class TopologicalNavServer(object):
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
         self.edge_pub = rospy.Publisher('/topological_navigation/Edge', CurrentEdge)
         self.cur_edge = rospy.Publisher('/current_edge', String)        
+        self.monit_nav_cli= False
+
         
         #Waiting for Topological Map        
         self.lnodes = []
@@ -86,6 +88,7 @@ class TopologicalNavServer(object):
         rospy.loginfo("Creating monitored navigation client.")
         self.monNavClient= actionlib.SimpleActionClient('monitored_navigation', MonitoredNavigationAction)
         self.monNavClient.wait_for_server()
+        self.monit_nav_cli= True
         rospy.loginfo(" ...done")
 
 
@@ -149,13 +152,15 @@ class TopologicalNavServer(object):
      This Functions is called when the Action Server is called
     """
     def executeCallback(self, goal):
-        self.cancelled = False
-        self.preempted = False
-        self._feedback.route = 'Starting...'
-        self._as.publish_feedback(self._feedback)
-        rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
-        self.navigate(goal.target)
-
+        if self.monit_nav_cli :
+            self.cancelled = False
+            self.preempted = False
+            self._feedback.route = 'Starting...'
+            self._as.publish_feedback(self._feedback)
+            rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
+            self.navigate(goal.target)
+        else:
+            rospy.loginfo('Monitored Navigation client has not started!!!')
 
     """
      Preempt CallBack
@@ -175,6 +180,8 @@ class TopologicalNavServer(object):
     """
     def closestNodeCallback(self, msg):
         self.closest_node=msg.data
+        if not self.monit_nav_cli :
+            rospy.loginfo('Monitored Navigation client has not started!!!')
 
 
 

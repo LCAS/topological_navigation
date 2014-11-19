@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* adding new launch files for topological map creation
+* Contributors: Jaime Pulido Fentanes
+
 0.0.12 (2014-11-17)
 -------------------
 

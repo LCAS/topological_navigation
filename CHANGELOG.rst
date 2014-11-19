@@ -2,6 +2,11 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update README.md
+* Contributors: Jaime Pulido Fentanes
+
 0.0.12 (2014-11-17)
 -------------------
 

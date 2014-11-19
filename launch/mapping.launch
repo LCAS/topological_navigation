@@ -1,0 +1,38 @@
+<launch>
+	<arg name="delta" default="0.05"/>
+	<arg name="xmin" default="-30.0"/>
+	<arg name="ymin" default="-30.0"/>
+	<arg name="xmax" default="30.0"/>
+	<arg name="ymax" default="30.0"/>
+
+
+	<!-- declare arg to be passed in -->
+	<arg name="met_map" default="empty"/>
+	<arg name="top_map" default="empty"/> 
+    <arg name="machine" default="localhost"/>
+    <arg name="user" default="" />
+
+
+    <!-- NOW when launching in a remote mode it will need the ROS_ENV_LOADER set if not it will leave it empty -->
+    <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true" />
+
+	<node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" >
+		<param name="xmin" value="$(arg xmin)"/>
+		<param name="ymin" value="$(arg ymin)"/>
+		<param name="xmax" value="$(arg xmax)"/>
+		<param name="ymax" value="$(arg ymax)"/>
+
+		<param name="delta" value="$(arg delta)"/>
+	</node>
+
+
+	<node pkg="topological_utils" type="insert_map.py" name="insert_map" output="screen" args="$(find topological_utils)/support/empty.tmap $(arg top_map) $(arg met_map)"/>
+
+	<node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/>
+	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>
+	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen"/>
+	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>
+	<node pkg="topological_utils" type="joy_add_node.py" name="joy_add_node" />
+	<node pkg="joy_map_saver" type="joy_map_saver" name="joy_map_saver" output="screen" args="$(arg met_map)"/>
+
+</launch>

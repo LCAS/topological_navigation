@@ -17,7 +17,7 @@ You will also need to create a [topological map](#Create-Topological-Maps)
 
 *note:* When Node by node navigation is active the robot will cancel the topological navigation when it reaches the influence zone of a node and it will navigate to its waypoint aborting the action.
 
-*note:* Statiscs are being recorded in the nav_stats collection within the autonomous_patrolling
+*note:* Statistics are being recorded in the nav_stats collection within the autonomous_patrolling
 
 *note:* every action server for the actions stored in the topological map have to be running, for example if the ramp_climb action is required you will need the ramp_climb server running, you can run it using:
 `rosrun ramp_climb ramp_climb`
@@ -29,39 +29,55 @@ You will also need to create a [topological map](#Create-Topological-Maps)
   `rosrun topological_navigation nav_client.py Destination`
   Where destination is the name of the node you want to reach.
 
+2. You can also run **RViz** `rosrun rviz rviz` and subscribe to the interactive markers `/name_of_map_go_to/update` and clicking on the Green Arrows to move the robot around.
+
 
 #Create Topological Maps
 
 There are different ways of creating **topological maps**:
 
-1. [Simultaneous Metic and Topological Mapping](https://github.com/strands-project/strands_navigation/tree/hydro-devel/joy_map_saver)
+1. [Simultaneous Metric and Topological Mapping](https://github.com/strands-project/strands_navigation/tree/hydro-devel/joy_map_saver)
 
 2. [From WayPoint File](#creation-of-the-topological-map-from-waypoint-file)
 
-3. Using RViz 
+3. [Using RViz](#Using-RViz)
 
-4. Using Gamepad
+4. [Using Gamepad](#Using-Gamepad)
 
-## Simultaneous Metic and Topological Mapping
+5. [Edit using MongoDB Client](#Edit-using-MongoDB-Client)
+
+## Simultaneous Metric and Topological Mapping
+
+@To improve
+
+To follow this process you will need to place the robot in the Charging station and reset the odometry, once it is there you can launch the mapping by running:
+
+`roslaunch topological_utils mapping.launch met_map:='name_of_metric_map' top_map:='name_of_topological_map'`
+
+Once this is done undock the robot using the Visual_charging_server. 
+
+When the robot is undocked you can move it around using the gamepad and when you wish to create a new topological node press button **'B'** once you are done save your metric map by pressing **'A'**.
+
+To edit the topological map you can use the following methods
 
 
 ## Creation of the Topological map From WayPoint File
 
 1. (**Modified**) The first step is to create the waypoint file by running:
- `rosrun topological_utils joy_add_waypoint.py name_of_the_waypoint_file`
+ `rosrun topological_utils joy_add_waypoint.py name_of_the_waypoint_file.csv`
 
 1. Next create a topological map file from the waypoint file using:
-`rosrun topological_utils tmap_from_waypoints.py input_file.csv output_file.txt` this will create a topological tree on which every waypoint in the file is a node and each waypoint is conected to every other waypoint using move_base and an octagonal influence area, for example,
+`rosrun topological_utils tmap_from_waypoints.py input_file.csv output_file.tmap` this will create a topological tree on which every waypoint in the file is a node and each waypoint is connected to every other waypoint using move_base and an octagonal influence area, for example,
 
   From a normal waypoint file like this:
-  ```
+  ```STON
   -2.3003,0.120533,-4.88295e-05,0,0,-0.0530802,0.99859
   -7.95369,-3.03503,-4.4791e-05,0,0,0.928319,-0.371784
   -8.91935,2.94528,0.00139425,0,0,0.473654,0.880711
   -2.68708,-2.23003,-0.000478224,0,0,-0.759842,0.650108
   ```
   It will create a topological map file like this:
-  ```
+  ```JSON
   node: 
   	ChargingPoint
   	waypoint:
@@ -132,10 +148,10 @@ There are different ways of creating **topological maps**:
         1.380000,-0.574000
 
   ```
-1. *Editing the topological map*, lets say that you want to make sure that to reach a node you get there using a specific action like ramp_climb from another node then you will need to edit the topological map file. You can also edit the vertices of the influence area so it can be defined using diferent kinds of polygons.
+1. *Editing the topological map*, lets say that you want to make sure that to reach a node you get there using a specific action like ramp_climb from another node then you will need to edit the topological map file. You can also edit the vertices of the influence area so it can be defined using different kinds of polygons.
   For example, lets suppose that in the previous map you want WayPoint3 to be reached only from the Waypoint1 using `ramp_climb` and that you want to define rectangular areas around your waypoints and a triangular area around the ChargingPoint, in such case your map file should look like this:
 
-  ```
+  ```JSON
   node: 
   	ChargingPoint
   	waypoint:
@@ -189,8 +205,36 @@ There are different ways of creating **topological maps**:
   *note:* The polygons of the influence area will be created using the convex-hull approach so they may not correspond exactly to the vertices previously defined.
   
 1. Once you are happy with your topological map you have to insert it in the strands_datacentre using:
-  `rosrun topological_utils insert_map.py topological_map.txt topological_map_name map_name`
+  `rosrun topological_utils insert_map.py topological_map.tmap topological_map_name map_name`
 
 ## Using RViz 
 
+**RViz** can be used to edit topological maps on system runtime, however there is also the possibility of inserting a basic *topological map* and editing it using *RViz*. The Following steps will guide through this process.
+
+1. It is necessary to insert a basic map in the DB and run the topological system based on it for this a launch file is provided and it can be used in the following way:
+
+  `roslaunch topological_utils create_topological_map.launch met_map:='name_of_metric_map' top_map:='name_of_topological_map'`
+  
+This will create a basic map and run the topological system with it.
+
+2. Once this is done you can run **Rviz**, `rosrun rviz rviz` and create two *marker array* interfaces `/topological_node_zones_array` and `/topological_edges_array` optionally an additional *marker array* interface can be created `/topological_nodes_array`. This will allow the visualization of the topological map.
+
+3. After this the map can be edited using interactive markers:
+
+  * **Adding Nodes:** for this objective there is one interactive marker topic called `/name_of_your_map/add_rm_node/update` that will put a green box on top of the robot. Drive the robot where you want to add a new node and press on the green box that will add a node there connected to all close by nodes by a *move_base* action.
+
+  * **Editing Node Position:** with `/name_of_your_map_markers/update`  it is possible to move the waypoints around and change their final goal orientation.
+
+  * **Removing Unnecessary Edges:** to remove edges there is another marker `/name_of_your_map_edges/update` that will allow you to remove edges by pressing on the red arrows.
+
+  * **Change the Influence Zones:** Finally it is possible to change the influence zones with `/name_of_your_map_zones/update` and moving the vertices of such zones around.
+
+
 ## Using Gamepad
+
+This method is basically the same as the previous method (follow steps 1 and 2, also 3 if/when needed) with the addition that in this case it is possible to add nodes at the current robot position by pressing button **'B'** on the Gamepad.
+
+
+## Edit using MongoDB Client
+
+@TODO

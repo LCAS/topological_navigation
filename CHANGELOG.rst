@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fixing bug in top_map
+* Contributors: Jaime Pulido Fentanes
+
 0.0.14 (2014-11-19)
 -------------------
 * adding new launch files for topological map creation

@@ -339,18 +339,21 @@ class TopologicalNavServer(object):
         nav_ok=True
         route_len = len(route)-2
         
-        
-        # If the robot is not on a node navigate to closest node
-        if self.current_node == 'none' :
-            a = route[rindex]._get_action(route[rindex+1].name)
-            self.next_action = a
+
+        a = route[rindex]._get_action(route[rindex+1].name)
+
+        # If the robot is not on a node or the first action is not move base type
+        # navigate to closest node waypoint (only when first action is not move base)
+        if self.current_node == 'none' or a not in self.move_base_actions :
             if a not in self.move_base_actions:
+                self.next_action = a
                 print 'Do move_base to %s' %self.closest_node#(route.source[0])
                 inf = route[0].waypoint
                 params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
                 self.rcnfclient.update_configuration(params)
                 nav_ok= self.monitored_navigation(inf,'move_base')
-        
+
+
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
             #current action

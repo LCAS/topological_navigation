@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.18 (2014-11-21)
+-------------------
 * bug fix
 * Now checking if there is a move_base action in the edges of the first node
   in route if not it's dangerous to move or inconvenient

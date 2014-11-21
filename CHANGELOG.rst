@@ -2,6 +2,11 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* replcaing result for nav_ok
+* Contributors: Jaime Pulido Fentanes
+
 0.0.19 (2014-11-21)
 -------------------
 * typo

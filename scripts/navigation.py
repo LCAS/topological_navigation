@@ -344,7 +344,7 @@ class TopologicalNavServer(object):
 
         # If the robot is not on a node or the first action is not move base type
         # navigate to closest node waypoint (only when first action is not move base)
-        if self.current_node == 'none' or a not in self.move_base_actions :
+        if self.current_node == 'none' and a not in self.move_base_actions :
             if a not in self.move_base_actions:
                 self.next_action = a
                 print 'Do move_base to %s' %self.closest_node#(route.source[0])
@@ -353,8 +353,28 @@ class TopologicalNavServer(object):
                 self.reconf_movebase(params)
                 #self.rcnfclient.update_configuration(params)
                 nav_ok, inc= self.monitored_navigation(inf,'move_base')
-
-
+        else:
+            if a not in self.move_base_actions :
+                n_edges=len(route[0].edges)
+                for i in range(0,n_edges):
+                    action_server=route[0].edges[i]["action"]
+                    #if  action_server == 'move_base' or  action_server == 'human_aware_navigation':
+                    # Check if there is a move_base action in the edages of this node
+                    # if not is dangerous to move
+                    if  action_server in self.move_base_actions :
+                        break
+                    action_server=None
+                                       
+                if action_server is None:
+                    rospy.loginfo("Action not taken, outputing success")
+                    nav_ok = True
+                    inc = 0
+                else:
+                    rospy.loginfo("Getting to exact pose")
+                    nav_ok, inc = self.monitored_navigation(Onode.waypoint, action_server)
+                    rospy.loginfo("going to waypoint in node resulted in")
+                    print result                
+                
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :
             #current action

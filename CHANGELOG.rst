@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.20 (2014-11-21)
+-------------------
 * moving scripts here
 * Contributors: Jaime Pulido Fentanes
 

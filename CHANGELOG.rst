@@ -2,6 +2,14 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* bug fix
+* Now checking if there is a move_base action in the edges of the first node
+  in route if not it's dangerous to move or inconvenient
+  like in the charging station
+* Contributors: Jaime Pulido Fentanes
+
 0.0.17 (2014-11-21)
 -------------------
 * catching reconfigur move_base exception

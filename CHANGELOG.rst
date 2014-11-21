@@ -2,6 +2,9 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.0.15 (2014-11-19)
 -------------------
 * fixing bug in top_map

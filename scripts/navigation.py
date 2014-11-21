@@ -373,7 +373,7 @@ class TopologicalNavServer(object):
                     rospy.loginfo("Getting to exact pose")
                     nav_ok, inc = self.monitored_navigation(route[0].waypoint, action_server)
                     rospy.loginfo("going to waypoint in node resulted in")
-                    print result                
+                    print nav_ok
                 
 
         while rindex < (len(route)-1) and not self.cancelled and nav_ok :

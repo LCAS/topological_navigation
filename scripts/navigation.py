@@ -198,7 +198,7 @@ class TopologicalNavServer(object):
                 if self.navigation_activated :  #is the action server active?
                     self.stat.set_at_node()
                     # if the robot reached and intermediate node and the next action is move base goal has been reached
-                    if self.current_node == self.current_target and self._target != self.current_target and self.next_action in self.move_base_actions :
+                    if self.current_node == self.current_target and self._target != self.current_target and self.next_action in self.move_base_actions and self.current_action in self.move_base_actions :
                         rospy.loginfo('intermediate node reached %s', self.current_node)
                         self.goal_reached=True
                         

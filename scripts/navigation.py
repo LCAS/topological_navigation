@@ -371,7 +371,7 @@ class TopologicalNavServer(object):
                     inc = 0
                 else:
                     rospy.loginfo("Getting to exact pose")
-                    nav_ok, inc = self.monitored_navigation(Onode.waypoint, action_server)
+                    nav_ok, inc = self.monitored_navigationroute[0].waypoint, action_server)
                     rospy.loginfo("going to waypoint in node resulted in")
                     print result                
                 

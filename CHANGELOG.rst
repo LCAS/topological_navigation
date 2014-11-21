@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.16 (2014-11-21)
+-------------------
 * removinf scitos_msgs from CmakeLists
 * making robot navigate to Way Point always when the first action is not move_base type
 * Added locking to service call.

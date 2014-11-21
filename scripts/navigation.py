@@ -350,7 +350,8 @@ class TopologicalNavServer(object):
                 print 'Do move_base to %s' %self.closest_node#(route.source[0])
                 inf = route[0].waypoint
                 params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
-                self.rcnfclient.update_configuration(params)
+                self.reconf_movebase(params)
+                #self.rcnfclient.update_configuration(params)
                 nav_ok, inc= self.monitored_navigation(inf,'move_base')
 
 
@@ -392,14 +393,16 @@ class TopologicalNavServer(object):
             # the current and following action are move_base or human_aware_navigation
             if rindex < route_len and a1 in self.move_base_actions and a in self.move_base_actions :
                 params = { 'yaw_goal_tolerance' : 6.283 }   # No orientation restrictions
-                self.rcnfclient.update_configuration(params)
+                self.reconf_movebase(params)
+                #self.rcnfclient.update_configuration(params)
 
 
             inf = route[rindex+1].waypoint
             self.current_target = route[rindex+1].name
             nav_ok, inc = self.monitored_navigation(inf, a)
             params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
-            self.rcnfclient.update_configuration(params)
+            self.reconf_movebase(params)
+            #self.rcnfclient.update_configuration(params)
             rospy.loginfo('setting parameters back')
             
             
@@ -443,7 +446,8 @@ class TopologicalNavServer(object):
 
 
         params = { 'yaw_goal_tolerance' : self.dyt }   #setting original config back
-        self.rcnfclient.update_configuration(params)
+        self.reconf_movebase(params)
+        #self.rcnfclient.update_configuration(params)
 
 
         self.navigation_activated=False
@@ -526,6 +530,12 @@ class TopologicalNavServer(object):
             
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result, inc
+
+    def reconf_movebase(self, params):
+        try:
+            self.rcnfclient.update_configuration(params)
+        except rospy.ServiceException as exc:
+            rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
 
 
 

@@ -64,6 +64,7 @@ catkin_package(
  install(PROGRAMS
    scripts/add_edge.py
    scripts/add_node.py
+   scripts/crop_map.py
    scripts/insert_map.py
    scripts/LoadPointSet.py
    scripts/map_collection_change.py

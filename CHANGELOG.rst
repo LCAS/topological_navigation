@@ -2,6 +2,47 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.20 (2014-11-21)
+-------------------
+* replcaing result for nav_ok
+* Contributors: Jaime Pulido Fentanes
+
+0.0.19 (2014-11-21)
+-------------------
+* typo
+* Contributors: Jaime Pulido Fentanes
+
+0.0.18 (2014-11-21)
+-------------------
+* bug fix
+* Now checking if there is a move_base action in the edges of the first node
+  in route if not it's dangerous to move or inconvenient
+  like in the charging station
+* Contributors: Jaime Pulido Fentanes
+
+0.0.17 (2014-11-21)
+-------------------
+* catching reconfigur move_base exception
+* only increase the fail counter of monitored navigation if result.recovered is True and result.human_interaction is False as suggested by @BFALacerda
+* fixing bug with an even longer if
+* Contributors: Jaime Pulido Fentanes
+
+0.0.16 (2014-11-21)
+-------------------
+* removinf scitos_msgs from CmakeLists
+* making robot navigate to Way Point always when the first action is not move_base type
+* Added locking to service call.
+* removing old dependency on scitos_msgs from top nav
+* Contributors: Bruno Lacerda, Jaime Pulido Fentanes, Nick Hawes
+
+0.0.15 (2014-11-19)
+-------------------
+
+0.0.14 (2014-11-19)
+-------------------
+* Update README.md
+* Contributors: Jaime Pulido Fentanes
+
 0.0.12 (2014-11-17)
 -------------------
 

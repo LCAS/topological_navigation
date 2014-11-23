@@ -530,7 +530,7 @@ class TopologicalNavServer(object):
         status=self.monNavClient.get_state()
         while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
             status=self.monNavClient.get_state()
-
+            rospy.sleep(rospy.Duration.from_sec(0.01))
         #rospy.loginfo(str(status))
         #print status
         res=self.monNavClient.get_result()

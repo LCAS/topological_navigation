@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>topological_navigation</name>
-  <version>0.0.13</version>
+  <version>0.0.20</version>
   <description>The topological_navigation package</description>
 
 
@@ -19,7 +19,6 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
-  <build_depend>scitos_msgs</build_depend>
   <build_depend>actionlib</build_depend>
   <build_depend>actionlib_msgs</build_depend>
   <build_depend>strands_navigation_msgs</build_depend>
@@ -32,7 +31,6 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <run_depend>scitos_msgs</run_depend>
   <run_depend>actionlib</run_depend>
   <run_depend>actionlib_msgs</run_depend>
   <run_depend>mongodb_store</run_depend>

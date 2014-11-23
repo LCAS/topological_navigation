@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.21 (2014-11-23)
+-------------------
 * Merge branch 'hydro-devel' of https://github.com/Jailander/strands_navigation into hydro-devel
 * error handling when no route is possible
 * adding sleep to reduce cpu consumption

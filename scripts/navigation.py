@@ -222,7 +222,12 @@ class TopologicalNavServer(object):
             # Target and Origin are Different and none of them is None
             if (Gnode is not None) and (Onode is not None) and (Gnode != Onode) :
                 route = self.search_route(Onode, target)
-                result, inc = self.followRoute(route)
+                if route:
+                    result, inc = self.followRoute(route)
+                else:
+                    rospy.logerr("There is no route to this node check your edges ...")
+                    result = False
+                    inc = 1
             else :
                 # Target and Origin are the same
                 if(Gnode == Onode) :
@@ -295,24 +300,28 @@ class TopologicalNavServer(object):
                 #    print m.name
                 #print "expanding node %d: (%s)" %(exp_index,to_expand[exp_index].name)
                 if exp_index >= len(to_expand) :
-                    not_goal=False
+                    not_goal=True
+                    break                    
                 children=to_expand[exp_index]._get_Children()
                 #print "nodes in list:"
                 #print children
-                
-        Gnode._set_Father(to_expand[exp_index].name)
-        #print "Father for Gnode %s" %(Gnode.father)
-        #del route[:]
-        route=[Gnode]
-        #print "Current Route %d" %len(route)
-        rindex=0
-        #print route[rindex].father
-        while route[rindex].father is not 'none' :
-            nwnode = get_node(route[rindex].father, to_expand)
-            route.append(nwnode)
-            rindex=rindex+1
         
-        route.reverse()
+        if not_goal:
+            route=None
+        else:
+            Gnode._set_Father(to_expand[exp_index].name)
+            #print "Father for Gnode %s" %(Gnode.father)
+            #del route[:]
+            route=[Gnode]
+            #print "Current Route %d" %len(route)
+            rindex=0
+            #print route[rindex].father
+            while route[rindex].father is not 'none' :
+                nwnode = get_node(route[rindex].father, to_expand)
+                route.append(nwnode)
+                rindex=rindex+1
+            
+            route.reverse()
         return route
 
                 

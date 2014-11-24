@@ -58,6 +58,7 @@ class TopologicalNavServer(object):
         self.actions_needed=[]
 
         self.move_base_actions = ['move_base','human_aware_navigation']        
+
         self.navigation_activated=False
         self._action_name = name
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
@@ -237,7 +238,7 @@ class TopologicalNavServer(object):
                         #if  action_server == 'move_base' or  action_server == 'human_aware_navigation':
                         # Check if there is a move_base action in the edages of this node
                         # if not is dangerous to move
-                        if  action_server in self.move_base_actions :
+                        if  action_server in self.move_base_actions or action_server == 'docking':
                             break
                         action_server=None
     

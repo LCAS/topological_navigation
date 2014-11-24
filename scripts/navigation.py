@@ -246,7 +246,7 @@ class TopologicalNavServer(object):
                     if action_server is None:
                         rospy.loginfo("Action not taken, outputing success")
                         result=True
-			inc=0
+                        inc=0
                     else:
                         rospy.loginfo("Getting to exact pose")
                         result, inc = self.monitored_navigation(Onode.waypoint, action_server)
@@ -256,7 +256,7 @@ class TopologicalNavServer(object):
                     rospy.loginfo("Target or Origin Nodes were not found on Map")
                     self.cancelled = True
                     result=False
-		    inc=1
+                    inc=1
             tries+=inc
 
 

@@ -71,9 +71,15 @@ class TopologicalNavLoc(object):
     def PoseCallback(self, msg):
         if(self.throttle%self.throttle_val==0):
             a = float('1000.0')
+            first_node_foud=True
             for i in self.lnodes:
                 d=get_distance_to_node(i, msg)
                 if d < a:
+                    if first_node_found:
+                        b2=i
+                        first_node_foud=False
+                    else:
+                        b2=b
                     b=i
                     a=d
             wpstr=str(b.name)
@@ -84,6 +90,10 @@ class TopologicalNavLoc(object):
             else :
                 cnstr='none'
                 #self.cn_pub.publish('none')
+            #Charging Point exception it should never be closest node
+            if wpstr == 'ChargingPoint' and cnstr == 'none':
+                wpstr=str(b2.name)
+
 
             self.publishTopics(wpstr, cnstr)           
             self.throttle=1

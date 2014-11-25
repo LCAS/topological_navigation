@@ -238,7 +238,7 @@ class TopologicalNavServer(object):
                         #if  action_server == 'move_base' or  action_server == 'human_aware_navigation':
                         # Check if there is a move_base action in the edages of this node
                         # if not is dangerous to move
-                        if  action_server in self.move_base_actions or action_server == 'docking':
+                        if  action_server in self.move_base_actions :
                             break
                         action_server=None
     

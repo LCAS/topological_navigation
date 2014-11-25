@@ -43,7 +43,7 @@ class TravelTimeEstimator(object):
         travel_distance = math.hypot((startNode.pose.position.x-endNode.pose.position.x),(startNode.pose.position.y-endNode.pose.position.y))
 
         # this is the default scitos speed
-        travel_speed_ms = 1.0
+        travel_speed_ms = 0.5
         travel_time = rospy.Duration(travel_distance/travel_speed_ms)
         self.service_lock.release()
         return travel_time

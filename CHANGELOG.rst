@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.22 (2014-11-26)
+-------------------
 * Got the speed more correct.
 * Fixing typo, also now the top loc will check for the influence area of the two closest nodes instead of just the closest
 * removing docking from action that are allowed so the robot navigates to closest node that now is never ChargingStation

@@ -58,6 +58,7 @@ class TopologicalNavServer(object):
         self.actions_needed=[]
 
         self.move_base_actions = ['move_base','human_aware_navigation']        
+
         self.navigation_activated=False
         self._action_name = name
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
@@ -246,6 +247,7 @@ class TopologicalNavServer(object):
                     if action_server is None:
                         rospy.loginfo("Action not taken, outputing success")
                         result=True
+                        inc=0
                     else:
                         rospy.loginfo("Getting to exact pose")
                         result, inc = self.monitored_navigation(Onode.waypoint, action_server)
@@ -255,6 +257,7 @@ class TopologicalNavServer(object):
                     rospy.loginfo("Target or Origin Nodes were not found on Map")
                     self.cancelled = True
                     result=False
+                    inc=1
             tries+=inc
 
 

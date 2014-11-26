@@ -2,6 +2,17 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Got the speed more correct.
+* Fixing typo, also now the top loc will check for the influence area of the two closest nodes instead of just the closest
+* removing docking from action that are allowed so the robot navigates to closest node that now is never ChargingStation
+* adding ChargingPoint exception to localisation
+* Triying Docking when Charging station is the closest node
+* Fixing indentation
+* Bug Fix with inc variable not being set on special cases
+* Contributors: Nick Hawes, STRANDS user on Pablo-PC
+
 0.0.21 (2014-11-23)
 -------------------
 * Merge branch 'hydro-devel' of https://github.com/Jailander/strands_navigation into hydro-devel

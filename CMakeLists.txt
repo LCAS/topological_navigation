@@ -6,7 +6,7 @@ find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generat
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 
 
@@ -66,6 +66,7 @@ catkin_package(
    scripts/add_node.py
    scripts/crop_map.py
    scripts/insert_map.py
+   scripts/list_maps
    scripts/LoadPointSet.py
    scripts/map_collection_change.py
    scripts/map_export.py

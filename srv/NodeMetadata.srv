@@ -1,3 +1,4 @@
+string map_name
 string pointset
 string meta_category
 ---

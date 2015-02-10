@@ -39,7 +39,15 @@ def get_nodes(point_set):
     msg_store = MessageStoreProxy(collection="topological_maps")
 
     query_meta = {}
-    query_meta["pointset"] = point_set
+    query_meta["pointset"] = {}
+    query_meta["inserted_by"] = {}
+    query_meta["pointset"]['$regex'] = point_set
+    #query_meta["inserted_by"] = "/unnamed"
+    #query_meta["inserted_by"] = "{'$regex': 'unnamed'}"
+    query_meta["inserted_by"]['$regex'] = 'unnamed'
+    print query_meta
+
+    #query_meta["stored_class"] = "strands_navigation_msgs/TopologicalNode"
     nodes = msg_store.query(TopologicalNode._type, {}, query_meta);
     available = len(nodes) > 0
 

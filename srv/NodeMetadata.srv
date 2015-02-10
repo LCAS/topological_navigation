@@ -1,3 +1,7 @@
 string pointset
+string meta_category
 ---
-string[] nodes
+string[] name
+string[] description
+string[] goto_node
+string[] node_type

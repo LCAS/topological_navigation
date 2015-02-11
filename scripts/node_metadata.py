@@ -33,6 +33,11 @@ def handle_query_nodes(req):
                     resp.description.append(gui_node["description"])
                 else:
                     resp.description.append("")
+                
+                if gui_node.has_key("at_node"):
+                    resp.at_node.append(gui_node["at_node"])
+                else:
+                    resp.at_node.append(False)
 
     print "Returning ",len(resp.name)," nodes for the meta_query ",req.meta_category
     return resp;

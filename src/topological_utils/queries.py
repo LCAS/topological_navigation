@@ -34,18 +34,20 @@ def get_maps():
     return maps
 
 
-def get_nodes(point_set):
+def get_nodes(map_name, point_set, meta_query):
 
     msg_store = MessageStoreProxy(collection="topological_maps")
 
     query_meta = {}
     query_meta["pointset"] = {}
-    query_meta["inserted_by"] = {}
+    query_meta["map"] = {}
+    query_meta["contains.category"] = {}
     query_meta["pointset"]['$regex'] = point_set
+    query_meta["map"]['$regex'] = map_name
     #query_meta["inserted_by"] = "/unnamed"
     #query_meta["inserted_by"] = "{'$regex': 'unnamed'}"
-    query_meta["inserted_by"]['$regex'] = 'unnamed'
-    print query_meta
+    query_meta["contains.category"]['$regex'] = meta_query
+    #print query_meta
 
     #query_meta["stored_class"] = "strands_navigation_msgs/TopologicalNode"
     nodes = msg_store.query(TopologicalNode._type, {}, query_meta);
@@ -54,7 +56,7 @@ def get_nodes(point_set):
     if available <= 0 :
         print "Desired pointset '"+point_set+"' not in datacentre"
         print "Available pointsets: "+str(available)
-        raise Exception("Can't find waypoints.")
+        #raise Exception("Can't find waypoints.")
 
     return nodes
     

@@ -24,23 +24,28 @@ def my_random_string(string_length=10):
     return random[0:string_length]
 
 def handle_query_nodes(req):
-    print "Queried for  %s %s"%(req.pointset, req.meta_category)
-    nodes_list = []
-    #nodes = get_nodes(req.pointset)
+    print "Queried for %s %s %s"%(req.map_name, req.pointset, req.meta_category)
+    
     resp = NodeMetadataResponse()
     resp.name=[]
     resp.description = []
     resp.goto_node=[]
     resp.node_type = []
-    #for node in nodes :
-    #    nodes_list.append(node[0].name)
-    #resp.nodes = nodes_list
-    results = randint(1,5);
-    for i in range(0, results) : 
-        resp.name.append(my_random_string(8));
-        resp.description.append("This is some really meaningful text");
-        resp.goto_node.append(my_random_string(6));
-        resp.node_type.append(req.meta_category);
+    
+    nodes = get_nodes(req.map_name, req.pointset, req.meta_category)
+    
+    for node in nodes:
+        print node[1]["node"]
+        for gui_node in node[1]["contains"]: 
+            if (gui_node["category"] == req.meta_category) :
+                resp.name.append(gui_node["name"])
+                resp.node_type.append(gui_node["category"])
+                resp.goto_node.append(node[1]["node"])
+                if gui_node.has_key("description"):
+                    resp.description.append(gui_node["description"])
+                else:
+                    resp.description.append("")
+
     return resp;
 
 def query_nodes_server():

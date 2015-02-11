@@ -24,7 +24,6 @@ def handle_query_nodes(req):
     nodes = get_nodes(req.map_name, req.pointset, req.meta_category)
     
     for node in nodes:
-        print node[1]["node"]
         for gui_node in node[1]["contains"]: 
             if (gui_node["category"] == req.meta_category) :
                 resp.name.append(gui_node["name"])
@@ -35,6 +34,7 @@ def handle_query_nodes(req):
                 else:
                     resp.description.append("")
 
+    print "Returning ",len(resp.name)," nodes for the meta_query ",req.meta_category
     return resp;
 
 def query_nodes_server():

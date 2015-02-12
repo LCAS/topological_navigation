@@ -75,7 +75,7 @@ class MapExport(object):
                 top_map.append(nodeinf)
                 #val = bson.json_util.dumps(nodeinf["meta"], indent=1)       
             
-            fh = open('test.txt', "w")
+            fh = open(filename, "w")
             #s_output = str(bson.json_util.dumps(nodeinf, indent=1))
             s_output = str(bson.json_util.dumps(top_map, indent=1, sort_keys=True) )
             print s_output

@@ -4,7 +4,7 @@ Provides routines for querying the database for map information.
 
 from strands_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
-
+import rospy
 
 def get_maps():
     """
@@ -34,6 +34,26 @@ def get_maps():
     return maps
 
 
+def get_nodes(map_name, point_set, meta_query):
 
+    msg_store = MessageStoreProxy(collection="topological_maps")
+
+    query_meta = {}
+    query_meta["pointset"] = {}
+    query_meta["map"] = {}
+    query_meta["contains.category"] = {}
+    query_meta["pointset"]['$regex'] = point_set
+    query_meta["map"]['$regex'] = map_name
+    query_meta["contains.category"]['$regex'] = meta_query
+
+    nodes = msg_store.query(TopologicalNode._type, {}, query_meta);
+    available = len(nodes) > 0
+
+    if available <= 0 :
+        print "Desired pointset '"+point_set+"' not in datacentre"
+        print "Available pointsets: "+str(available)
+
+    return nodes
+    
 if __name__ == "__main__":
     get_maps()

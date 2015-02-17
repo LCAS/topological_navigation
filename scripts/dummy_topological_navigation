@@ -57,8 +57,9 @@ class DummyTopologicalNavigator():
         # wait for completion or prempt
 
         if self.time_srv:
-            time_estimate = self.time_srv(self.cn, goal.target).travel_time
-            rospy.sleep(time_estimate)
+            target = rospy.get_rostime() + self.time_srv(self.cn, goal.target).travel_time
+            while not rospy.is_shutdown() and not self.nav_server.is_preempt_requested() and rospy.get_rostime() < target:
+                rospy.sleep(0.5)
         else:
             rospy.sleep(1)
 

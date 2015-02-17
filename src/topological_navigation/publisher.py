@@ -7,6 +7,7 @@ import std_msgs.msg
 from topological_navigation.topological_node import *
 from strands_navigation_msgs.msg import TopologicalNode
 from strands_navigation_msgs.msg import TopologicalMap
+from strands_navigation_msgs.srv import GetTopologicalMap
 
 from mongodb_store.message_store import MessageStoreProxy
 
@@ -20,6 +21,7 @@ class map_publisher(object):
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
         rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
+        self.get_map_srv=rospy.Service('/topological_map_publisher/get_topological_map', GetTopologicalMap, self.get_topological_map_cb)
 
 
      
@@ -29,6 +31,11 @@ class map_publisher(object):
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)        
 
+
+    def get_topological_map_cb(self, req):
+        nodes = self.loadMap(req.pointset)
+        print "Returning Map %s"%req.pointset
+        return nodes
 
 
     def loadMap(self, point_set) :
@@ -62,8 +69,8 @@ class map_publisher(object):
         message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
 
         points = TopologicalMap()
-        points.name = self.name
-        points.map = self.name
+        points.name = point_set
+        points.map = point_set
         points.pointset = point_set
         #string last_updated
         for i in message_list:

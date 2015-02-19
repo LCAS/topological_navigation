@@ -345,7 +345,7 @@ class PolicyExecutionServer(object):
         for i in self.lnodes:
             if i.name == node :
                 found = True
-                target_pose = i.pose
+                target_pose = i.pose[0]
                 break
         
         if found:

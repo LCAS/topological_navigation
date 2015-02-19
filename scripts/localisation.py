@@ -32,7 +32,7 @@ def get_node(name, clist):
 
 
 def get_distance_to_node(node, pose):
-    dist=math.hypot((pose.position.x-node.pose.position.x),(pose.position.y-node.pose.position.y))
+    dist=math.hypot((pose.position.x-node.pose[0].position.x),(pose.position.y-node.pose[0].position.y))
     return dist
 
 
@@ -123,8 +123,8 @@ class TopologicalNavLoc(object):
 
 
     def point_in_poly(self,node,pose):
-        x=pose.position.x-node.pose.position.x
-        y=pose.position.y-node.pose.position.y
+        x=pose.position.x-node.pose[0].position.x
+        y=pose.position.y-node.pose[0].position.y
         
         n = len(node.verts)
         inside = False

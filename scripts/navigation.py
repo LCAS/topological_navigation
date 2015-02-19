@@ -133,7 +133,7 @@ class TopologicalNavServer(object):
                 data = [j.x,j.y]
                 verts.append(data)
             b._insert_vertices(verts)  
-            c=i.pose
+            c=i.pose[0]
             waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
             b.waypoint = waypoint
             b._get_coords()

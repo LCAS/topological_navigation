@@ -59,6 +59,7 @@ class map_publisher(object):
                     rospy.sleep(rospy.Duration.from_sec(6))
                 else :
                     raise Exception("Can't find waypoints.")
+                    sys.exit(2)
             else:
                 map_found=True
  

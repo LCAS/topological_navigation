@@ -20,20 +20,13 @@ if __name__ == '__main__':
 
     msg_store = MessageStoreProxy(collection='topological_maps')
 
-    print "loading %s"%filename
-    yaml_data=open(filename, "r")
+    json_data=open(filename, 'rb').read()
     
-    data = yaml.load(yaml_data)
-    
-    print "printing vlaa"
-    print data
-
-    #data = json.loads(json_data)
+    data = json.loads(json_data)
     
     for i in data:
-        meta = i[1]
-        msgv = dc_util.dictionary_to_message(i[0], TopologicalNode)
-        print msgv, meta
+        meta = i['meta']
+        msgv = dc_util.dictionary_to_message(i['node'], TopologicalNode)
         msg_store.insert(msgv,meta)
         #mongodb_store.util.store_message(points_db,p,val)
 

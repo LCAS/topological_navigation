@@ -15,8 +15,6 @@ if __name__ == '__main__':
 	sys.exit(2)
 
     filename=str(sys.argv[1])
-    #dataset_name=str(sys.argv[2])
-    #map_name=str(sys.argv[3])
 
     msg_store = MessageStoreProxy(collection='topological_maps')
 
@@ -26,14 +24,13 @@ if __name__ == '__main__':
     data = yaml.load(yaml_data)
     
     print "printing vlaa"
-    print data
 
-    #data = json.loads(json_data)
     
     for i in data:
         meta = i[1]
+        print i[0]
         msgv = dc_util.dictionary_to_message(i[0], TopologicalNode)
-        print msgv, meta
+        #print msgv, meta
         msg_store.insert(msgv,meta)
         #mongodb_store.util.store_message(points_db,p,val)
 

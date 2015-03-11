@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 
+#==============================================================================
+# This Script takes a waypoint file and creates a Yaml file with a topological 
+# map definition
+#
+# Usage:
+#
+# `rosrun topological_utils waypoints_to_yaml_tmap.py input_file output_file pointset map [max_dist_connect]`
+#
+#==============================================================================
+
 import sys
 import math
 import json
@@ -36,8 +46,18 @@ def get_vertex_list(vertices):
     return verts
 
 def node_dist(node1,node2):
-    dist = math.sqrt((node1.pose[0].position.x - node2.pose[0].position.x)**2 + (node1.pose[0].position.y - node2.pose[0].position.y)**2 )
+    dist = math.sqrt((node1.pose.position.x - node2.pose.position.x)**2 + (node1.pose.position.y - node2.pose.position.y)**2 )
     return dist
+
+
+def get_edge_id(source, target, eids):
+    test=0
+    eid = '%s_%s' %(source, target)
+    while eid in eids:
+        eid = '%s_%s_%3d' %(source, target, test)
+        test += 1
+    return eid
+
 
 def get_empty_edge(mapname,standard_action):
     e = Edge()
@@ -48,17 +68,34 @@ def get_empty_edge(mapname,standard_action):
     e.use_default_nav_recovery = True
     e.use_default_helpers = True
     return e
+    
+def create_node(name, mapname, pointset, line):
+    o=[]
+    n = TopologicalNode()
+    n.name = name
+    n.map = mapname
+    n.pointset = pointset
+    n.pose = pose_from_waypoint(line)
+    n.yaw_goal_tolerance = 0.1
+    n.xy_goal_tolerance = 0.3
+    n.verts = get_vertex_list(vertices)
+    m = {}
+    m["map"] = mapname
+    m["pointset"] = pointset
+    m["node"] = n.name
+    o.append(n)
+    o.append(m)    
+    return o
 
 if __name__ == '__main__':
     if len(sys.argv) < 5 :
-        print "usage: tmap_from_waypoint input_file output_file pointset map [max_dist_connect]"
+        print "usage:  waypoints_to_yaml_tmap.py input_file output_file pointset map [max_dist_connect]"
         sys.exit(2)
         
     filename=str(sys.argv[1])
     outfile=str(sys.argv[2])
     pointset=str(sys.argv[3])
     mapname=str(sys.argv[4])
-
     vertices=[(0.69, 0.287), (0.287, 0.69), (-0.287, 0.69), (-0.69, 0.287), (-0.69, -0.287), (-0.287, -0.69), (0.287, -0.69), (0.69, -0.287)]
 
     if len(sys.argv) == 6:
@@ -67,50 +104,54 @@ if __name__ == '__main__':
         max_dist_connect=100
     
     standard_action = 'move_base'
+    eids=[] #list of known edge id's    
+
+
+    lnodes=[]
     
 
     fin = open(filename, 'r')
-    lnodes=[]
     line = fin.readline()
     nnodes=0
+
     #Inserting waypoints
     while line:
         nnodes=nnodes+1
         wname= "WayPoint%d" %nnodes
-        o = []
-        n = TopologicalNode()
-        n.name = wname
-        n.map = mapname
-        n.pointset = pointset
-        n.pose.append(pose_from_waypoint(line))
-        n.yaw_goal_tolerance = 0.1
-        n.xy_goal_tolerance = 0.3
-        n.verts = get_vertex_list(vertices)
-        #n = dc_util.msg_to_document(n1)
-        #print n
-        m = {}
-        m["map"] = mapname
-        m["pointset"] = pointset
-        m["node"] = n.name
-        o.append(n)
-        o.append(m)
+        o=create_node(wname, mapname, pointset, line)
         lnodes.append(o)
         line = fin.readline()
     fin.close()
+
 
 #    for i in lnodes:        print i["node"]
     print "calculate edges"
     edge_names = []
     for i in lnodes:
-        #im = dc_util.dictionary_to_message(i[0], TopologicalNode)
         for j in lnodes:
-            #jm = dc_util.dictionary_to_message(j[0], TopologicalNode)
             if node_dist(i[0],j[0]) < max_dist_connect and i[0].name != j[0].name :
                 print "connecting %s to %s"%(i[0].name,j[0].name)
                 e = get_empty_edge(mapname, standard_action)
                 e.edge_id = "%s_%s"%(i[0].name,j[0].name)
                 e.node = j[0].name
                 i[0].edges.append(e)
+
+    print "charging point"
+    a=[]
+    a=create_node('ChargingPoint', mapname, pointset, "0,0,0,0,0,0,0\n")
+    print "Connecting %s to %s"%(a[0].name, lnodes[0][0].name)
+    e = get_empty_edge(mapname, 'undocking')
+    e.edge_id = "%s_%s"%(a[0].name, lnodes[0][0].name)
+    e.node = lnodes[0][0].name
+    lnodes.append(a)
+
+
+    print "Connecting %s to %s"%(lnodes[0][0].name, a[0].name)
+    e = get_empty_edge(mapname, 'docking')
+    e.edge_id = "%s_%s"%(lnodes[0][0].name, a[0].name)
+    e.node = a[0].name
+    lnodes[0][0].edges.append(e)
+    #print lnodes[0][0].edges
 
     onodes = []
     for i in lnodes:

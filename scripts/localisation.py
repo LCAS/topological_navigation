@@ -17,10 +17,10 @@ from std_msgs.msg import String
 #import scitos_apps_msgs.msg
 
 from strands_navigation_msgs.msg import TopologicalNode
-from mongodb_store.message_store import MessageStoreProxy
+#from mongodb_store.message_store import MessageStoreProxy
 
 from strands_navigation_msgs.msg import TopologicalMap
-from topological_navigation.topological_node import *
+#from topological_navigation.topological_node import *
 
 import topological_navigation.msg
 
@@ -32,7 +32,8 @@ def get_node(name, clist):
 
 
 def get_distance_to_node(node, pose):
-    dist=math.hypot((pose.position.x-node.pose[0].position.x),(pose.position.y-node.pose[0].position.y))
+    #dist=math.hypot((pose.position.x-node.pose[0].position.x),(pose.position.y-node.pose[0].position.y))
+    dist=math.hypot((pose.position.x-node.pose.position.x),(pose.position.y-node.pose.position.y))
     return dist
 
 
@@ -47,10 +48,10 @@ class TopologicalNavLoc(object):
         self.wpstr="Unknown"
         self.cnstr="Unknown"
         
-        
-        #self._action_name = name
+
         self.wp_pub = rospy.Publisher('/closest_node', String, latch=True)
         self.cn_pub = rospy.Publisher('/current_node', String, latch=True)
+        
         
         self.lnodes = []
 
@@ -62,7 +63,6 @@ class TopologicalNavLoc(object):
             pass
             
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
-        #self.run_analysis()
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -116,19 +116,22 @@ class TopologicalNavLoc(object):
         self.wpstr=wpstr
         self.cnstr=cnstr
 
+
+    """
+     MapCallback
+     
+     This function receives the Topological Map
+    """
     def MapCallback(self, msg) :
         self.lnodes = msg.nodes
-#        for i in self.lnodes : 
-#            print i
 
 
     def point_in_poly(self,node,pose):
-        x=pose.position.x-node.pose[0].position.x
-        y=pose.position.y-node.pose[0].position.y
+        x=pose.position.x-node.pose.position.x
+        y=pose.position.y-node.pose.position.y
         
         n = len(node.verts)
         inside = False
-
     
         p1x = node.verts[0].x
         p1y = node.verts[0].y
@@ -143,7 +146,6 @@ class TopologicalNavLoc(object):
                         if p1x == p2x or x <= xints:
                             inside = not inside
             p1x,p1y = p2x,p2y
-
         return inside
 
 

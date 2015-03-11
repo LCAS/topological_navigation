@@ -133,7 +133,7 @@ class TopologicalNavServer(object):
                 data = [j.x,j.y]
                 verts.append(data)
             b._insert_vertices(verts)  
-            c=i.pose[0]
+            c=i.pose#[0]
             waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
             b.waypoint = waypoint
             b._get_coords()
@@ -145,6 +145,7 @@ class TopologicalNavServer(object):
                 if j not in self.actions_needed:
                     self.actions_needed.append(j)
         self.lnodes = points
+
 
 
     """
@@ -162,6 +163,7 @@ class TopologicalNavServer(object):
             self.navigate(goal.target)
         else:
             rospy.loginfo('Monitored Navigation client has not started!!!')
+
 
     """
      Preempt CallBack
@@ -185,7 +187,6 @@ class TopologicalNavServer(object):
             rospy.loginfo('Monitored Navigation client has not started!!!')
 
 
-
     """
      Current Node CallBack
      
@@ -203,8 +204,6 @@ class TopologicalNavServer(object):
                         rospy.loginfo('intermediate node reached %s', self.current_node)
                         self.goal_reached=True
                         
-
-
  
     """
      Navigate
@@ -295,30 +294,19 @@ class TopologicalNavServer(object):
             if pos>=0 :
                 not_goal=False
             else :
-                #print "Goal NOT found"
                 update_to_expand(to_expand, children, self.lnodes, to_expand[exp_index].name)
                 exp_index=exp_index+1
-                #print "nodes to expand %d:" %len(to_expand)
-                #for m in to_expand :
-                #    print m.name
-                #print "expanding node %d: (%s)" %(exp_index,to_expand[exp_index].name)
                 if exp_index >= len(to_expand) :
                     not_goal=True
                     break                    
                 children=to_expand[exp_index]._get_Children()
-                #print "nodes in list:"
-                #print children
         
         if not_goal:
             route=None
         else:
             Gnode._set_Father(to_expand[exp_index].name)
-            #print "Father for Gnode %s" %(Gnode.father)
-            #del route[:]
             route=[Gnode]
-            #print "Current Route %d" %len(route)
             rindex=0
-            #print route[rindex].father
             while route[rindex].father is not 'none' :
                 nwnode = get_node(route[rindex].father, to_expand)
                 route.append(nwnode)
@@ -405,14 +393,14 @@ class TopologicalNavServer(object):
             current_edge = '%s_%s--%s' %(route[rindex].name, route[rindex+1].name, self.topol_map)
             self.cur_edge.publish(current_edge)
 
-            pubedg = CurrentEdge()
-            pubedg.header.stamp = rospy.Time.now()
-            pubedg.origin = route[rindex].name
-            pubedg.target = route[rindex+1].name
-            pubedg.action = a
-            pubedg.active = True
-            pubedg.result = True
-            self.edge_pub.publish(pubedg)
+#            pubedg = CurrentEdge()
+#            pubedg.header.stamp = rospy.Time.now()
+#            pubedg.origin = route[rindex].name
+#            pubedg.target = route[rindex+1].name
+#            pubedg.action = a
+#            pubedg.active = True
+#            pubedg.result = True
+#            self.edge_pub.publish(pubedg)
             
             
             self._feedback.route = '%s to %s using %s' % (route[rindex].name, route[rindex+1].name, a)
@@ -464,10 +452,10 @@ class TopologicalNavServer(object):
 
             self.publish_stats()
 
-            pubedg.header.stamp = rospy.Time.now()
-            pubedg.active = False
-            pubedg.result = nav_ok
-            self.edge_pub.publish(pubedg)
+#            pubedg.header.stamp = rospy.Time.now()
+#            pubedg.active = False
+#            pubedg.result = nav_ok
+#            self.edge_pub.publish(pubedg)
             
             current_edge = 'none'
             self.cur_edge.publish(current_edge)            

@@ -1,17 +1,28 @@
 #!/usr/bin/env python
 
-import json
+#==============================================================================
+# This Script takes a topological map file (.tmap) and creates a Yaml file with 
+# the topological map definition
+#
+# Usage:
+#
+# `rosrun topological_utils tmap_to_yaml.py input_file.tmap outfile dataset map_name`
+#
+#==============================================================================
+
+
+#import json
 import sys
-import rospy
+#import rospy
 import yaml
 
 from geometry_msgs.msg import Pose
 from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 import mongodb_store.util as dc_util
 
-import pymongo
+#import pymongo
 #import mongodb_store.util
-from mongodb_store.message_store import MessageStoreProxy
+#from mongodb_store.message_store import MessageStoreProxy
 
 
 class topological_node(object):
@@ -105,15 +116,15 @@ def loadMap(inputfile, dataset_name, map_name) :
 
 if __name__ == '__main__':
     if len(sys.argv) < 5 :
-        print "usage: insert_map input_file.txt outfile dataset map_name"
-	sys.exit(2)
+        print "usage: tmap_to_yaml.py input_file.tmap outfile dataset map_name"
+        sys.exit(2)
 
     filename=str(sys.argv[1])
     outfile=str(sys.argv[2])
     dataset_name=str(sys.argv[3])
     map_name=str(sys.argv[4])
 
-    eids=[]
+    eids=[] #list of known edge id's
     lnodes=loadMap(filename, dataset_name, map_name)
     nnodes=[]
 
@@ -122,7 +133,6 @@ if __name__ == '__main__':
     meta["pointset"] = dataset_name
         
     for i in lnodes:
-        #val=i.__dict__#json.loads(vala)        print val #+ '\n'
         n = TopologicalNode()
         n.name = i.name
         meta["node"] = i.name
@@ -149,16 +159,16 @@ if __name__ == '__main__':
             eid = get_edge_id(i.name, e.node, eids)
             eids.append(eid)
             e.edge_id = eid
+            e.top_vel =0.55
+            e.map_2d = map_name
+            e.use_default_recovery = True
+            e.use_default_nav_recovery = True
+            e.use_default_helpers = True            
             n.edges.append(e)
         nnodes.append(n)
-        #print n
-        #msg_store.insert(n,meta)
-        #mongodb_store.util.store_message(points_db,p,val)
-    
-        onodes = []
-
 
     
+    onodes = []
     for i in nnodes:
         r = []
         q = dc_util.msg_to_document(i)
@@ -170,10 +180,10 @@ if __name__ == '__main__':
         r.append(m)
         onodes.append(r)
 
-    onodes.sort(key=lambda x: x[0]['name'])
 
+    onodes.sort(key=lambda x: x[0]['name'])
     yml = yaml.safe_dump(onodes, default_flow_style=False)
-    print yml
+    #print yml
     #print s_output
 
     fh = open(outfile, "w")
@@ -183,5 +193,5 @@ if __name__ == '__main__':
     fh.write(s_output)
     fh.close
 
-    for i in onodes:
-        print i
+#    for i in onodes:
+#        print i

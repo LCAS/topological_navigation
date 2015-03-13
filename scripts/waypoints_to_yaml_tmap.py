@@ -37,9 +37,9 @@ def pose_from_waypoint(waypoint):
     return p
 
 def get_vertex_list(vertices):
-    v = Vertex()
     verts = []
     for i in vertices:
+        v = Vertex()
         v.x = i[0]
         v.y = i[1]
         verts.append(v)
@@ -69,7 +69,7 @@ def get_empty_edge(mapname,standard_action):
     e.use_default_helpers = True
     return e
     
-def create_node(name, mapname, pointset, line):
+def create_node(name, mapname, pointset, line, vertices):
     o=[]
     n = TopologicalNode()
     n.name = name
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     while line:
         nnodes=nnodes+1
         wname= "WayPoint%d" %nnodes
-        o=create_node(wname, mapname, pointset, line)
+        o=create_node(wname, mapname, pointset, line, vertices)
         lnodes.append(o)
         line = fin.readline()
     fin.close()
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     print "charging point"
     a=[]
-    a=create_node('ChargingPoint', mapname, pointset, "0,0,0,0,0,0,0\n")
+    a=create_node('ChargingPoint', mapname, pointset, "0,0,0,0,0,0,0\n", vertices)
     print "Connecting %s to %s"%(a[0].name, lnodes[0][0].name)
     e = get_empty_edge(mapname, 'undocking')
     e.edge_id = "%s_%s"%(a[0].name, lnodes[0][0].name)
@@ -172,4 +172,3 @@ if __name__ == '__main__':
     print s_output
     fh.write(s_output)
     fh.close
-       

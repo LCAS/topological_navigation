@@ -137,12 +137,13 @@ if __name__ == '__main__':
                 i[0].edges.append(e)
 
     print "charging point"
-    a=[]
+    #a=[]
     a=create_node('ChargingPoint', mapname, pointset, "0,0,0,0,0,0,0\n", vertices)
     print "Connecting %s to %s"%(a[0].name, lnodes[0][0].name)
     e = get_empty_edge(mapname, 'undocking')
     e.edge_id = "%s_%s"%(a[0].name, lnodes[0][0].name)
     e.node = lnodes[0][0].name
+    a[0].edges.append(e)
     lnodes.append(a)
 
 

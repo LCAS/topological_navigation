@@ -145,6 +145,10 @@ class PolicyExecutionServer(object):
                         next_action, target = self.find_action(self.current_route.source[nod_ind], self.current_route.edge_id[nod_ind])
                         if next_action in self.move_base_actions :
                             self.goal_reached=True
+                        else:
+                            if self.current_node != self.current_target :
+                                #This means that the robot will try to execute the policies again which means navigating to the waypoint
+                                self.goal_failed=True                            
 
 
     """
@@ -238,7 +242,8 @@ class PolicyExecutionServer(object):
                         # There is NO edge between these two nodes so abort the execution
                         success = False
                         keep_executing = False
-                        rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
+                        rospy.loginfo("There is NO edge %s will ABORT policy execution", route.edge_id[nod_ind])
+                        #rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
                 else :
                     nfails+=1
                     if nfails < self.n_tries :
@@ -295,7 +300,7 @@ class PolicyExecutionServer(object):
                                     # No edge between Closest Node and its target Abort execution
                                     success = False
                                     keep_executing = False
-                                    rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
+                                    rospy.loginfo("There is NO edge %s will ABORT policy execution", route.edge_id[nod_ind])
                                     break
                             else :
                                 # Closest node not in route navigate to it (if it suceeds policy execution will be successful)
@@ -348,6 +353,7 @@ class PolicyExecutionServer(object):
      
     """
     def navigate_to(self, action, node):
+        self.current_target=node
         found = False
         for i in self.lnodes:
             if i.name == node :
@@ -399,10 +405,11 @@ class PolicyExecutionServer(object):
         goal.target_pose.pose = pose
 
         self.goal_reached=False
+        self.goal_failed=False
         self.monNavClient.send_goal(goal)
         status=self.monNavClient.get_state()
         
-        while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached :
+        while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached and not self.goal_failed :
             status=self.monNavClient.get_state()
             rospy.sleep(rospy.Duration.from_sec(0.1))
 

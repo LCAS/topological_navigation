@@ -114,6 +114,7 @@ class topological_map(object):
                 edge = Edge()
                 edge.node = de_waypoint
                 edge.action = action
+                edge.top_vel = 0.55
                 available[0][0].edges.append(edge)
                 msg_store.update(available[0][0], query_meta, query, upsert=True)
             else :

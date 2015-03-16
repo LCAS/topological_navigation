@@ -71,7 +71,7 @@ def update_meta(meta, pointset):
         if j in to_pop:
             cm.pop(j)
     
-    cm['pointset']=pointsetb
+    cm['pointset']=pointset
     return cm
 
 if __name__ == '__main__':
@@ -91,8 +91,8 @@ if __name__ == '__main__':
     print b
     
 
-    pointset='robolab'
-    pointsetb='robolab_b'
+    #pointset='robolab'
+    #pointset='robolab_b'
 
     db=client.message_store
     collection=db["topological_maps"]
@@ -129,14 +129,14 @@ if __name__ == '__main__':
 
     del_ids = []
     for pointset in to_update:
-        pointsetb='%s_b'%pointset
-        print pointsetb
+        #pointsetb='%s_b'%pointset
+        #print pointsetb
         search = {"_meta.pointset": pointset}
         av =collection.find(search)
         lnodes=[]
         for a in av:
             #print a
-            bc = update_node(a, pointsetb)
+            bc = update_node(a, pointset)
     
             nna = a['name']
             nma = a['map']
@@ -150,7 +150,7 @@ if __name__ == '__main__':
                 v = update_vert(i)
                 bc.verts.append(v)
             
-            meta = update_meta(a['_meta'], pointsetb)
+            meta = update_meta(a['_meta'], pointset)
             
             #print bc
             #print meta

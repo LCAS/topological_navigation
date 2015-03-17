@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.24 (2015-03-17)
+-------------------
 * Fix in map to yaml
 * Added a boolean value indicating whether the returned nodes are actual nodes in the topological map
 * Clean up

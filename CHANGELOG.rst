@@ -2,6 +2,22 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix in map to yaml
+* Added a boolean value indicating whether the returned nodes are actual nodes in the topological map
+* Clean up
+* Print message
+* Clean up
+* returning nodes based on the mongodb node metadata
+* Adding scripts for new file format
+* Added map name to the service message
+* Returning random data
+* Adding topological node metadata query service - initial commit
+* Added better handling of time for dummy navigation.
+* Add list maps utility.
+* Contributors: Chris Burbridge, Jailander, Nick Hawes, Rares Ambrus
+
 0.0.23 (2014-12-17)
 -------------------
 

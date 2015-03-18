@@ -2,6 +2,12 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added the option to simulate time as an argument to the file.
+* Renamed to .py to be consistent.
+* Contributors: Nick Hawes
+
 0.0.24 (2015-03-17)
 -------------------
 * Fix in map to yaml

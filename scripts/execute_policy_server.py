@@ -314,7 +314,7 @@ class PolicyExecutionServer(object):
                     else :
                         # Current node not in route so policy execution was successful
                         nfails=0
-                        print 'Do move_base to %s' %self.self.current_node
+                        print 'Do move_base to %s' %self.current_node
                         self.current_action = 'move_base'
                         success=self.navigate_to(self.current_action,self.current_node)
                         if success :

@@ -292,7 +292,7 @@ class PolicyExecutionServer(object):
                                         print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target)
                                         success=self.navigate_to(self.current_action,target)
                                     else:
-                                        # If closest_node and its target are not connected by move_base type action nvigate to closest_node
+                                        # If closest_node and its target are not connected by move_base type action navigate to closest_node
                                         print 'Do move_base to %s' %self.closest_node#(route.source[0])
                                         self.current_action = 'move_base'
                                         success=self.navigate_to(self.current_action,self.closest_node)
@@ -314,8 +314,11 @@ class PolicyExecutionServer(object):
                     else :
                         # Current node not in route so policy execution was successful
                         nfails=0
-                        success = True
-                        keep_executing = False
+                        print 'Do move_base to %s' %self.self.current_node
+                        self.current_action = 'move_base'
+                        success=self.navigate_to(self.current_action,self.current_node)
+                        if success :
+                            keep_executing = False
             rospy.sleep(rospy.Duration.from_sec(0.3))
         self.navigation_activated = False
         return success

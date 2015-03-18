@@ -3,13 +3,13 @@
 	<!-- which topological map to simulate. if undefined one will be created -->
   	<arg name="map" default="" />
 
-	<node pkg="topological_utils" type="dummy_topological_navigation" name="dummy_topological_navigation" output="screen">
+	<node pkg="topological_utils" type="dummy_topological_navigation.py" name="dummy_topological_navigation" output="screen">
 		<!-- if simulate time is true then this node uses the estimator service to get the travel time, then sleeps for that long -->
 		<param name="simulate_time" value="true"/>
 		<param name="map" value="$(arg map)" />
 	</node>
 
-	<node pkg="topological_navigation" type="travel_time_estimator" name="travel_time_estimator" output="screen"/>
+	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" output="screen"/>
 
 
 </launch>

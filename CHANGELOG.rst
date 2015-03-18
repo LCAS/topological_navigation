@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.26 (2015-03-18)
+-------------------
 * Forgot the install targets
 * Contributors: Nick Hawes
 

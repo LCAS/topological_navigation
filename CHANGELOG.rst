@@ -2,6 +2,11 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Renamed to .py to be consistent.
+* Contributors: Nick Hawes
+
 0.0.24 (2015-03-17)
 -------------------
 

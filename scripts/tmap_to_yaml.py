@@ -161,9 +161,9 @@ if __name__ == '__main__':
             e.edge_id = eid
             e.top_vel =0.55
             e.map_2d = map_name
-            e.use_default_recovery = True
-            e.use_default_nav_recovery = True
-            e.use_default_helpers = True            
+#            e.use_default_recovery = True
+#            e.use_default_nav_recovery = True
+#            e.use_default_helpers = True            
             n.edges.append(e)
         nnodes.append(n)
 

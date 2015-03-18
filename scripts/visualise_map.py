@@ -39,13 +39,14 @@ from strands_navigation_msgs.msg import TopologicalMap
 class TopologicalMapVis(object):
     _killall_timers=False
 
-    def __init__(self, name, filename) :
+    def __init__(self, name, filename, edit_mode) :
 
         rospy.on_shutdown(self._on_node_shutdown)
 
         self.update_needed=False
         self.in_feedback=False
         self._point_set=filename
+        self._edit_mode = edit_mode
         
         rospy.loginfo("Creating Publishers ...")
         self.map_pub = rospy.Publisher('/topological_nodes_array', MarkerArray)
@@ -61,8 +62,9 @@ class TopologicalMapVis(object):
         self.vert_cont = vertex_controllers(self._point_set)
         rospy.loginfo("Waypoint Controllers ...")
         self.node_cont = waypoint_controllers(self._point_set)
-        rospy.loginfo("Go To Controllers ...")
-        self.goto_cont = go_to_controllers(self._point_set)
+        if not self._edit_mode :
+            rospy.loginfo("Go To Controllers ...")
+            self.goto_cont = go_to_controllers(self._point_set)
         rospy.loginfo("Node Manager Controllers ...")
         self.add_rm_node = node_manager(self._point_set)
         rospy.loginfo("Done ...")
@@ -121,7 +123,8 @@ class TopologicalMapVis(object):
 
 
     def map_callback(self, msg) :
-        self.goto_cont.update_map(msg)
+        if not self._edit_mode :
+            self.goto_cont.update_map(msg)
         self.node_cont.update_map(msg)
         self.vert_cont.update_map(msg)
         self.edge_cont.update_map(msg)
@@ -143,7 +146,12 @@ class TopologicalMapVis(object):
 
 
 if __name__ == '__main__':
+    edit_mode=False
     mapname=str(sys.argv[1])
+    argc = len(sys.argv)
+    if argc > 2:
+        if '-edit' in sys.argv or '-e' in sys.argv :
+            edit_mode = True
     rospy.init_node('topological_visualisation')
-    server = TopologicalMapVis(rospy.get_name(),mapname)
+    server = TopologicalMapVis(rospy.get_name(),mapname, edit_mode)
     rospy.spin()

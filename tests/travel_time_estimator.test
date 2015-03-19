@@ -6,7 +6,7 @@
 
   <node name="message_store" pkg="mongodb_store" type="message_store_node.py" output="screen"/>
   
-  <node name="travel_time_estimator" pkg="topological_navigation" type="travel_time_estimator" output="screen"/>
+  <node name="travel_time_estimator" pkg="topological_navigation" type="travel_time_estimator.py" output="screen"/>
 
   <test test-name="travel_time_tester" pkg="topological_navigation" type="travel_time_tester.py" />
 

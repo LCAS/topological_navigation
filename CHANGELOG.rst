@@ -2,6 +2,33 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.26 (2015-03-18)
+-------------------
+* Forgot the install targets
+* Contributors: Nick Hawes
+
+0.0.25 (2015-03-18)
+-------------------
+* Added the option to simulate time as an argument to the file.
+* Renamed to .py to be consistent.
+* Contributors: Nick Hawes
+
+0.0.24 (2015-03-17)
+-------------------
+* Fix in map to yaml
+* Added a boolean value indicating whether the returned nodes are actual nodes in the topological map
+* Clean up
+* Print message
+* Clean up
+* returning nodes based on the mongodb node metadata
+* Adding scripts for new file format
+* Added map name to the service message
+* Returning random data
+* Adding topological node metadata query service - initial commit
+* Added better handling of time for dummy navigation.
+* Add list maps utility.
+* Contributors: Chris Burbridge, Jailander, Nick Hawes, Rares Ambrus
+
 0.0.23 (2014-12-17)
 -------------------
 

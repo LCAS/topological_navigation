@@ -86,7 +86,7 @@ catkin_package(
    scripts/tmap_from_waypoints.py
    scripts/joy_add_node.py
    scripts/topological_map_update.py
-   scripts/dummy_topological_navigation
+   scripts/dummy_topological_navigation.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

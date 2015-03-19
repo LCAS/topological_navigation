@@ -2,6 +2,24 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel
+  Conflicts:
+  topological_navigation/CMakeLists.txt
+* Adding topological map editor launch file,
+  replacing map_publisher with map manager,
+  adding add_node service
+* adding edit mode to visualise
+* fixing typo
+* sending the robot to waypoint when in the influence area of the target node
+* making sure robot executes action when reaching node in policy execution
+* Navigation and policy_executor working with new defs
+* bug fixes
+* adding Get Topological Map service
+* new branch created
+* Contributors: Bruno Lacerda, Jaime Pulido Fentanes
+
 0.0.26 (2015-03-18)
 -------------------
 * Forgot the install targets

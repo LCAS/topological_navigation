@@ -9,7 +9,8 @@
 
  	<node pkg="monitored_navigation" type="monitored_nav.py" name="monitored_nav" output="screen" args="$(arg mon_nav_config_file)"/> 
 	
-	<node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/>
+	<!-- <node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/> -->
+	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)"/>
  
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen"/>

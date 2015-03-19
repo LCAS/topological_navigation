@@ -1,0 +1,13 @@
+<launch>
+	<!-- WARNING: MongoDB instance "mongodb_store" MUST be running-->
+	<arg name="map"/> 	<!-- 2D Occupancy Grid Map -->
+	<arg name="pointset"/>  <!--    Topological Map    -->
+	
+	<!-- lanch map server -->
+	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map)"/>
+	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg pointset)"/>
+	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg pointset) -e"/> 
+	
+	<node pkg="rviz" type="rviz" name="rviz"/> 
+
+</launch>

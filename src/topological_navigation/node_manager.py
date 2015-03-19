@@ -15,6 +15,9 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
+
+import strands_navigation_msgs.srv
+
 from strands_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
 from strands_navigation_msgs.msg import TopologicalMap
@@ -112,25 +115,27 @@ class node_manager(object):
                     rospy.logwarn("Failed to get robot pose")
                     return
                 
-                lnames=[]
-                for i in self.topo_map.nodes :
-                     if i.name.startswith('WayPoint') :
-                         nam = i.name.strip('WayPoint')
-                         lnames.append(int(nam))
-                
-                lnames.sort()
-                print "used names:"
-                for j in lnames :
-                    print j
-                
-                print "Chosen name!!!!!!"
-                if lnames:
-                    nodname = 'WayPoint%d'%(int(lnames[-1])+1)
-                else :
-                    nodname = 'WayPoint1'
-                print nodname
-                #self.topo_map = topological_map(pointset)     
-                self.topo_map.add_node(nodname,8.0, pos, 'move_base')
+                add_node = rospy.ServiceProxy('/topological_map_publisher/add_topological_node', strands_navigation_msgs.srv.AddNode)
+                add_node('',pos)
+#                lnames=[]
+#                for i in self.topo_map.nodes :
+#                     if i.name.startswith('WayPoint') :
+#                         nam = i.name.strip('WayPoint')
+#                         lnames.append(int(nam))
+#                
+#                lnames.sort()
+#                print "used names:"
+#                for j in lnames :
+#                    print j
+#                
+#                print "Chosen name!!!!!!"
+#                if lnames:
+#                    nodname = 'WayPoint%d'%(int(lnames[-1])+1)
+#                else :
+#                    nodname = 'WayPoint1'
+#                print nodname
+#                #self.topo_map = topological_map(pointset)     
+#                self.topo_map.add_node(nodname,8.0, pos, 'move_base')
             
                 map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)        
                 map_update.publish(rospy.Time.now())            

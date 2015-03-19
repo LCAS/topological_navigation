@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.27 (2015-03-19)
+-------------------
 * sending the robot to waypoint when in the influence area of the target node
 * removing pointset b testing
 * commiting migrate script plus typo fix

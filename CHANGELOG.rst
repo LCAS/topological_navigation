@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.27 (2015-03-19)
+-------------------
 * Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel
   Conflicts:
   topological_navigation/CMakeLists.txt

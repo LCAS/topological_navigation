@@ -2,6 +2,23 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* sending the robot to waypoint when in the influence area of the target node
+* removing pointset b testing
+* commiting migrate script plus typo fix
+* map to Json utilities
+* fixing bug by which undocking edge was not being created
+* bug fixes
+* Now waypoint to yaml automatically Includes ChargingPoint
+* tmap_to_yaml.py now includes default values for edges
+* Navigation and policy_executor working with new defs
+* New map format export and insertion scripts
+* committing map creation script
+* Adding recovery behaviours to edges
+* new branch created
+* Contributors: Jailander, Jaime Pulido Fentanes
+
 0.0.26 (2015-03-18)
 -------------------
 * Forgot the install targets

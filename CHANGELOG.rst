@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.28 (2015-03-20)
+-------------------
 * removed scripts/LoadPointSet.py from install
 * Contributors: Marc Hanheide
 

@@ -78,7 +78,6 @@ catkin_package(
    scripts/crop_map.py
    scripts/insert_map.py
    scripts/list_maps
-   scripts/LoadPointSet.py
    scripts/map_collection_change.py
    scripts/map_export.py
    scripts/node_rm.py

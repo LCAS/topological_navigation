@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* removed scripts/LoadPointSet.py from install
+* Contributors: Marc Hanheide
+
 0.0.27 (2015-03-19)
 -------------------
 * sending the robot to waypoint when in the influence area of the target node

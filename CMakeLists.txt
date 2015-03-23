@@ -86,6 +86,9 @@ catkin_package(
    scripts/joy_add_node.py
    scripts/topological_map_update.py
    scripts/dummy_topological_navigation.py
+   scripts/migrate.py
+   scripts/load_yaml_map.py
+   scripts/load_json_map.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

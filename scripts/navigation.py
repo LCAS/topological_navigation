@@ -169,11 +169,11 @@ class TopologicalNavServer(object):
      Preempt CallBack
     """
     def preemptCallback(self):
+        self.monNavClient.cancel_all_goals()
         self.cancelled = True
         self.preempted = True
         self._result.success = False
         self.navigation_activated = False
-        self.monNavClient.cancel_all_goals()
         #self._as.set_preempted(self._result)
 
 

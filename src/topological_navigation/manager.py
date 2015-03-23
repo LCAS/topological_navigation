@@ -12,6 +12,8 @@ from strands_navigation_msgs.srv import *
 
 
 from mongodb_store.message_store import MessageStoreProxy
+#from mongodb_store_msgs.msgs import StringList
+from mongodb_store_msgs.msg import StringList
 
 
 def node_dist(node1,node2):
@@ -34,13 +36,75 @@ class map_manager(object):
         self.get_map_srv=rospy.Service('/topological_map_publisher/get_topological_map', strands_navigation_msgs.srv.GetTopologicalMap, self.get_topological_map_cb)
         #This service adds a node 
         self.get_map_srv=rospy.Service('/topological_map_publisher/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
-
+        #This service adds a tag to the meta information of a list of nodes
+        self.get_map_srv=rospy.Service('/topological_map_publisher/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
+        #This service returns a list of nodes that have a given tag
+        self.get_map_srv=rospy.Service('/topological_map_publisher/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)
      
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
         self.nodes = self.loadMap(self.name)
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)        
+
+    def get_tagged_nodes(self, tag):
+        mm=[]#StringList()
+        a=[]
+
+        #db.topological_maps.find({ "_meta.tag":"AAA" })
+
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"_meta.tag": tag, "pointset": self.nodes.name}
+        query_meta = {}
+        query_meta["pointset"] = self.nodes.name
+        query_meta["map"] = self.nodes.map
+
+        #print query, query_meta
+        available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+        #print len(available)
+        for i in available:
+            nname= i[1]['node']
+            a.append(nname)
+          
+        mm.append(a)
+
+        return mm
+
+
+    def get_tagged_cb(self, msg):
+        return self.get_tagged_nodes(msg.tag)
+
+    def add_tag_cb(self, msg):
+        #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
+        succeded = True
+        for j in msg.node:
+            
+            msg_store = MessageStoreProxy(collection='topological_maps')
+            query = {"name" : j, "pointset": self.nodes.name}
+            query_meta = {}
+            query_meta["pointset"] = self.nodes.name
+            query_meta["map"] = self.nodes.map
+    
+            #print query, query_meta
+            available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+            #print len(available)
+            for i in available:
+                msgid= i[1]['_id']
+                if 'tag' in i[1]:
+                    if not msg.tag in i[1]['tag']:
+                        i[1]['tag'].append(msg.tag)
+                else:
+                    a=[]
+                    a.append(msg.tag)
+                    i[1]['tag']=a
+                meta_out = str(i[1])
+                
+                msg_store.update_id(msgid, i[0], i[1], upsert = False)
+                #print trstr
+             if len(available) == 0:
+                 succeded = False
+
+        return succeded, meta_out
 
 
     def get_topological_map_cb(self, req):
@@ -75,9 +139,9 @@ class map_manager(object):
         query_meta["pointset"] = self.nodes.name
         query_meta["map"] = self.nodes.map
 
-        print query, query_meta
+        #print query, query_meta
         available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
-        print len(available)
+        #print len(available)
         if len(available) == 1 :
             eids = []
             for i in available[0][0].edges :
@@ -98,7 +162,7 @@ class map_manager(object):
 
             available[0][0].edges.append(edge)
                      
-            print available[0][0]
+            #print available[0][0]
             msg_store.update(available[0][0], query_meta, query, upsert=True)
             return True
         else :

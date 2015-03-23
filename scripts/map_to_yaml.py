@@ -75,12 +75,26 @@ class MapExport(object):
                 top_map.append(nodeinf)
                 #val = bson.json_util.dumps(nodeinf["meta"], indent=1)       
             
+            
+            
+            #top_map.sort(key=lambda x: x[0]['name'])
+            yml = yaml.safe_dump(top_map, default_flow_style=False)
+            #print yml
+            #print s_output
+            
             fh = open(filename, "w")
             #s_output = str(bson.json_util.dumps(nodeinf, indent=1))
-            s_output = str(bson.json_util.dumps(top_map, indent=1, sort_keys=True) )
+            s_output = str(yml)
             print s_output
             fh.write(s_output)
-            fh.close
+            fh.close            
+            
+#            fh = open(filename, "w")
+#            #s_output = str(bson.json_util.dumps(nodeinf, indent=1))
+#            s_output = str(bson.json_util.dumps(top_map, indent=1, sort_keys=True) )
+#            print s_output
+#            fh.write(s_output)
+#            fh.close
 
 
 if __name__ == '__main__':

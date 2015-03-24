@@ -35,11 +35,11 @@ class map_manager(object):
         #This service returns any given map
         self.get_map_srv=rospy.Service('/topological_map_publisher/get_topological_map', strands_navigation_msgs.srv.GetTopologicalMap, self.get_topological_map_cb)
         #This service adds a node 
-        self.get_map_srv=rospy.Service('/topological_map_publisher/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
+        self.get_map_srv=rospy.Service('/topological_map_manager/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
         #This service adds a tag to the meta information of a list of nodes
-        self.get_map_srv=rospy.Service('/topological_map_publisher/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
+        self.get_map_srv=rospy.Service('/topological_map_manager/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         #This service returns a list of nodes that have a given tag
-        self.get_map_srv=rospy.Service('/topological_map_publisher/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)
+        self.get_map_srv=rospy.Service('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)
      
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
@@ -101,7 +101,7 @@ class map_manager(object):
                 
                 msg_store.update_id(msgid, i[0], i[1], upsert = False)
                 #print trstr
-             if len(available) == 0:
+            if len(available) == 0:
                  succeded = False
 
         return succeded, meta_out

@@ -26,6 +26,14 @@ class topological_node(object):
     def _insert_vertices(self, vertices):
         self.vertices=vertices
 
+def get_edge_id(source, target, eids):
+    test=0
+    eid = '%s_%s' %(source, target)
+    while eid in eids:
+        eid = '%s_%s_%3d' %(source, target, test)
+        test += 1
+    return eid
+
 
 def loadMap(inputfile, dataset_name, map_name) :
 
@@ -101,13 +109,8 @@ if __name__ == '__main__':
     map_name=str(sys.argv[3])
 
     msg_store = MessageStoreProxy(collection='topological_maps')
-    #host = rospy.get_param("mongodb_host")
-    #port = rospy.get_param("mongodb_port")
-    #print "Using datacentre  ",host,":", port
-    #client = pymongo.MongoClient(host, port)
-    #db=client.autonomous_patrolling
-    #points_db=db["waypoints"]
 
+    eids=[] #list of known edge id's
     lnodes=loadMap(filename, dataset_name, map_name)
 
     meta = {}
@@ -139,7 +142,13 @@ if __name__ == '__main__':
             e = Edge()
             e.node = k['node']
             e.action = k['action']
+            eid = get_edge_id(i.name, e.node, eids)
+            eids.append(eid)
+            e.edge_id = eid
+            e.top_vel =0.55
+            e.map_2d = map_name        
             n.edges.append(e)
+            
         print n
         msg_store.insert(n,meta)
         #mongodb_store.util.store_message(points_db,p,val)

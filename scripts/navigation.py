@@ -28,6 +28,7 @@ from topological_navigation.navigation_stats import *
 import topological_navigation.msg
 import dynamic_reconfigure.client
 
+import strands_navigation_msgs.msg
 
 
 """
@@ -63,6 +64,7 @@ class TopologicalNavServer(object):
         self._action_name = name
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
         self.edge_pub = rospy.Publisher('/topological_navigation/Edge', CurrentEdge)
+        self.route_pub = rospy.Publisher('/topological_navigation/Route', strands_navigation_msgs.msg.TopologicalRoute)
         self.cur_edge = rospy.Publisher('/current_edge', String)        
         self.monit_nav_cli= False
 
@@ -74,6 +76,8 @@ class TopologicalNavServer(object):
         while len(self.lnodes) == 0:
             pass
         rospy.loginfo(" ...done")
+        
+        
         rospy.set_param('topological_map_name', self.topol_map)
 
 
@@ -223,6 +227,7 @@ class TopologicalNavServer(object):
             if (Gnode is not None) and (Onode is not None) and (Gnode != Onode) :
                 route = self.search_route(Onode, target)
                 if route:
+                    self.publish_route(route)
                     result, inc = self.followRoute(route)
                 else:
                     rospy.logerr("There is no route to this node check your edges ...")
@@ -474,6 +479,13 @@ class TopologicalNavServer(object):
 
         result=nav_ok
         return result, inc
+
+    def publish_route(self, route):
+        stroute = strands_navigation_msgs.msg.TopologicalRoute()
+        for i in route:
+            stroute.nodes.append(i.name)
+        self.route_pub.publish(stroute)
+        
 
 
     def publish_stats(self):

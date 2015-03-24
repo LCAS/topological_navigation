@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.29 (2015-03-23)
+-------------------
+* adding install targets
+* Contributors: Jaime Pulido Fentanes
+
 0.0.28 (2015-03-20)
 -------------------
 * removed scripts/LoadPointSet.py from install

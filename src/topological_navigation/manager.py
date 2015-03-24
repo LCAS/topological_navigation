@@ -39,13 +39,19 @@ class map_manager(object):
         #This service adds a tag to the meta information of a list of nodes
         self.get_map_srv=rospy.Service('/topological_map_manager/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         #This service returns a list of nodes that have a given tag
-        self.get_map_srv=rospy.Service('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)
+        self.get_map_srv=rospy.Service('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
+        #This service returns a list of edges_ids between two nodes
+        self.get_map_srv=rospy.Service('/topological_map_manager/get_edges_between_nodes', strands_navigation_msgs.srv.GetEdgesBetweenNodes, self.get_edges_between_cb)
+        #adds edge between two nodes
+        self.get_map_srv=rospy.Service('/topological_map_manager/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
+        
      
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
         self.nodes = self.loadMap(self.name)
         self.last_updated = rospy.Time.now()
-        self.map_pub.publish(self.nodes)        
+        self.map_pub.publish(self.nodes)      
+        self.names = self.create_list_of_nodes()
 
     def get_tagged_nodes(self, tag):
         mm=[]#StringList()
@@ -126,8 +132,10 @@ class map_manager(object):
             nodname = 'WayPoint1'
         return nodname
 
+    def add_edge_cb(self, req):
+        return self.add_edge(req.origin, req.destination, req.action, req.edge_id)
 
-    def add_edge(self, or_waypoint, de_waypoint, action) :
+    def add_edge(self, or_waypoint, de_waypoint, action, edge_id) :
 
         rospy.loginfo('Adding Edge from '+or_waypoint+' to '+de_waypoint+' using '+action)
         node_name = or_waypoint
@@ -147,11 +155,14 @@ class map_manager(object):
             for i in available[0][0].edges :
                 eids.append(i.edge_id)
 
-            test=0
-            eid = '%s_%s' %(or_waypoint, de_waypoint)
-            while eid in eids:
-                eid = '%s_%s_%3d' %(or_waypoint, de_waypoint, test)
-                test += 1
+            if not edge_id or edge_id in eids:
+                test=0
+                eid = '%s_%s' %(or_waypoint, de_waypoint)
+                while eid in eids:
+                    eid = '%s_%s_%3d' %(or_waypoint, de_waypoint, test)
+                    test += 1
+            else:
+                eid=edge_id
 
             edge = strands_navigation_msgs.msg.Edge()
             edge.node = de_waypoint
@@ -232,13 +243,39 @@ class map_manager(object):
 #
 #        print "===   UPDATED NODES   ==="
         for i in close_nodes:
-            self.add_edge(i, node.name, 'move_base')
+            self.add_edge(i, node.name, 'move_base', '')
 #            print "+++++++++++++++++++++++"
 
         #Here I save the node        
         msg_store.insert(node,meta)
 
         return True
+
+
+    def get_edges_between(self, nodea, nodeb):
+         ab=[]
+         ba=[]
+         for i in self.nodes.nodes:
+             if nodea == i.name:
+                 for j in i.edges:
+                     if j.node == nodeb:
+                         ab.append(j.edge_id)
+             if nodeb == i.name:
+                 for j in i.edges:
+                     if j.node == nodea:
+                         ba.append(j.edge_id)
+                     
+#         ab.append("ab_1")
+#         ab.append("ab_2")
+#         ba.append("ba_1")
+#         ba.append("ba_2")
+         return ab, ba
+
+    def get_edges_between_cb(self, req):
+#         print req.nodea
+#         print req.nodeb
+         return self.get_edges_between(req.nodea, req.nodeb)
+
 
 
     def loadMap(self, point_set) :

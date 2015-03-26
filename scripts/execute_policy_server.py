@@ -151,6 +151,22 @@ class PolicyExecutionServer(object):
                                 self.goal_failed=True                            
 
 
+    def get_edge_id(self, orig, dest, a):
+        found = False
+        edge_id= 'none'
+        for i in self.curr_tmap.nodes:
+            if i.name == orig:
+                for j in i.edges:
+                    if j.node == dest and j.action == a :
+                        found = True
+                        edge_id = j.edge_id
+                        break
+            if found:
+                break
+        
+        return edge_id
+
+
     """
      Execute CallBack
      
@@ -367,6 +383,8 @@ class PolicyExecutionServer(object):
         if found:
             self.current_action = action
             
+            edg= self.get_edge_id(route[rindex].name, route[rindex+1].name, action)
+            self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map, edg)
             # Creating Navigation Object
             self.stat=nav_stats(self.current_node, node, self.topol_map)
             #dt_text=self.stat.get_start_time_str()
@@ -462,6 +480,7 @@ class PolicyExecutionServer(object):
     def MapCallback(self, msg) :
         self.topol_map = msg.name
         self.lnodes = msg.nodes
+        self.curr_tmap = msg
 
 
 

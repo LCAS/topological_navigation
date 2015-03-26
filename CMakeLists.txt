@@ -85,8 +85,8 @@ catkin_package(
    scripts/load_json_map.py
    #scripts/map_collection_change.py
    scripts/map_export.py
-   map_to_json.py
-   map_to_yaml.py
+   scripts/map_to_json.py
+   scripts/map_to_yaml.py
    scripts/migrate.py
    scripts/node_rm.py
    scripts/rm_map_from_db.py

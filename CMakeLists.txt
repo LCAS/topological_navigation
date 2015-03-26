@@ -76,19 +76,24 @@ catkin_package(
    scripts/add_edge.py
    scripts/add_node.py
    scripts/crop_map.py
+   scripts/dummy_topological_navigation.py
    scripts/insert_map.py
+   scripts/joy_add_node.py
+   scripts/joy_add_waypoint.py
    scripts/list_maps
-   scripts/map_collection_change.py
+   scripts/load_yaml_map.py
+   scripts/load_json_map.py
+   #scripts/map_collection_change.py
    scripts/map_export.py
+   map_to_json.py
+   map_to_yaml.py
+   scripts/migrate.py
    scripts/node_rm.py
    scripts/rm_map_from_db.py
    scripts/tmap_from_waypoints.py
-   scripts/joy_add_node.py
+   scripts/tmap_to_yaml.py
    scripts/topological_map_update.py
-   scripts/dummy_topological_navigation.py
-   scripts/migrate.py
-   scripts/load_yaml_map.py
-   scripts/load_json_map.py
+   scripts/waypoints_to_yaml_tmap.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

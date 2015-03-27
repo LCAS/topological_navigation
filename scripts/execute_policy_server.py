@@ -405,6 +405,7 @@ class PolicyExecutionServer(object):
                 else :
                     #rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
                     self.stat.status= "fatal"
+            
             self.publish_stats()
 
         else :
@@ -452,6 +453,7 @@ class PolicyExecutionServer(object):
     """
     def publish_stats(self):
         pubst = NavStatistics()
+        pubst.edge_id = self.stat.edge_id
         pubst.status = self.stat.status
         pubst.origin = self.stat.origin
         pubst.target = self.stat.target

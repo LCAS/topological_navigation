@@ -14,10 +14,13 @@ from datetime import datetime
 
 
 from actionlib_msgs.msg import *
-from move_base_msgs.msg import *
+#from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Header
 from std_msgs.msg import String
-#import scitos_apps_msgs.msg
+from nav_msgs.srv import *
+
 
 from strands_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
@@ -31,19 +34,31 @@ from strands_navigation_msgs.srv import *
 import fremenserver.msg
 
 
+
 def get_node(name, clist):
     for i in clist:
         if i.name == name:
             return i
 
 def node_dist(node1,node2):
+#    rospy.wait_for_service('/move_base/make_plan')
+#        try:
+#            get_prediction = rospy.ServiceProxy('/move_base/make_plan', nav_msgs.srv.GetPlan)
+#            now = rospy.Time.now()
+#            prediction_time = now + rospy.Duration(seconds_from_now) 
+#            print "Requesting prediction for %f"%prediction_time.secs
+#            resp1 = get_prediction(prediction_time)
+#            return resp1
+#        except rospy.ServiceException, e:
+#            print "Service call failed: %s"%e        
+#    h = std_msgs.msg.Header()
+#    h.stamp = rospy.Time.now()
     dist = math.sqrt((node1.pose.position.x - node2.pose.position.x)**2 + (node1.pose.position.y - node2.pose.position.y)**2 )
     return dist
 
 
 class TopologicalNavPred(object):
-       
-    
+
     def __init__(self, name) :
         
         self.lnodes = []
@@ -86,7 +101,8 @@ class TopologicalNavPred(object):
             fremgoal.operation = 'predict'
             fremgoal.id = i["model_id"]
             fremgoal.times.append(epoch)
-            fremgoal.order = 2
+            #print i["order"]
+            fremgoal.order =  i["order"]
             
             self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
         
@@ -98,16 +114,20 @@ class TopologicalNavPred(object):
             #print ps.probabilities[0]
             prob.append(ps.probabilities[0])
             if ps.probabilities[0] >=0.1:
-                dur.append(i["dist"]/ps.probabilities[0])
+                est_dur = rospy.Duration(i["dist"]/ps.probabilities[0])
+                dur.append(est_dur)
             else :
-                dur.append(i["dist"]/0.1)
+                est_dur = rospy.Duration(i["dist"]/0.1)
+                dur.append(est_dur)
+
 
         #print edges_ids, prob, dur
         return edges_ids, prob, dur
         
 
     def predict_edge_cb(self, req):
-        return self.get_predict(req.epoch)
+        print req
+        return self.get_predict(req.epoch.secs)
 
 
     """
@@ -153,6 +173,7 @@ class TopologicalNavPred(object):
             edge_mod["model_id"]= i["model_id"]#self.lnodes.name+'__'+i["edge_id"]
             edge_mod["dist"]= i["dist"]#self.lnodes.name+'__'+i["edge_id"]
             edge_mod["models"]=[]
+            edge_mod["order"]=-1
             
             for j in available:                
                 val = {}
@@ -172,40 +193,54 @@ class TopologicalNavPred(object):
     def create_fremen_models(self, models):
         self.models = models
         for i in models:
-            print "-----------------"
+            print "-------CREATING MODEL----------"
+            
             mid = i["model_id"]
             print mid
-            print i["dist"]
+            #print i["dist"]
             times=[]
             states=[]
             for j in i["models"]:
                 times.append(j["epoch"])
                 states.append(j["st"])
-            print times
-            print states
+            #print times
+            #print states
             fremgoal = fremenserver.msg.FremenGoal()
             fremgoal.operation = 'add'
             fremgoal.id = mid
             fremgoal.times = times
             fremgoal.states = states
-        
+            
             # Sends the goal to the action server.
-            self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
-        
+            self.FremenClient.send_goal(fremgoal)
+            
             # Waits for the server to finish performing the action.
             self.FremenClient.wait_for_result()
-        
+            
             # Prints out the result of executing the action
             ps = self.FremenClient.get_result()  # A FibonacciResult
-            print ps
+            #print ps
+            
+            print "--- EVALUATE ---"
+            frevgoal = fremenserver.msg.FremenGoal()
+            frevgoal.operation = 'evaluate'
+            frevgoal.id = mid
+            frevgoal.times = times
+            frevgoal.states = states
+            frevgoal.order = 5
+            
+            # Sends the goal to the action server.
+            self.FremenClient.send_goal(frevgoal)
+            
+            # Waits for the server to finish performing the action.
+            self.FremenClient.wait_for_result()
+            
+            # Prints out the result of executing the action
+            pse = self.FremenClient.get_result()  # A FibonacciResult
+            print pse.errors
+            print "chosen order %d" %pse.errors.index(min(pse.errors))
+            i["order"] = pse.errors.index(min(pse.errors))
 
-#        for i in available:
-#            nname= i[1]['node']
-#            a.append(nname)
-#          
-#        mm.append(a)
-#
-#        return mm
 
 
 if __name__ == '__main__':

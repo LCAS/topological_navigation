@@ -250,6 +250,7 @@ class PolicyExecutionServer(object):
                     nod_ind = route.source.index(self.current_node)
 #                    self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                     self.current_action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
+                    
                     if self.current_action != 'none':
                         # There is an edge between these two nodes
                         print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target)
@@ -386,7 +387,7 @@ class PolicyExecutionServer(object):
             #self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map, edg)
             # Creating Navigation Object
             edg= self.get_edge_id(self.current_node, node, action)
-            self.stat=nav_stats(self.current_node, node, self.topol_map)
+            self.stat=nav_stats(self.current_node, node, self.topol_map, edg)
             #dt_text=self.stat.get_start_time_str()
 
             result = self.monitored_navigation(target_pose, action)

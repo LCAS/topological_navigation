@@ -12,6 +12,8 @@
 	<!-- <node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/> -->
 	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)"/>
  
+	<node pkg="fremenserver" type="fremenserver" name="fremenserver"/> 
+	
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen"/>
 	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen"/>
@@ -19,6 +21,7 @@
 	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)"/> 
 
 	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator"/> 
+	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction"/> 
 
 
 </launch>

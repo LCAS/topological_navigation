@@ -129,6 +129,7 @@ include_directories(
    scripts/map_manager.py
    scripts/travel_time_estimator.py
    scripts/execute_policy_server.py
+   scripts/topological_prediction.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

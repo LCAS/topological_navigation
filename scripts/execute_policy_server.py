@@ -383,9 +383,9 @@ class PolicyExecutionServer(object):
         if found:
             self.current_action = action
             
-            edg= self.get_edge_id(route[rindex].name, route[rindex+1].name, action)
-            self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map, edg)
+            #self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map, edg)
             # Creating Navigation Object
+            edg= self.get_edge_id(self.current_node, node, action)
             self.stat=nav_stats(self.current_node, node, self.topol_map)
             #dt_text=self.stat.get_start_time_str()
 
@@ -469,7 +469,7 @@ class PolicyExecutionServer(object):
         meta["date"] = self.stat.date_at_node.strftime('%A, %B %d %Y, at %H:%M:%S hours')
         meta["pointset"] = self.stat.topological_map
 
-        msg_store = MessageStoreProxy()
+        msg_store = MessageStoreProxy(collection='nav_stats')
         msg_store.insert(pubst,meta)
 
 

@@ -25,10 +25,10 @@ from strands_navigation_msgs.msg import TopologicalMap
 import topological_navigation.msg
 
 
-def get_node(name, clist):
-    for i in clist:
-        if i.name == name:
-            return i
+#def get_node(name, clist):
+#    for i in clist:
+#        if i.name == name:
+#            return i
 
 
 def get_distance_to_node(node, pose):
@@ -77,11 +77,17 @@ class TopologicalNavLoc(object):
                 if d < a:
                     if first_node_found:
                         b2=i
+                        a2=d
                         first_node_found=False
                     else:
                         b2=b
+                        a2=a
                     b=i
                     a=d
+                elif d < a2 :
+                    a2 = d
+                    b2 = i
+                    
             wpstr=str(b.name)
             #self.wp_pub.publish(String(b.name))
             if self.point_in_poly(b, msg) :

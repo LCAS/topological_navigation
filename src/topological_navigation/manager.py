@@ -264,16 +264,9 @@ class map_manager(object):
                  for j in i.edges:
                      if j.node == nodea:
                          ba.append(j.edge_id)
-                     
-#         ab.append("ab_1")
-#         ab.append("ab_2")
-#         ba.append("ba_1")
-#         ba.append("ba_2")
          return ab, ba
 
     def get_edges_between_cb(self, req):
-#         print req.nodea
-#         print req.nodeb
          return self.get_edges_between(req.nodea, req.nodeb)
 
 

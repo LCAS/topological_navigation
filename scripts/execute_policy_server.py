@@ -12,12 +12,10 @@ from datetime import datetime
 
 
 from actionlib_msgs.msg import *
-#from move_base_msgs.msg import *
 from std_msgs.msg import String
 
 from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
-
 from strands_navigation_msgs.msg import NavStatistics
 
 
@@ -26,6 +24,7 @@ from strands_navigation_msgs.msg import TopologicalMap
 from mongodb_store.message_store import MessageStoreProxy
 #from topological_navigation.topological_node import *
 from topological_navigation.navigation_stats import *
+
 
 import topological_navigation.msg
 import strands_navigation_msgs.msg

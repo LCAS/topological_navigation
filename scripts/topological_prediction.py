@@ -150,7 +150,10 @@ class TopologicalNavPred(object):
                     val["ori"]=i.name
                     val["dest"]=j.node
                     ddn=get_node(j.node, self.lnodes.nodes)
-                    val["dist"]= node_dist(i,ddn)/j.top_vel
+                    if j.top_vel>= 0.1:
+                        val["dist"]= node_dist(i,ddn)/j.top_vel
+                    else :
+                        val["dist"]= node_dist(i,ddn)/0.1
                     self.eids.append(val)
 
 

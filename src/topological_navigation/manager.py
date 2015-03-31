@@ -2,6 +2,8 @@
 import math
 import rospy
 import sys
+import pymongo
+import json
 
 import std_msgs.msg
 #from geometry_msgs.msg import Pose
@@ -36,8 +38,14 @@ class map_manager(object):
         self.get_map_srv=rospy.Service('/topological_map_publisher/get_topological_map', strands_navigation_msgs.srv.GetTopologicalMap, self.get_topological_map_cb)
         #This service adds a node 
         self.add_node_srv=rospy.Service('/topological_map_manager/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
+        #This service adds content to a node
+        self.add_node_srv=rospy.Service('/topological_map_manager/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
+        #This service adds a tag to the meta information of a list of nodes
+        self.add_tag_srv=rospy.Service('/topological_map_manager/get_tags', strands_navigation_msgs.srv.GetTags, self.get_tags_cb)
         #This service adds a tag to the meta information of a list of nodes
         self.add_tag_srv=rospy.Service('/topological_map_manager/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
+        #This service removes a tag from the meta information of a list of nodes
+        self.add_tag_srv=rospy.Service('/topological_map_manager/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         #This service returns a list of nodes that have a given tag
         self.get_tagged_srv=rospy.Service('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
         #This service returns a list of edges_ids between two nodes
@@ -52,6 +60,21 @@ class map_manager(object):
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)      
         self.names = self.create_list_of_nodes()
+
+
+    def get_tags_cb(self, req):
+        host = rospy.get_param("mongodb_host")
+        port = rospy.get_param("mongodb_port")
+        client = pymongo.MongoClient(host, port)
+        
+        db=client.message_store
+        collection=db["topological_maps"]
+        available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
+        tt=[]
+        #for i in available:
+        tt.append(available)
+        return tt
+
 
     def get_tagged_nodes(self, tag):
         mm=[]#StringList()
@@ -79,6 +102,53 @@ class map_manager(object):
 
     def get_tagged_cb(self, msg):
         return self.get_tagged_nodes(msg.tag)
+
+
+    def add_content_cb(self, req):
+        #print req
+        data = json.loads(req.content)
+        #print data
+
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"name" : req.node, "pointset": self.nodes.name}
+        query_meta = {}
+        query_meta["pointset"] = self.nodes.name
+        query_meta["map"] = self.nodes.map
+
+        #print query, query_meta
+        available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+        #print len(available)
+        if len(available) != 1:
+             succeded = False
+             print 'there are no nodes or more than 1 with that name'
+        else:
+            succeded = True
+            for i in available:
+                msgid= i[1]['_id']
+                if 'contains' in i[1]:
+                    if type(data) is list :
+                        for j in data:
+                            if 'category' in j and 'name' in j :
+                                i[1]['contains'].append(j)
+                    elif type(data) is dict :
+                        if 'category' in data and 'name' in data :
+                            i[1]['contains'].append(data)
+                else:
+                    a=[]
+                    if type(data) is list :
+                        for j in data:
+                            if 'category' in j and 'name' in j :
+                                a.append(j)
+                    elif type(data) is dict :
+                        if 'category' in data and 'name' in data :
+                            a.append(data)
+                    i[1]['contains']=a
+                meta_out = str(i[1])
+                print "Updating %s--%s" %(i[0].pointset, i[0].name)
+                msg_store.update_id(msgid, i[0], i[1], upsert = False)
+
+        return succeded, meta_out
+
 
     def add_tag_cb(self, msg):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
@@ -110,6 +180,36 @@ class map_manager(object):
             if len(available) == 0:
                  succeded = False
 
+        return succeded, meta_out
+
+
+    def rm_tag_cb(self, msg):
+        #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
+        succeded = True
+        for j in msg.node:
+            
+            msg_store = MessageStoreProxy(collection='topological_maps')
+            query = {"name" : j, "pointset": self.nodes.name}
+            query_meta = {}
+            query_meta["pointset"] = self.nodes.name
+            query_meta["map"] = self.nodes.map
+    
+            #print query, query_meta
+            available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+            #print len(available)
+            succeded = False
+            for i in available:
+                msgid= i[1]['_id']
+                if 'tag' in i[1]:
+                    if msg.tag in i[1]['tag']:
+                        print 'removing tag'
+                        i[1]['tag'].remove(msg.tag)
+                        print 'new list of tags'
+                        print i[1]['tag']
+                        msg_store.update_id(msgid, i[0], i[1], upsert = False)
+                        succeded = True
+                meta_out = str(i[1])
+                
         return succeded, meta_out
 
 

@@ -142,9 +142,9 @@ if __name__ == '__main__':
             e = Edge()
             e.node = k['node']
             e.action = k['action']
-            eid = get_edge_id(i.name, e.node, eids)
-            eids.append(eid)
-            e.edge_id = eid
+            #eid = get_edge_id(i.name, e.node, eids)
+            #eids.append(eid)
+            #e.edge_id = eid
             e.top_vel =0.55
             e.map_2d = map_name        
             n.edges.append(e)

@@ -100,7 +100,7 @@ class TopologicalNavPred(object):
         dur=[]
         prob=[]
         for i in self.models:
-            edges_ids.append(i["model_id"])
+            edges_ids.append(i["edge_id"])
             fremgoal = fremenserver.msg.FremenGoal()
             fremgoal.operation = 'predict'
             fremgoal.id = i["model_id"]
@@ -129,7 +129,7 @@ class TopologicalNavPred(object):
 
        
         for i in self.unknowns:
-            edges_ids.append(i["model_id"])
+            edges_ids.append(i["edge_id"])
             prob.append(0.5)
             est_dur = rospy.Duration(i["dist"]/0.5)
             dur.append(est_dur)
@@ -191,6 +191,7 @@ class TopologicalNavPred(object):
             edge_mod["dist"]= i["dist"]#self.lnodes.name+'__'+i["edge_id"]
             edge_mod["models"]=[]
             edge_mod["order"]=-1
+            edge_mod["edge_id"]=i["edge_id"]
             
             for j in available:                
                 val = {}

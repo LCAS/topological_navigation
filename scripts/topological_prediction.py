@@ -120,12 +120,23 @@ class TopologicalNavPred(object):
                 prob.append(ps.probabilities[0])
             else:
                 prob.append(0.01)
+            
+            dur_c=[]
             if ps.probabilities[0] >=0.1:
-                est_dur = rospy.Duration(i["dist"]/ps.probabilities[0])
-                dur.append(est_dur)
+                est_dur = i["dist"]/ps.probabilities[0]
+                dur_c.append(est_dur)
             else :
-                est_dur = rospy.Duration(i["dist"]/0.1)
-                dur.append(est_dur)
+                est_dur = i["dist"]/0.1
+                dur_c.append(est_dur)
+            
+            
+            for j in i['models']:
+                if j['st'] :
+                    dur_c.append(j['optime'])
+                    
+            ava= rospy.Duration(sum(dur_c) / float(len(dur_c)))
+            dur.append(ava)
+
 
        
         for i in self.unknowns:
@@ -200,6 +211,7 @@ class TopologicalNavPred(object):
                 else:
                     val["st"] = 0
                 val["epoch"] = int(datetime.strptime(j[0].date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
+                val["optime"] = j[0].operation_time
                 edge_mod["models"].append(val)
                 
             if len(available) > 0 :

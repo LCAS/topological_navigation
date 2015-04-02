@@ -31,6 +31,6 @@ if __name__ == "__main__":
     #print est.edge_id
     
     if len(est.edge_ids) == len(est.probs) and len(est.edge_ids) == len(est.durations):
-        print "Good Answer!!!"
+        print "Good Answer!!! %d" %len(est.probs)
         for i in range(len(est.edge_ids)):
             print est.edge_ids[i], est.probs[i], est.durations[i].secs

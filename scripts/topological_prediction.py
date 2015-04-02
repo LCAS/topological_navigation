@@ -28,6 +28,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_navigation_msgs.msg import NavStatistics
 
 from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation.tmap_utils import *
 #from topological_navigation.topological_node import *
 
 from strands_navigation_msgs.srv import *
@@ -35,12 +36,12 @@ import fremenserver.msg
 
 
 
-def get_node(name, clist):
-    for i in clist:
-        if i.name == name:
+def get_model(name, models):
+    for i in models:
+        if i["model_id"] == name:
             return i
 
-def node_dist(node1,node2):
+#def node_dist(node1,node2):
 #    rospy.wait_for_service('/move_base/make_plan')
 #        try:
 #            get_prediction = rospy.ServiceProxy('/move_base/make_plan', nav_msgs.srv.GetPlan)
@@ -53,8 +54,8 @@ def node_dist(node1,node2):
 #            print "Service call failed: %s"%e        
 #    h = std_msgs.msg.Header()
 #    h.stamp = rospy.Time.now()
-    dist = math.sqrt((node1.pose.position.x - node2.pose.position.x)**2 + (node1.pose.position.y - node2.pose.position.y)**2 )
-    return dist
+#    dist = math.sqrt((node1.pose.position.x - node2.pose.position.x)**2 + (node1.pose.position.y - node2.pose.position.y)**2 )
+#    return dist
 
 
 class TopologicalNavPred(object):
@@ -98,32 +99,49 @@ class TopologicalNavPred(object):
         print "requesting prediction for time %d" %epoch
         edges_ids=[]
         dur=[]
-        prob=[]
-        for i in self.models:
-            edges_ids.append(i["edge_id"])
-            fremgoal = fremenserver.msg.FremenGoal()
-            fremgoal.operation = 'predict'
-            fremgoal.id = i["model_id"]
-            fremgoal.times.append(epoch)
-            #print i["order"]
-            fremgoal.order =  i["order"]
+        #prob=[]
+        
+        eids = [x['edge_id'] for x in self.models]
+        mods = [x['model_id'] for x in self.models]
+        ords = [x['order'] for x in self.models]
+
+
+        fremgoal = fremenserver.msg.FremenGoal()
+        fremgoal.operation = 'forecast'
+        fremgoal.ids = mods
+        fremgoal.times.append(epoch)
+        #print i["order"]
+        fremgoal.order = -1
+        fremgoal.orders = ords#i["order"]
+        
+        self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
+    
+        # Waits for the server to finish performing the action.
+        self.FremenClient.wait_for_result()
+    
+        # Prints out the result of executing the action
+        ps = self.FremenClient.get_result()  # A FibonacciResult
+
+        print ps
+
+        prob = list(ps.probabilities)
+
+        print mods
+        print ords
+        print prob        
+        
+        for j in range(len(mods)):
             
-            self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
-        
-            # Waits for the server to finish performing the action.
-            self.FremenClient.wait_for_result()
-        
-            # Prints out the result of executing the action
-            ps = self.FremenClient.get_result()  # A FibonacciResult
+            i=get_model(mods[j], self.models)
+            edges_ids.append(eids[j])
+         
             #print ps.probabilities[0]
-            if ps.probabilities[0] > 0 :
-                prob.append(ps.probabilities[0])
-            else:
-                prob.append(0.01)
+            if prob[j] < 0.01 :
+                prob[j] = 0.01
             
             dur_c=[]
-            if ps.probabilities[0] >=0.1:
-                est_dur = i["dist"]/ps.probabilities[0]
+            if prob[j] >=0.1:
+                est_dur = i["dist"]/prob[j]
                 dur_c.append(est_dur)
             else :
                 est_dur = i["dist"]/0.1
@@ -174,11 +192,11 @@ class TopologicalNavPred(object):
                     val["model_id"]=self.lnodes.name+'__'+j.edge_id
                     val["ori"]=i.name
                     val["dest"]=j.node
-                    ddn=get_node(j.node, self.lnodes.nodes)
+                    ddn=get_node(self.lnodes, j.node)
                     if j.top_vel>= 0.1:
-                        val["dist"]= node_dist(i,ddn)/j.top_vel
+                        val["dist"]= get_distance_to_node(i,ddn)/j.top_vel
                     else :
-                        val["dist"]= node_dist(i,ddn)/0.1
+                        val["dist"]= get_distance_to_node(i,ddn)/0.1
                     self.eids.append(val)
 
 

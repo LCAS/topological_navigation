@@ -2,67 +2,60 @@
 
 import sys
 import rospy
-import actionlib
-import pymongo
 import json
-import sys
-import math
 
 
-
+import rostopic
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-#import scitos_apps_msgs.msg
+import strands_navigation_msgs.srv
 
 from strands_navigation_msgs.msg import TopologicalNode
-#from mongodb_store.message_store import MessageStoreProxy
-
 from strands_navigation_msgs.msg import TopologicalMap
-#from topological_navigation.topological_node import *
 
-import topological_navigation.msg
+from topological_navigation.tmap_utils import *
+#import topological_navigation.msg
 
-
-#def get_node(name, clist):
-#    for i in clist:
-#        if i.name == name:
-#            return i
-
-
-def get_distance_to_node(node, pose):
-    #dist=math.hypot((pose.position.x-node.pose[0].position.x),(pose.position.y-node.pose[0].position.y))
-    dist=math.hypot((pose.position.x-node.pose.position.x),(pose.position.y-node.pose.position.y))
-    return dist
 
 
 class TopologicalNavLoc(object):
        
     
     def __init__(self, name) :
-        self.throttle_val = rospy.get_param("~LocalisationThrottle", 5)
+        self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
         self.throttle = self.throttle_val
         self.node="Unknown"
         self.wpstr="Unknown"
         self.cnstr="Unknown"
-        
 
-        self.wp_pub = rospy.Publisher('/closest_node', String, latch=True)
-        self.cn_pub = rospy.Publisher('/current_node', String, latch=True)
-        
+        self.wp_pub = rospy.Publisher('/closest_node', String, latch=True, queue_size=1)
+        self.cn_pub = rospy.Publisher('/current_node', String, latch=True, queue_size=1)
         
         self.lnodes = []
+        self.loc_by_topic=[]
+
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
-        
         rospy.loginfo("Waiting for Topological map ...")
         
         while len(self.lnodes) == 0:
-            pass
-            
+            rospy.sleep(rospy.Duration.from_sec(0.1))
+        
+
+        rospy.loginfo("Subscribing to localise topics")
+        for j in self.nodes_by_topic:
+            toptyp = rostopic.get_topic_class(j['topic'])
+            rospy.loginfo("Subscribing to %s" %j['topic'])
+            rospy.Subscriber(j['topic'], toptyp[0], self.Callback, callback_args=j)
+
+        rospy.loginfo("Subscribing to robot pose")
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
+
+        rospy.loginfo("NODES BY TOPIC: %s" %self.names_by_topic)
+        rospy.loginfo("NO GO NODES: %s" %self.nogos)
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -70,41 +63,45 @@ class TopologicalNavLoc(object):
 
     def PoseCallback(self, msg):
         if(self.throttle%self.throttle_val==0):
-            a = float('1000.0')
-            first_node_found=True
+            #rospy.loginfo("NO GO NODES: %s" %self.nogos)
+            self.distances=[]
             for i in self.lnodes:
-                d=get_distance_to_node(i, msg)
-                if d < a:
-                    if first_node_found:
-                        b2=i
-                        a2=d
-                        first_node_found=False
-                    else:
-                        b2=b
-                        a2=a
-                    b=i
-                    a=d
-                elif d < a2 :
-                    a2 = d
-                    b2 = i
-                    
-            wpstr=str(b.name)
-            #self.wp_pub.publish(String(b.name))
-            if self.point_in_poly(b, msg) :
-                cnstr=str(b.name)
-                #self.cn_pub.publish(String(b.name))
-            else :
-                if self.point_in_poly(b2, msg) :
-                    wpstr=str(b2.name)
-                    cnstr=str(b2.name)
-                else:
-                    cnstr='none'
-                #self.cn_pub.publish('none')
-            #Charging Point exception it should never be closest node
-            if wpstr == 'ChargingPoint' and cnstr == 'none':
-                wpstr=str(b2.name)
+                d= get_distance_node_pose(i, msg)#get_distance_to_node(i, msg)
+                a={}
+                a['node'] = i
+                a['dist'] = d
+                self.distances.append(a)
 
-            self.publishTopics(wpstr, cnstr)           
+            self.distances = sorted(self.distances, key=lambda k: k['dist'])
+            #print self.distances
+            closeststr='none'
+            currentstr='none'
+            
+            not_loc=True
+            if not self.loc_by_topic:                
+                ind = 0
+                while not_loc and ind<len(self.distances) and ind<3 :
+                    if self.distances[ind]['node'].name not in self.names_by_topic:
+                        if self.point_in_poly(self.distances[ind]['node'], msg) :
+                            currentstr=str(self.distances[ind]['node'].name)
+                            closeststr=currentstr
+                            not_loc=False
+                    ind+=1
+                          
+                ind = 0
+                not_loc=True
+                while not_loc and ind<len(self.distances) and closeststr=='none' :
+                    if self.distances[ind]['node'].name not in self.nogos and self.distances[ind]['node'].name not in self.names_by_topic :
+                        closeststr=str(self.distances[ind]['node'].name)
+                        not_loc=False
+                    ind+=1
+                #currentstr=str(self.distances[0]['node'])
+            else:
+                not_loc=False
+                closeststr=str(self.loc_by_topic[0])
+                currentstr=str(self.loc_by_topic[0])
+
+            self.publishTopics(closeststr, currentstr)
             self.throttle=1
         else:
             self.throttle +=1
@@ -123,13 +120,59 @@ class TopologicalNavLoc(object):
         self.cnstr=cnstr
 
 
+
     """
      MapCallback
      
      This function receives the Topological Map
     """
     def MapCallback(self, msg) :
+        self.names_by_topic=[]
+        self.nodes_by_topic=[]
+        self.nogos=[]
+
         self.lnodes = msg.nodes
+        
+        for i in self.lnodes:
+            if i.localise_by_topic:
+                a= json.loads(i.localise_by_topic)
+                a['name'] = i.name
+                self.nodes_by_topic.append(a)
+                self.names_by_topic.append(a['name'])
+                
+        #print "NO GO NODES"
+        self.nogos = self.get_no_go_nodes()
+        #print self.nogos
+
+
+    def Callback(self, msg, item):
+        #print item
+        val = getattr(msg, item['field'])
+        if val == item['val'] :
+            if item['name'] not in self.loc_by_topic:
+                self.loc_by_topic.append(item['name'])
+        else:
+            if item['name'] in self.loc_by_topic:
+                self.loc_by_topic.remove(item['name'])
+
+
+
+    """
+     Get No_Go_Nodes
+     
+     This function gets the list of No go nodes
+    """
+    def get_no_go_nodes(self):
+        rospy.wait_for_service('/topological_map_manager/get_tagged_nodes')
+        try:
+            get_prediction = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            resp1 = get_prediction('no_go')
+            #print resp1
+            return resp1.nodes
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+            return []
+        
 
 
     def point_in_poly(self,node,pose):

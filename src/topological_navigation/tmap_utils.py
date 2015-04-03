@@ -14,6 +14,17 @@ def get_node(top_map, node_name):
             return i
     return None
 
+
+"""
+    get_distance_node_pose
+    
+    Returns the straight line distance between a pose and a node
+""" 
+def get_distance_node_pose(node, pose):
+    #dist=math.hypot((pose.position.x-node.pose[0].position.x),(pose.position.y-node.pose[0].position.y))
+    dist=math.hypot((pose.position.x-node.pose.position.x),(pose.position.y-node.pose.position.y))
+    return dist
+
  
 """
     get_distance_to_node

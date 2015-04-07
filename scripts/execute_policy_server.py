@@ -32,6 +32,17 @@ import strands_navigation_msgs.msg
 
 
 """
+    get_node
+    
+    Given a topological map and a node name it returns the node object
+"""
+def get_node(top_map, node_name):
+    for i in top_map.nodes:
+        if i.name == node_name:
+            return i
+    return None
+
+"""
  Class for Policy Execution
 
 """
@@ -319,6 +330,7 @@ class PolicyExecutionServer(object):
                                     rospy.loginfo("There is NO edge %s will ABORT policy execution", route.edge_id[nod_ind])
                                     break
                             else :
+
                                 # Closest node not in route navigate to it (if it suceeds policy execution will be successful)
                                 print 'Do move_base to %s' %self.closest_node
                                 self.current_action = 'move_base'
@@ -329,12 +341,20 @@ class PolicyExecutionServer(object):
                             keep_executing = False
                     else :
                         # Current node not in route so policy execution was successful
+                        cl_node = get_node(self.curr_tmap, self.closest_node)                       
                         nfails=0
-                        print 'Do move_base to %s' %self.current_node
-                        self.current_action = 'move_base'
-                        success=self.navigate_to(self.current_action,self.current_node)
-                        if success :
-                            keep_executing = False
+                        if not cl_node.localise_by_topic:
+                            print 'Do move_base to %s' %self.current_node
+                            self.current_action = 'move_base'
+                            success=self.navigate_to(self.current_action,self.current_node)
+                            if success :
+                                keep_executing = False
+                        else:
+                            print 'Policy was successful %s' %self.current_node
+                            #self.current_action = 'move_base'
+                            success=True #self.navigate_to(self.current_action,self.current_node)
+                            if success :
+                                keep_executing = False
             rospy.sleep(rospy.Duration.from_sec(0.3))
         self.navigation_activated = False
         return success
@@ -483,7 +503,6 @@ class PolicyExecutionServer(object):
         self.topol_map = msg.name
         self.lnodes = msg.nodes
         self.curr_tmap = msg
-
 
 
     """

@@ -34,14 +34,14 @@ class TopologicalNavLoc(object):
         self.wp_pub = rospy.Publisher('/closest_node', String, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('/current_node', String, latch=True, queue_size=1)
         
-        self.lnodes = []
+        self.rec_map=False
         self.loc_by_topic=[]
 
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
         
-        while len(self.lnodes) == 0:
+        while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
         
 
@@ -65,7 +65,7 @@ class TopologicalNavLoc(object):
         if(self.throttle%self.throttle_val==0):
             #rospy.loginfo("NO GO NODES: %s" %self.nogos)
             self.distances=[]
-            for i in self.lnodes:
+            for i in self.tmap.nodes:
                 d= get_distance_node_pose(i, msg)#get_distance_to_node(i, msg)
                 a={}
                 a['node'] = i
@@ -78,7 +78,14 @@ class TopologicalNavLoc(object):
             currentstr='none'
             
             not_loc=True
-            if not self.loc_by_topic:                
+            if self.loc_by_topic:
+                test_node=get_node(self.tmap, self.loc_by_topic[0])
+                if self.point_in_poly(test_node, msg):
+                    not_loc=False
+                    closeststr=str(self.loc_by_topic[0])
+                    currentstr=str(self.loc_by_topic[0])
+
+            if not_loc:
                 ind = 0
                 while not_loc and ind<len(self.distances) and ind<3 :
                     if self.distances[ind]['node'].name not in self.names_by_topic:
@@ -96,10 +103,6 @@ class TopologicalNavLoc(object):
                         not_loc=False
                     ind+=1
                 #currentstr=str(self.distances[0]['node'])
-            else:
-                not_loc=False
-                closeststr=str(self.loc_by_topic[0])
-                currentstr=str(self.loc_by_topic[0])
 
             self.publishTopics(closeststr, currentstr)
             self.throttle=1
@@ -131,9 +134,10 @@ class TopologicalNavLoc(object):
         self.nodes_by_topic=[]
         self.nogos=[]
 
-        self.lnodes = msg.nodes
+        self.tmap = msg        
+        self.rec_map=True
         
-        for i in self.lnodes:
+        for i in self.tmap.nodes:
             if i.localise_by_topic:
                 a= json.loads(i.localise_by_topic)
                 a['name'] = i.name

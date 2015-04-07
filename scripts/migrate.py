@@ -11,7 +11,7 @@ from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 from geometry_msgs.msg import Pose
 import mongodb_store.util as dc_util
 from mongodb_store.message_store import MessageStoreProxy
-
+import strands_navigation_msgs.msg
 
 
 def get_edge_id(source, target, eids):
@@ -91,7 +91,7 @@ def check_for_update(b, d, client):
     #for every point_set in the db
     for pointset in available:
         #get one message
-        search = {"_meta.pointset": pointset}
+        search = {"_meta.pointset": pointset, "name" : 'ChargingPoint'}
         aa =collection.find_one(search)
         a = aa.keys()
         #pop out meta form msg store from the dict keys
@@ -106,6 +106,7 @@ def check_for_update(b, d, client):
         else:
 #            print "No differences at node level testing edges"
 #            print 'Edge comparison for pointset %s' %pointset
+    
             e = aa["edges"][0].keys()
             edef =len(list(set(d).difference(set(e))))
 #            print edef
@@ -134,11 +135,12 @@ def update_maps(to_update, client):
     
             nna = a['name']
             nma = a['map']
-            es = a['edges']
             vt = a['verts']
-            for i in es:
-                ed, eids = update_edge(i, nna, nma, eids)
-                bc.edges.append(ed)
+            if a['edges']:
+                es = a['edges']
+                for i in es:
+                    ed, eids = update_edge(i, nna, nma, eids)
+                    bc.edges.append(ed)
                 
             for i in vt:
                 v = update_vert(i)
@@ -183,24 +185,51 @@ def check_sanity(client):
         for i in message_list:
             update = False
             print i[0].pointset, i[0].name, i[1]['_id']
-            for j in i[0].edges :
-                if j.edge_id == '':
-                    update = True
-                    print 'needs edge id'
-                    j.edge_id =  get_edge_id(i[0].name, j.node, eids)
-                    print 'new edge_id %s' %j.edge_id
-                eids.append(j.edge_id)
-                if j.top_vel <= 0.1 :
-                    update = True
-                    print 'needs top vel'
-                    j.top_vel = 0.55
-                if j.map_2d == '':
-                    update = True
-                    print 'needs map_2d'
-                    j.map_2d = i[0].map
+            if i[0].edges:
+                for j in i[0].edges :
+                    if j.edge_id == '':
+                        update = True
+                        print 'needs edge id'
+                        j.edge_id =  get_edge_id(i[0].name, j.node, eids)
+                        print 'new edge_id %s' %j.edge_id
+                    eids.append(j.edge_id)
+                    if j.top_vel <= 0.1 :
+                        update = True
+                        print 'needs top vel'
+                        j.top_vel = 0.55
+                    if j.map_2d == '':
+                        update = True
+                        print 'needs map_2d'
+                        j.map_2d = i[0].map
             if update:
                 msg_store.update_id(i[1]['_id'], i[0], i[1], upsert = False)                
 
+def add_localise_by_topic(tmap, node, json_str):
+    #print req
+    #data = json.loads(req.content)
+    #print data
+
+    msg_store = MessageStoreProxy(collection='topological_maps')
+    query = {"name" : node, "pointset": tmap}
+    query_meta = {}
+    #query_meta["pointset"] = tmap
+    #query_meta["map"] = self.nodes.map
+
+    #print query, query_meta
+    available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+    #print len(available)
+    if len(available) != 1:
+         #succeded = False
+         print 'there are no nodes or more than 1 with that name'
+    else:
+        #succeded = True
+        for i in available:
+            if not i[0].localise_by_topic:
+                msgid= i[1]['_id']
+                i[0].localise_by_topic=json_str
+                #print i[0]
+                print "Updating %s--%s" %(i[0].pointset, i[0].name)
+                msg_store.update_id(msgid, i[0], i[1], upsert = False)
 
 
 if __name__ == '__main__':
@@ -231,6 +260,12 @@ if __name__ == '__main__':
     check_sanity(client)    
     #print available
     
+    db=client.message_store
+    collection=db["topological_maps"]
+    available = collection.find().distinct("_meta.pointset")
+    print available    
     
+    for i in available:
+        add_localise_by_topic(i, 'ChargingPoint', "{\"topic\":\"/battery_state\",\"field\":\"charging\", \"val\": true}")
 
     

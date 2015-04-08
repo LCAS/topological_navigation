@@ -197,7 +197,7 @@ class TopologicalNavLoc(object):
             #print resp1
             return resp1.nodes
         except rospy.ServiceException, e:
-            rospy.loggerr(Service call failed: %s"%e)
+            rospy.loggerr("Service call failed: %s"%e)
             return []
         
 

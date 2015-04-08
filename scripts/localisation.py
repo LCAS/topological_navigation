@@ -173,7 +173,7 @@ class TopologicalNavLoc(object):
             resp1 = cont(req.tag)
             tagnodes = resp1.nodes
         except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+            rospy.loggerr("Service call failed: %s"%e)
             rlist.append(tlist)
             return rlist
         
@@ -197,7 +197,7 @@ class TopologicalNavLoc(object):
             #print resp1
             return resp1.nodes
         except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+            rospy.loggerr(Service call failed: %s"%e)
             return []
         
 

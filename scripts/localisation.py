@@ -167,15 +167,13 @@ class TopologicalNavLoc(object):
         tlist = []
         rlist=[]
 
-        rospy.wait_for_service('/topological_map_manager/get_tagged_nodes')
         try:
+            rospy.wait_for_service('/topological_map_manager/get_tagged_nodes', timeout=3)
             cont = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
             resp1 = cont(req.tag)
             tagnodes = resp1.nodes
         except rospy.ServiceException, e:
-            rospy.loggerr("Service call failed: %s"%e)
-            rlist.append(tlist)
-            return rlist
+            rospy.logerr("Service call failed: %s"%e)
         
         ldis = [x['node'].name for x in self.distances]
         for i in ldis:
@@ -190,15 +188,14 @@ class TopologicalNavLoc(object):
      This function gets the list of No go nodes
     """
     def get_no_go_nodes(self):
-        rospy.wait_for_service('/topological_map_manager/get_tagged_nodes')
         try:
+            rospy.wait_for_service('/topological_map_manager/get_tagged_nodes', timeout=3)
             get_prediction = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
             resp1 = get_prediction('no_go')
             #print resp1
             return resp1.nodes
         except rospy.ServiceException, e:
-            rospy.loggerr("Service call failed: %s"%e)
-            return []
+            rospy.logerr("Service call failed: %s"%e)
         
 
 

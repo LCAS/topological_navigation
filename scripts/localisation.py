@@ -164,20 +164,23 @@ class TopologicalNavLoc(object):
 
 
     def get_nodes_wtag_cb(self,req):
+        tlist = []
+        rlist=[]
+
         rospy.wait_for_service('/topological_map_manager/get_tagged_nodes')
         try:
             cont = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
             resp1 = cont(req.tag)
             tagnodes = resp1.nodes
         except rospy.ServiceException, e:
-            return "Service call failed: %s"%e
+            print "Service call failed: %s"%e
+            rlist.append(tlist)
+            return rlist
         
-        tlist = []
         ldis = [x['node'].name for x in self.distances]
         for i in ldis:
             if i in tagnodes:
                 tlist.append(i)
-        rlist=[]
         rlist.append(tlist)
         return rlist
 

@@ -295,6 +295,7 @@ class TopologicalNavServer(object):
 
         rospy.loginfo("%d Nodes on route" %nnodes)
 
+        inc=1
         rindex=0
         nav_ok=True
         route_len = len(route.edge_id)

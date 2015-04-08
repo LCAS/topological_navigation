@@ -36,8 +36,10 @@ class TopologicalNavLoc(object):
         
         self.rec_map=False
         self.loc_by_topic=[]
-
-
+        
+        #This service returns a list of nodes that have a given tag
+        self.get_tagged_srv=rospy.Service('/topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
+        
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
         
@@ -160,6 +162,24 @@ class TopologicalNavLoc(object):
                 self.loc_by_topic.remove(item['name'])
 
 
+
+    def get_nodes_wtag_cb(self,req):
+        rospy.wait_for_service('/topological_map_manager/get_tagged_nodes')
+        try:
+            cont = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            resp1 = cont(req.tag)
+            tagnodes = resp1.nodes
+        except rospy.ServiceException, e:
+            return "Service call failed: %s"%e
+        
+        tlist = []
+        ldis = [x['node'].name for x in self.distances]
+        for i in ldis:
+            if i in tagnodes:
+                tlist.append(i)
+        rlist=[]
+        rlist.append(tlist)
+        return rlist
 
     """
      Get No_Go_Nodes

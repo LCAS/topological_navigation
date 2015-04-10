@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.31 (2015-04-10)
+-------------------
 * fixing issues tested
 * typo
 * changing prints to rospy.loggerr

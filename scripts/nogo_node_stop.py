@@ -25,8 +25,7 @@ class NoGoServer(object):
         self.stop_services=["/enable_motors", "/emergency_stop", "/task_executor/set_execution_status"]
         self.activate_services=["/enable_motors", "/reset_motorstop", "/task_executor/set_execution_status"]
 
-        self.av_stop_services=[]
-        self.av_activate_services=[]  
+
         
 
         #Waiting for Topological Map        
@@ -37,17 +36,8 @@ class NoGoServer(object):
             pass
         rospy.loginfo(" ...done")
 
-        #print rosservice.get_service_list()
-        self.service_names = rosservice.get_service_list()#[x[0] for x in rosgraph.masterapi.Master('/no_go_nodes_stop').getSystemState()[2]]
-        #print service_names
-        for i in self.stop_services:
-            if i in self.service_names:
-                self.av_stop_services.append(i)
-        
-        for i in self.activate_services :
-            if i in self.service_names :
-                self.av_activate_services.append(i)
-        
+
+        self.update_service_list()
         print self.av_stop_services, self.av_activate_services
         
     
@@ -63,6 +53,22 @@ class NoGoServer(object):
         t.start()
         rospy.loginfo("All Done ...")
         rospy.spin()
+
+
+
+    def update_service_list(self):
+        self.av_stop_services=[]
+        self.av_activate_services=[]        
+        #print rosservice.get_service_list()
+        self.service_names = rosservice.get_service_list()#[x[0] for x in rosgraph.masterapi.Master('/no_go_nodes_stop').getSystemState()[2]]
+        #print service_names
+        for i in self.stop_services:
+            if i in self.service_names:
+                self.av_stop_services.append(i)
+        
+        for i in self.activate_services :
+            if i in self.service_names :
+                self.av_activate_services.append(i)
 
 
 
@@ -114,12 +120,14 @@ class NoGoServer(object):
         if self.nogo_active:
             self.set_emergency_stop()
             if not self.nogo_pre_active :
+                self.update_service_list()
                 self.set_free_run(True)
                 self.start_stop_scheduler(False)
                 self.send_email()
             self.nogo_pre_active = True
         else:
             if self.nogo_pre_active :
+                self.update_service_list()
                 self.release_emergency_stop()
                 self.set_free_run(False)
                 self.start_stop_scheduler(True)            

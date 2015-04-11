@@ -1,0 +1,12 @@
+<launch>
+	<!-- declare arg to be passed in -->
+	<arg name="machine" default="localhost" />
+	<arg name="user" default="" />
+
+	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
+
+	<node pkg="strands_emails" name="strands_emails" type="send_emails.py" output="screen"/>
+	
+	<node pkg="topological_navigation" name="nogo_node_stop" type="nogo_node_stop.py" output="screen"/>
+	<node pkg="topological_navigation" name="safety_trigger" type="safety_trigger.py" output="screen"/>
+</launch> 

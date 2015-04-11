@@ -319,14 +319,16 @@ class TopologicalNavServer(object):
         else:
             if a not in self.move_base_actions :
                 #n_edges=len(Orig.edges)
+                action_server = 'move_base'
+                move_base_act= False
                 for i in o_node.edges :
                     # Check if there is a move_base action in the edages of this node
                     # if not is dangerous to move
                     if i.action in self.move_base_actions :
-                        break
-                    action_server=None
+                        move_base_act = True
+
                                        
-                if action_server is None:
+                if not move_base_act :
                     rospy.loginfo("Action not taken, outputing success")
                     nav_ok = True
                     inc = 0

@@ -2,6 +2,26 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.31 (2015-04-10)
+-------------------
+* fixing issues tested
+* typo
+* changing prints to rospy.loggerr
+* Improving error handling
+* adding service to get tagged nodes ordered by distance and minor bug fix on topological navigation
+* Policy execution doesn't do move_base to the waypoint when the waypoint is localised by topic
+* localisation by topic only works if the robot is in the influence zone of the node, migrate script now adds JSON string for localisation on ChargingPoint
+* Implementing Localise By topic and No go nodes exceptions
+* Topological prediction now uses forecast service
+* Improving time estimation
+* returning only edge_id in topological prediction
+* Fixing issues with topological Prediction
+* second part of previous commit
+* checking sanity on migrate scripts
+* Topological navigation doesn't use nasty old Classes anymore
+* adding search route script
+* Contributors: Jaime Pulido Fentanes
+
 0.0.29 (2015-03-23)
 -------------------
 

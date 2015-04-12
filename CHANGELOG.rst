@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.32 (2015-04-12)
+-------------------
 * fixing bug in insert map that I inserted myself
 * Contributors: Jaime Pulido Fentanes
 

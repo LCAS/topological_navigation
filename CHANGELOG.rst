@@ -2,6 +2,14 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* emergency behaviours launch file
+* updating service list when most services will be needed
+* Adding Emergency Behaviours
+* fixing action server bug
+* Contributors: Jaime Pulido Fentanes
+
 0.0.31 (2015-04-10)
 -------------------
 * fixing issues tested

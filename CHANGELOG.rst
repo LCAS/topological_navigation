@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.32 (2015-04-12)
+-------------------
 * emergency behaviours launch file
 * updating service list when most services will be needed
 * Adding Emergency Behaviours

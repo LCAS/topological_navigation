@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fixing bug in insert map that I inserted myself
+* Contributors: Jaime Pulido Fentanes
+
 0.0.31 (2015-04-10)
 -------------------
 * localisation by topic only works if the robot is in the influence zone of the node, migrate script now adds JSON string for localisation on ChargingPoint

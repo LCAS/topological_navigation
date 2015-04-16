@@ -278,14 +278,9 @@ class PolicyExecutionServer(object):
 #                        action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                         action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
                         if action != 'none':
-                            if action in self.move_base_actions :
-                                self.current_action = action
-                                print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target)
-                                success=self.navigate_to(self.current_action,target)
-                            else:                           
-                                print 'Do move_base to %s' %self.current_node#(route.source[0])
-                                self.current_action = 'move_base'
-                                success=self.navigate_to(self.current_action,self.current_node)
+                            self.current_action = action
+                            print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target)
+                            success=self.navigate_to(self.current_action,target)
                         else:
                             success = False
                             keep_executing = False

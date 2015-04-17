@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 import rospy
 import actionlib
 import pymongo
@@ -393,6 +394,7 @@ class PolicyExecutionServer(object):
             if i.name == node :
                 found = True
                 target_pose = i.pose#[0]
+                tolerance=i.xy_goal_tolerance
                 break
         
         if found:
@@ -404,8 +406,12 @@ class PolicyExecutionServer(object):
             self.stat=nav_stats(self.current_node, node, self.topol_map, edg)
             #dt_text=self.stat.get_start_time_str()
 
+            if action in self.move_base_actions and node in self.current_route.source:
+                rospy.set_param("/move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))  
+                
             result = self.monitored_navigation(target_pose, action)
-
+            
+            rospy.set_param("/move_base/NavfnROS/default_tolerance",0.0)
 
             self.stat.set_ended(self.current_node)
 

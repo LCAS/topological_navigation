@@ -7,14 +7,12 @@ import pymongo
 import json
 import sys
 import math
-
-
+import time
 
 from datetime import datetime
 
-
+import actionlib
 from actionlib_msgs.msg import *
-#from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Header
@@ -22,14 +20,13 @@ from std_msgs.msg import String
 from nav_msgs.srv import *
 
 
+import strands_navigation_msgs.msg
 from strands_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
-
 from strands_navigation_msgs.msg import NavStatistics
-
 from strands_navigation_msgs.msg import TopologicalMap
+
 from topological_navigation.tmap_utils import *
-#from topological_navigation.topological_node import *
 
 from strands_navigation_msgs.srv import *
 import fremenserver.msg
@@ -41,27 +38,14 @@ def get_model(name, models):
         if i["model_id"] == name:
             return i
 
-#def node_dist(node1,node2):
-#    rospy.wait_for_service('/move_base/make_plan')
-#        try:
-#            get_prediction = rospy.ServiceProxy('/move_base/make_plan', nav_msgs.srv.GetPlan)
-#            now = rospy.Time.now()
-#            prediction_time = now + rospy.Duration(seconds_from_now) 
-#            print "Requesting prediction for %f"%prediction_time.secs
-#            resp1 = get_prediction(prediction_time)
-#            return resp1
-#        except rospy.ServiceException, e:
-#            print "Service call failed: %s"%e        
-#    h = std_msgs.msg.Header()
-#    h.stamp = rospy.Time.now()
-#    dist = math.sqrt((node1.pose.position.x - node2.pose.position.x)**2 + (node1.pose.position.y - node2.pose.position.y)**2 )
-#    return dist
-
 
 class TopologicalNavPred(object):
 
+    _feedback = strands_navigation_msgs.msg.BuildTopPredictionFeedback()
+    _result   = strands_navigation_msgs.msg.BuildTopPredictionResult()
+
     def __init__(self, name) :
-        
+        self.edgid=[]
         self.lnodes = []
         self.eids = []
         self.unknowns = []
@@ -79,18 +63,21 @@ class TopologicalNavPred(object):
         self.FremenClient.wait_for_server()
         rospy.loginfo(" ...done")
 
-        self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
-        #This service returns a list of nodes that have a given tag
+
+        #Creating Action Server
+        rospy.loginfo("Creating action server.")
+        self._as = actionlib.SimpleActionServer(name, strands_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.BuildCallback, auto_start = False)
+        self._as.register_preempt_callback(self.preemptCallback)
+        rospy.loginfo(" ...starting")
+        self._as.start()
+        rospy.loginfo(" ...done")
 
         self.get_list_of_edges()
-        #print "List of edges"
-        #print self.eids
-        
+        rospy.loginfo("Gathering Data")
         self.gather_stats()
+        rospy.loginfo(" ...done")
 
-#        for i in self.unknowns:
-#            print i
-
+        self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 
@@ -183,10 +170,15 @@ class TopologicalNavPred(object):
         self.map_received = True
         #print self.lnodes
 
-    def get_list_of_edges(self):        
+
+    def get_list_of_edges(self):
+        #self.eids = []
+        
+        rospy.loginfo("Querying for list of edges")
         for i in self.lnodes.nodes :
             for j in i.edges:
-                if j.edge_id not in self.eids:
+                if j.edge_id not in self.edgid :
+                    self.edgid.append(j.edge_id)
                     val={}
                     val["edge_id"]=j.edge_id
                     val["model_id"]=self.lnodes.name+'__'+j.edge_id
@@ -198,6 +190,42 @@ class TopologicalNavPred(object):
                     else :
                         val["dist"]= get_distance_to_node(i,ddn)/0.1
                     self.eids.append(val)
+        fdbmsg = 'Done. %d edges found' %len(self.edgid)
+        rospy.loginfo(fdbmsg)
+
+
+    """
+     BuildCallBack
+     
+     This Functions is called when the Action Server is called to build the models again
+    """
+    def BuildCallback(self, goal):
+        self.cancelled = False
+
+        start_time = time.time()        
+        self.get_list_of_edges()
+        elapsed_time = time.time() - start_time
+        self._feedback.result = "%d edges found in %.3f seconds \nGathering stats ..." %(len(self.eids),elapsed_time)
+        self._as.publish_feedback(self._feedback)
+        self.gather_stats()        
+        
+        elapsed_time = time.time() - start_time
+        self._feedback.result = "Finished after %.3f seconds" %elapsed_time 
+        self._as.publish_feedback(self._feedback)       #Publish Feedback
+
+        print "Finished after %.3f seconds" %elapsed_time
+        
+        if not self.cancelled :     
+            self._result.success = True
+            self._as.set_succeeded(self._result)
+        else:
+            self._result.success = False
+            self._as.set_preempted(self._result)
+
+
+    def preemptCallback(self):
+        self.cancelled = True
+
 
 
     def gather_stats(self):
@@ -238,6 +266,7 @@ class TopologicalNavPred(object):
                 self.unknowns.append(edge_mod)
                 
         self.create_fremen_models(to_add)
+
 
 
     def create_fremen_models(self, models):

@@ -50,6 +50,7 @@ class TopologicalNavPred(object):
         self.eids = []
         self.unknowns = []
         self.map_received =False
+        action_name = name+'/build_temporal_model'
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         
@@ -66,7 +67,7 @@ class TopologicalNavPred(object):
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(name, strands_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.BuildCallback, auto_start = False)
+        self._as = actionlib.SimpleActionServer(action_name, strands_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.BuildCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
         rospy.loginfo(" ...starting")
         self._as.start()

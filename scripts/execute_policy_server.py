@@ -29,7 +29,7 @@ from topological_navigation.navigation_stats import *
 
 import topological_navigation.msg
 import strands_navigation_msgs.msg
-#import dynamic_reconfigure.client
+import dynamic_reconfigure.client
 
 
 """
@@ -65,6 +65,7 @@ class PolicyExecutionServer(object):
         self.current_node = 'unknown'
         self.closest_node = 'unknown'
         self.current_action = 'none'
+        self.current_route = None
         self.n_tries = 3        
         
         rospy.on_shutdown(self._on_node_shutdown)
@@ -102,10 +103,10 @@ class PolicyExecutionServer(object):
 
         
         #Creating Reconfigure Client
-#        rospy.loginfo("Creating Reconfigure Client")
-#        self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
-#        config = self.rcnfclient.get_configuration()
-#        self.dyt = config['yaw_goal_tolerance']
+        rospy.loginfo("Creating Reconfigure Client")
+        self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
+        config = self.rcnfclient.get_configuration()
+        self.dyt = config['yaw_goal_tolerance']
 
 
         rospy.loginfo("All Done ...")
@@ -225,7 +226,7 @@ class PolicyExecutionServer(object):
 
         # If the robot is not on a node navigate to closest node
         if self.current_node == 'none' :
-            print 'Do move_base to %s' %self.closest_node#(route.source[0])
+            rospy.loginfo('Do move_base to %s' %self.closest_node)#(route.source[0])
             result=self.navigate_to('move_base',self.closest_node)
 
         #if self.current_node in route.source:
@@ -264,7 +265,7 @@ class PolicyExecutionServer(object):
                     
                     if self.current_action != 'none':
                         # There is an edge between these two nodes
-                        print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target)
+                        rospy.loginfo('%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target))
                         success=self.navigate_to(self.current_action, target)
                     else:
                         # There is NO edge between these two nodes so abort the execution
@@ -280,7 +281,7 @@ class PolicyExecutionServer(object):
                         action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
                         if action != 'none':
                             self.current_action = action
-                            print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target)
+                            rospy.loginfo('%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target))
                             success=self.navigate_to(self.current_action,target)
                         else:
                             success = False
@@ -312,11 +313,11 @@ class PolicyExecutionServer(object):
                                     if action in self.move_base_actions :
                                         # If closest_node and its target are connected by move_base type action nvigate to target
                                         self.current_action = action
-                                        print '%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target)
+                                        rospy.loginfo('%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target))
                                         success=self.navigate_to(self.current_action,target)
                                     else:
                                         # If closest_node and its target are not connected by move_base type action navigate to closest_node
-                                        print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                                        rospy.loginfo('Do move_base to %s' %self.closest_node)#(route.source[0])
                                         self.current_action = 'move_base'
                                         success=self.navigate_to(self.current_action,self.closest_node)
                                 else:
@@ -328,7 +329,7 @@ class PolicyExecutionServer(object):
                             else :
 
                                 # Closest node not in route navigate to it (if it suceeds policy execution will be successful)
-                                print 'Do move_base to %s' %self.closest_node
+                                rospy.loginfo('Do move_base to %s' %self.closest_node)
                                 self.current_action = 'move_base'
                                 success=self.navigate_to(self.current_action,self.closest_node)
                         else:
@@ -340,19 +341,20 @@ class PolicyExecutionServer(object):
                         cl_node = get_node(self.curr_tmap, self.closest_node)                       
                         nfails=0
                         if not cl_node.localise_by_topic:
-                            print 'Do move_base to %s' %self.current_node
+                            rospy.loginfo('Do move_base to %s' %self.current_node)
                             self.current_action = 'move_base'
                             success=self.navigate_to(self.current_action,self.current_node)
                             if success :
                                 keep_executing = False
                         else:
-                            print 'Policy was successful %s' %self.current_node
+                            rospy.loginfo('Policy was successful %s' %self.current_node)
                             #self.current_action = 'move_base'
                             success=True #self.navigate_to(self.current_action,self.current_node)
                             if success :
                                 keep_executing = False
             rospy.sleep(rospy.Duration.from_sec(0.3))
         self.navigation_activated = False
+        self.current_route = None
         return success
 
 
@@ -377,7 +379,7 @@ class PolicyExecutionServer(object):
         if not found:
             self._feedback.route_status = self.current_node
             self._as.publish_feedback(self._feedback)
-            print "source node not found"
+            rospy.logwarn("source node not found")
         return action,target
 
 
@@ -389,13 +391,39 @@ class PolicyExecutionServer(object):
     """
     def navigate_to(self, action, node):
         self.current_target=node
+        node_in_route = False
         found = False
+        tolerance=0.0
+        ytolerance= 0.0
         for i in self.lnodes:
             if i.name == node :
                 found = True
                 target_pose = i.pose#[0]
                 tolerance=i.xy_goal_tolerance
+                ytolerance= i.yaw_goal_tolerance
                 break
+        
+        #temporary safety measures (Until all maps are updated)
+        if tolerance == 0.0:
+            tolerance = 0.48
+        if ytolerance == 0.0:
+            ytolerance = self.dyt
+        
+        if self.current_route != None :
+            if node in self.current_route.source:
+                routeind = self.current_route.source.index(node)
+                next_action, next_node = self.find_action(node, self.current_route.edge_id[routeind])
+                node_in_route = True
+                #print "Next goal (%s) is the %d node in route" %(node,routeind)
+                #print "Next Edge %s, Next Action %s" %(self.current_route.edge_id[routeind],next_action)
+            else :
+                next_action = 'none'
+                node_in_route = False
+                #print "Next goal NOT on route"
+        else:
+            next_action = 'none'
+            node_in_route = False
+            #print "no route"
         
         if found:
             self.current_action = action
@@ -406,11 +434,22 @@ class PolicyExecutionServer(object):
             self.stat=nav_stats(self.current_node, node, self.topol_map, edg)
             #dt_text=self.stat.get_start_time_str()
 
-            if action in self.move_base_actions and node in self.current_route.source:
-                rospy.set_param("/move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))  
+            if action in self.move_base_actions and node_in_route :
+                rospy.set_param("/move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))
+
+            if next_action in self.move_base_actions :
+                params = { 'yaw_goal_tolerance' : 6.28318531 }   #360 degrees tolerance               
+            else:
+                if next_action == 'none':
+                    params = { 'yaw_goal_tolerance' : ytolerance} #Node predetermined tolerance
+                else:
+                    params = { 'yaw_goal_tolerance' : 0.523598776 }   #30 degrees tolerance               
+            self.do_reconf_movebase(params)
                 
             result = self.monitored_navigation(target_pose, action)
             
+            params = { 'yaw_goal_tolerance' : self.dyt, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
+            self.do_reconf_movebase(params)
             rospy.set_param("/move_base/NavfnROS/default_tolerance",0.0)
 
             self.stat.set_ended(self.current_node)
@@ -504,6 +543,18 @@ class PolicyExecutionServer(object):
         self.topol_map = msg.name
         self.lnodes = msg.nodes
         self.curr_tmap = msg
+
+
+
+    """
+    Reconfigure Move Base
+     
+    """
+    def do_reconf_movebase(self, params):
+        try:
+            self.rcnfclient.update_configuration(params)
+        except rospy.ServiceException as exc:
+            rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
 
 
     """

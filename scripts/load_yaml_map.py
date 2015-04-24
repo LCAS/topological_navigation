@@ -27,9 +27,9 @@ if __name__ == '__main__':
 
     
     for i in data:
-        meta = i[1]
-        print i[0]
-        msgv = dc_util.dictionary_to_message(i[0], TopologicalNode)
+        meta = i['meta']
+        print i['node']
+        msgv = dc_util.dictionary_to_message(i['node'], TopologicalNode)
         #print msgv, meta
         msg_store.insert(msgv,meta)
         #mongodb_store.util.store_message(points_db,p,val)

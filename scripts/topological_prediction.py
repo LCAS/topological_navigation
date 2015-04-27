@@ -45,10 +45,7 @@ class TopologicalNavPred(object):
     _result   = strands_navigation_msgs.msg.BuildTopPredictionResult()
 
     def __init__(self, name) :
-        self.edgid=[]
         self.lnodes = []
-        self.eids = []
-        self.unknowns = []
         self.map_received =False
         action_name = name+'/build_temporal_model'
 
@@ -73,15 +70,23 @@ class TopologicalNavPred(object):
         self._as.start()
         rospy.loginfo(" ...done")
 
-        self.get_list_of_edges()
-        rospy.loginfo("Gathering Data")
-        self.gather_stats()
-        rospy.loginfo(" ...done")
+        self.create_temporal_models()        
+
 
         self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 
+    def create_temporal_models(self):
+        self.edgid=[]
+        self.eids = []
+        self.unknowns = []
+
+        self.get_list_of_edges()
+        rospy.loginfo("Gathering Data")
+        self.gather_stats()
+        rospy.loginfo(" ...done")
+        
 
     def get_predict(self, epoch):
         print "requesting prediction for time %d" %epoch
@@ -204,12 +209,12 @@ class TopologicalNavPred(object):
         self.cancelled = False
 
         start_time = time.time()        
-        self.get_list_of_edges()
-        elapsed_time = time.time() - start_time
-        self._feedback.result = "%d edges found in %.3f seconds \nGathering stats ..." %(len(self.eids),elapsed_time)
-        self._as.publish_feedback(self._feedback)
-        self.gather_stats()        
-        
+        #self.get_list_of_edges()
+        #elapsed_time = time.time() - start_time
+        #self._feedback.result = "%d edges found in %.3f seconds \nGathering stats ..." %(len(self.eids),elapsed_time)
+        #self._as.publish_feedback(self._feedback)
+        #self.gather_stats()        
+        self.create_temporal_models()
         elapsed_time = time.time() - start_time
         self._feedback.result = "Finished after %.3f seconds" %elapsed_time 
         self._as.publish_feedback(self._feedback)       #Publish Feedback

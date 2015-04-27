@@ -28,6 +28,8 @@ if __name__ == "__main__":
         sys.exit(1)
     rospy.init_node('topological_prediction_test')
     est = predict_edges(seconds_from_now)
+    print "set of repeated edges:"
+    print set([x for x in est.edge_ids if est.edge_ids.count(x) > 1])
     #print est.edge_id
     
     if len(est.edge_ids) == len(est.probs) and len(est.edge_ids) == len(est.durations):

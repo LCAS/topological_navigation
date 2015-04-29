@@ -1,5 +1,6 @@
 #goal definition
 string target
+bool   no_orientation	#Do not care about the final orientation
 ---
 #result definition
 bool success

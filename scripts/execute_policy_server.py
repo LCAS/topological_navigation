@@ -461,11 +461,19 @@ class PolicyExecutionServer(object):
                     params = { 'yaw_goal_tolerance' : ytolerance, 'max_vel_x':top_vel, 'max_trans_vel':top_vel} #Node predetermined tolerance
                 else:                                                                    # Next action not move_base type
                     params = { 'yaw_goal_tolerance' : 0.523598776, 'max_vel_x':top_vel, 'max_trans_vel':top_vel}   #30 degrees tolerance
-            self.do_reconf_movebase(params, action)
+            if action in self.move_base_actions:
+                self.do_reconf_movebase(params, action)
+            else:
+                self.do_reconf_movebase(params, 'move_base')
                 
             result = self.monitored_navigation(target_pose, action)
             params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
-            self.do_reconf_movebase(params, action)
+
+            if action in self.move_base_actions:
+                self.do_reconf_movebase(params, action)
+            else:
+                self.do_reconf_movebase(params, 'move_base')
+            
             rospy.set_param("/move_base/NavfnROS/default_tolerance",0.0)
 
             self.stat.set_ended(self.current_node)

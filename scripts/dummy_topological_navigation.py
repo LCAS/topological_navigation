@@ -105,6 +105,10 @@ if __name__ == '__main__':
     map_name =  rospy.get_param('~map', None)
     if map_name:
         rospy.loginfo('simulating map: %s' % map_name)
+        rospy.set_param('topological_map_name', map_name)        
+    else:
+        rospy.set_param('dummy_map', map_name)
+
     navigator = DummyTopologicalNavigator(size, sim_times, map_name)        
     navigator.start()
 

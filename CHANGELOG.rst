@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.34 (2015-05-05)
+-------------------
 * Adding boolean to tell topological navigation not to care for orientation in the final node
 * fixing bug with repeated edges in prediction, and adding test for this case in test top prediction
 * reconfiguring move_base yaw tolerance depending on next action if its move_base type to 2*PI if its none to the default node tolerance and if it is a non move_base type to 30 degrees

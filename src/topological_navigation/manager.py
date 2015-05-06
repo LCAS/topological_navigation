@@ -216,6 +216,7 @@ class map_manager(object):
     def get_topological_map_cb(self, req):
         nodes = self.loadMap(req.pointset)
         print "Returning Map %s"%req.pointset
+        nodes.nodes.sort(key=lambda node: node.name)
         return nodes
         
 

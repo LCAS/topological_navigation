@@ -3,12 +3,13 @@
 import math
 import rospy
 import actionlib
-import pymongo
-import json
-import sys
+#import pymongo
+#import json
+#import sys
+import rosservice
 
 import calendar
-from time import sleep
+#from time import sleep
 from datetime import datetime
 
 
@@ -70,6 +71,9 @@ class PolicyExecutionServer(object):
         
         rospy.on_shutdown(self._on_node_shutdown)
         self.move_base_actions = ['move_base','human_aware_navigation']
+        self.needed_actions=[]
+        
+        
         self.navigation_activated=False
         self._action_name = '/topological_navigation/execute_policy_mode'
         self.stats_pub = rospy.Publisher('/execute_policy_mode/Statistics', NavStatistics)
@@ -78,6 +82,10 @@ class PolicyExecutionServer(object):
         self.lnodes = []
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)       
         rospy.loginfo("Waiting for Topological map ...")        
+        while len(self.lnodes) == 0 :
+            rospy.sleep(rospy.Duration.from_sec(0.05))
+        rospy.loginfo(" ...done")
+        self.needed_move_base_actions = [x for x in self.needed_actions if x in self.move_base_actions]
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
@@ -103,12 +111,22 @@ class PolicyExecutionServer(object):
 
         self.rcnfclient={}
         config = {}
+        service_names = rosservice.get_service_list()
+        
         #Creating Reconfigure Client
-        for i in self.move_base_actions:
+        for i in self.needed_move_base_actions:
+            client = None
             rcnfsrvrname= '/'+i+'/DWAPlannerROS'
-            rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
-            self.rcnfclient[i] = dynamic_reconfigure.client.Client(rcnfsrvrname)
-            config[i] = self.rcnfclient[i].get_configuration()
+            test_service = rcnfsrvrname+'/set_parameters'
+            
+            if test_service in service_names:
+                rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
+                client = dynamic_reconfigure.client.Client(rcnfsrvrname, timeout=10)
+                self.rcnfclient[i] = client
+                config[i] = self.rcnfclient[i].get_configuration()
+            else:
+                rospy.logwarn("I couldn't create reconfigure client %s." %rcnfsrvrname)
+        
         self.dyt = config['move_base']['yaw_goal_tolerance']
         rospy.loginfo("default yaw tolerance %f" %self.dyt)
 
@@ -567,7 +585,10 @@ class PolicyExecutionServer(object):
         self.topol_map = msg.name
         self.lnodes = msg.nodes
         self.curr_tmap = msg
-
+        for i in self.lnodes:
+            for j in i.edges:
+                if j.action not in self.needed_actions:
+                    self.needed_actions.append(j.action)
 
 
     """
@@ -575,11 +596,17 @@ class PolicyExecutionServer(object):
      
     """
     def do_reconf_movebase(self, params, action):
-        try:
-            self.rcnfclient[action].update_configuration(params)
-        except rospy.ServiceException as exc:
-            rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
-
+        if self.rcnfclient.has_key(action):
+            try:
+                self.rcnfclient[action].update_configuration(params)
+            except rospy.ServiceException as exc:
+                rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
+        else:
+            rospy.logwarn("No dynamic reconfigure for this action will try using move_base. You should solve this")
+            try:
+                self.rcnfclient['move_base'].update_configuration(params)
+            except rospy.ServiceException as exc:
+                rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
 
     """
      Node Shutdown CallBack

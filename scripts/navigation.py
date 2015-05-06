@@ -47,6 +47,7 @@ class TopologicalNavServer(object):
         self.cancelled = False
         self.preempted = False
         self.stat = None
+        self.no_orientation = False
         self._target = "None"
         self.current_action = 'none'
         self.next_action = 'none'
@@ -150,6 +151,8 @@ class TopologicalNavServer(object):
         if self.monit_nav_cli :
             self.cancelled = False
             self.preempted = False
+            self.no_orientation = goal.no_orientation
+            print "NO ORIENTATION (%s)" %self.no_orientation
             self._feedback.route = 'Starting...'
             self._as.publish_feedback(self._feedback)
             rospy.loginfo('Navigating From %s to %s', self.closest_node, goal.target)
@@ -373,7 +376,10 @@ class TopologicalNavServer(object):
                 self.reconf_movebase(cedg, cnode, True)
                 #self.rcnfclient.update_configuration(params)
             else:
-                self.reconf_movebase(cedg, cnode, False)
+                if self.no_orientation:
+                    self.reconf_movebase(cedg, cnode, True)
+                else:
+                    self.reconf_movebase(cedg, cnode, False)
 
                 
             self.current_target = cedg.node

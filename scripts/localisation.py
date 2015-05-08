@@ -37,6 +37,10 @@ class TopologicalNavLoc(object):
         self.rec_map=False
         self.loc_by_topic=[]
         
+        self.current_pose=Pose()
+        self.previous_pose=Pose()
+        self.previous_pose.position.x=1000 #just give a random big value so this is tested 
+        
         #This service returns a list of nodes that have a given tag
         self.get_tagged_srv=rospy.Service('/topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
         
@@ -64,6 +68,7 @@ class TopologicalNavLoc(object):
 
 
     def PoseCallback(self, msg):
+        self.current_pose = msg
         if(self.throttle%self.throttle_val==0):
             #rospy.loginfo("NO GO NODES: %s" %self.nogos)
             self.distances=[]
@@ -153,15 +158,18 @@ class TopologicalNavLoc(object):
 
     def Callback(self, msg, item):
         #print item
-        val = getattr(msg, item['field'])
-        if val == item['val'] :
-            if item['name'] not in self.loc_by_topic:
-                self.loc_by_topic.append(item['name'])
-        else:
-            if item['name'] in self.loc_by_topic:
-                self.loc_by_topic.remove(item['name'])
-
-
+        dist = get_distance(self.current_pose, self.previous_pose)
+        if dist>0.10:
+            val = getattr(msg, item['field'])
+            if val == item['val'] :
+                if item['name'] not in self.loc_by_topic:
+                    self.loc_by_topic.append(item['name'])
+                    self.previous_pose = self.current_pose
+            else:
+                if item['name'] in self.loc_by_topic:
+                    self.loc_by_topic.remove(item['name'])
+                    self.previous_pose = self.current_pose
+                    self.previous_pose.position.x = self.previous_pose.position.x+1000
 
     def get_nodes_wtag_cb(self,req):
         tlist = []

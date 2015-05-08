@@ -86,7 +86,9 @@ class PolicyExecutionServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         self.needed_move_base_actions = [x for x in self.needed_actions if x in self.move_base_actions]
-
+        if 'move_base' not in self.needed_move_base_actions:
+            self.needed_move_base_actions.append('move_base')
+        
         #Creating Action Server
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)

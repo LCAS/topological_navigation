@@ -73,7 +73,7 @@ class TopologicalNavServer(object):
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
         rospy.loginfo("Waiting for Topological map ...")        
         while not self._map_received :
-            pass
+            rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         
         

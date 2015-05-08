@@ -3,12 +3,13 @@
 import math
 import rospy
 import actionlib
-import pymongo
-import json
-import sys
+#import pymongo
+#import json
+#import sys
+import rosservice
 
 import calendar
-from time import sleep
+#from time import sleep
 from datetime import datetime
 
 
@@ -70,6 +71,9 @@ class PolicyExecutionServer(object):
         
         rospy.on_shutdown(self._on_node_shutdown)
         self.move_base_actions = ['move_base','human_aware_navigation']
+        self.needed_actions=[]
+        
+        
         self.navigation_activated=False
         self._action_name = '/topological_navigation/execute_policy_mode'
         self.stats_pub = rospy.Publisher('/execute_policy_mode/Statistics', NavStatistics)
@@ -78,6 +82,10 @@ class PolicyExecutionServer(object):
         self.lnodes = []
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)       
         rospy.loginfo("Waiting for Topological map ...")        
+        while len(self.lnodes) == 0 :
+            rospy.sleep(rospy.Duration.from_sec(0.05))
+        rospy.loginfo(" ...done")
+        self.needed_move_base_actions = [x for x in self.needed_actions if x in self.move_base_actions]
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
@@ -101,13 +109,26 @@ class PolicyExecutionServer(object):
         rospy.Subscriber('/current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
 
+        self.rcnfclient={}
+        config = {}
+        service_names = rosservice.get_service_list()
         
         #Creating Reconfigure Client
-        rospy.loginfo("Creating Reconfigure Client")
-        self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
-        config = self.rcnfclient.get_configuration()
-        self.dyt = config['yaw_goal_tolerance']
-
+        for i in self.needed_move_base_actions:
+            client = None
+            rcnfsrvrname= '/'+i+'/DWAPlannerROS'
+            test_service = rcnfsrvrname+'/set_parameters'
+            
+            if test_service in service_names:
+                rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
+                client = dynamic_reconfigure.client.Client(rcnfsrvrname, timeout=10)
+                self.rcnfclient[i] = client
+                config[i] = self.rcnfclient[i].get_configuration()
+            else:
+                rospy.logwarn("I couldn't create reconfigure client %s." %rcnfsrvrname)
+        
+        self.dyt = config['move_base']['yaw_goal_tolerance']
+        rospy.loginfo("default yaw tolerance %f" %self.dyt)
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -123,6 +144,8 @@ class PolicyExecutionServer(object):
         self._result.success = False
         self.navigation_activated = False
         self.monNavClient.cancel_all_goals()
+        params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
+        self.do_reconf_movebase(params, 'move_base')
         #self._as.set_preempted(self._result)
     
 
@@ -163,20 +186,20 @@ class PolicyExecutionServer(object):
                                 self.goal_failed=True                            
 
 
-    def get_edge_id(self, orig, dest, a):
+    def get_edge(self, orig, dest, a):
         found = False
-        edge_id= 'none'
+        edge = None
         for i in self.curr_tmap.nodes:
             if i.name == orig:
                 for j in i.edges:
                     if j.node == dest and j.action == a :
                         found = True
-                        edge_id = j.edge_id
+                        edge = j
                         break
             if found:
                 break
         
-        return edge_id
+        return edge
 
 
     """
@@ -225,9 +248,11 @@ class PolicyExecutionServer(object):
 
 
         # If the robot is not on a node navigate to closest node
-        if self.current_node == 'none' :
-            rospy.loginfo('Do move_base to %s' %self.closest_node)#(route.source[0])
-            result=self.navigate_to('move_base',self.closest_node)
+#        if self.current_node == 'none' :
+#            rospy.loginfo('Do move_base to %s' %self.closest_node)#(route.source[0])
+#            result=self.navigate_to('move_base',self.closest_node)
+
+
 
         #if self.current_node in route.source:
                 
@@ -352,7 +377,7 @@ class PolicyExecutionServer(object):
                             success=True #self.navigate_to(self.current_action,self.current_node)
                             if success :
                                 keep_executing = False
-            rospy.sleep(rospy.Duration.from_sec(0.3))
+            rospy.sleep(rospy.Duration.from_sec(0.1))
         self.navigation_activated = False
         self.current_route = None
         return success
@@ -430,26 +455,43 @@ class PolicyExecutionServer(object):
             
             #self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map, edg)
             # Creating Navigation Object
-            edg= self.get_edge_id(self.current_node, node, action)
-            self.stat=nav_stats(self.current_node, node, self.topol_map, edg)
+            edg= self.get_edge(self.current_node, node, action)
+            if edg is None:
+                edge_id = 'none'
+                top_vel = 0.55
+            else:
+                edge_id = edg.edge_id
+                if edg.top_vel >= 0:
+                    top_vel = edg.top_vel
+                else:
+                    top_vel = 0.55
+            
+            self.stat=nav_stats(self.current_node, node, self.topol_map, edge_id)
             #dt_text=self.stat.get_start_time_str()
 
             if action in self.move_base_actions and node_in_route :
                 rospy.set_param("/move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))
 
             if next_action in self.move_base_actions :
-                params = { 'yaw_goal_tolerance' : 6.28318531 }   #360 degrees tolerance               
+                params = { 'yaw_goal_tolerance' : 6.28318531, 'max_vel_x':top_vel, 'max_trans_vel':top_vel}   #360 degrees tolerance
             else:
-                if next_action == 'none':
-                    params = { 'yaw_goal_tolerance' : ytolerance} #Node predetermined tolerance
-                else:
-                    params = { 'yaw_goal_tolerance' : 0.523598776 }   #30 degrees tolerance               
-            self.do_reconf_movebase(params)
+                if next_action == 'none':                                                #Next node is the final destination
+                    params = { 'yaw_goal_tolerance' : ytolerance, 'max_vel_x':top_vel, 'max_trans_vel':top_vel} #Node predetermined tolerance
+                else:                                                                    # Next action not move_base type
+                    params = { 'yaw_goal_tolerance' : 0.523598776, 'max_vel_x':top_vel, 'max_trans_vel':top_vel}   #30 degrees tolerance
+            if action in self.move_base_actions:
+                self.do_reconf_movebase(params, action)
+            else:
+                self.do_reconf_movebase(params, 'move_base')
                 
             result = self.monitored_navigation(target_pose, action)
+            params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
+
+            if action in self.move_base_actions:
+                self.do_reconf_movebase(params, action)
+            else:
+                self.do_reconf_movebase(params, 'move_base')
             
-            params = { 'yaw_goal_tolerance' : self.dyt, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
-            self.do_reconf_movebase(params)
             rospy.set_param("/move_base/NavfnROS/default_tolerance",0.0)
 
             self.stat.set_ended(self.current_node)
@@ -493,7 +535,7 @@ class PolicyExecutionServer(object):
         
         while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached and not self.goal_failed :
             status=self.monNavClient.get_state()
-            rospy.sleep(rospy.Duration.from_sec(0.1))
+            rospy.sleep(rospy.Duration.from_sec(0.05))
 
 
         if status != GoalStatus.SUCCEEDED :
@@ -543,19 +585,28 @@ class PolicyExecutionServer(object):
         self.topol_map = msg.name
         self.lnodes = msg.nodes
         self.curr_tmap = msg
-
+        for i in self.lnodes:
+            for j in i.edges:
+                if j.action not in self.needed_actions:
+                    self.needed_actions.append(j.action)
 
 
     """
     Reconfigure Move Base
      
     """
-    def do_reconf_movebase(self, params):
-        try:
-            self.rcnfclient.update_configuration(params)
-        except rospy.ServiceException as exc:
-            rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
-
+    def do_reconf_movebase(self, params, action):
+        if self.rcnfclient.has_key(action):
+            try:
+                self.rcnfclient[action].update_configuration(params)
+            except rospy.ServiceException as exc:
+                rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
+        else:
+            rospy.logwarn("No dynamic reconfigure for this action will try using move_base. You should solve this")
+            try:
+                self.rcnfclient['move_base'].update_configuration(params)
+            except rospy.ServiceException as exc:
+                rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
 
     """
      Node Shutdown CallBack
@@ -563,8 +614,12 @@ class PolicyExecutionServer(object):
     """
     def _on_node_shutdown(self):
         self.cancelled = True
-
-
+        params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
+        self.do_reconf_movebase(params, 'move_base')
+        rospy.sleep(rospy.Duration.from_sec(0.2))
+        params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
+        self.do_reconf_movebase(params, 'move_base')
+        rospy.sleep(rospy.Duration.from_sec(0.2))
 
 if __name__ == '__main__':
     mode="normal"

@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.35 (2015-05-10)
+-------------------
 * forcing the creation of move_base reconfigure client even when there are no move_base edges on the topological map
 * sorting nodes by name when calling `/topological_map_publisher/get_topological_map` service
 * Creating Reconfigure Client only for needed actions and handling not available reconfigure clients

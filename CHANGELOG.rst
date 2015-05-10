@@ -2,6 +2,17 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* forcing the creation of move_base reconfigure client even when there are no move_base edges on the topological map
+* sorting nodes by name when calling `/topological_map_publisher/get_topological_map` service
+* Creating Reconfigure Client only for needed actions and handling not available reconfigure clients
+* fix for localise by topic where localisation by topic is only verified once the robot has moved more than 10 cm away from the pose it first detected the topic on
+* reconfigure using move base on non-move_base type action
+* Adding reconfigure Client depending on edge action
+* reconfiguring speed and removing move_base to closest node
+* Contributors: Jaime Pulido Fentanes
+
 0.0.34 (2015-05-05)
 -------------------
 * Adding boolean to tell topological navigation not to care for orientation in the final node

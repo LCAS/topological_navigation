@@ -388,7 +388,7 @@ class TopologicalNavServer(object):
             dt_text=self.stat.get_start_time_str()
             inf = cnode.pose
             nav_ok, inc = self.monitored_navigation(inf, a)
-            params = { 'yaw_goal_tolerance' : 0.087266, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
+            params = { 'yaw_goal_tolerance' : 0.087266, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance   'max_vel_x':0.55,
             self.do_reconf_movebase(params)
             #self.rcnfclient.update_configuration(params)
             rospy.loginfo('setting parameters back')
@@ -519,10 +519,10 @@ class TopologicalNavServer(object):
         return result, inc
 
     def reconf_movebase(self, cedg, cnode, intermediate):
-        if cedg.top_vel <= 0.1:
-            ctopvel = 0.55
-        else:
-            ctopvel = cedg.top_vel
+#        if cedg.top_vel <= 0.1:
+#            ctopvel = 0.55
+#        else:
+#            ctopvel = cedg.top_vel
         if cnode.xy_goal_tolerance <= 0.1:
             cxygtol = 0.1
         else:
@@ -534,7 +534,7 @@ class TopologicalNavServer(object):
                 cytol = cnode.yaw_goal_tolerance
         else:
             cytol = 6.283
-        params = { 'yaw_goal_tolerance' : cytol, 'max_vel_x':ctopvel, 'xy_goal_tolerance':cxygtol }   # No orientation restrictions
+        params = { 'yaw_goal_tolerance' : cytol, 'xy_goal_tolerance':cxygtol }   # No orientation restrictions, 'max_vel_x':ctopvel,
         print "reconfiguring move_base with %s" %params
         print intermediate
         self.do_reconf_movebase(params)

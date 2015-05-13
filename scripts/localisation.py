@@ -86,11 +86,11 @@ class TopologicalNavLoc(object):
             
             not_loc=True
             if self.loc_by_topic:
-                test_node=get_node(self.tmap, self.loc_by_topic[0])
-                if self.point_in_poly(test_node, msg):
-                    not_loc=False
-                    closeststr=str(self.loc_by_topic[0])
-                    currentstr=str(self.loc_by_topic[0])
+#                test_node=get_node(self.tmap, self.loc_by_topic[0])
+#                if self.point_in_poly(test_node, msg):
+                not_loc=False
+                closeststr=str(self.loc_by_topic[0])
+                currentstr=str(self.loc_by_topic[0])
 
             if not_loc:
                 ind = 0

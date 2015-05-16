@@ -233,6 +233,7 @@ class map_manager(object):
             nodname = 'WayPoint1'
         return nodname
 
+
     def add_edge_cb(self, req):
         return self.add_edge(req.origin, req.destination, req.action, req.edge_id)
 
@@ -260,7 +261,7 @@ class map_manager(object):
                 test=0
                 eid = '%s_%s' %(or_waypoint, de_waypoint)
                 while eid in eids:
-                    eid = '%s_%s_%3d' %(or_waypoint, de_waypoint, test)
+                    eid = '%s_%s_%03d' %(or_waypoint, de_waypoint, test)
                     test += 1
             else:
                 eid=edge_id

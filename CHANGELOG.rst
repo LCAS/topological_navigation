@@ -2,6 +2,13 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added the wait_reset_bumper_duration to top_nav.launch
+* if localised by topic assume as current node no matter pose
+* removing speed reconfiguration in topological navigation, this is messing with the walking group speeds, there should be something smarter like in policy execution
+* Contributors: Jaime Pulido Fentanes, Nils Bore
+
 0.0.35 (2015-05-10)
 -------------------
 * forcing the creation of move_base reconfigure client even when there are no move_base edges on the topological map

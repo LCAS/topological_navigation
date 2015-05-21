@@ -34,8 +34,10 @@ class TopologicalNavLoc(object):
         self.wp_pub = rospy.Publisher('/closest_node', String, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('/current_node', String, latch=True, queue_size=1)
         
+        self.force_check=True
         self.rec_map=False
         self.loc_by_topic=[]
+        self.persist={}        
         
         self.current_pose=Pose()
         self.previous_pose=Pose()
@@ -86,11 +88,20 @@ class TopologicalNavLoc(object):
             
             not_loc=True
             if self.loc_by_topic:
-#                test_node=get_node(self.tmap, self.loc_by_topic[0])
-#                if self.point_in_poly(test_node, msg):
-                not_loc=False
-                closeststr=str(self.loc_by_topic[0])
-                currentstr=str(self.loc_by_topic[0])
+                #print self.loc_by_topic
+                for i in self.loc_by_topic:
+                    if not_loc:
+                        if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic 
+                            test_node=get_node(self.tmap, i['name'])
+                            if self.point_in_poly(test_node, msg):
+                                not_loc=False
+                                closeststr=str(i['name'])
+                                currentstr=str(i['name'])
+                        else:                               # If not, it is localised!!!
+                            not_loc=False
+                            closeststr=str(i['name'])
+                            currentstr=str(i['name'])
+
 
             if not_loc:
                 ind = 0
@@ -143,33 +154,67 @@ class TopologicalNavLoc(object):
 
         self.tmap = msg        
         self.rec_map=True
-        
-        for i in self.tmap.nodes:
-            if i.localise_by_topic:
-                a= json.loads(i.localise_by_topic)
-                a['name'] = i.name
-                self.nodes_by_topic.append(a)
-                self.names_by_topic.append(a['name'])
-                
+        self.update_loc_by_topic()
         #print "NO GO NODES"
         self.nogos = self.get_no_go_nodes()
         #print self.nogos
 
 
+    """
+    update_loc_by_topic
+     
+     This function updates the localisation by topic variables
+    """               
+    def update_loc_by_topic(self) :
+        for i in self.tmap.nodes:
+            if i.localise_by_topic:
+                a= json.loads(i.localise_by_topic)
+                a['name'] = i.name
+                if not a.has_key('localise_anywhere'):
+                    a['localise_anywhere']=True
+                if not a.has_key('persistency'):
+                    a['persistency']=10
+                self.nodes_by_topic.append(a)
+                self.names_by_topic.append(a['name'])
+        print self.nodes_by_topic
+
+
+
     def Callback(self, msg, item):
-        #print item
-        dist = get_distance(self.current_pose, self.previous_pose)
+        #needed for not checking the localise by topic when the robot hasn't moved and making sure it does when the new 
+        #position is close (<10) to the last one it was detected
+        if self.force_check:
+            dist = 1.0
+        else:
+            dist = get_distance(self.current_pose, self.previous_pose)
+                   
         if dist>0.10:
+            #print self.persist
             val = getattr(msg, item['field'])
             if val == item['val'] :
-                if item['name'] not in self.loc_by_topic:
-                    self.loc_by_topic.append(item['name'])
+                if self.persist.has_key(item['name']):
+                    if self.persist[item['name']] < item['persistency']:
+                        self.persist[item['name']]+=1
+                else:
+                    self.persist[item['name']]=0
+
+                #if item['name'] not in self.loc_by_topic:
+                if item['name'] not in [x['name'] for x in self.loc_by_topic] and self.persist[item['name']] < item['persistency']:
+                    #if item['persistency'] 
+                    self.loc_by_topic.append(item)
                     self.previous_pose = self.current_pose
+                    self.force_check=False
+                else:
+                    self.force_check=True
             else:
-                if item['name'] in self.loc_by_topic:
-                    self.loc_by_topic.remove(item['name'])
+                #if item['name'] in self.loc_by_topic:
+                if item['name'] in [x['name'] for x in self.loc_by_topic]:
+                    #self.loc_by_topic.remove(item['name'])
+                    self.loc_by_topic.remove(item)
                     self.previous_pose = self.current_pose
-                    self.previous_pose.position.x = self.previous_pose.position.x+1000
+                    self.force_check=True
+                    self.persist.pop(item['name'])
+
 
     def get_nodes_wtag_cb(self,req):
         tlist = []

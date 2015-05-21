@@ -207,13 +207,14 @@ class TopologicalNavLoc(object):
                 else:
                     self.force_check=True
             else:
+                self.persist.pop(item['name'])
                 #if item['name'] in self.loc_by_topic:
                 if item['name'] in [x['name'] for x in self.loc_by_topic]:
                     #self.loc_by_topic.remove(item['name'])
                     self.loc_by_topic.remove(item)
                     self.previous_pose = self.current_pose
                     self.force_check=True
-                    self.persist.pop(item['name'])
+
 
 
     def get_nodes_wtag_cb(self,req):

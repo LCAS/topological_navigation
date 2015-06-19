@@ -32,6 +32,15 @@ from strands_navigation_msgs.srv import *
 import fremenserver.msg
 
 
+def usage():
+    print "For using all the available stats use:"
+    print "\t rosrun topological_navigation topological_prediction.py"
+    print "For all the stats in a range use:"
+    print "\t rosrun topological_navigation topological_prediction.py from_epoch to_epoch"
+    print "For all the stats from a date until now use:"
+    print "\t rosrun topological_navigation topological_prediction.py from_epoch -1"
+    print "For all the stats until one date:"
+    print "\t rosrun topological_navigation topological_prediction.py 0 to_epoch"
 
 def get_model(name, models):
     for i in models:
@@ -44,9 +53,11 @@ class TopologicalNavPred(object):
     _feedback = strands_navigation_msgs.msg.BuildTopPredictionFeedback()
     _result   = strands_navigation_msgs.msg.BuildTopPredictionResult()
 
-    def __init__(self, name) :
+    def __init__(self, epochs) :
         self.lnodes = []
         self.map_received =False
+        self.range = epochs
+        name= rospy.get_name()
         action_name = name+'/build_temporal_model'
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
@@ -54,7 +65,10 @@ class TopologicalNavPred(object):
         rospy.loginfo("Waiting for Topological map ...")
         
         while not self.map_received:
-            pass
+            rospy.sleep(rospy.Duration(0.1))
+            rospy.loginfo("Waiting for Topological map ...")
+
+        rospy.loginfo("... Got Topological map")
 
         rospy.loginfo("Creating fremen server client.")
         self.FremenClient= actionlib.SimpleActionClient('fremenserver', fremenserver.msg.FremenAction)
@@ -92,12 +106,10 @@ class TopologicalNavPred(object):
         print "requesting prediction for time %d" %epoch
         edges_ids=[]
         dur=[]
-        #prob=[]
         
         eids = [x['edge_id'] for x in self.models]
         mods = [x['model_id'] for x in self.models]
         ords = [x['order'] for x in self.models]
-
 
         fremgoal = fremenserver.msg.FremenGoal()
         fremgoal.operation = 'forecast'
@@ -219,7 +231,7 @@ class TopologicalNavPred(object):
         self._feedback.result = "Finished after %.3f seconds" %elapsed_time 
         self._as.publish_feedback(self._feedback)       #Publish Feedback
 
-        print "Finished after %.3f seconds" %elapsed_time
+        #rospy.loginfo("Finished after %.3f seconds" %elapsed_time)
         
         if not self.cancelled :     
             self._result.success = True
@@ -236,19 +248,27 @@ class TopologicalNavPred(object):
 
     def gather_stats(self):
         msg_store = MessageStoreProxy(collection='nav_stats')
-        #db.topological_maps.find({ "_meta.tag":"AAA" })
 
-        to_add=[]        
-        for i in self.eids:
+        to_add=[]
+        for i in self.eids:            
+            query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}                
+            if len(self.range) <= 1:
+                query_meta={}
+            else:
+                query_meta={}
+                if self.range[1] < 1:
+                    upperlim = rospy.Time.now().secs
+                else:
+                    upperlim = self.range[1]
+                query_str = '{"$and": [ { "_meta.epoch": { "$gt": %d } }, { "_meta.epoch": { "$lt": %d} } ]}' %(self.range[0], upperlim)
+                query_meta2= json.loads(query_str)
+                query.update(query_meta2)
             
-            query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}
-            #query = {"_meta.tag": tag, "pointset": self.nodes.name}
-            query_meta = {}
-            query_meta["pointset"] = self.lnodes.name
-    
-            #print query, query_meta
+            #print query
+            #print query_meta
+            
             available = msg_store.query(NavStatistics._type, query, query_meta)
-            
+            #print len(available)
             edge_mod={}
             edge_mod["model_id"]= i["model_id"]#self.lnodes.name+'__'+i["edge_id"]
             edge_mod["dist"]= i["dist"]#self.lnodes.name+'__'+i["edge_id"]
@@ -330,4 +350,16 @@ class TopologicalNavPred(object):
 
 if __name__ == '__main__':
     rospy.init_node('topological_prediction')
-    server = TopologicalNavPred(rospy.get_name())
+    epochs=[]
+    if len(sys.argv) < 2:
+        print "gathering all the stats"
+        print len(epochs)
+    else:
+        if len(sys.argv) == 3:
+            epochs.append(int(sys.argv[1]))
+            epochs.append(int(sys.argv[2]))
+            print epochs
+        else: 
+            usage()
+            sys.exit(1)
+    server = TopologicalNavPred(epochs)

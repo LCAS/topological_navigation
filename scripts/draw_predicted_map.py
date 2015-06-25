@@ -7,8 +7,8 @@ import sys
 #from sensor_msgs.msg import Image
 import cv2
 import cv
-#from cv_bridge import CvBridge
-#from matplotlib import pyplot as plt
+import matplotlib as mpl
+import matplotlib.cm as cm
 import numpy as np
 
 
@@ -71,6 +71,10 @@ def draw_arrow(image, V1, V2, color, origin, arrow_magnitude=5, thickness=1, lin
 class DrawMap(object):
 
     def __init__(self, epoch):
+        self.norm = mpl.colors.Normalize(vmin=0, vmax=100)
+        self.cmap = cm.jet
+        self.colmap = cm.ScalarMappable(norm=self.norm, cmap=self.cmap)
+
         map2d = self.get2dmap()
         dat= [128 if i < 0 else ((100-i)*2.5) for i in map2d.data]
 
@@ -103,9 +107,14 @@ class DrawMap(object):
             V1=i.pose.position
             for j in i.edges:
                 V2 = get_node(points, j.node).pose.position
+                indx= est.edge_ids.index(j.edge_id)
                 #print j.edge_id, est.probs[est.edge_ids.index(j.edge_id)], est.durations[est.edge_ids.index(j.edge_id)]
-                thick = int(est.probs[est.edge_ids.index(j.edge_id)]*5)
-                draw_arrow(topmap_image, V1, V2, (255,0,0,255), origin, thickness=thick, arrow_magnitude=thick+5, line_type=1)
+                dist=math.hypot((V1.x-V2.x),(V1.y-V2.y))
+                vel = round((dist/float(est.durations[indx].secs))/0.55,2)
+                print j.edge_id, velcd 
+                a= self.colmap.to_rgba(int(vel*100))
+                thick = int(est.probs[indx]*5)
+                draw_arrow(topmap_image, V1, V2, (int(a[0]*255),int(a[1]*255),int(a[2]*255),255), origin, thickness=thick, arrow_magnitude=thick+5, line_type=1)
             xval = (int(V1.x/info.resolution))+origin[0]
             yval = origin[1]+(int(V1.y/info.resolution))
             #print xval, yval
@@ -117,11 +126,16 @@ class DrawMap(object):
     def save_images(self, map2dimg, topmapimg):
         #map2dimg = cv2.flip(map2dimg, 0)
         topmapimg = cv2.flip(topmapimg, 0)
+        print topmapimg.shape
+        #topmapimg.reshape((topmapimg.shape[0], topmapimg.shape[1]))
+        #out_image = topmapimg.copy()
+        size = topmapimg.shape[0]+200, topmapimg.shape[1]+200, 3
+        out_image = np.zeros(size, dtype=np.uint8)
+        out_image = cv2.cvtColor(out_image, cv.CV_BGR2BGRA);
         
-        #img = cv2.addWeighted(map2dimg,0.1,topmapimg,1.0,0)
-        
+        out_image[:topmapimg.shape[0],100:100+topmapimg.shape[1]] = topmapimg
         #cv2.imwrite('playmap.png',map2dimg)
-        cv2.imwrite('predmap.png',topmapimg)
+        cv2.imwrite('predmap.png',out_image)
         #cv2.imwrite('playmapb.png',img)
 
 

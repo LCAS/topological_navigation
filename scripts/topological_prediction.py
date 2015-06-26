@@ -103,7 +103,7 @@ class TopologicalNavPred(object):
         
 
     def get_predict(self, epoch):
-        print "requesting prediction for time %d" %epoch
+        # print "requesting prediction for time %d" %epoch
         edges_ids=[]
         dur=[]
         
@@ -127,13 +127,13 @@ class TopologicalNavPred(object):
         # Prints out the result of executing the action
         ps = self.FremenClient.get_result()  # A FibonacciResult
 
-        print ps
+        # print ps
 
         prob = list(ps.probabilities)
 
-        print mods
-        print ords
-        print prob        
+        # print mods
+        # print ords
+        # print prob        
         
         for j in range(len(mods)):
             
@@ -174,7 +174,7 @@ class TopologicalNavPred(object):
         
 
     def predict_edge_cb(self, req):
-        print req
+        # print req
         return self.get_predict(req.epoch.secs)
 
 
@@ -220,6 +220,16 @@ class TopologicalNavPred(object):
     def BuildCallback(self, goal):
         self.cancelled = False
 
+        # print goal
+
+        # set epoch ranges based on goal
+        if goal.start_range.secs > 0:
+            self.range[0] = goal.start_range.secs
+        if goal.end_range.secs > 0:
+            self.range[1] = goal.end_range.secs
+
+        rospy.loginfo('Building model for epoch range: %s' % self.range)
+
         start_time = time.time()        
         #self.get_list_of_edges()
         #elapsed_time = time.time() - start_time
@@ -251,24 +261,24 @@ class TopologicalNavPred(object):
 
         to_add=[]
         for i in self.eids:            
+
             query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}                
-            if len(self.range) <= 1:
-                query_meta={}
-            else:
-                query_meta={}
+            query_meta={}            
+            
+            if len(self.range) == 2:
+                
                 if self.range[1] < 1:
                     upperlim = rospy.Time.now().secs
                 else:
                     upperlim = self.range[1]
-                query_str = '{"$and": [ { "_meta.epoch": { "$gt": %d } }, { "_meta.epoch": { "$lt": %d} } ]}' %(self.range[0], upperlim)
-                query_meta2= json.loads(query_str)
-                query.update(query_meta2)
-            
+
+                query_meta["epoch"] = {"$gte": self.range[0], "$lt" : upperlim}    
+
             #print query
             #print query_meta
             
             available = msg_store.query(NavStatistics._type, query, query_meta)
-            #print len(available)
+            # print len(available)
             edge_mod={}
             edge_mod["model_id"]= i["model_id"]#self.lnodes.name+'__'+i["edge_id"]
             edge_mod["dist"]= i["dist"]#self.lnodes.name+'__'+i["edge_id"]
@@ -298,10 +308,10 @@ class TopologicalNavPred(object):
     def create_fremen_models(self, models):
         self.models = models
         for i in models:
-            print "-------CREATING MODEL----------"
+            # print "-------CREATING MODEL----------"
             
             mid = i["model_id"]
-            print mid
+            # print mid
             #print i["dist"]
             times=[]
             states=[]
@@ -326,7 +336,7 @@ class TopologicalNavPred(object):
             ps = self.FremenClient.get_result()  # A FibonacciResult
             #print ps
             
-            print "--- EVALUATE ---"
+            # print "--- EVALUATE ---"
             frevgoal = fremenserver.msg.FremenGoal()
             frevgoal.operation = 'evaluate'
             frevgoal.id = mid
@@ -342,8 +352,8 @@ class TopologicalNavPred(object):
             
             # Prints out the result of executing the action
             pse = self.FremenClient.get_result()  # A FibonacciResult
-            print pse.errors
-            print "chosen order %d" %pse.errors.index(min(pse.errors))
+            # print pse.errors
+            # print "chosen order %d" %pse.errors.index(min(pse.errors))
             i["order"] = pse.errors.index(min(pse.errors))
 
 
@@ -352,8 +362,8 @@ if __name__ == '__main__':
     rospy.init_node('topological_prediction')
     epochs=[]
     if len(sys.argv) < 2:
-        print "gathering all the stats"
-        print len(epochs)
+        print "gathering all the stats"        
+        epochs=[0, rospy.get_rostime().to_sec()]
     else:
         if len(sys.argv) == 3:
             epochs.append(int(sys.argv[1]))

@@ -14,5 +14,9 @@
 
 	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" output="screen"/>
 
+	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction"/> 
+
+	<node pkg="fremenserver" type="fremenserver" name="fremenserver"/> 
+
 
 </launch>

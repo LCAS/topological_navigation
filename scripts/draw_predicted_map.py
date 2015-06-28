@@ -7,7 +7,11 @@ import sys
 #from sensor_msgs.msg import Image
 import cv2
 import cv
-from datetime import datetime
+
+from datetime import tzinfo, timedelta, datetime
+import pytz
+#from pytz import UTC
+
 import matplotlib as mpl
 import matplotlib.cm as cm
 import numpy as np
@@ -30,12 +34,14 @@ def usage():
     print "\t rosrun topological_utils draw_predicted_map.py"
     print "\nFor one image of one specific timestamp:"
     print "\t rosrun topological_utils draw_predicted_map.py -time epoch"
-    #print "For all the stats in a range use:"
-    #print "\t rosrun topological_navigation topological_prediction.py -range from_epoch to_epoch"
+    print "For images in a range use (every two hours):"
+    print "\t rosrun topological_utils draw_predicted_map.py -range from_epoch to_epoch"
+    print "\n\n"
     #print "For all the stats from a date until now use:"
     #print "\t rosrun topological_navigation topological_prediction.py -range from_epoch -1"
     #print "For all the stats until one date:"
     #print "\t rosrun topological_navigation topological_prediction.py -range 0 to_epoch"
+    #https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
 
 def predict_edges(epoch):
@@ -47,6 +53,25 @@ def predict_edges(epoch):
         return resp1
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
+
+
+def rotate_about_center(src, angle, scale=1.):
+    w = src.shape[1]
+    h = src.shape[0]
+    rangle = np.deg2rad(angle)  # angle in radians
+    # now calculate new image width and height
+    nw = (abs(np.sin(rangle)*h) + abs(np.cos(rangle)*w))*scale
+    nh = (abs(np.cos(rangle)*h) + abs(np.sin(rangle)*w))*scale
+    # ask OpenCV for the rotation matrix
+    rot_mat = cv2.getRotationMatrix2D((nw*0.5, nh*0.5), angle, scale)
+    # calculate the move from the old center to the new center combined
+    # with the rotation
+    rot_move = np.dot(rot_mat, np.array([(nw-w)*0.5, (nh-h)*0.5,0]))
+    # the move only affects the translation, so update the translation
+    # part of the transform
+    rot_mat[0,2] += rot_move[0]
+    rot_mat[1,2] += rot_move[1]
+    return cv2.warpAffine(src, rot_mat, (int(math.ceil(nw)), int(math.ceil(nh))), flags=cv2.INTER_LANCZOS4)
 
 
 def draw_arrow(image, V1, V2, color, origin, arrow_magnitude=5, thickness=1, line_type=8, shift=0):
@@ -82,7 +107,7 @@ def draw_arrow(image, V1, V2, color, origin, arrow_magnitude=5, thickness=1, lin
 
 class DrawMap(object):
 
-    def __init__(self, epoch):
+    def __init__(self, epoch, props):
         freq =7200
         self.norm = mpl.colors.Normalize(vmin=0, vmax=100)
         self.cmap = cm.jet
@@ -95,6 +120,21 @@ class DrawMap(object):
         points.nodes.sort(key=lambda node: node.name)        
         map2dimg = self.draw_2d_map(dat, map2d.info)
 
+        if 'rotate' in props:
+            self.rotate=props['rotate']
+        else:
+            self.rotate=0
+
+        if 'scale' in props:
+            self.scale=props['rotate']
+        else:
+            self.scale=1.0
+        
+        
+        if 'tz' in props:
+            self.timezone = pytz.timezone(props['tz'])
+        else:
+            self.timezone = pytz.timezone('GMT')
 
         if len(epoch) <2:
             self.epoch = epoch[0]
@@ -111,10 +151,10 @@ class DrawMap(object):
             while self.epoch.secs <= epoch[1].secs:
                 print self.epoch.secs
                 self.max_vel=0.01
-                self.epoch = self.epoch + rospy.Duration(freq)
                 est = predict_edges(self.epoch)
                 topmapimg = self.draw_top_map(points, map2d.info, map2dimg, est)
                 self.save_images(map2dimg, topmapimg)
+                self.epoch = self.epoch + rospy.Duration(freq)
         #print est.edge_ids
         
         
@@ -169,14 +209,17 @@ class DrawMap(object):
     def save_images(self, map2dimg, topmapimg):
         topmapimg = cv2.flip(topmapimg, 0)
         print topmapimg.shape
+        topmapimg = rotate_about_center(topmapimg, self.rotate, self.scale)
+        
         size = topmapimg.shape[0]+200, topmapimg.shape[1]+200, 3
+
         out_image = np.zeros(size, dtype=np.uint8)
         out_image = cv2.cvtColor(out_image, cv.CV_BGR2BGRA);
         
         out_image[100:100+topmapimg.shape[0],100:100+topmapimg.shape[1]] = topmapimg
 
 
-        ts = datetime.fromtimestamp(self.epoch.secs).strftime('%a %d %b %Y %H:%M:%S')        
+        ts = datetime.fromtimestamp(self.epoch.secs, tz=pytz.UTC).astimezone(self.timezone).strftime('%a %d %b %Y %H:%M:%S (%Z)')        
         height, width, depth = out_image.shape
         font = cv2.FONT_HERSHEY_SIMPLEX
         size1 = cv2.getTextSize(ts, font, 2, 5)
@@ -240,6 +283,7 @@ class DrawMap(object):
 if __name__ == '__main__':
     rospy.init_node('draw_map')
     epochs=[]
+    props={}
     #if len(sys.argv) < 2:
     if '-h' in sys.argv or '--help' in sys.argv:
         usage()
@@ -255,6 +299,16 @@ if __name__ == '__main__':
             epochs.append(rospy.Time.from_sec(float(sys.argv[ind+1])))
             print epochs
         else:
-            epochs.append(rospy.Time.now())       
+            epochs.append(rospy.Time.now())
+        
+        if '-rotate' in sys.argv:
+            ind = sys.argv.index('-rotate')
+            props['rotate'] = float(sys.argv[ind+1])
+        if '-scale' in sys.argv:
+            ind = sys.argv.index('-scale')
+            props['scale'] = float(sys.argv[ind+1])
+        if '-tz' in sys.argv:
+            ind = sys.argv.index('-tz')
+            props['tz'] = str(sys.argv[ind+1])
     
-    server = DrawMap(epochs)
+    server = DrawMap(epochs, props)

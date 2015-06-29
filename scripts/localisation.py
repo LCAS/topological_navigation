@@ -207,7 +207,8 @@ class TopologicalNavLoc(object):
                 else:
                     self.force_check=True
             else:
-                self.persist.pop(item['name'])
+                if item['name'] in self.persist:
+                    self.persist.pop(item['name'])
                 #if item['name'] in self.loc_by_topic:
                 if item['name'] in [x['name'] for x in self.loc_by_topic]:
                     #self.loc_by_topic.remove(item['name'])

@@ -32,6 +32,15 @@ from strands_navigation_msgs.srv import *
 import fremenserver.msg
 
 
+def usage():
+    print "\nFor using all the available stats use:"
+    print "\t rosrun topological_navigation topological_prediction.py"
+    print "For all the stats in a range use:"
+    print "\t rosrun topological_navigation topological_prediction.py -range from_epoch to_epoch"
+    print "For all the stats from a date until now use:"
+    print "\t rosrun topological_navigation topological_prediction.py -range from_epoch -1"
+    print "For all the stats until one date:"
+    print "\t rosrun topological_navigation topological_prediction.py -range 0 to_epoch"
 
 def get_model(name, models):
     for i in models:
@@ -44,9 +53,11 @@ class TopologicalNavPred(object):
     _feedback = strands_navigation_msgs.msg.BuildTopPredictionFeedback()
     _result   = strands_navigation_msgs.msg.BuildTopPredictionResult()
 
-    def __init__(self, name) :
+    def __init__(self, epochs) :
         self.lnodes = []
         self.map_received =False
+        self.range = epochs
+        name= rospy.get_name()
         action_name = name+'/build_temporal_model'
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
@@ -54,7 +65,10 @@ class TopologicalNavPred(object):
         rospy.loginfo("Waiting for Topological map ...")
         
         while not self.map_received:
-            pass
+            rospy.sleep(rospy.Duration(0.1))
+            rospy.loginfo("Waiting for Topological map ...")
+
+        rospy.loginfo("... Got Topological map")
 
         rospy.loginfo("Creating fremen server client.")
         self.FremenClient= actionlib.SimpleActionClient('fremenserver', fremenserver.msg.FremenAction)
@@ -71,9 +85,11 @@ class TopologicalNavPred(object):
         rospy.loginfo(" ...done")
 
         self.create_temporal_models()        
-
+        for i in self.models:
+            print i['model_id']
 
         self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
+        self.predict_srv=rospy.Service('/topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 
@@ -89,15 +105,13 @@ class TopologicalNavPred(object):
         
 
     def get_predict(self, epoch):
-        print "requesting prediction for time %d" %epoch
+        # print "requesting prediction for time %d" %epoch
         edges_ids=[]
         dur=[]
-        #prob=[]
         
         eids = [x['edge_id'] for x in self.models]
         mods = [x['model_id'] for x in self.models]
         ords = [x['order'] for x in self.models]
-
 
         fremgoal = fremenserver.msg.FremenGoal()
         fremgoal.operation = 'forecast'
@@ -119,9 +133,9 @@ class TopologicalNavPred(object):
 
         prob = list(ps.probabilities)
 
-        print mods
-        print ords
-        print prob        
+        # print mods
+        # print ords
+        # print prob        
         
         for j in range(len(mods)):
             
@@ -162,8 +176,53 @@ class TopologicalNavPred(object):
         
 
     def predict_edge_cb(self, req):
-        print req
+        # print req
         return self.get_predict(req.epoch.secs)
+
+
+
+    def get_entropies(self, epoch):
+        # print "requesting prediction for time %d" %epoch
+        edges_ids=[]
+        dur=[]
+        
+        eids = [x['edge_id'] for x in self.models]
+        mods = [x['model_id'] for x in self.models]
+        ords = [x['order'] for x in self.models]
+
+        fremgoal = fremenserver.msg.FremenGoal()
+        fremgoal.operation = 'forecastEntropy'
+        fremgoal.ids = mods
+        fremgoal.times.append(epoch)
+        #print i["order"]
+        fremgoal.order = -1
+        fremgoal.orders = ords#i["order"]
+        
+        self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
+    
+        # Waits for the server to finish performing the action.
+        self.FremenClient.wait_for_result()
+    
+        # Prints out the result of executing the action
+        ps = self.FremenClient.get_result()  # A FibonacciResult
+
+        print ps
+
+        prob = list(ps.entropies)
+
+      
+        for i in self.unknowns:
+            edges_ids.append(i["edge_id"])
+            prob.append(0.5)
+
+        #print edges_ids, prob, dur
+        return edges_ids, prob, dur
+
+
+
+    def edge_entropies_cb(self, req):
+        # print req
+        return self.get_entropies(req.epoch.secs)
 
 
     """
@@ -174,12 +233,9 @@ class TopologicalNavPred(object):
     def MapCallback(self, msg) :
         self.lnodes = msg
         self.map_received = True
-        #print self.lnodes
 
 
     def get_list_of_edges(self):
-        #self.eids = []
-        
         rospy.loginfo("Querying for list of edges")
         for i in self.lnodes.nodes :
             for j in i.edges:
@@ -208,6 +264,16 @@ class TopologicalNavPred(object):
     def BuildCallback(self, goal):
         self.cancelled = False
 
+        # print goal
+
+        # set epoch ranges based on goal
+        if goal.start_range.secs > 0:
+            self.range[0] = goal.start_range.secs
+        if goal.end_range.secs > 0:
+            self.range[1] = goal.end_range.secs
+
+        rospy.loginfo('Building model for epoch range: %s' % self.range)
+
         start_time = time.time()        
         #self.get_list_of_edges()
         #elapsed_time = time.time() - start_time
@@ -219,7 +285,7 @@ class TopologicalNavPred(object):
         self._feedback.result = "Finished after %.3f seconds" %elapsed_time 
         self._as.publish_feedback(self._feedback)       #Publish Feedback
 
-        print "Finished after %.3f seconds" %elapsed_time
+        #rospy.loginfo("Finished after %.3f seconds" %elapsed_time)
         
         if not self.cancelled :     
             self._result.success = True
@@ -236,19 +302,27 @@ class TopologicalNavPred(object):
 
     def gather_stats(self):
         msg_store = MessageStoreProxy(collection='nav_stats')
-        #db.topological_maps.find({ "_meta.tag":"AAA" })
 
-        to_add=[]        
-        for i in self.eids:
+        to_add=[]
+        for i in self.eids:            
+
+            query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}                
+            query_meta={}            
             
-            query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}
-            #query = {"_meta.tag": tag, "pointset": self.nodes.name}
-            query_meta = {}
-            query_meta["pointset"] = self.lnodes.name
-    
-            #print query, query_meta
+            if len(self.range) == 2:
+                
+                if self.range[1] < 1:
+                    upperlim = rospy.Time.now().secs
+                else:
+                    upperlim = self.range[1]
+
+                query_meta["epoch"] = {"$gte": self.range[0], "$lt" : upperlim}    
+
+            #print query
+            #print query_meta
+            
             available = msg_store.query(NavStatistics._type, query, query_meta)
-            
+            # print len(available)
             edge_mod={}
             edge_mod["model_id"]= i["model_id"]#self.lnodes.name+'__'+i["edge_id"]
             edge_mod["dist"]= i["dist"]#self.lnodes.name+'__'+i["edge_id"]
@@ -278,10 +352,10 @@ class TopologicalNavPred(object):
     def create_fremen_models(self, models):
         self.models = models
         for i in models:
-            print "-------CREATING MODEL----------"
+            # print "-------CREATING MODEL----------"
             
             mid = i["model_id"]
-            print mid
+            # print mid
             #print i["dist"]
             times=[]
             states=[]
@@ -306,7 +380,7 @@ class TopologicalNavPred(object):
             ps = self.FremenClient.get_result()  # A FibonacciResult
             #print ps
             
-            print "--- EVALUATE ---"
+            # print "--- EVALUATE ---"
             frevgoal = fremenserver.msg.FremenGoal()
             frevgoal.operation = 'evaluate'
             frevgoal.id = mid
@@ -322,12 +396,27 @@ class TopologicalNavPred(object):
             
             # Prints out the result of executing the action
             pse = self.FremenClient.get_result()  # A FibonacciResult
-            print pse.errors
-            print "chosen order %d" %pse.errors.index(min(pse.errors))
+            # print pse.errors
+            # print "chosen order %d" %pse.errors.index(min(pse.errors))
             i["order"] = pse.errors.index(min(pse.errors))
 
 
 
 if __name__ == '__main__':
     rospy.init_node('topological_prediction')
-    server = TopologicalNavPred(rospy.get_name())
+    epochs=[]
+    #if len(sys.argv) < 2:
+    if '-h' in sys.argv or '--help' in sys.argv:
+        usage()
+        sys.exit(1)
+    else:
+        if '-range' in sys.argv:
+            ind = sys.argv.index('-range')
+            epochs.append(int(sys.argv[ind+1]))
+            epochs.append(int(sys.argv[ind+2]))
+            print epochs
+        else:
+            print "gathering all the stats"        
+            epochs=[0, rospy.get_rostime().to_sec()]
+
+    server = TopologicalNavPred(epochs)

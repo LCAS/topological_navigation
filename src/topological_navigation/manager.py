@@ -384,8 +384,8 @@ class map_manager(object):
         map_found=False
         
         while not map_found :
-            available = len(msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, {}, query_meta)) > 0
-            #print available
+            available = len(msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, {}, query_meta))
+            # print available
             if available <= 0 :
                 rospy.logerr("Desired pointset '"+point_set+"' not in datacentre, try :"+str(ntries))
                 #rospy.logerr("Available pointsets: "+str(available))

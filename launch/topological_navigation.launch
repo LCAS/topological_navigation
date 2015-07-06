@@ -24,7 +24,7 @@
 	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>
 
 	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator"/>
-	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction"/>
+	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen"/>
 
 
 </launch>

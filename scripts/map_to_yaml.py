@@ -2,14 +2,10 @@
 
 import sys
 import rospy
-import actionlib
-import pymongo
 import json
-import bson
 import sys
-import math
 import yaml
-import pickle
+#import pickle
 
 from topological_navigation.topological_node import *
 from actionlib_msgs.msg import *
@@ -63,7 +59,7 @@ class MapExport(object):
             for i in message_list:
                 nodeinf = {}
                 nodeinf["node"] = yaml.load(str(i[0]))
-                nodeinf["node"]["localise_by_topic"] = str(nodeinf["node"]["localise_by_topic"])
+                nodeinf["node"]["localise_by_topic"] = json.dumps(nodeinf["node"]["localise_by_topic"])
                 nodeinf["meta"] = i[1] #str(bson.json_util.dumps(i[1], indent=1))
                 nodeinf["meta"].pop("last_updated_by", None)
                 nodeinf["meta"].pop('inserted_at', None)

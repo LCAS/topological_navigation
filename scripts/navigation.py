@@ -77,7 +77,7 @@ class TopologicalNavServer(object):
         rospy.loginfo(" ...done")
         
         
-        rospy.set_param('topological_map_name', self.topol_map)
+#        rospy.set_param('topological_map_name', self.topol_map)
 
 
         #Creating Action Server

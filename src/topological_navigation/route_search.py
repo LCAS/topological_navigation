@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#import rospy
+import rospy
 from topological_navigation.tmap_utils import *
 from strands_navigation_msgs.msg import NavRoute
 

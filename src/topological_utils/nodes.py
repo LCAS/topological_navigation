@@ -26,13 +26,14 @@ def rename_node(name, new_name, top_map_name):
     msg_store = MessageStoreProxy(collection='topological_maps')
     
     nodes = msg_store.query(TopologicalNode._type, {}, {'pointset':top_map_name})
+    node_names = [node.name for node,meta in nodes]
     node_renames = 0
     edge_changes = 0
     node_changes = 0
 
-    if name not in nodes:
+    if name not in node_names:
         raise Exception("No such node.")
-    if new_name in nodes:
+    if new_name in node_names:
         raise Exception("New node name already in use.")
 
     old_metas = []

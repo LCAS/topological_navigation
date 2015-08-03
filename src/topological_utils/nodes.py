@@ -49,7 +49,7 @@ def rename_node(name, new_name, top_map_name):
         for edge in node.edges:
             if edge.node == name:
                 edge.node = new_name
-            if edge.edge_id.find(name) > 0:
+            if edge.edge_id.find(name) > -1:
                 edge.edge_id = edge.edge_id.replace(name, new_name)
                 edge_changes += 1
             

@@ -1,0 +1,22 @@
+#!/usr/bin/python
+
+"""
+Outputs a list of available topological maps
+"""
+
+from topological_utils.nodes import rename_node
+import sys
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print "Usage: rename_node current_node_name new_node_name tological_map_name)"
+        sys.exit(1)
+    old_name, new_name, map_name = sys.argv[1:]
+    print "Changing %s[%s] to %s"%(map_name, old_name, new_name)
+    try:
+        n, e = rename_node(old_name, new_name, map_name)
+    except Exception, e:
+        print "Failed: ", e.message
+        sys.exit(1)
+    print "Changed ", n, " nodes."
+    print "Changed ", e, " edges."

@@ -50,6 +50,7 @@ class TopologicalMeanPred(object):
         action_name = name+'/build_temporal_model'
         self.range = epochs
         self.edge_to_duration = {}
+        self.edge_to_probability = {}
         self.map = None
         rospy.Subscriber('/topological_map', TopologicalMap, self.map_callback)
         
@@ -81,7 +82,9 @@ class TopologicalMeanPred(object):
  
 
     def predict_edge_cb(self, req):
-        return self.edge_to_duration.keys(), [1] * len(self.edge_to_duration), self.edge_to_duration.values()
+        # build like this to ensure both lists are in the same order
+        results = [[edge_id, self.edge_to_probability[edge_id], self.edge_to_duration[edge_id]] for edge_id in self.edge_to_duration.keys()]
+        return zip(*results)
 
     """
      map_callback
@@ -122,6 +125,7 @@ class TopologicalMeanPred(object):
 
         # reset model
         self.edge_to_duration = {}
+        self.edge_to_probability = {}
 
         query_meta={}                    
         if len(self.range) == 2:            
@@ -148,12 +152,13 @@ class TopologicalMeanPred(object):
                             self.edge_to_duration[j.edge_id] = rospy.Duration(get_distance_to_node(i, destination)/j.top_vel)
                         else :
                             self.edge_to_duration[j.edge_id] = rospy.Duration(get_distance_to_node(i, destination)/0.1)
+                        self.edge_to_probability[j.edge_id] = 0.0
                     else:
                         durations = np.array([stat.operation_time for stat, meta in stats])
                         self.edge_to_duration[j.edge_id] = rospy.Duration(durations.mean())
 
-
-
+                        successes = np.array([1 if stat.status == 'success' else 0 for stat, meta in stats])
+                        self.edge_to_probability[j.edge_id] = successes.mean()
 
 
 if __name__ == '__main__':

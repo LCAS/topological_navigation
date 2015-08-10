@@ -4,7 +4,7 @@ import sys
 import topological_navigation.testing
 import rospy
 from mongodb_store.message_store import MessageStoreProxy
-from topological_navigation.publisher import map_publisher
+from topological_navigation.manager import map_manager
 from topological_navigation.msg import GotoNodeAction, GotoNodeResult, GotoNodeFeedback
 from strands_navigation_msgs.msg import *
 import actionlib 
@@ -18,8 +18,8 @@ class DummyTopologicalNavigator():
             self.map_name = map_name
         else:
             self.map_name = self.create_and_insert_map(size = size)
-        self.publisher = map_publisher(self.map_name)
-        self.node_names = set([node.name for node in self.publisher.nodes.nodes])
+        self.manager = map_manager(self.map_name)
+        self.node_names = set([node.name for node in self.manager.nodes.nodes])
         
         self.nav_result   =  GotoNodeResult()   
         self.nav_feedback = GotoNodeFeedback() 

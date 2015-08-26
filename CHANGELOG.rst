@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.37 (2015-08-26)
+-------------------
 * Fixed bug in dummy map where origin and ChargingPoint names were mixed up.
 * Fix edge renaming.
 * Fix node name check.

@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.37 (2015-08-26)
+-------------------
 * Fixed bug in dummy map where origin and ChargingPoint names were mixed up.
 * getting rid of nasty error
 * Fixing Visualisation of policies

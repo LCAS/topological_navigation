@@ -27,14 +27,16 @@ import topological_navigation.msg
 
 class node_manager(object):
 
-    def __init__(self, map_name) :
+    def __init__(self) :
         self.in_feedback=False
-        #self.timer = Timer(1.0, self.timer_callback)
+        map_name = rospy.get_param('/topological_map_name', 'top_map')
         self._node_server = InteractiveMarkerServer(map_name+"_add_rm_node")
         rospy.loginfo(" ... Init done")
+        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
 
-        
+
     def update_map(self, msg) :
         print "updating node controllers..."
         self.topo_map = topological_map(msg.name, msg=msg)
@@ -42,6 +44,15 @@ class node_manager(object):
         self._node_server.applyChanges()
         self.create_marker()
         
+
+    """
+     MapCallback
+     
+     This function receives the Topological Map
+    """
+    def MapCallback(self, msg) :
+        self.update_map(msg)
+
 
 
     def makeEmptyMarker(self, dummyBox=True ) :

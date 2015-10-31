@@ -63,6 +63,7 @@ class TopologicalMapVis(object):
         rospy.loginfo("Waypoint Controllers ...")
         self.node_cont = waypoint_controllers(self._point_set)
         if not self._edit_mode :
+            print "NO EDIT MODE"
             rospy.loginfo("Go To Controllers ...")
             self.goto_cont = go_to_controllers(self._point_set)
         rospy.loginfo("Node Manager Controllers ...")

@@ -36,6 +36,8 @@ class map_manager(object):
         rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
         #This service returns any given map
         self.get_map_srv=rospy.Service('/topological_map_publisher/get_topological_map', strands_navigation_msgs.srv.GetTopologicalMap, self.get_topological_map_cb)
+        #This service switches topological map
+        self.swicth_map_srv=rospy.Service('/topological_map_manager/switch_topological_map', strands_navigation_msgs.srv.GetTopologicalMap, self.switch_topological_map_cb)
         #This service adds a node 
         self.add_node_srv=rospy.Service('/topological_map_manager/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
         #This service adds content to a node
@@ -218,6 +220,17 @@ class map_manager(object):
         print "Returning Map %s"%req.pointset
         nodes.nodes.sort(key=lambda node: node.name)
         return nodes
+
+
+    def switch_topological_map_cb(self, req):
+        self.nodes=[]
+        self.name = req.pointset
+        self.nodes = self.loadMap(req.pointset)
+        print "Returning Map %s"%req.pointset
+        #nodes.nodes.sort(key=lambda node: node.name)
+        self.names = self.create_list_of_nodes()
+        self.map_pub.publish(self.nodes)
+        return self.nodes
         
 
     def get_new_name(self):        
@@ -283,14 +296,17 @@ class map_manager(object):
             return False
 
 
+
     def add_topological_node_cb(self, req):
+        self.add_topological_node(req.name)
+
+    def add_topological_node(self, node_name):
         dist = 8.0
         #Get New Node Name
-        if req.name:
-            name = req.name
+        if node_name:
+            name = node_name
         else:
             name = self.get_new_name()
-
 
         rospy.loginfo('Creating Node: '+name)        
 
@@ -351,6 +367,48 @@ class map_manager(object):
         msg_store.insert(node,meta)
 
         return True
+
+
+
+    def remove_node(self, node_name) :
+        rospy.loginfo('Removing Node: '+node_name)
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"name" : node_name, "pointset": self.name}
+        query_meta = {}
+        query_meta["pointset"] = self.name
+        query_meta["map"] = self.map
+
+        available = msg_store.query(TopologicalNode._type, query, query_meta)
+        
+        node_found = False
+        if len(available) == 1 :
+            node_found = True
+            rm_id = str(available[0][1]['_id'])
+            print rm_id
+        else :
+            rospy.logerr("Node not found "+str(len(available))+" waypoints found after query")
+            #rospy.logerr("Available data: "+str(available))
+        
+        
+        if node_found :
+            query_meta = {}
+            query_meta["pointset"] = self.name
+            edges_to_rm = []
+            message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
+            for i in message_list:
+                for j in i[0].edges :
+                    if j.node == node_name :
+                        edge_rm = i[0].name+'_'+node_name
+                        edges_to_rm.append(edge_rm)
+            
+            for k in edges_to_rm :
+                print 'remove: '+k
+                self.remove_edge(k)
+            msg_store.delete(rm_id)
+
+
+
+
 
 
     def get_edges_between(self, nodea, nodeb):
@@ -414,6 +472,7 @@ class map_manager(object):
         
         points.map = points.nodes[0].map
         return points
+    
     
     def create_list_of_nodes(self):
         names=[]

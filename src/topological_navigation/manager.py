@@ -37,6 +37,8 @@ class map_manager(object):
         self.swicth_map_srv=rospy.Service('/topological_map_manager/switch_topological_map', strands_navigation_msgs.srv.GetTopologicalMap, self.switch_topological_map_cb)
         #This service adds a node 
         self.add_node_srv=rospy.Service('/topological_map_manager/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
+        #This service deletes a node 
+        self.add_node_srv=rospy.Service('/topological_map_manager/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
         #This service adds content to a node
         self.add_node_srv=rospy.Service('/topological_map_manager/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
         #This service adds a tag to the meta information of a list of nodes
@@ -296,9 +298,10 @@ class map_manager(object):
 
 
     def add_topological_node_cb(self, req):
-        self.add_topological_node(req.name)
-
-    def add_topological_node(self, node_name):
+        res=self.add_topological_node(req.name, req.pose)
+        return res
+        
+    def add_topological_node(self, node_name, node_pose):
         dist = 8.0
         #Get New Node Name
         if node_name:
@@ -324,7 +327,7 @@ class map_manager(object):
         node.name = name
         node.map = self.nodes.map
         node.pointset = self.name
-        node.pose = req.pose
+        node.pose = node_pose
         node.yaw_goal_tolerance = 0.1
         node.xy_goal_tolerance = 0.3
         node.localise_by_topic = ''
@@ -358,15 +361,17 @@ class map_manager(object):
         msg_store.insert(node,meta)
         return True
 
-
+    def remove_node_cb(self, req):
+        res = self.remove_node(req.name)
+        return res
 
     def remove_node(self, node_name) :
         rospy.loginfo('Removing Node: '+node_name)
         msg_store = MessageStoreProxy(collection='topological_maps')
-        query = {"name" : node_name, "pointset": self.name}
+        query = {"name" : node_name, "pointset": self.nodes.name}
         query_meta = {}
-        query_meta["pointset"] = self.name
-        query_meta["map"] = self.map
+        query_meta["pointset"] = self.nodes.name
+        query_meta["map"] = self.nodes.map
 
         available = msg_store.query(TopologicalNode._type, query, query_meta)
         
@@ -382,22 +387,45 @@ class map_manager(object):
         
         if node_found :
             query_meta = {}
-            query_meta["pointset"] = self.name
+            query_meta["pointset"] = self.nodes.name
             edges_to_rm = []
             message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
             for i in message_list:
                 for j in i[0].edges :
                     if j.node == node_name :
-                        edge_rm = i[0].name+'_'+node_name
+                        edge_rm = j.edge_id
                         edges_to_rm.append(edge_rm)
             
             for k in edges_to_rm :
                 print 'remove: '+k
                 self.remove_edge(k)
+            
             msg_store.delete(rm_id)
+            return True
+        else:
+            return False
 
 
-
+    def remove_edge(self, edge_name) :
+        #print 'removing edge: '+edge_name
+        rospy.loginfo('Removing Edge: '+edge_name)
+        msg_store = MessageStoreProxy(collection='topological_maps')
+        query = {"edges.edge_id" : edge_name, "pointset": self.nodes.name}
+        query_meta = {}
+        query_meta["pointset"] = self.nodes.name
+        query_meta["map"] = self.nodes.map
+        available = msg_store.query(TopologicalNode._type, query, query_meta)
+        
+        if len(available) >= 1 :
+            for i in available :
+                print i[0]
+                for j in i[0].edges:
+                    if j.edge_id == edge_name :
+                        i[0].edges.remove(j)
+                        msg_store.update(i[0], query_meta, query, upsert=True)
+        else :
+            rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
+            rospy.logerr("Available data: "+str(available)) 
 
 
 

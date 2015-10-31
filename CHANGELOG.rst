@@ -2,6 +2,26 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.37 (2015-08-26)
+-------------------
+* Fixed bug in dummy map where origin and ChargingPoint names were mixed up.
+* Fix edge renaming.
+* Fix node name check.
+* Add utility to check map for errors.
+* Add basic argument checking.
+* Add utiltiy to automate renaming of map nodes.
+* adding options for rotating and scaling the map and timezone management
+* drawing maps in an epoch range
+* coding expected speeds
+* Compiles and visualises data based on nav predictions vs ground truth.
+* added map_manager to  create script
+* added policy and prediction stuff to dummy system
+* Added script to print out count of nav stats per edge
+* removing unwanted file
+* drawing predicted map
+* map drawing utilities
+* Contributors: Jailander, Jaime Pulido Fentanes, Nick Hawes, Rares Ambrus
+
 0.0.36 (2015-05-17)
 -------------------
 

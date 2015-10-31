@@ -63,6 +63,7 @@ class MapExport(object):
             for i in message_list:
                 nodeinf = {}
                 nodeinf["node"] = yaml.load(str(i[0]))
+                nodeinf["node"]["localise_by_topic"] = json.dumps(nodeinf["node"]["localise_by_topic"])
                 nodeinf["meta"] = i[1] #str(bson.json_util.dumps(i[1], indent=1))
 
                 nodeinf["meta"].pop("last_updated_by", None)
@@ -78,7 +79,7 @@ class MapExport(object):
             fh = open(filename, "w")
             #s_output = str(bson.json_util.dumps(nodeinf, indent=1))
             s_output = str(bson.json_util.dumps(top_map, indent=1, sort_keys=True) )
-            print s_output
+            #print s_output
             fh.write(s_output)
             fh.close
 

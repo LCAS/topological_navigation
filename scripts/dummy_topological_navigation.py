@@ -4,8 +4,9 @@ import sys
 import topological_navigation.testing
 import rospy
 from mongodb_store.message_store import MessageStoreProxy
-from topological_navigation.publisher import map_publisher
+from topological_navigation.manager import map_manager
 from topological_navigation.msg import GotoNodeAction, GotoNodeResult, GotoNodeFeedback
+from strands_navigation_msgs.msg import *
 import actionlib 
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String
@@ -17,10 +18,16 @@ class DummyTopologicalNavigator():
             self.map_name = map_name
         else:
             self.map_name = self.create_and_insert_map(size = size)
-        self.publisher = map_publisher(self.map_name)
+        self.manager = map_manager(self.map_name)
+        self.node_names = set([node.name for node in self.manager.nodes.nodes])
+        
         self.nav_result   =  GotoNodeResult()   
         self.nav_feedback = GotoNodeFeedback() 
         self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
+
+        self.policy_result   =  ExecutePolicyModeResult()   
+        self.policy_server = actionlib.SimpleActionServer('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction, execute_cb = self.policy_callback, auto_start = False)
+
         self.cn_pub = rospy.Publisher('/current_node', String, queue_size=1)
         self.cl_pub = rospy.Publisher('/closest_node', String, queue_size=1)
         self.cn = 'ChargingPoint'
@@ -39,11 +46,43 @@ class DummyTopologicalNavigator():
 
     def start(self):
         self.nav_server.start()                 
+        self.policy_server.start()                 
         while not rospy.is_shutdown():
              self.cn_pub.publish(String(self.cn))
              self.cl_pub.publish(String(self.cn))
              rospy.sleep(1)
 
+
+    def policy_callback(self, goal):
+        print 'called with policy goal %s'%goal
+
+        # target is the one which is not in the source list
+        if len(goal.route.source) == 0:
+            target_node = self.cn
+        else:
+            target_node = self.node_names - set(goal.route.source)
+
+        print target_node
+
+        if self.time_srv:
+            target = rospy.get_rostime() + self.time_srv(self.cn, target_node).travel_time
+            while not rospy.is_shutdown() and not self.policy_server.is_preempt_requested() and rospy.get_rostime() < target:
+                rospy.sleep(0.5)
+        else:
+            rospy.sleep(1)
+
+        if self.policy_server.is_preempt_requested():
+            print "done preempted"            
+            self.policy_result.success = False
+            self.policy_server.set_preempted(self.policy_result)
+        else:
+            print "done normal"     
+            self.cn = target_node            
+            self.policy_result.success = True       
+            self.policy_server.set_succeeded(self.policy_result)
+        
+        print "policy mode execution complete" 
+     
 
     def nav_callback(self, goal):
         print 'called with nav goal %s'%goal.target

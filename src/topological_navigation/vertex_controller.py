@@ -11,18 +11,19 @@ from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
 from strands_navigation_msgs.msg import TopologicalNode
+from strands_navigation_msgs.msg import TopologicalMap
+
 from topological_navigation.topological_map import *
 
 
-class vertex_controllers(object):
+class VertexControllers(object):
 
-    def __init__(self, map_name) :
-        #self.in_feedback=False
+    def __init__(self) :
+        map_name = rospy.get_param('/topological_map_name', 'top_map')
         self.timer = Timer(1.0, self.timer_callback)
-        #self.topo_map = topological_map(map_name)
         self._vertex_server = InteractiveMarkerServer(map_name+"_zones")
         self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
-
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
 
     def update_map(self, msg) :
@@ -35,7 +36,6 @@ class vertex_controllers(object):
             node._get_coords()
             count=0
             for i in node.vertices :
-                #print i[0], i[1]
                 Vert = Point()
                 Vert.z = 0.05
                 Vert.x = node.px + i[0]
@@ -45,6 +45,15 @@ class vertex_controllers(object):
                 Pos.position = Vert
                 self._vertex_marker(vertname, Pos, vertname)
                 count+=1
+
+
+    """
+     MapCallback
+     
+     This function receives the Topological Map
+    """
+    def MapCallback(self, msg) :
+        self.update_map(msg)
 
 
     def _vertex_marker(self, marker_name, pose, marker_description="vertex marker"):
@@ -96,7 +105,6 @@ class vertex_controllers(object):
 
 
     def _vertex_feedback(self, feedback):
-        print '-'
         self.info = feedback
         self.timer.cancel()
         del self.timer
@@ -105,7 +113,6 @@ class vertex_controllers(object):
 
 
     def timer_callback(self) :
-        print '.'
         vertex_name = self.info.marker_name.rsplit('-', 1)
         node_name = vertex_name[0]
         vertex_index = int(vertex_name[1])

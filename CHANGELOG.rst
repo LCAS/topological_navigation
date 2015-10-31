@@ -2,6 +2,24 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.37 (2015-08-26)
+-------------------
+* Fixed bug in dummy map where origin and ChargingPoint names were mixed up.
+* getting rid of nasty error
+* Fixing Visualisation of policies
+* creating edge_entropy service
+* Added window range to action message. If this is left blank in the goal the behaviour is as before
+* Does duration prediction based on mean of data.
+* Speed-based duration predictor for single edges
+* adding the possibility of limiting the stats used for the predictions by time range
+* output to screen
+* map drawing utilities
+* making sure the number of messages needed for persist is consecutive
+* Update README.md
+* including persistency check on localise by topic, and localise_anywhere is
+  now configurable on the localise by topic string
+* Contributors: Jailander, Jaime Pulido Fentanes, Nick Hawes
+
 0.0.36 (2015-05-17)
 -------------------
 * Added the wait_reset_bumper_duration to top_nav.launch

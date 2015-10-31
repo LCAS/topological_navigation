@@ -12,25 +12,27 @@ from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
 from strands_navigation_msgs.msg import TopologicalNode
+from strands_navigation_msgs.msg import TopologicalMap
 from topological_navigation.topological_map import *
 
 
 
 class edge_controllers(object):
 
-    def __init__(self, map_name) :
-        print "init_controller"
-        self.in_feedback=False
-        
+    def __init__(self) :
+        self.in_feedback=False        
+        #self.timer = Timer(1.0, self.timer_callback)
+        map_name = rospy.get_param('/topological_map_name', 'top_map')
         self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)        
         self._edge_server = InteractiveMarkerServer(map_name+"_edges")
+
 
 
     def update_map(self, msg) :
         print "updating edge controllers..."
         
-        self.topo_map = topological_map(msg.name, msg=msg)
-        
+        self.topo_map = topological_map(msg.name, msg=msg)       
         self._edge_server.clear()
         self._edge_server.applyChanges()
         
@@ -43,12 +45,25 @@ class edge_controllers(object):
                 V2= (self.topo_map.nodes[ind]._get_pose()).position
                 edge_name=node.name+"_"+self.topo_map.nodes[ind].name
                 self._edge_marker(edge_name, V1, V2, edge_name)
+
     
+    """
+     MapCallback
+     
+     This function receives the Topological Map
+    """
+    def MapCallback(self, msg) :
+        self.update_map(msg)
+
+
+
     def makeEmptyMarker(self, dummyBox=True ):
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = "/map"
         int_marker.scale = 1
         return int_marker
+
+
 
     def makeBox(self, msg ):
         marker = Marker()
@@ -65,9 +80,9 @@ class edge_controllers(object):
     
         return marker
 
+
+
     def _edge_marker(self, marker_name, point1, point2, marker_description="edge marker") :
-        # create an interactive marker for our server
-        
         marker = self.makeEmptyMarker()
         marker.name = marker_name
         #marker.description = marker_description
@@ -87,7 +102,7 @@ class edge_controllers(object):
         
         pose.position.x = (point1.x+point2.x)/2
         pose.position.y = (point1.y+point2.y)/2
-        pose.position.z = (point1.z+point2.z)/2
+        pose.position.z = ((point1.z+point2.z)/2)+0.15
         angle = math.atan2((point2.y-point1.y),(point2.x-point1.x))
         qat = tf.transformations.quaternion_from_euler(0, 0, angle)
         pose.orientation.w = qat[3]
@@ -96,9 +111,9 @@ class edge_controllers(object):
         pose.orientation.z = qat[2]
 
         if pose is not None:
-            #pose.position.z=pose.position.z+0.15
             self._edge_server.setPose( marker.name, pose )
             self._edge_server.applyChanges()
+
 
 
     def feedback_cb(self, feedback):
@@ -107,10 +122,12 @@ class edge_controllers(object):
         self._edge_server.applyChanges()
         self.map_update.publish(rospy.Time.now())
         
+
     
     def clear():
         self._edge_server.clear()
         self._edge_server.applyChanges()
+
 
         
     def __del__(self):

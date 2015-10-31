@@ -14,18 +14,20 @@ from interactive_markers.interactive_marker_server import *
 
 
 from strands_navigation_msgs.msg import TopologicalMap
-from strands_navigation_msgs.msg import TopologicalNode
+#from strands_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
 
 
 
-class waypoint_controllers(object):
+class WaypointControllers(object):
 
-    def __init__(self, map_name) :
+    def __init__(self) :
         self.timer = Timer(1.0, self.timer_callback)
-        self._marker_server = InteractiveMarkerServer(map_name+"_markers")       
+        map_name = rospy.get_param('/topological_map_name', 'top_map')
+        #print map_name
+        self._marker_server = InteractiveMarkerServer(map_name+"_markers")   
         self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
-
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
     
     def update_map(self, msg) :
@@ -33,9 +35,20 @@ class waypoint_controllers(object):
         self.topo_map = topological_map(msg.name, msg=msg)
         self._marker_server.clear()
         self._marker_server.applyChanges()
-        
+      
         for i in self.topo_map.nodes :
             self._create_marker(i.name, i._get_pose(), i.name)
+
+
+    """
+     MapCallback
+     
+     This function receives the Topological Map
+    """
+    def MapCallback(self, msg) :
+        self.update_map(msg)
+
+
 
     def _create_marker(self, marker_name, pose, marker_description="waypoint marker") :
         # create an interactive marker for our server
@@ -101,7 +114,6 @@ class waypoint_controllers(object):
 
 
     def _marker_feedback(self, feedback):
-        #print '+'
         self.info = feedback
         self.timer.cancel()
         del self.timer
@@ -110,7 +122,6 @@ class waypoint_controllers(object):
 
 
     def timer_callback(self) :
-        #print '*'
         self.topo_map.update_node_waypoint(self.info.marker_name, self.info.pose)
         self.map_update.publish(rospy.Time.now())
         

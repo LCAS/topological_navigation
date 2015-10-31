@@ -23,13 +23,15 @@ import topological_navigation.msg
 
 class go_to_controllers(object):
 
-    def __init__(self, map_name) :
+    def __init__(self) :
         self.in_feedback=False
         #self.timer = Timer(1.0, self.timer_callback)
+        map_name = rospy.get_param('/topological_map_name', 'top_map')
         self._goto_server = InteractiveMarkerServer(map_name+"_go_to")
         self.client = actionlib.SimpleActionClient('topological_navigation', topological_navigation.msg.GotoNodeAction)
         self.client.wait_for_server()
-        rospy.loginfo(" ... Init done")
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        rospy.loginfo(" ... Go to Initialised")
 
 
     def update_map(self, map_msg) :
@@ -38,6 +40,16 @@ class go_to_controllers(object):
         self._goto_server.clear()
         for i in map_msg.nodes :
             self.create_marker(i.name, i.pose, i.name)
+            
+    """
+     MapCallback
+     
+     This function receives the Topological Map
+    """
+    def MapCallback(self, msg) :
+        self.update_map(msg)
+        
+    
 
     def makeEmptyMarker(self, dummyBox=True ) :
         int_marker = InteractiveMarker()

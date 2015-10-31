@@ -1,60 +1,78 @@
 #!/usr/bin/env python
 
-import sys
 import rospy
 import math
 import tf
-import numpy
 
-import matplotlib as mpl
-import matplotlib.cm as cm
 
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import Point
 
+
+from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
 
-from strands_navigation_msgs.msg import TopologicalNode
-from topological_navigation.topological_map import *
+from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation.marker_arrays import *
 from strands_navigation_msgs.msg import NavRoute
 
 
-class policies_marker(object):
-    
-    def __init__(self, map_name) :
-        self.map_name = map_name
+class PoliciesVis(object):
+#    _killall_timers=False
+
+    def __init__(self) :
+        self._killall=False
+        #rospy.on_shutdown(self._on_node_shutdown)
         self.route_nodes = NavRoute()
-        self.updating=True
-        self.update_map(map_name)
+        self.map_edges = MarkerArray()
+        #self.update_needed=False
+        
+        rospy.loginfo("Creating Publishers ...")
+        self.policies_pub = rospy.Publisher('/topological_edges_policies', MarkerArray)
+        rospy.loginfo("Done ...")
+        
+        
+        rospy.loginfo("Creating subscriber ...")      
+        self.subs = rospy.Subscriber("/mdp_plan_exec/current_policy_mode", NavRoute, self.policies_callback)       
+        rospy.loginfo("Done ...")
+
+        #Waiting for Topological Map        
+        self.map_received=False
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.loginfo("Waiting for Topological map ...")        
+        while not self.map_received and not self._killall :
+            rospy.sleep(rospy.Duration.from_sec(0.05))
+        rospy.loginfo(" ...done")
         
 
-    def update_map(self,map_name) :
-        self.topo_map = topological_map(self.map_name)
-        self.map_edges = MarkerArray()
-                
+        rospy.loginfo("All Done ...")
+
+
+    def _update_everything(self) :
+        print "updating ..."
+        print self.route_nodes
+
+        self.map_edges.markers=[]
+        
         counter=0
         total = len(self.route_nodes.source)
 
-        #print 'updating '+str(total)+' edges'        
+        print 'updating '+str(total)+' edges'        
         while counter < total :
-            #print 'Creating edge '+str(counter) 
-            inds = self.topo_map._get_node_index(self.route_nodes.source[counter])
-            indt = self.topo_map._get_node_index(self.route_nodes.target[counter])
-            point1=Point()
-            point2=Point()
-            point1= (self.topo_map.nodes[inds]._get_pose()).position
-            point2= (self.topo_map.nodes[indt]._get_pose()).position
-            #val = self.route_nodes.prob[counter]
-            self.create_edge(point1, point2)
+            print 'Creating edge '+str(counter) 
+            ori = self.get_node(self.lnodes, self.route_nodes.source[counter])
+            targ = self.find_action(ori.name, self.route_nodes.edge_id[counter])
+            if targ:
+                #print ori.name,ori.pose.position      
+                target = self.get_node(self.lnodes, targ)
+                #print target.name,target.pose.position 
+                self.create_edge(ori.pose.position, target.pose.position)
             counter+=1
-
+        
+        
         idn = 0
         for m in self.map_edges.markers:
             m.id = idn
             idn += 1
-        self.updating=False
-        
-        
+        self.policies_pub.publish(self.map_edges)
         print "All Done"
 
 
@@ -80,22 +98,70 @@ class policies_marker(object):
         marker.scale.y = 0.15
         marker.scale.z = 0.15
         marker.color.a = 0.95
-        marker.color.r = 0.1
+        marker.color.r = 0.9
         marker.color.g = 0.1
         marker.color.b = 0.1
         marker.pose = pose
         self.map_edges.markers.append(marker)
 
 
-    def received_route(self, route):
-        #print "Route Received"
-        if not self.updating :
-            #print "Updating Route"
-            self.route_nodes = route
-            self.clear()
-            self.update_map(self.topo_map)
-    
-    def clear(self):
-        if not self.updating :
-            self.updating=True
-            del self.map_edges
+
+    """
+        get_node
+        
+        Given a topological map and a node name it returns the node object
+    """
+    def get_node(self, top_map, node_name):
+        print 'looking for: '+node_name
+        for i in top_map.nodes:
+            #print i.name
+            if i.name == node_name:
+                return i
+        return None
+
+
+    """
+     Find Action
+         
+    """
+#    def find_action(self, source, target):
+    def find_action(self, source, edge_id):
+        #print 'Searching for action between: %s -> %s' %(source, target)
+        found = False
+        #action = 'none'
+        target = 'none'
+        for i in self.lnodes.nodes :
+            if i.name == source :
+                for j in i.edges:
+                    if j.edge_id == edge_id:
+                        #action = j.action
+                        target = j.node
+                found = True
+        if not found:
+            rospy.logwarn("source node not found")
+            return None
+        return target
+       
+
+
+    def policies_callback(self, msg) :
+        print "GOT policies"
+        self.route_nodes = msg
+        self._update_everything()
+
+
+    """
+     MapCallback
+     
+     This function receives the Topological Map
+    """
+    def MapCallback(self, msg) :
+        print "got map"
+        self.lnodes = msg
+#        print self.lnodes.nodes
+        self.map_received = True 
+        
+
+    def on_node_shutdown(self):
+        self._killall=True
+        #sleep(2)

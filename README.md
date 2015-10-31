@@ -46,6 +46,9 @@ There are different ways of creating **topological maps**:
 
 5. [Edit using MongoDB Client](#Edit-using-MongoDB-Client)
 
+*. [Using Localise by Topic] (#Using-Localise-by-Topic)
+
+
 ## Simultaneous Metric and Topological Mapping
 
 @To improve
@@ -238,3 +241,27 @@ This method is basically the same as the previous method (follow steps 1 and 2, 
 ## Edit using MongoDB Client
 
 @TODO
+
+## Using Localise by Topic
+
+Localise by topic is a [JSON](http://json.org/) string defined in the topological map which is empty by default `"localise_by_topic" : ""` which means that the robot will use its pose to obtained its location on the topological map. 
+
+However in some specific cases it might be necessary to localise the robot by means of an specific topic in this cases the localise by topic string should be defined with the following **mandatory** fields 
+
+- *topic*: the name of the topic that will be used for localisation
+- *field*: the field of the topic that will be compared
+- *val*: the value of *field* that will be used to set the current node (`/current_node`)
+
+A typical localise by topic string will look like this:
+
+```JSON
+"{"topic":"/battery_state","field":"charging","val":true}"
+```
+
+There are also some **optional** fields that can be set:
+
+- *localise_anywhere*: (default value **true**) If set to **true** topological localisation will assume the robot to be at the node whenever localisation by topic corresponds to the values on the string, else this will only happen when the robot is in the influence area of the specific node.
+- *persistency*: (default value **10**) is number of consecutive messages with the correct value that must arrive before localisation by topic is determined
+- *timeout*: @todo
+
+* Please note: when localised by topic is active the robot will never assume this node to be **closest node**  unless it is also **current node**

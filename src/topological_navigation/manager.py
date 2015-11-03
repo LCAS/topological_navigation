@@ -19,12 +19,21 @@ def node_dist(node1,node2):
 
 class map_manager(object):
 
-    def __init__(self, name) :
+    def __init__(self, name, load=True) :
         self.name = name
-        self.nodes = self.loadMap(name)
-        self.names = self.create_list_of_nodes()
         
-        rospy.set_param('topological_map_name', self.nodes.pointset)
+        if load:
+            self.nodes = self.loadMap(name)
+            self.names = self.create_list_of_nodes()
+            
+            rospy.set_param('topological_map_name', self.nodes.pointset)
+        else:
+            self.nodes = strands_navigation_msgs.msg.TopologicalMap()
+            self.nodes.name = name
+            self.nodes.pointset = name
+            self.names=[]
+            rospy.set_param('topological_map_name', self.nodes.pointset)
+
         
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
         self.last_updated = rospy.Time.now()
@@ -450,13 +459,17 @@ class map_manager(object):
 
     def loadMap(self, point_set) :
         msg_store = MessageStoreProxy(collection='topological_maps')
-    
+        points = strands_navigation_msgs.msg.TopologicalMap()
+        points.name = point_set
+        points.pointset = point_set
+        
         query_meta = {}
         query_meta["pointset"] = point_set
 
         ntries=1
         map_found=False
         
+        #Tries to load the map for a minute if not it quits
         while not map_found :
             available = len(msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, {}, query_meta))
             if available <= 0 :
@@ -466,17 +479,18 @@ class map_manager(object):
                     rospy.sleep(rospy.Duration.from_sec(6))
                 else :
                     raise Exception("Can't find waypoints.")
-                    sys.exit(2)
+                    return points
+                    #We just want to raise the exception not quit
+                    #sys.exit(2)
             else:
                 map_found=True
- 
- 
+  
         query_meta = {}
         query_meta["pointset"] = point_set
               
         message_list = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, {}, query_meta)
 
-        points = strands_navigation_msgs.msg.TopologicalMap()
+
         points.name = point_set
         points.pointset = point_set
         for i in message_list:

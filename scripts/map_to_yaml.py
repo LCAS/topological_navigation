@@ -9,7 +9,7 @@ import yaml
 
 from topological_navigation.topological_node import *
 from actionlib_msgs.msg import *
-from move_base_msgs.msg import *
+
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 

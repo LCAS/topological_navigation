@@ -63,8 +63,6 @@ class PolicyExecutionServer(object):
         self.cancelled = False
         self.preempted = False
         #self.aborted = False
-        self.current_node = 'unknown'
-        self.closest_node = 'unknown'
         self.current_action = 'none'
         self.current_route = None
         self.n_tries = 3        
@@ -89,14 +87,6 @@ class PolicyExecutionServer(object):
         if 'move_base' not in self.needed_move_base_actions:
             self.needed_move_base_actions.append('move_base')
         
-        #Creating Action Server
-        rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
-        self._as.register_preempt_callback(self.preemptCallback)
-        rospy.loginfo(" ...starting")
-        self._as.start()
-        rospy.loginfo(" ...done")
-
 
         #Creating monitored navigation client
         rospy.loginfo("Creating monitored navigation client.")
@@ -106,6 +96,9 @@ class PolicyExecutionServer(object):
 
 
         #Subscribing to Localisation Topics
+        rospy.loginfo("Waiting for Localisation Topics")
+        self.current_node = rospy.wait_for_message('/current_node')
+        self.closest_node = rospy.wait_for_message('/closest_node')
         rospy.loginfo("Subscribing to Localisation Topics")
         rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
         rospy.Subscriber('/current_node', String, self.currentNodeCallback)
@@ -131,6 +124,16 @@ class PolicyExecutionServer(object):
         
         self.dyt = config['move_base']['yaw_goal_tolerance']
         rospy.loginfo("default yaw tolerance %f" %self.dyt)
+
+
+        #Creating Action Server
+        rospy.loginfo("Creating action server.")
+        self._as = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
+        self._as.register_preempt_callback(self.preemptCallback)
+        rospy.loginfo(" ...starting")
+        self._as.start()
+        rospy.loginfo(" ...done")
+
 
         rospy.loginfo("All Done ...")
         rospy.spin()

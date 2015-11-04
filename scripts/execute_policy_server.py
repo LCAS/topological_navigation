@@ -97,8 +97,8 @@ class PolicyExecutionServer(object):
 
         #Subscribing to Localisation Topics
         rospy.loginfo("Waiting for Localisation Topics")
-        self.current_node = rospy.wait_for_message('/current_node')
-        self.closest_node = rospy.wait_for_message('/closest_node')
+        self.current_node = rospy.wait_for_message('/current_node', String)
+        self.closest_node = rospy.wait_for_message('/closest_node', String)
         rospy.loginfo("Subscribing to Localisation Topics")
         rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
         rospy.Subscriber('/current_node', String, self.currentNodeCallback)

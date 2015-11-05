@@ -124,6 +124,7 @@ class ScenarioServer(object):
             rospy.logfatal("No scenario loaded!")
             return EmptyResponse()
 
+        rospy.loginfo("Resetting robot position...")
         self.client.cancel_all_goals()
 
         sock = self._connect_port(PORT)
@@ -142,6 +143,7 @@ class ScenarioServer(object):
         sock.close()
         self._init_nav(self._robot_start_pose)
         self._clear_costmaps()
+        rospy.loginfo("... done")
         return EmptyResponse()
 
     def graceful_fail(self):
@@ -234,7 +236,7 @@ class ScenarioServer(object):
         # Has to be done here because the policy execution server waits for a topo map.
         self.client = actionlib.SimpleActionClient("/topological_navigation/execute_policy_mode", ExecutePolicyModeAction)
         self.client.wait_for_server()
-        rospy.loginfo(" ... done")
+        rospy.loginfo(" ... started")
 
         self._loaded = True
         self.reset(None)

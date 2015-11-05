@@ -9,10 +9,6 @@
   </include>
   <include file="$(find strands_morse)/mba/launch/move_base_arena_nav.launch"/>
 
-  <include file="$(find strands_ui)/launch/strands_ui.launch"/>
-
-  <include file="$(find backtrack_behaviour)/launch/backtrack.launch"/>
-
   <include file="$(find topological_navigation)/launch/topological_navigation_empty_map.launch">
     <arg name="map" value="empty"/>
     <arg name="mon_nav_config_file" value=""/>

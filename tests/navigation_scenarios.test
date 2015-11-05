@@ -12,6 +12,7 @@
   <include file="$(find topological_navigation)/launch/topological_navigation_empty_map.launch">
     <arg name="map" value="empty"/>
     <arg name="mon_nav_config_file" value=""/>
+    <arg name="execute_policy_retries" value="0"/>
   </include>
 
   <node name="route_search" type="get_simple_policy.py" pkg="topological_navigation"/>

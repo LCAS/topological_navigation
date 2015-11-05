@@ -1,0 +1,27 @@
+<launch>
+
+  <include file="$(find mongodb_store)/launch/mongodb_store.launch">
+    <arg name="test_mode" value="true"/>
+  </include>
+
+  <include file="$(find strands_morse)/mba/launch/move_base_arena.launch">
+    <arg name="env" value="mba_fast"/>
+  </include>
+  <include file="$(find strands_morse)/mba/launch/move_base_arena_nav.launch"/>
+
+  <include file="$(find strands_ui)/launch/strands_ui.launch"/>
+
+  <include file="$(find backtrack_behaviour)/launch/backtrack.launch"/>
+
+  <include file="$(find topological_navigation)/launch/topological_navigation_empty_map.launch">
+    <arg name="map" value="empty"/>
+    <arg name="mon_nav_config_file" value=""/>
+  </include>
+
+  <node name="route_search" type="get_simple_policy.py" pkg="topological_navigation"/>
+
+  <node name="scenario_server" type="scenario_server.py" pkg="topological_navigation" output="screen"/>
+
+  <test time-limit="1800.0" test-name="topological_navigation_tester" pkg="topological_navigation" type="topological_navigation_tester.py" />
+
+</launch>

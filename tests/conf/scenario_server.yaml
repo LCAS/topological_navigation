@@ -1,0 +1,4 @@
+robot_start_node: Start
+robot_goal_node: End
+success_metrics:
+    nav_timeout: 60.0 # 0 for inf

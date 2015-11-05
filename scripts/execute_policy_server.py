@@ -65,7 +65,7 @@ class PolicyExecutionServer(object):
         #self.aborted = False
         self.current_action = 'none'
         self.current_route = None
-        self.n_tries = 3        
+        self.n_tries = rospy.get_param('~retries', 3)
         
         rospy.on_shutdown(self._on_node_shutdown)
         self.move_base_actions = ['move_base','human_aware_navigation']

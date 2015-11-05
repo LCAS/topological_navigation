@@ -117,7 +117,7 @@ class PolicyExecutionServer(object):
             
             service_created=False
             service_created_tries=50
-            while service_created_tries>0:              
+            while service_created_tries>0 and not self.cancelled :              
                 service_names = rosservice.get_service_list()
                 if test_service in service_names:
                     rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
@@ -139,22 +139,36 @@ class PolicyExecutionServer(object):
         if mb_service_created:
             self.dyt = config['move_base']['yaw_goal_tolerance']
         else:
-            self.dyt = 0.1
+            while not mb_service_created and not self.cancelled:
+                rcnfsrvrname= '/move_base/DWAPlannerROS'
+                test_service = rcnfsrvrname+'/set_parameters'
+                rospy.logwarn("%s must be created! will keep trying until its there" %rcnfsrvrname)
+                service_names = rosservice.get_service_list()
+                if test_service in service_names:
+                    rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
+                    client = dynamic_reconfigure.client.Client(rcnfsrvrname, timeout=10)
+                    self.rcnfclient['move_base'] = client
+                    config['move_base'] = self.rcnfclient['move_base'].get_configuration()
+                    mb_service_created=True
+                else:
+                    rospy.sleep(1)
+
         
-        rospy.loginfo("default yaw tolerance %f" %self.dyt)
-
-
-        #Creating Action Server
-        rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
-        self._as.register_preempt_callback(self.preemptCallback)
-        rospy.loginfo(" ...starting")
-        self._as.start()
-        rospy.loginfo(" ...done")
-
-
-        rospy.loginfo("EPM All Done ...")
-        rospy.spin()
+        if not self.cancelled:
+            self.dyt = config['move_base']['yaw_goal_tolerance']
+            rospy.loginfo("default yaw tolerance %f" %self.dyt)
+    
+            #Creating Action Server
+            rospy.loginfo("Creating action server.")
+            self._as = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
+            self._as.register_preempt_callback(self.preemptCallback)
+            rospy.loginfo(" ...starting")
+            self._as.start()
+            rospy.loginfo(" ...done")
+    
+    
+            rospy.loginfo("EPM All Done ...")
+            rospy.spin()
 
 
     """

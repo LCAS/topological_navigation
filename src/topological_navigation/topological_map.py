@@ -19,12 +19,12 @@ class topological_map(object):
         else :
             self.name = msg.pointset
             self.nodes = self.map_from_msg(msg.nodes)
-            
+
 
     def _get_node_index(self, node_name):
         ind = -1
         counter = 0
-       
+
         for i in self.nodes :
             if i.name == node_name :
                 ind = counter
@@ -89,7 +89,7 @@ class topological_map(object):
             msg_store.update(available[0][0], query_meta, query, upsert=True)
         else :
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
-            rospy.logerr("Available data: "+str(available))        
+            rospy.logerr("Available data: "+str(available))
 
 
     def add_edge(self, or_waypoint, de_waypoint, action) :
@@ -133,7 +133,7 @@ class topological_map(object):
         query_meta["map"] = self.map
 
         available = msg_store.query(TopologicalNode._type, query, query_meta)
-        
+
         node_found = False
         if len(available) == 1 :
             node_found = True
@@ -142,8 +142,8 @@ class topological_map(object):
         else :
             rospy.logerr("Node not found "+str(len(available))+" waypoints found after query")
             #rospy.logerr("Available data: "+str(available))
-        
-        
+
+
         if node_found :
             query_meta = {}
             query_meta["pointset"] = self.name
@@ -154,7 +154,7 @@ class topological_map(object):
                     if j.node == node_name :
                         edge_rm = i[0].name+'_'+node_name
                         edges_to_rm.append(edge_rm)
-            
+
             for k in edges_to_rm :
                 print 'remove: '+k
                 self.remove_edge(k)
@@ -169,7 +169,7 @@ class topological_map(object):
         for i in self.nodes :
             if i.name == name :
                 found = True
-        
+
         if found :
             rospy.logerr("Node already exists, try another name")
         else :
@@ -192,7 +192,7 @@ class topological_map(object):
                 v.y = float(j[1])
                 node.verts.append(v)
 
-            
+
             cx = node.pose.position.x
             cy = node.pose.position.y
             close_nodes = []
@@ -201,24 +201,24 @@ class topological_map(object):
                 if ndist < dist :
                     if i.name != 'ChargingPoint' :
                         close_nodes.append(i.name)
-            
+
             for i in close_nodes :
                 edge = Edge()
                 edge.node = i
                 edge.action = std_action
                 node.edges.append(edge)
-               
+
             msg_store.insert(node,meta)
-            
+
             for i in close_nodes :
                 self.add_edge(i, name, std_action)
-            
+
 
     def delete_map(self) :
 
         rospy.loginfo('Deleting map: '+self.name)
         msg_store = MessageStoreProxy(collection='topological_maps')
-        
+
         query_meta = {}
         query_meta["pointset"] = self.name
 
@@ -226,12 +226,12 @@ class topological_map(object):
         for i in message_list:
             rm_id = str(i[1]['_id'])
             msg_store.delete(rm_id)
-            
+
 
     def map_from_msg(self, nodes):
         #self.topol_map = msg.pointset
         points = []
-        for i in nodes : 
+        for i in nodes :
             self.map = i.map
             b = topological_node(i.name)
             edges = []
@@ -245,37 +245,35 @@ class topological_map(object):
             for j in i.verts :
                 data = [j.x,j.y]
                 verts.append(data)
-            b._insert_vertices(verts)  
+            b._insert_vertices(verts)
             c=i.pose
             waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
             b.waypoint = waypoint
             b._get_coords()
             points.append(b)
-        
+
         return points
 
 
     def loadMap(self, point_set):
         msg_store = MessageStoreProxy(collection='topological_maps')
-    
+
         query_meta = {}
         query_meta["pointset"] = point_set
 
         available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
 
-        print available
-
         if available <= 0 :
             rospy.logerr("Desired pointset '"+point_set+"' not in datacentre")
             rospy.logerr("Available pointsets: "+str(available))
             raise Exception("Can't find waypoints.")
-    
+
         else :
             query_meta = {}
             query_meta["pointset"] = point_set
-            
+
             message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
-    
+
             points = []
             for i in message_list:
                 self.map = i[0].map
@@ -287,18 +285,18 @@ class topological_map(object):
                     data["action"]=j.action
                     edges.append(data)
                 b.edges = edges
-                
+
                 verts = []
                 for j in i[0].verts :
                     data = [j.x,j.y]
                     verts.append(data)
                 b._insert_vertices(verts)
-    
+
                 c=i[0].pose
                 waypoint=[str(c.position.x), str(c.position.y), str(c.position.z), str(c.orientation.x), str(c.orientation.y), str(c.orientation.z), str(c.orientation.w)]
                 b.waypoint = waypoint
                 b._get_coords()
-    
+
                 points.append(b)
-            
+
             return points

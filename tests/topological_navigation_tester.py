@@ -28,57 +28,57 @@ class TestTopologicalNavigation(unittest.TestCase):
             self.assertTrue(False)
         return res
 
-    def test0(self):
+    def test_static_l_shaped_corridor_2m(self):
         res = self._run(self._map_names[0])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test1(self):
+    def test_static_facing_wall_1cm_distance_0_degrees_goal_behind(self):
         res = self._run(self._map_names[1])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test2(self):
+    def test_static_facing_wall_1cm_distance_minus_45_degrees_goal_behind(self):
         res = self._run(self._map_names[2])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test3(self):
+    def test_static_facing_wall_1cm_distance_plus_45_degrees_goal_behind(self):
         res = self._run(self._map_names[3])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test4(self):
+    def test_static_155cm_corridor_with_55cm_chairs_on_one_side(self):
         res = self._run(self._map_names[4])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test5(self):
+    def test_static_210cm_corridor_with_55cm_chairs_on_both_sides(self):
         res = self._run(self._map_names[5])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test6(self):
+    def test_static_80cm_wide_door(self):
         res = self._run(self._map_names[6])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test7(self):
+    def test_static_70cm_wide_door(self):
         res = self._run(self._map_names[7])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test8(self):
+    def test_static_trapped_in_corner(self):
         res = self._run(self._map_names[8])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test9(self):
+    def test_static_1m_striaght_corridor(self):
         res = self._run(self._map_names[9])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test10(self):
+    def test_static_1m_l_shaped_corridor(self):
         res = self._run(self._map_names[10])
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)

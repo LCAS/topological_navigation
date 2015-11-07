@@ -35,6 +35,7 @@ class ScenarioServer(object):
 
     def __init__(self, name):
         rospy.loginfo("Starting scenario server")
+        robot = rospy.get_param("~robot", False)
         conf_file = find_resource("topological_navigation", "scenario_server.yaml")[0]
         rospy.loginfo("Reading config file: %s ..." % conf_file)
         with open(conf_file,'r') as f:
@@ -43,12 +44,12 @@ class ScenarioServer(object):
         self._robot_goal_node = conf["robot_goal_node"]
         self._timeout = conf["success_metrics"]["nav_timeout"]
         rospy.loginfo(" ... done")
-        rospy.loginfo("Inserting maps into datacentre...")
-        self._insert_maps()
-        rospy.loginfo("... done")
+        if not robot:
+            rospy.loginfo("Inserting maps into datacentre...")
+            self._insert_maps()
+            rospy.loginfo("... done")
         self.tf = TransformListener()
         rospy.Service("~load", LoadTopoNavTestScenario, self.load_scenario)
-        robot = rospy.get_param("~robot", False)
         self.reset = self.reset_robot if robot else self.reset_sim
         rospy.Service("~reset", Empty, self.reset)
         rospy.Service("~start", RunTopoNavTestScenario, self.start)

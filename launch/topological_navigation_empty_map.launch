@@ -3,6 +3,7 @@
 	<arg name="map"/>
 	<arg name="mon_nav_config_file"  default="" />
 	<arg name="wait_reset_bumper_duration" default="0.0"/>
+	<arg name="topological_navigation_retries" default="3"/>
 	<arg name="execute_policy_retries" default="3"/>
 	<arg name="machine" default="localhost" />
 	<arg name="user" default="" />
@@ -19,7 +20,9 @@
 	<node pkg="fremenserver" type="fremenserver" name="fremenserver"/>
 
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>
-	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen"/>
+	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen">
+		<param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
+	</node>
 	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen">
 		<param name="retries" type="int" value="$(arg execute_policy_retries)"/>
 	</node>

@@ -121,13 +121,19 @@ class ScenarioServer(object):
         new_pose.pose.orientation.w, new_pose.pose.orientation.x, new_pose.pose.orientation.y, new_pose.pose.orientation.z)
 
     def reset_pose_robot(self):
-        while(self._robot_start_node != rospy.wait_for_message("/current_node", String).data):
-            rospy.loginfo("+++ Please push the robot to %s +++" % self._robot_start_node)
+        while self._robot_start_node != rospy.wait_for_message("/current_node", String).data and not rospy.is_shutdown():
+            rospy.loginfo("+++ Please push the robot to '%s' +++" % self._robot_start_node)
             rospy.sleep(1)
+        rospy.loginfo("+++ Robot at '%s' +++" % self._robot_start_node)
 
-        while(not rospy.wait_for_message("/teleop_joystick/action_buttons", action_buttons).A):
-            rospy.loginfo("+++ Robot at %s please confirm correct positioning with A button on joypad +++" % self._robot_start_node)
-            rospy.sleep(1)
+        while not rospy.is_shutdown():
+            rospy.loginfo("+++ Please confirm correct positioning with A button on joypad +++")
+            try:
+                if rospy.wait_for_message("/teleop_joystick/action_buttons", action_buttons, timeout=1.).A:
+                    break
+            except rospy.ROSException:
+                pass
+        rospy.loginfo("+++ Position confirmed +++")
 
     def reset_pose_sim(self):
         sock = self._connect_port(PORT)
@@ -156,7 +162,7 @@ class ScenarioServer(object):
 
         self._init_nav(self._robot_start_pose)
         self._clear_costmaps()
-        rospy.loginfo("... done")
+        rospy.loginfo("... reset successful")
         return EmptyResponse()
 
     def graceful_fail(self):

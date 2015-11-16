@@ -138,6 +138,9 @@ class ScenarioServer(object):
 
         while not rospy.is_shutdown():
             rospy.loginfo("+++ Please confirm correct positioning with A button on joypad +++")
+            if self._robot_start_node != rospy.wait_for_message("/current_node", String).data:
+                self.reset_pose()
+                return
             try:
                 if rospy.wait_for_message("/teleop_joystick/action_buttons", action_buttons, timeout=1.).A:
                     break
@@ -150,10 +153,10 @@ class ScenarioServer(object):
             s = rospy.ServiceProxy("/enable_motors", EnableMotors)
             s.wait_for_service()
             s(True)
-            s = rospy.ServiceProxy("/reset_motorstop", EnableMotors)
+            s = rospy.ServiceProxy("/reset_motorstop", ResetMotorStop)
             s.wait_for_service()
             s()
-            s = rospy.ServiceProxy("/reset_barrier_stop", EnableMotors)
+            s = rospy.ServiceProxy("/reset_barrier_stop", ResetBarrierStop)
             s.wait_for_service()
             s()
         except (rospy.ROSInterruptException, rospy.ServiceException) as e:

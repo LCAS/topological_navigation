@@ -23,6 +23,7 @@ import time
 from strands_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
 from tf import TransformListener
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
+from scitos_teleop.msg import action_buttons
 
 HOST = 'localhost'
 PORT = 4000
@@ -50,7 +51,7 @@ class ScenarioServer(object):
             rospy.loginfo("... done")
         self.tf = TransformListener()
         rospy.Service("~load", LoadTopoNavTestScenario, self.load_scenario)
-        self.reset = self.reset_robot if robot else self.reset_sim
+        self.reset_pose = self.reset_pose_robot if robot else self.reset_pose_sim
         rospy.Service("~reset", Empty, self.reset)
         rospy.Service("~start", RunTopoNavTestScenario, self.start)
         rospy.loginfo("All done")
@@ -117,17 +118,16 @@ class ScenarioServer(object):
         % (id, agent, new_pose.pose.position.x, new_pose.pose.position.y, \
         new_pose.pose.orientation.w, new_pose.pose.orientation.x, new_pose.pose.orientation.y, new_pose.pose.orientation.z)
 
-    def reset_robot(self, req):
-        pass
+    def reset_pose_robot(self):
+        while(self._robot_start_node != rospy.wait_for_message("/current_node", String).data):
+            rospy.loginfo("+++ Please push the robot to %s +++" % self._robot_start_node)
+            rospy.sleep(1)
 
-    def reset_sim(self, req):
-        if not self._loaded:
-            rospy.logfatal("No scenario loaded!")
-            return EmptyResponse()
+        while(not rospy.wait_for_message("/teleop_joystick/action_buttons", action_buttons).A):
+            rospy.loginfo("+++ Robot at %s please confirm correct positioning with A button on joypad +++" % self._robot_start_node)
+            rospy.sleep(1)
 
-        rospy.loginfo("Resetting robot position...")
-        self.client.cancel_all_goals()
-
+    def reset_pose_sim(self):
         sock = self._connect_port(PORT)
         if not sock:
             raise Exception("Could not create socket connection to morse")
@@ -142,6 +142,16 @@ class ScenarioServer(object):
         self._id += 1
 
         sock.close()
+
+    def reset(self, req):
+        if not self._loaded:
+            rospy.logfatal("No scenario loaded!")
+            return EmptyResponse()
+
+        rospy.loginfo("Resetting robot position...")
+
+        self.reset_pose()
+
         self._init_nav(self._robot_start_pose)
         self._clear_costmaps()
         rospy.loginfo("... done")

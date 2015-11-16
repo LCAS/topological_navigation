@@ -45,10 +45,7 @@ class ScenarioServer(object):
         self._robot_goal_node = conf["robot_goal_node"]
         self._timeout = conf["success_metrics"]["nav_timeout"]
         rospy.loginfo(" ... done")
-        if not robot:
-            rospy.loginfo("Inserting maps into datacentre...")
-            self._insert_maps()
-            rospy.loginfo("... done")
+        self._insert_maps()
         self.tf = TransformListener()
         rospy.Service("~load", LoadTopoNavTestScenario, self.load_scenario)
         self.reset_pose = self.reset_pose_robot if robot else self.reset_pose_sim
@@ -58,8 +55,12 @@ class ScenarioServer(object):
 
     def _insert_maps(self):
         map_dir = rospy.get_param("~map_dir", "")
+        rospy.loginfo("Inserting maps into datacentre...")
+        if map_dir == "":
+            rospy.logwarn("No 'map_dir' given. Will not insert maps into datacentre and assume they are present already.")
         y = YamlMapLoader()
         y.insert_maps(y.read_maps(map_dir))
+        rospy.loginfo("... done")
 
     def robot_callback(self, msg):
         self._robot_poses.append(msg)

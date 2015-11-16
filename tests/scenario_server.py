@@ -22,6 +22,7 @@ from roslib.packages import find_resource
 import time
 from strands_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
 from tf import TransformListener
+from tf.transformations import euler_from_quaternion
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
 from scitos_teleop.msg import action_buttons
 from scitos_msgs.srv import EnableMotors, ResetBarrierStop, ResetMotorStop
@@ -34,6 +35,7 @@ class ScenarioServer(object):
     _id = 0
     _loaded = False
     _robot_poses = []
+    _distances = [0,0]
 
     def __init__(self, name):
         rospy.loginfo("Starting scenario server")
@@ -121,6 +123,12 @@ class ScenarioServer(object):
         % (id, agent, new_pose.pose.position.x, new_pose.pose.position.y, \
         new_pose.pose.orientation.w, new_pose.pose.orientation.x, new_pose.pose.orientation.y, new_pose.pose.orientation.z)
 
+    def robot_start_dist(self, msg):
+        self._distances[0] = self.get_distance_travelled([msg, self._robot_start_pose.pose])[0]
+        q1 = (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
+        q2 = (self._robot_start_pose.pose.orientation.x, self._robot_start_pose.pose.orientation.y, self._robot_start_pose.pose.orientation.z, self._robot_start_pose.pose.orientation.w)
+        self._distances[1] = euler_from_quaternion(q1)[2] - euler_from_quaternion(q2)[2]
+
     def reset_pose_robot(self):
         rospy.loginfo("Enabling freerun ...")
         try:
@@ -137,7 +145,8 @@ class ScenarioServer(object):
         rospy.loginfo("+++ Robot at '%s' +++" % self._robot_start_node)
 
         while not rospy.is_shutdown():
-            rospy.loginfo("+++ Please confirm correct positioning with A button on joypad +++")
+            sub = rospy.Subscriber("/robot_pose", Pose, self.robot_start_dist)
+            rospy.loginfo("+++ Please confirm correct positioning with A button on joypad: distance %.2fm %.2frad +++" %(self._distances[0], self._distances[1]))
             if self._robot_start_node != rospy.wait_for_message("/current_node", String).data:
                 self.reset_pose()
                 return

@@ -18,12 +18,13 @@ import actionlib_msgs
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
 from strands_navigation_msgs.msg import ExecutePolicyModeAction, ExecutePolicyModeGoal
 from strands_navigation_msgs.srv import LoadTopoNavTestScenario, LoadTopoNavTestScenarioResponse, RunTopoNavTestScenario, RunTopoNavTestScenarioResponse, GetRouteTo
-from roslib.packages import find_resource, get_pkg_subdir
+from roslib.packages import find_resource
 import time
 from strands_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
 from tf import TransformListener
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
 from scitos_teleop.msg import action_buttons
+from scitos_msgs.srv import EnableMotors, ResetBarrierStop, ResetMotorStop
 
 HOST = 'localhost'
 PORT = 4000
@@ -121,6 +122,15 @@ class ScenarioServer(object):
         new_pose.pose.orientation.w, new_pose.pose.orientation.x, new_pose.pose.orientation.y, new_pose.pose.orientation.z)
 
     def reset_pose_robot(self):
+        rospy.loginfo("Enabling freerun ...")
+        try:
+            s = rospy.ServiceProxy("/enable_motors", EnableMotors)
+            s.wait_for_service()
+            s(False)
+        except (rospy.ROSInterruptException, rospy.ServiceException) as e:
+            rospy.logwarn(e)
+        rospy.loginfo("... enabled")
+
         while self._robot_start_node != rospy.wait_for_message("/current_node", String).data and not rospy.is_shutdown():
             rospy.loginfo("+++ Please push the robot to '%s' +++" % self._robot_start_node)
             rospy.sleep(1)
@@ -134,6 +144,21 @@ class ScenarioServer(object):
             except rospy.ROSException:
                 pass
         rospy.loginfo("+++ Position confirmed +++")
+
+        rospy.loginfo("Enabling motors, resetting motor stop and barrier stopped ...")
+        try:
+            s = rospy.ServiceProxy("/enable_motors", EnableMotors)
+            s.wait_for_service()
+            s(True)
+            s = rospy.ServiceProxy("/reset_motorstop", EnableMotors)
+            s.wait_for_service()
+            s()
+            s = rospy.ServiceProxy("/reset_barrier_stop", EnableMotors)
+            s.wait_for_service()
+            s()
+        except (rospy.ROSInterruptException, rospy.ServiceException) as e:
+            rospy.logwarn(e)
+        rospy.loginfo("... enabled and reset")
 
     def reset_pose_sim(self):
         sock = self._connect_port(PORT)

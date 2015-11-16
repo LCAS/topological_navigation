@@ -4,12 +4,32 @@ The topological navigation tests are designed to optimise the parameter set of t
 
 ## Run test
 
-Test for your whole worksapce can be run with `catkin_make test` which assumes that `strands_navigation` is present in your ros workspace. If you only want to run the test described here, use `catkin_make test --pkg topological_navigation`. To run the testes from an installed version of topological_navigation do:
+Test for your whole worksapce can be run with `catkin_make test` which assumes that `strands_navigation` is present in your ros workspace. If you only want to run the test described here, use `catkin_make test --pkg topological_navigation`. This will only run the critical topological navigation tests. A set of supplementary tests can be run with:
 
 ```
 roslaunch topological_navigation navigation_scenarios.test
-rosrun topological_navigation topological_navigation_tester.py
+rosrun topological_navigation topological_navigation_tester_supplementary.py
 ```
+
+To run the testes from an installed version of topological_navigation do:
+
+```
+roslaunch topological_navigation navigation_scenarios.test
+```
+
+and 
+
+```
+rosrun topological_navigation topological_navigation_tester_critical.py
+```
+
+for the critical tests or
+
+```
+rosrun topological_navigation topological_navigation_tester_supplementary.py
+```
+
+for the supplementary tests to test parameter sets.
 
 This will start all the tests and report the result to the terminal and a log file.
 

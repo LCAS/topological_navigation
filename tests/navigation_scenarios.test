@@ -27,7 +27,7 @@
   </node>
 
   <group unless="$(arg robot)">
-    <test time-limit="1800.0" test-name="topological_navigation_tester" pkg="topological_navigation" type="topological_navigation_tester.py" />
+    <test time-limit="1800.0" test-name="topological_navigation_tester" pkg="topological_navigation" type="topological_navigation_tester_critical.py" />
   </group>
 
 </launch>

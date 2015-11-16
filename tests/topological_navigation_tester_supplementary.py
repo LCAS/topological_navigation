@@ -28,11 +28,6 @@ class TestTopologicalNavigation(unittest.TestCase):
             self.assertTrue(False)
         return res
 
-    def test_static_l_shaped_corridor_2m(self):
-        res = self._run(self._map_names[0])
-        rospy.loginfo(res)
-        self.assertTrue(res.nav_success)
-
     def test_static_facing_wall_1cm_distance_0_degrees_goal_behind(self):
         res = self._run(self._map_names[1])
         rospy.loginfo(res)

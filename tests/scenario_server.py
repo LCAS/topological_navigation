@@ -57,7 +57,7 @@ class ScenarioServer(object):
         rospy.loginfo("All done")
 
     def _insert_maps(self):
-        map_dir = get_pkg_subdir("strands_morse", "mba", required=False) + "/maps"
+        map_dir = rospy.get_param("~map_dir", "")
         y = YamlMapLoader()
         y.insert_maps(y.read_maps(map_dir))
 

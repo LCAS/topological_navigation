@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="robot" default="false"/>
+  <arg name="map_dir" default="$(find strands_morse)/mba/maps"/>
 
   <group unless="$(arg robot)">
     <include file="$(find mongodb_store)/launch/mongodb_store.launch">
@@ -24,6 +25,7 @@
 
   <node name="scenario_server" type="scenario_server.py" pkg="topological_navigation" output="screen">
     <param name="robot" type="bool" value="$(arg robot)"/>
+    <param name="map_dir" type="string" value="$(arg map_dir)"/>
   </node>
 
   <group unless="$(arg robot)">

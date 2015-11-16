@@ -1,7 +1,8 @@
 <launch>
 
   <arg name="robot" default="false"/>
-  <arg name="map_dir" default="$(find strands_morse)/mba/maps"/>
+  <arg name="map_dir" default="" if="$(arg robot)"/>
+  <arg name="map_dir" default="$(find strands_morse)/mba/maps" unless="$(arg robot)"/>
 
   <group unless="$(arg robot)">
     <include file="$(find mongodb_store)/launch/mongodb_store.launch">

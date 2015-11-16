@@ -58,6 +58,7 @@ class ScenarioServer(object):
         rospy.loginfo("Inserting maps into datacentre...")
         if map_dir == "":
             rospy.logwarn("No 'map_dir' given. Will not insert maps into datacentre and assume they are present already.")
+            return
         y = YamlMapLoader()
         y.insert_maps(y.read_maps(map_dir))
         rospy.loginfo("... done")

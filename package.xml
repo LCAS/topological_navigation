@@ -39,14 +39,7 @@
   <run_depend>visualization_msgs</run_depend>
   <run_depend>monitored_navigation</run_depend>
   <run_depend>dwa_local_planner</run_depend>
-  <run_depend>fremenserver</run_depend>
-
-  <test_depend>rosunit</test_depend>
-  <test_depend>rostest</test_depend>
-  <test_depend>roslib</test_depend>
-  <test_depend>std_srvs</test_depend>
-  <test_depend>strands_morse</test_depend>
-  <test_depend>tf</test_depend>
+  <run_depend>fremenserver</run_depend>  
 
 
   <!-- The export tag contains other, unspecified, tags -->

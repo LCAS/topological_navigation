@@ -130,6 +130,7 @@ include_directories(
    scripts/travel_time_estimator.py
    scripts/execute_policy_server.py
    scripts/topological_prediction.py
+   scripts/get_simple_policy.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
@@ -138,10 +139,10 @@ install(DIRECTORY launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-#install(DIRECTORY tests
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#   USE_SOURCE_PERMISSIONS
-#)
+install(DIRECTORY tests
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+   USE_SOURCE_PERMISSIONS
+)
 
 
 

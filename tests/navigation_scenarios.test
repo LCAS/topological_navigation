@@ -33,4 +33,8 @@
     <test time-limit="1800.0" test-name="topological_navigation_tester" pkg="topological_navigation" type="topological_navigation_tester_critical.py" />
   </group>
 
+  <group if="$(arg robot)">
+    <node name="navigation_test_joypad_control" type="navigation_test_joypad_control.py" pkg="topological_navigation"/>
+  </group>
+
 </launch>

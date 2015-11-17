@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.38 (2015-11-17)
+-------------------
 * Extending the load yaml map functionality. Now based on a class in topological navigation to prevent circular test dependencies.
 * Revert "Adding first version of topological test scenarios"
 * Extending the load yaml map functionality. Now based on a class in topological navigation to prevent circular test dependencies.

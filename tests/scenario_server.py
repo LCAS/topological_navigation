@@ -146,7 +146,7 @@ class ScenarioServer(object):
 
         while not rospy.is_shutdown():
             sub = rospy.Subscriber("/robot_pose", Pose, self.robot_start_dist)
-            rospy.loginfo("+++ Please confirm correct positioning with A button on joypad: distance %.2fm %.2frad +++" %(self._distances[0], self._distances[1]))
+            rospy.loginfo("+++ Please confirm correct positioning with A button on joypad: distance %.2fm %.2fdeg +++" %(self._distances[0], self._distances[1]))
             if self._robot_start_node != rospy.wait_for_message("/current_node", String).data:
                 self.reset_pose()
                 return

@@ -34,7 +34,7 @@
   </group>
 
   <group if="$(arg robot)">
-    <node name="navigation_test_joypad_control" type="navigation_test_joypad_control.py" pkg="topological_navigation"/>
+    <node name="navigation_test_joypad_control" type="navigation_test_joypad_control.py" pkg="topological_navigation" output="screen"/>
   </group>
 
 </launch>

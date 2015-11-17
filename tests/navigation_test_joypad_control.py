@@ -14,14 +14,14 @@ class JoyPadControl(object):
     def __init__(self, name):
         rospy.loginfo("Starting %s ..." % name)
         self.action = self._start
-        rospy.Subscriber("/teleop_joystick/action_buttons", action_buttons, self.callback)
+        rospy.Subscriber("/teleop_joystick/action_buttons", action_buttons, self.callback, queue_size=1)
         rospy.loginfo("... done")
 
     def callback(self, msg):
-        if msg.B:
+        if msg.A:
             self.action = self._start if self.action == self._reset else self._reset
-            rospy.loginfo("+++ Current action '%s'. Press 'A' to confirm or 'B' to toggle. +++")
-        elif msg.A:
+            rospy.loginfo("+++ Current action '%s'. Press 'B' to confirm or 'A' to toggle. +++" % self.action)
+        elif msg.B:
             if self.action == self._start:
                 try:
                     s = rospy.ServiceProxy("/scenario_server/start", RunTopoNavTestScenario)

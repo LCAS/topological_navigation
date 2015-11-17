@@ -127,7 +127,7 @@ class ScenarioServer(object):
         self._distances[0] = self.get_distance_travelled([msg, self._robot_start_pose.pose])[0]
         q1 = (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
         q2 = (self._robot_start_pose.pose.orientation.x, self._robot_start_pose.pose.orientation.y, self._robot_start_pose.pose.orientation.z, self._robot_start_pose.pose.orientation.w)
-        self._distances[1] = euler_from_quaternion(q1)[2] - euler_from_quaternion(q2)[2]
+        self._distances[1] = (euler_from_quaternion(q1)[2] - euler_from_quaternion(q2)[2]) * 180/np.pi
 
     def reset_pose_robot(self):
         rospy.loginfo("Enabling freerun ...")
@@ -155,6 +155,8 @@ class ScenarioServer(object):
                     break
             except rospy.ROSException:
                 pass
+        sub.unregister()
+        sub = None
         rospy.loginfo("+++ Position confirmed +++")
 
         rospy.loginfo("Enabling motors, resetting motor stop and barrier stopped ...")
@@ -231,7 +233,7 @@ class ScenarioServer(object):
 
         self._robot_poses = []
         grace_res = False
-        rospy.Subscriber("/robot_pose", Pose, self.robot_callback)
+        sub = rospy.Subscriber("/robot_pose", Pose, self.robot_callback)
         rospy.loginfo("Sending goal to policy execution ...")
         self.client.send_goal(ExecutePolicyModeGoal(route=self._policy.route))
         t = time.time()
@@ -245,6 +247,8 @@ class ScenarioServer(object):
             rospy.loginfo("Attemting graceful death ...")
             grace_res = self.graceful_fail()
             rospy.loginfo("... dead")
+        sub.unregister()
+        sub = None
         distance = self.get_distance_travelled(self._robot_poses)
         rospy.loginfo("... test done")
         return RunTopoNavTestScenarioResponse(

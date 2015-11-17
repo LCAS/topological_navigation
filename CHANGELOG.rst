@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.38 (2015-11-17)
+-------------------
 * Updating readme
 * Correcting output
 * Changing to degrees and unregeistering robot_pose callback when not needed.

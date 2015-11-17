@@ -86,14 +86,14 @@ Coming soon
 The scenario server can also be used without the unit test file for tests on the real robot. Running
 
 ```
-roslaunch topological_navigation navigation_scenarios.test robot:=true
+roslaunch topological_navigation navigation_scenarios.test robot:=true map_dir:="path_to_topologicalmaps"
 ```
 
-will start only the scneario server and the simple policy generation. This assumes that everything on the robot, up to topological navigation, is running. It also assumes that the maps you want to use for testing are already inserted into the datacentre. The scneario server then offers 3 simple services:
+will start only the scneario server, the simple policy generation, and the joypad control. This assumes that everything on the robot, up to topological navigation, is running. The `map_dir` argument specifies a directory which holds the topological maps that you want to use for testing. If this is given, the maps will automatically inserted into the datacentre. If the maps have been inserted previously, the server will print a warning and skip the insertion. If the `map_dir` argument is omitted, no maps are inserted. The scneario server then offers 3 simple services:
 
-* `/scneario_server/load` expects a string which is the name of the topological map you want to test. Keep in mind that this has to have the node `Start` and `End`.
-* `/scenario_server/reset` is an empty service and is called to reset the data recording the the robot position. The robot position however cannot as easily be changed in real life as it can be in simulation, hence the robot has to be pushed to the starting node and then confirmed via a button press on the joypad. The reasoning behind having to push the robot is that the starting position might not be easily reachable via move_base. **Not implemented yet for the real robot**
-* `\scneario_server/start` starts the poslicy execution. returns
+* `/scneario_server/load <map_name>` expects a string which is the name of the topological map you want to test. Keep in mind that this has to have the node `Start` and `End`.
+* `/scenario_server/reset` is an empty service and is called to reset the data recording and the robot position. The robot position, however, cannot as easily be changed in real life as it can be in simulation, hence the robot has to be pushed to the starting node and then confirmed via the `A` button on the joypad. The reasoning behind having to push the robot is that the starting position might not be easily reachable via `move_base`. The server will print `+++ Please push the robot to 'Start' +++` where `Start` is the name of the starting node, until the node is reached. Once the node is reached, the server will print `+++ Please confirm correct positioning with A button on joypad: distance 0.65m 180.06deg +++` where distance represents the distance of the current `/robot_pose` to the metric coordinates of the node. In simulation this will just teleport the robot to the correct node.
+* `/scneario_server/start` starts the policy execution. Returns
 
  ```
 bool nav_success
@@ -104,4 +104,24 @@ float64 mean_speed
 float64 distance_travelled
 float64 travel_time
  ```
+
+**Joypad control**
+
+For convenience, a joypad control of the `reset` and `start` service is provided. The `load` service still has to be called manually to tell the server which map to use. The joypad control then offers an easy way to interact with the scenario server during the tests:
+
+* `A`: Toggle between `start` and `reset`.
+* `B`: Confirm current selection.
+
+If in doubt, press `A` and look for the output on the terminal.
+
+**Creating Topological maps for testing**
+
+The topological map used for each test has to be a different one and the nodes have to conform to a specific naming scheme. By default, the start node has to be called `Start` and the goal has to be called `End`. This can be changed in `topologcial_navigation/tests/conf/scenario_server.yaml`. The easiest way to create these maps is:
+
+1. Start topological navigation with `roslaunch topological_navigation topologocal_navigation_empty_map.launch map:=<map_name>` where `map_name` will be the name of your new map and cannot be the name of an existing one.
+1. Drive the robot to the positions of the nodes you want to create and use the `add_rm_node` interactive marker in rviz to create a new node.
+1. Use the interactive `edges` marker in rviz to delete unwanted edges.
+1. Rename the start and end node to `Start` and `End` using `rosrun topological_utils rename_node <old_name> <new_name> <map_name>`
+1. This map can now be loaded with `/scneario_server/load <map_name>`
+
 

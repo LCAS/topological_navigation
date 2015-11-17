@@ -2,6 +2,69 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Updating readme
+* Correcting output
+* Changing to degrees and unregeistering robot_pose callback when not needed.
+* Bugfix and adding output to screen for new control
+* Adding joypad control
+* Adding displaying of the distance in meters and radians to the actual position in the tha map after reaching the node.
+* fixing copy and paste error
+* Calli8ng services to enable freerun and reenable motors in case of bumper hit or barrier stop.
+* Fixing faulty wait for message for button press.
+* Adding missing return and using if and unless in map_dir arg due to roslaunch bugs/features
+* Inserting maps if map_dir is given
+* Making map directory for topological maps a parameter.
+* Adding robot specific reset function.
+* Dividing tests into critical and supplementary. Only critical tests are run on jenkins and supplementary tests can be run to test navigation parameters. See README.
+* Adding install targets for test and get_simple_policy script.
+  Adding correct description of how to run tests in README
+* Undoing installing tests directory. This needs a little more thought to make it work.
+* Adding a readme for the navigation tests
+* Installing test directory
+* Adding argument robot to test launch file to be able to run only the essentials on the robot.
+* Only try to load maps from strands_morse if run in simulation. strands_morse might not be installed on the robot.
+* Giving tests speaking names
+* Exposing retries parameter for topological navigation via launch files.
+* Exposing execute_policy_retries via launch files
+* Removing unnecessary dependencies and adding some prints.
+* Adds the first version of the simulation only unit-test for topological_navigation/move_base.
+* Extending the load yaml map functionality. Now based on a class in topological navigation to prevent circular test dependencies.
+* Removing annoying print statement
+* Revert "Adding first version of topological test scenarios"
+* Adding install targets for test and get_simple_policy script.
+  Adding correct description of how to run tests in README
+* Undoing installing tests directory. This needs a little more thought to make it work.
+* Adding a readme for the navigation tests
+* Installing test directory
+* Adding argument robot to test launch file to be able to run only the essentials on the robot.
+* Only try to load maps from strands_morse if run in simulation. strands_morse might not be installed on the robot.
+* Giving tests speaking names
+* Exposing retries parameter for topological navigation via launch files.
+* Exposing execute_policy_retries via launch files
+* Removing unnecessary dependencies and adding some prints.
+* Adds the first version of the simulation only unit-test for topological_navigation/move_base.
+* Extending the load yaml map functionality. Now based on a class in topological navigation to prevent circular test dependencies.
+* Removing annoying print statement
+* this should fix the race condition permanently
+* waiting for reconfigure services for 50 seconds before continuing. should avoid race condition
+* making number of tries a parameter
+* how embarrassing ...
+* avoiding race condition in execute policy server by waiting for topological localisation before publitising the action server
+* solving silly race condition
+* adding simple policy generation based on A*
+* now you can launch topological navigation with an empty map (meaning no nodes)
+* safety commit
+* adding services for adding and deleting nodes
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into move-base-testing
+* creating move base testing branch
+* Various fixes and code cleaning in topological map visualiser
+* now the topological map name param is set by the map manager and not by navigation
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into map-edition-fixes
+* minor fixes
+* Contributors: Christian Dondrup, Jaime Pulido Fentanes, Nick Hawes
+
 0.0.37 (2015-08-26)
 -------------------
 * Fixed bug in dummy map where origin and ChargingPoint names were mixed up.

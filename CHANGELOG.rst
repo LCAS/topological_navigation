@@ -2,6 +2,20 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Extending the load yaml map functionality. Now based on a class in topological navigation to prevent circular test dependencies.
+* Revert "Adding first version of topological test scenarios"
+* Extending the load yaml map functionality. Now based on a class in topological navigation to prevent circular test dependencies.
+* now you can launch topological navigation with an empty map (meaning no nodes)
+* removing edge analysis
+* Removed unnecessary import
+* safety commit
+* creating move base testing branch
+* fixes on map exporting scripts
+* minor fixes
+* Contributors: Christian Dondrup, Jaime Pulido Fentanes, Nick Hawes
+
 0.0.37 (2015-08-26)
 -------------------
 * Fixed bug in dummy map where origin and ChargingPoint names were mixed up.

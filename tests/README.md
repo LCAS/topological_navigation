@@ -122,6 +122,6 @@ The topological map used for each test has to be a different one and the nodes h
 1. Drive the robot to the positions of the nodes you want to create and use the `add_rm_node` interactive marker in rviz to create a new node.
 1. Use the interactive `edges` marker in rviz to delete unwanted edges.
 1. Rename the start and end node to `Start` and `End` using `rosrun topological_utils rename_node <old_name> <new_name> <map_name>`
-1. This map can now be loaded with `/scneario_server/load <map_name>`
+1. This map can now be loaded with `/scenario_server/load <map_name>`
 
 

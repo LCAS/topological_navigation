@@ -9,7 +9,7 @@ PKG = 'topological_navigation'
 
 
 class TestTopologicalNavigation(unittest.TestCase):
-    _map_names = ['mb_test0', 'mb_test1', 'mb_test2', 'mb_test3', 'mb_test4', 'mb_test5', 'mb_test6', 'mb_test7', 'mb_test8', 'mb_test9', 'mb_test10']
+    _map_name = 'mb_test'
 
     def __init__(self, *args):
         super(self.__class__, self).__init__(*args)
@@ -29,7 +29,7 @@ class TestTopologicalNavigation(unittest.TestCase):
         return res
 
     def test_static_l_shaped_corridor_2m(self):
-        res = self._run(self._map_names[0])
+        res = self._run(self._map_name+str(0))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 

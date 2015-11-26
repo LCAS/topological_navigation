@@ -216,7 +216,6 @@ class TopologicalNavServer(object):
             o_node = get_node(self.lnodes, self.closest_node)
             g_node = get_node(self.lnodes, target)
             
-            
             # Everything is Awesome!!!
             # Target and Origin are Different and none of them is None
             if (g_node is not None) and (o_node is not None) and (g_node.name != o_node.name) :
@@ -253,6 +252,8 @@ class TopologicalNavServer(object):
                         result, inc = self.monitored_navigation(g_node.pose, action_server)
                         rospy.loginfo("going to waypoint in node resulted in")
                         print result
+                        if not result:
+                            inc=1
                 else:
                     rospy.loginfo("Target or Origin Nodes were not found on Map")
                     self.cancelled = True

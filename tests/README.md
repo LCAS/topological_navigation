@@ -80,10 +80,12 @@ The topological maps used for the tests presented here can be found in `strands_
  * `mb_test10`: Traverse a 1m wide l-shaped corridor.
  * `mb_test11`: Wheelchair blocking an intermediate node in open space.
  * `mb_test12`: Wheelchair blocking final node in open space.
- * `mb_test13`: Non-SLAM map chairs on one side of 2m wide l-shaped corridor.
- * `mb_test14`: Non-SLAM map wheelchairs on one side of 2m wide l-shaped corridor.
- * `mb_test15`: Non-SLAM map wheelchairs block 2m wide l-shaped corridor after intermediate waypoint.
- * `mb_test16`: Non-SLAM map static humans block 2m wide l-shaped corridor after intermediate waypoint.
+ * `mb_test13`: Human blocking an intermediate node in open space.
+ * `mb_test14`: Human blocking final node in open space.
+ * `mb_test15`: Non-SLAM map chairs on one side of 2m wide l-shaped corridor.
+ * `mb_test16`: Non-SLAM map wheelchairs on one side of 2m wide l-shaped corridor.
+ * `mb_test17`: Non-SLAM map wheelchairs block 2m wide l-shaped corridor after intermediate waypoint.
+ * `mb_test18`: Non-SLAM map static humans block 2m wide l-shaped corridor after intermediate waypoint.
 
 **Dynamic**
 

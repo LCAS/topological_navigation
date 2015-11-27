@@ -28,7 +28,8 @@ from scitos_teleop.msg import action_buttons
 from scitos_msgs.srv import EnableMotors, ResetBarrierStop, ResetMotorStop
 import subprocess
 import os
-from threading import Thread
+from threading import Thread, Timer
+import thread
 
 HOST = 'localhost'
 PORT = 4000
@@ -295,25 +296,48 @@ class ScenarioServer(object):
             client.cancel_all_goals()
         return res
 
-    def play_human_bag(self, bag):
+    def _user_input(self, prompt='>', timeout=10.):
+        timer = Timer(timeout, thread.interrupt_main)
+        astring = None
         try:
-            bag_file = find_resource(PKG, bag)[0]
-        except IndexError:
-            rospy.logwarn("No bag for human movement found, assuming static test.")
-            return
+            timer.start()
+            astring = raw_input(prompt)
+        except KeyboardInterrupt:
+            pass
+        timer.cancel()
+        return astring
 
-        rospy.loginfo("Found bag file: '%s'. Spawning human.")
-        pass # Spawn human somewhere
-        rospy.loginfo("Starting playback of human movement ...")
+    def record_human_bag(self):
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        prompt = "Would you like to record a rosbag now? [y/n] "
+        inp = self._user_input(prompt, 10.)
+        print inp
+
+    def play(self, bag_file):
         with open(os.devnull, 'w') as FNULL:
             p = subprocess.Popen("rosbag play "+bag_file, stdin=subprocess.PIPE, shell=True, stdout=FNULL)
             while p.poll() == None:
                 rospy.sleep(1)
-        rospy.loginfo(" ... playback of human movement finished")
+
+    def play_human_bag(self, bag):
+        try:
+            bag_file = find_resource(PKG, bag)[0]
+        except IndexError:
+            rospy.logwarn("No bag for human movement found.")
+#            self.record_human_bag()
+            return
+
+        human_thread = Thread(target=self.play, args=(bag_file,))
+
+        rospy.loginfo("Found bag file: '%s'. Spawning human.")
+        pass # Spawn human somewhere
+        rospy.loginfo("Starting playback of human movement ...")
+        human_thread.start()
+        return human_thread
 
     def start(self, req):
         rospy.loginfo("Starting test ...")
-        human_thread = Thread(target=self.play_human_bag, args=(self.pointset+".bag",))
+
         if not self._loaded:
             rospy.logfatal("No scenario loaded!")
             return RunTopoNavTestScenarioResponse(False, False)
@@ -323,8 +347,8 @@ class ScenarioServer(object):
         sub = rospy.Subscriber("/robot_pose", Pose, self.robot_callback)
         rospy.loginfo("Sending goal to policy execution ...")
         print self._policy.route
+        human_thread = self.play_human_bag(self.pointset+".bag")
         self.client.send_goal(ExecutePolicyModeGoal(route=self._policy.route))
-        human_thread.start()
         t = time.time()
         rospy.loginfo("... waiting for result ...")
         print self._timeout

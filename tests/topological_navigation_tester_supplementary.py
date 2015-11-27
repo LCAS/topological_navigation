@@ -78,33 +78,43 @@ class TestTopologicalNavigation(unittest.TestCase):
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test_static_obstacle_on_intermediate_point(self):
+    def test_static_wheelchair_on_intermediate_point(self):
         res = self._run(self._map_name+str(11))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test_static_obstacle_on_end_point(self):
+    def test_static_wheelchair_on_end_point(self):
         res = self._run(self._map_name+str(12))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test_static_chairs_on_one_side_of_corridor(self):
+    def test_static_human_on_intermediate_point(self):
         res = self._run(self._map_name+str(13))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test_static_wheelchairs_on_one_side_of_corridor(self):
+    def test_static_human_on_end_point(self):
         res = self._run(self._map_name+str(14))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test_static_corridor_blocked_by_wheelchairs(self):
+    def test_static_chairs_on_one_side_of_corridor(self):
         res = self._run(self._map_name+str(15))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
-    def test_static_corridor_blocked_by_humans(self):
+    def test_static_wheelchairs_on_one_side_of_corridor(self):
         res = self._run(self._map_name+str(16))
+        rospy.loginfo(res)
+        self.assertTrue(res.nav_success)
+
+    def test_static_corridor_blocked_by_wheelchairs(self):
+        res = self._run(self._map_name+str(17))
+        rospy.loginfo(res)
+        self.assertTrue(res.nav_success)
+
+    def test_static_corridor_blocked_by_humans(self):
+        res = self._run(self._map_name+str(18))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 

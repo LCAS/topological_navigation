@@ -12,7 +12,7 @@ from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import Header, String
 import yaml
 import numpy as np
-from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, PoseStamped, Point
 import actionlib
 import actionlib_msgs
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
@@ -22,13 +22,14 @@ from roslib.packages import find_resource
 import time
 from strands_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
 from tf import TransformListener
-from tf.transformations import euler_from_quaternion
+import tf.transformations as trans
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
 from scitos_teleop.msg import action_buttons
 from scitos_msgs.srv import EnableMotors, ResetBarrierStop, ResetMotorStop
 
 HOST = 'localhost'
 PORT = 4000
+PKG = "topological_navigation"
 
 
 class ScenarioServer(object):
@@ -39,19 +40,21 @@ class ScenarioServer(object):
 
     def __init__(self, name):
         rospy.loginfo("Starting scenario server")
-        robot = rospy.get_param("~robot", False)
+        self.robot = rospy.get_param("~robot", False)
         conf_file = find_resource("topological_navigation", "scenario_server.yaml")[0]
         rospy.loginfo("Reading config file: %s ..." % conf_file)
         with open(conf_file,'r') as f:
             conf = yaml.load(f)
         self._robot_start_node = conf["robot_start_node"]
         self._robot_goal_node = conf["robot_goal_node"]
+        self._obstacle_node_prefix = conf["obstacle_node_prefix"]
+        self._obstacle_types = conf["obstacle_types"]
         self._timeout = conf["success_metrics"]["nav_timeout"]
         rospy.loginfo(" ... done")
         self._insert_maps()
         self.tf = TransformListener()
         rospy.Service("~load", LoadTopoNavTestScenario, self.load_scenario)
-        self.reset_pose = self.reset_pose_robot if robot else self.reset_pose_sim
+        self.reset_pose = self.reset_pose_robot if self.robot else self.reset_pose_sim
         rospy.Service("~reset", Empty, self.reset)
         rospy.Service("~start", RunTopoNavTestScenario, self.start)
         rospy.loginfo("All done")
@@ -124,10 +127,7 @@ class ScenarioServer(object):
         new_pose.pose.orientation.w, new_pose.pose.orientation.x, new_pose.pose.orientation.y, new_pose.pose.orientation.z)
 
     def robot_start_dist(self, msg):
-        self._distances[0] = self.get_distance_travelled([msg, self._robot_start_pose.pose])[0]
-        q1 = (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
-        q2 = (self._robot_start_pose.pose.orientation.x, self._robot_start_pose.pose.orientation.y, self._robot_start_pose.pose.orientation.z, self._robot_start_pose.pose.orientation.w)
-        self._distances[1] = (euler_from_quaternion(q1)[2] - euler_from_quaternion(q2)[2]) * 180/np.pi
+        self._distances = self._get_pose_distance(msg, self._robot_start_pose.pose)
 
     def reset_pose_robot(self):
         rospy.loginfo("Enabling freerun ...")
@@ -174,37 +174,94 @@ class ScenarioServer(object):
             rospy.logwarn(e)
         rospy.loginfo("... enabled and reset")
 
+    def _send_socket(self, sock, agent, pose):
+        sock.send(
+            self._get_set_object_pose_command(
+                agent,
+                self._id,
+                pose
+            )
+        )
+        res = sock.recv(4096)
+        self._id += 1
+        if "FAILURE" in res:
+            raise Exception(res)
+
+    def _get_quaternion_distance(self, q1, q2):
+        q1 = (q1.x, q1.y, q1.z, q1.w)
+        q2 = (q2.x, q2.y, q2.z, q2.w)
+        return (trans.euler_from_quaternion(q1)[2] - trans.euler_from_quaternion(q2)[2]) * 180/np.pi
+
+    def _get_euclidean_distance(self, p1, p2):
+        return np.sqrt(np.power(p2.x - p1.x, 2) + np.power(p2.y - p1.y, 2))
+
+    def _get_pose_distance(self, p1, p2):
+        e = self._get_euclidean_distance(p1.position, p2.position)
+        q = self._get_quaternion_distance(p1.orientation, p2.orientation)
+        return e, q
+
     def reset_pose_sim(self):
         sock = self._connect_port(PORT)
         if not sock:
             raise Exception("Could not create socket connection to morse")
 
-        sock.send(
-            self._get_set_object_pose_command(
-                "robot",
-                self._id,
-                self._robot_start_pose
-            )
+        # Clean up whole scene
+        # Create pose outside of map
+        clear_pose = PoseStamped(
+            header=Header(stamp=rospy.Time.now(), frame_id="/map"),
+            pose=Pose(position=Point(x=20, y=20, z=0.01))
         )
-        self._id += 1
+
+        # Moving obstacles to clear_pose
+        for obstacle in self._obstacle_types:
+            for idx in range(10):
+                self._send_socket(sock, obstacle+str(idx), clear_pose)
+
+        # Setting robot and obstacles to correct position
+        self._send_socket(sock, "robot", self._robot_start_pose)
+
+        if len(self._obstacle_poses) > 0:
+            for idx, d in enumerate(self._obstacle_poses):
+                try:
+                    obstacle = max([x for x in self._obstacle_types if x in d["name"]], key=len)
+                except ValueError:
+                    rospy.logwarn("No obstacle specified for obstacle node '%s', will use '%s'." % (d["name"], self._obstacle_types[0]))
+                    obstacle = self._obstacle_types[0]
+                rospy.loginfo("Adding obstacle %s%i" % (obstacle,idx))
+                self._send_socket(sock, obstacle+str(idx), d["pose"])
+        else:
+            rospy.logwarn("No nodes starting with '%s' found in map. Assuming test without obstacles." % self._obstacle_node_prefix)
 
         sock.close()
+
+        while not rospy.is_shutdown():
+            rpose = rospy.wait_for_message("/robot_pose", Pose)
+            rospy.loginfo("Setting initial amcl pose ...")
+            self._init_nav(self._robot_start_pose)
+            dist = self._get_pose_distance(rpose, self._robot_start_pose.pose)
+            if dist[0] < 0.1 and dist[1] < 10:
+                break
+            rospy.sleep(0.2)
+#            self._robot_start_pose.header.stamp = rospy.Time.now()
+        rospy.loginfo(" ... pose set.")
 
     def reset(self, req):
         if not self._loaded:
             rospy.logfatal("No scenario loaded!")
             return EmptyResponse()
 
+        self.client.cancel_all_goals()
+
         rospy.loginfo("Resetting robot position...")
 
         self.reset_pose()
 
-        self._init_nav(self._robot_start_pose)
         self._clear_costmaps()
         rospy.loginfo("... reset successful")
         return EmptyResponse()
 
     def graceful_fail(self):
+        res = False
         closest_node = rospy.wait_for_message("/closest_node", String).data
         rospy.loginfo("Closest node: %s" % closest_node)
         if closest_node != self._robot_start_node:
@@ -214,7 +271,8 @@ class ScenarioServer(object):
             policy = s(self._robot_start_node)
             self.client.send_goal(ExecutePolicyModeGoal(route=policy.route))
             self.client.wait_for_result(timeout=rospy.Duration(self._timeout))
-            return self.client.get_state() == actionlib_msgs.msg.GoalStatus.SUCCEEDED
+            res = self.client.get_state() == actionlib_msgs.msg.GoalStatus.SUCCEEDED
+            self.client.cancel_all_goals()
         else:
             rospy.loginfo("Using topo nav from %s to %s" % (closest_node, self._robot_start_node))
             rospy.loginfo("Starting topo nav client...")
@@ -223,10 +281,13 @@ class ScenarioServer(object):
             rospy.loginfo(" ... done")
             client.send_goal(GotoNodeGoal(target=self._robot_start_node))
             client.wait_for_result(timeout=rospy.Duration(self._timeout))
-            return client.get_state() == actionlib_msgs.msg.GoalStatus.SUCCEEDED
+            res = client.get_state() == actionlib_msgs.msg.GoalStatus.SUCCEEDED
+            client.cancel_all_goals()
+        return res
 
     def start(self, req):
         rospy.loginfo("Starting test ...")
+
         if not self._loaded:
             rospy.logfatal("No scenario loaded!")
             return RunTopoNavTestScenarioResponse(False, False)
@@ -235,16 +296,18 @@ class ScenarioServer(object):
         grace_res = False
         sub = rospy.Subscriber("/robot_pose", Pose, self.robot_callback)
         rospy.loginfo("Sending goal to policy execution ...")
+        print self._policy.route
         self.client.send_goal(ExecutePolicyModeGoal(route=self._policy.route))
         t = time.time()
         rospy.loginfo("... waiting for result ...")
+        print self._timeout
         self.client.wait_for_result(timeout=rospy.Duration(self._timeout))
         elapsed = time.time() - t
         res = self.client.get_state() == actionlib_msgs.msg.GoalStatus.SUCCEEDED
         rospy.loginfo("... policy execution finished")
         self.client.cancel_all_goals()
         if not res:
-            rospy.loginfo("Attemting graceful death ...")
+            rospy.loginfo("Attempting graceful death ...")
             grace_res = self.graceful_fail()
             rospy.loginfo("... dead")
         sub.unregister()
@@ -264,10 +327,7 @@ class ScenarioServer(object):
     def get_distance_travelled(self, poses):
         distance = 0.0
         for idx in range(len(poses))[1:]:
-            distance += np.sqrt(
-                [((poses[idx].position.x - poses[idx-1].position.x)**2) \
-                + ((poses[idx].position.y - poses[idx-1].position.y)**2)]
-            )
+            distance += self._get_euclidean_distance(poses[idx].position, poses[idx-1].position)
         return distance
 
     def load_scenario(self, req):
@@ -276,16 +336,27 @@ class ScenarioServer(object):
         s.wait_for_service()
         topo_map = s(GetTopologicalMapRequest(pointset=req.pointset)).map
 
+        self.pointset = req.pointset
+
         self._robot_start_pose = None
+        self._obstacle_poses = []
         found_end_node = False
         for node in topo_map.nodes:
             if node.name == self._robot_start_node:
                 self._robot_start_pose = PoseStamped(
-                        header=Header(stamp=rospy.Time.now(), frame_id="/map"),
-                        pose=node.pose
+                    header=Header(stamp=rospy.Time.now(), frame_id="/map"),
+                    pose=node.pose
                 )
             elif node.name == self._robot_goal_node:
                 found_end_node = True
+            elif node.name.startswith(self._obstacle_node_prefix):
+                self._obstacle_poses.append({
+                    "name": node.name.lower(),
+                    "pose": PoseStamped(
+                        header=Header(stamp=rospy.Time.now(), frame_id="/map"),
+                        pose=node.pose
+                    )
+                })
 
         if self._robot_start_pose == None:
             raise Exception("Topological map '%s' does not contain start node '%s'." % (req.pointset, self._robot_start_node))

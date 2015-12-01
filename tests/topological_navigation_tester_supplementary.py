@@ -9,7 +9,7 @@ PKG = 'topological_navigation'
 
 
 class TestTopologicalNavigation(unittest.TestCase):
-    _map_names = ['mb_test0', 'mb_test1', 'mb_test2', 'mb_test3', 'mb_test4', 'mb_test5', 'mb_test6', 'mb_test7', 'mb_test8', 'mb_test9', 'mb_test10']
+    _map_name = 'mb_test'
 
     def __init__(self, *args):
         super(self.__class__, self).__init__(*args)
@@ -29,54 +29,94 @@ class TestTopologicalNavigation(unittest.TestCase):
         return res
 
     def test_static_facing_wall_1cm_distance_0_degrees_goal_behind(self):
-        res = self._run(self._map_names[1])
+        res = self._run(self._map_name+str(1))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_facing_wall_1cm_distance_minus_45_degrees_goal_behind(self):
-        res = self._run(self._map_names[2])
+        res = self._run(self._map_name+str(2))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_facing_wall_1cm_distance_plus_45_degrees_goal_behind(self):
-        res = self._run(self._map_names[3])
+        res = self._run(self._map_name+str(3))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_155cm_corridor_with_55cm_chairs_on_one_side(self):
-        res = self._run(self._map_names[4])
+        res = self._run(self._map_name+str(4))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_210cm_corridor_with_55cm_chairs_on_both_sides(self):
-        res = self._run(self._map_names[5])
+        res = self._run(self._map_name+str(5))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_80cm_wide_door(self):
-        res = self._run(self._map_names[6])
+        res = self._run(self._map_name+str(6))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_70cm_wide_door(self):
-        res = self._run(self._map_names[7])
+        res = self._run(self._map_name+str(7))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_trapped_in_corner(self):
-        res = self._run(self._map_names[8])
+        res = self._run(self._map_name+str(8))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_1m_striaght_corridor(self):
-        res = self._run(self._map_names[9])
+        res = self._run(self._map_name+str(9))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
 
     def test_static_1m_l_shaped_corridor(self):
-        res = self._run(self._map_names[10])
+        res = self._run(self._map_name+str(10))
         rospy.loginfo(res)
         self.assertTrue(res.nav_success)
+
+    def test_static_wheelchair_on_intermediate_point(self):
+        res = self._run(self._map_name+str(11))
+        rospy.loginfo(res)
+        self.assertTrue(res.nav_success)
+
+    def test_static_wheelchair_on_end_point(self):
+        res = self._run(self._map_name+str(12))
+        rospy.loginfo(res)
+        self.assertTrue(res.graceful_fail)  # Cannot reach final node
+
+    def test_static_human_on_intermediate_point(self):
+        res = self._run(self._map_name+str(13))
+        rospy.loginfo(res)
+        self.assertTrue(res.nav_success)
+
+    def test_static_human_on_end_point(self):
+        res = self._run(self._map_name+str(14))
+        rospy.loginfo(res)
+        self.assertTrue(res.graceful_fail)  # Cannot reach final node
+
+    def test_static_chairs_on_one_side_of_corridor(self):
+        res = self._run(self._map_name+str(15))
+        rospy.loginfo(res)
+        self.assertTrue(res.nav_success)
+
+    def test_static_wheelchairs_on_one_side_of_corridor(self):
+        res = self._run(self._map_name+str(16))
+        rospy.loginfo(res)
+        self.assertTrue(res.nav_success)
+
+    def test_static_corridor_blocked_by_wheelchairs(self):
+        res = self._run(self._map_name+str(17))
+        rospy.loginfo(res)
+        self.assertTrue(res.graceful_fail) # Cannot reach final node
+
+    def test_static_corridor_blocked_by_humans(self):
+        res = self._run(self._map_name+str(18))
+        rospy.loginfo(res)
+        self.assertTrue(res.graceful_fail) # Cannot reach final node
 
 
 if __name__ == '__main__':

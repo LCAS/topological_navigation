@@ -86,7 +86,7 @@ class TestTopologicalNavigation(unittest.TestCase):
     def test_static_wheelchair_on_end_point(self):
         res = self._run(self._map_name+str(12))
         rospy.loginfo(res)
-        self.assertTrue(res.nav_success)
+        self.assertTrue(res.graceful_fail)  # Cannot reach final node
 
     def test_static_human_on_intermediate_point(self):
         res = self._run(self._map_name+str(13))
@@ -96,7 +96,7 @@ class TestTopologicalNavigation(unittest.TestCase):
     def test_static_human_on_end_point(self):
         res = self._run(self._map_name+str(14))
         rospy.loginfo(res)
-        self.assertTrue(res.nav_success)
+        self.assertTrue(res.graceful_fail)  # Cannot reach final node
 
     def test_static_chairs_on_one_side_of_corridor(self):
         res = self._run(self._map_name+str(15))
@@ -111,12 +111,12 @@ class TestTopologicalNavigation(unittest.TestCase):
     def test_static_corridor_blocked_by_wheelchairs(self):
         res = self._run(self._map_name+str(17))
         rospy.loginfo(res)
-        self.assertTrue(res.nav_success)
+        self.assertTrue(res.graceful_fail) # Cannot reach final node
 
     def test_static_corridor_blocked_by_humans(self):
         res = self._run(self._map_name+str(18))
         rospy.loginfo(res)
-        self.assertTrue(res.nav_success)
+        self.assertTrue(res.graceful_fail) # Cannot reach final node
 
 
 if __name__ == '__main__':

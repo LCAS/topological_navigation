@@ -98,7 +98,8 @@ class PolicyExecutionServer(object):
         #Subscribing to Localisation Topics
         rospy.loginfo("Waiting for Localisation Topics")
         self.current_node = rospy.wait_for_message('/current_node', String)
-        self.closest_node = rospy.wait_for_message('/closest_node', String)
+        self.closest_node = rospy.wait_for_message('/closest_node', String) 	
+
         rospy.loginfo("Subscribing to Localisation Topics")
         rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
         rospy.Subscriber('/current_node', String, self.currentNodeCallback)
@@ -313,13 +314,18 @@ class PolicyExecutionServer(object):
         self.navigation_activated=True
 
         nfails=0            # number of continous failures
-        
+#        print "---------------------------------------------------------"
+#        print "HERE WE GO AGAIN"        
+#        print "---------------------------------------------------------"        
         while keep_executing :
-
+#            print "#####################################################"
+#            print self.current_node,nfails, keep_executing, success
+#            print "#####################################################"
             if self.current_node in route.source and not self.cancelled :
-
+                #print "case A"
                 # If there is an action associated to the current node and action server not preempted or aborted
                 if success :
+                    #print "case A.1"
                     nfails=0
                     nod_ind = route.source.index(self.current_node)
 #                    self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
@@ -336,6 +342,7 @@ class PolicyExecutionServer(object):
                         rospy.loginfo("There is NO edge %s will ABORT policy execution", route.edge_id[nod_ind])
                         #rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
                 else :
+                    #print "case A.2"
                     nfails+=1
                     if nfails < self.n_tries :
                         nod_ind = route.source.index(self.current_node)
@@ -353,16 +360,21 @@ class PolicyExecutionServer(object):
                         keep_executing = False
 
             else :
+                #print "case B"
                 if self.cancelled:
+                    print "case B.1"
+                    nfails+=1
                     # Execution was preempted or aborted
                     success = False
                     keep_executing = False
                     break
                 else :
+                    #print "case B.2"
                     # No action associated with current node
                     #print "%s not in:" %self.current_node 
                     #print route.source
                     if self.current_node == 'none' :
+                        #print "case B.2.1"
                         # if current_node is none then is a failure
                         nfails+=1
                         if nfails < self.n_tries :
@@ -399,14 +411,20 @@ class PolicyExecutionServer(object):
                             success = False
                             keep_executing = False
                     else :
+                        #print "case B.2.2"
                         # Current node not in route so policy execution was successful
                         cl_node = get_node(self.curr_tmap, self.closest_node)                       
                         nfails=0
                         if not cl_node.localise_by_topic:
-                            rospy.loginfo('Do move_base to %s' %self.current_node)
-                            self.current_action = 'move_base'
-                            success=self.navigate_to(self.current_action,self.current_node)
-                            if success :
+                            if nfails < self.n_tries :
+                                rospy.loginfo('Do move_base to %s' %self.current_node)
+                                self.current_action = 'move_base'
+                                success=self.navigate_to(self.current_action,self.current_node)
+                                if success :
+                                    keep_executing = False
+                                else:
+                                    nfails+=1
+                            else:
                                 keep_executing = False
                         else:
                             rospy.loginfo('Policy was successful %s' %self.current_node)
@@ -414,6 +432,7 @@ class PolicyExecutionServer(object):
                             success=True #self.navigate_to(self.current_action,self.current_node)
                             if success :
                                 keep_executing = False
+
             rospy.sleep(rospy.Duration.from_sec(0.1))
         self.navigation_activated = False
         self.current_route = None

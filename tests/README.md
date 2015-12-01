@@ -79,13 +79,13 @@ The topological maps used for the tests presented here can be found in `strands_
  * `mb_test9`: Traverse a 1m wide straight corridor.
  * `mb_test10`: Traverse a 1m wide l-shaped corridor.
  * `mb_test11`: Wheelchair blocking an intermediate node in open space.
- * `mb_test12`: Wheelchair blocking final node in open space.
+ * `mb_test12`: Wheelchair blocking final node in open space. Graceful fail has to be tru to pass this test as the node itself can never be reached precisely.
  * `mb_test13`: Human blocking an intermediate node in open space.
- * `mb_test14`: Human blocking final node in open space.
+ * `mb_test14`: Human blocking final node in open space. Graceful fail has to be tru to pass this test as the node itself can never be reached precisely.
  * `mb_test15`: Non-SLAM map chairs on one side of 2m wide l-shaped corridor.
  * `mb_test16`: Non-SLAM map wheelchairs on one side of 2m wide l-shaped corridor.
- * `mb_test17`: Non-SLAM map wheelchairs block 2m wide l-shaped corridor after intermediate waypoint.
- * `mb_test18`: Non-SLAM map static humans block 2m wide l-shaped corridor after intermediate waypoint.
+ * `mb_test17`: Non-SLAM map wheelchairs block 2m wide l-shaped corridor after intermediate waypoint. Graceful fail has to be tru to pass this test as the node itself can never be reached.
+ * `mb_test18`: Non-SLAM map static humans block 2m wide l-shaped corridor after intermediate waypoint. Graceful fail has to be tru to pass this test as the node itself can never be reached.
 
 **Dynamic**
 
@@ -137,7 +137,7 @@ The topological map used for each test has to be a different one and the nodes h
 
 **Creating scnearios with obstacles that are not in the SLAM map**
 
-For this purpose, there are `Chair`s, `OfficeChair`s, `WheelChair`s, and `StaticHuman`s that can be positioned via topological nodes. Each object has 10 instances so you can only use 10 of any single object. The Objects are positioned according to topological nodes following a naming scheme: `ObstacleStaticHuman1` for example positions a static human model on this node. `Obstacle` is the `obstacle_node_prefix`  defined in the `conf/scneario_server.yaml`, `StaticHuman` is the identifier of the obstacle type (if this omitted, a `Chair` will be used), and `1` is just an arbitrary number to make the node name unique. When creating the topoligocal map, make sure that all edges from and to obstacle nodes are removed. Additionally, the nodes need to define a `localise_by_topic` json string so the robot will never localise itself based on these nodes. In the current simulation, we use the charging topic, because the robot will never charge and hence never localise itself at these nodes and the topic has to exist, otherwise topological navigation fails. Example node:
+For this purpose, there are `Chair`s, `OfficeChair`s, `WheelChair`s, and `StaticHuman`s present in the current test environment that can be positioned via topological nodes. The exact obstacle types are defined in the `conf/scenario_server.yaml` under `obstacle_types`; The names used have to be the variable name of the obstacle in the morse environment. Obstacle types have to be lower case, node names can be camel case to enhance readability. Currently, in the test environment, each object has 10 instances so you can only use 10 of any single object. The Objects are positioned according to topological nodes following a naming scheme: `ObstacleStaticHuman1` for example positions a static human model on this node. `Obstacle` is the `obstacle_node_prefix`  defined in the `conf/scneario_server.yaml`, `StaticHuman` is the identifier of the obstacle type (if this omitted, an arbitrary object will be used), and `1` is just an arbitrary number to make the node name unique. When creating the topoligocal map, make sure that all edges from and to obstacle nodes are removed. Additionally, the nodes need to define a `localise_by_topic` json string so the robot will never localise itself based on these nodes. In the current simulation, we use the charging topic, because the robot will never charge and hence never localise itself at these nodes. We have to use an existing topic otherwise topological navigation fails. Example node:
 
 ```
 - meta:

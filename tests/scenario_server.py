@@ -26,10 +26,6 @@ import tf.transformations as trans
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
 from scitos_teleop.msg import action_buttons
 from scitos_msgs.srv import EnableMotors, ResetBarrierStop, ResetMotorStop
-import subprocess
-import os
-from threading import Thread, Timer
-import thread
 
 HOST = 'localhost'
 PORT = 4000
@@ -41,7 +37,6 @@ class ScenarioServer(object):
     _loaded = False
     _robot_poses = []
     _distances = [0,0]
-    _obstacle_types = ["chair", "officechair", "wheelchair", "statichuman"]
 
     def __init__(self, name):
         rospy.loginfo("Starting scenario server")
@@ -52,8 +47,8 @@ class ScenarioServer(object):
             conf = yaml.load(f)
         self._robot_start_node = conf["robot_start_node"]
         self._robot_goal_node = conf["robot_goal_node"]
-        self._human_start_node = conf["human_start_node"]
         self._obstacle_node_prefix = conf["obstacle_node_prefix"]
+        self._obstacle_types = conf["obstacle_types"]
         self._timeout = conf["success_metrics"]["nav_timeout"]
         rospy.loginfo(" ... done")
         self._insert_maps()
@@ -217,19 +212,13 @@ class ScenarioServer(object):
             pose=Pose(position=Point(x=20, y=20, z=0.01))
         )
 
-        # Moving obstacles and human to clear_pose
+        # Moving obstacles to clear_pose
         for obstacle in self._obstacle_types:
             for idx in range(10):
                 self._send_socket(sock, obstacle+str(idx), clear_pose)
-        self._send_socket(sock, "human", clear_pose) # Human will start falling but this is no problem.
 
-        # Setting robot, human and obstacles to correct position
+        # Setting robot and obstacles to correct position
         self._send_socket(sock, "robot", self._robot_start_pose)
-
-        if self._human_start_pose != None:
-            self._send_socket(sock, "human", self._human_start_pose)
-        else:
-            rospy.logwarn("No node named '%s' found in map. Assuming test without human." % self._human_start_node)
 
         if len(self._obstacle_poses) > 0:
             for idx, d in enumerate(self._obstacle_poses):
@@ -296,45 +285,6 @@ class ScenarioServer(object):
             client.cancel_all_goals()
         return res
 
-    def _user_input(self, prompt='>', timeout=10.):
-        timer = Timer(timeout, thread.interrupt_main)
-        astring = None
-        try:
-            timer.start()
-            astring = raw_input(prompt)
-        except KeyboardInterrupt:
-            pass
-        timer.cancel()
-        return astring
-
-    def record_human_bag(self):
-        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        prompt = "Would you like to record a rosbag now? [y/n] "
-        inp = self._user_input(prompt, 10.)
-        print inp
-
-    def play(self, bag_file):
-        with open(os.devnull, 'w') as FNULL:
-            p = subprocess.Popen("rosbag play "+bag_file, stdin=subprocess.PIPE, shell=True, stdout=FNULL)
-            while p.poll() == None:
-                rospy.sleep(1)
-
-    def play_human_bag(self, bag):
-        try:
-            bag_file = find_resource(PKG, bag)[0]
-        except IndexError:
-            rospy.logwarn("No bag for human movement found.")
-#            self.record_human_bag()
-            return
-
-        human_thread = Thread(target=self.play, args=(bag_file,))
-
-        rospy.loginfo("Found bag file: '%s'. Spawning human.")
-        pass # Spawn human somewhere
-        rospy.loginfo("Starting playback of human movement ...")
-        human_thread.start()
-        return human_thread
-
     def start(self, req):
         rospy.loginfo("Starting test ...")
 
@@ -347,7 +297,6 @@ class ScenarioServer(object):
         sub = rospy.Subscriber("/robot_pose", Pose, self.robot_callback)
         rospy.loginfo("Sending goal to policy execution ...")
         print self._policy.route
-        human_thread = self.play_human_bag(self.pointset+".bag")
         self.client.send_goal(ExecutePolicyModeGoal(route=self._policy.route))
         t = time.time()
         rospy.loginfo("... waiting for result ...")
@@ -361,7 +310,6 @@ class ScenarioServer(object):
             rospy.loginfo("Attempting graceful death ...")
             grace_res = self.graceful_fail()
             rospy.loginfo("... dead")
-        human_thread.join()
         sub.unregister()
         sub = None
         distance = self.get_distance_travelled(self._robot_poses)
@@ -391,7 +339,6 @@ class ScenarioServer(object):
         self.pointset = req.pointset
 
         self._robot_start_pose = None
-        self._human_start_pose = None
         self._obstacle_poses = []
         found_end_node = False
         for node in topo_map.nodes:
@@ -402,11 +349,6 @@ class ScenarioServer(object):
                 )
             elif node.name == self._robot_goal_node:
                 found_end_node = True
-            elif node.name == self._human_start_node:
-                self._human_start_pose = PoseStamped(
-                    header=Header(stamp=rospy.Time.now(), frame_id="/map"),
-                    pose=node.pose
-                )
             elif node.name.startswith(self._obstacle_node_prefix):
                 self._obstacle_poses.append({
                     "name": node.name.lower(),

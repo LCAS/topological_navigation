@@ -301,7 +301,7 @@ class ScenarioServer(object):
         t = time.time()
         rospy.loginfo("... waiting for result ...")
         print self._timeout
-        self.client.wait_for_result(timeout=rospy.Duration(self._timeout))
+        nav_timeout = not self.client.wait_for_result(timeout=rospy.Duration(self._timeout))
         elapsed = time.time() - t
         res = self.client.get_state() == actionlib_msgs.msg.GoalStatus.SUCCEEDED
         rospy.loginfo("... policy execution finished")
@@ -316,6 +316,7 @@ class ScenarioServer(object):
         rospy.loginfo("... test done")
         return RunTopoNavTestScenarioResponse(
             nav_success=res,
+            nav_timeout=nav_timeout,
             graceful_fail=grace_res,
             human_success=False,
             min_distance_to_human=0,

@@ -59,11 +59,8 @@ class MapExport(object):
             for i in message_list:
                 nodeinf = {}
                 nodeinf["node"] = yaml.load(str(i[0]))
-                print "------------------"
-                print nodeinf["node"]["localise_by_topic"]
                 if nodeinf["node"]["localise_by_topic"]:
                     nodeinf["node"]["localise_by_topic"] = json.dumps(nodeinf["node"]["localise_by_topic"])
-                print nodeinf["node"]["localise_by_topic"]
                 nodeinf["meta"] = i[1] #str(bson.json_util.dumps(i[1], indent=1))
                 nodeinf["meta"].pop("last_updated_by", None)
                 nodeinf["meta"].pop('inserted_at', None)

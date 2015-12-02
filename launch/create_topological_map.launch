@@ -12,7 +12,6 @@
 
 	<node pkg="topological_utils" type="insert_map.py" name="insert_map" output="screen" args="$(find topological_utils)/support/empty.tmap $(arg top_map) $(arg met_map)"/>
 
-	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg top_map)"/>
 	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen"/>
 	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg top_map)"/>

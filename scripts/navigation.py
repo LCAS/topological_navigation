@@ -221,6 +221,7 @@ class TopologicalNavServer(object):
             if (g_node is not None) and (o_node is not None) and (g_node.name != o_node.name) :
                 rsearch = TopologicalRouteSearch(self.lnodes)
                 route = rsearch.search_route(o_node.name, target)
+                print "################################"
                 print route
                 if route:
                     self.publish_route(route, target)

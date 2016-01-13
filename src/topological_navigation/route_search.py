@@ -49,9 +49,11 @@ class TopologicalRouteSearch(object):
         children = get_conected_nodes(cen) #nodes current node is connected to
         #print children
         not_goal=True
+        route_found=False
         while not_goal :
             if target in children:
                 not_goal=False
+                route_found=True
                 cdist = get_distance_to_node(cen, goal)
                 cnte = NodeToExpand(goal.name, nte.name, nte.current_distance+cdist, 0.0)  #Node to Expand
                 expanded.append(cnte)
@@ -83,28 +85,31 @@ class TopologicalRouteSearch(object):
                     children = get_conected_nodes(cen)
                 else:
                     not_goal=False
-
-           
-#        print "===== RESULT ====="
-        steps=[]
-        val = len(expanded)-1
-        steps.append(expanded[val])
-        next_node = expanded[val].father
-        #print next_node
-        while next_node != 'none':
-            for i in expanded:
-                if i.name == next_node :
-                    steps.append(i)
-                    next_node = i.father
-                    break
+                    route_found=False
         
         route = NavRoute()
-        steps.reverse()
-        val = len(steps)
-        for i in range(1, val):
-            edg=get_edges_between(self.top_map, steps[i].father, steps[i].name)
-            route.source.append(steps[i].father)
-            route.edge_id.append(edg[0].edge_id)
-            #route.append(r)
+#        print "===== RESULT ====="
+        if route_found:
+            steps=[]
+            val = len(expanded)-1
+            steps.append(expanded[val])
+            next_node = expanded[val].father
+            #print next_node
+            while next_node != 'none':
+                for i in expanded:
+                    if i.name == next_node :
+                        steps.append(i)
+                        next_node = i.father
+                        break
+            
+            steps.reverse()
+            val = len(steps)
+            for i in range(1, val):
+                edg=get_edges_between(self.top_map, steps[i].father, steps[i].name)
+                route.source.append(steps[i].father)
+                route.edge_id.append(edg[0].edge_id)
+                #route.append(r)
         
-        return route
+            return route
+        else:
+            return None

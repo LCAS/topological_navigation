@@ -2,6 +2,12 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* removing prints and repeated node
+* Fixes in topological utils
+* Contributors: Jaime Pulido Fentanes
+
 0.0.38 (2015-11-17)
 -------------------
 * Extending the load yaml map functionality. Now based on a class in topological navigation to prevent circular test dependencies.

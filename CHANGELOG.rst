@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.39 (2016-01-28)
+-------------------
 * removing annoying print
 * print warning when no route to node
 * Impossible tests now require the navigation to fail on its own accord

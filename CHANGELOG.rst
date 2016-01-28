@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.39 (2016-01-28)
+-------------------
 * removing prints and repeated node
 * Fixes in topological utils
 * Contributors: Jaime Pulido Fentanes

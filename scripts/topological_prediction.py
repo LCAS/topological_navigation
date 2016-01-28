@@ -85,8 +85,9 @@ class TopologicalNavPred(object):
         rospy.loginfo(" ...done")
 
         self.create_temporal_models()        
-        for i in self.models:
-            print i['model_id']
+#        for i in self.models:
+#            print i['model_id']
+#            print i['time_model_id']
 
         self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         self.predict_srv=rospy.Service('/topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
@@ -112,6 +113,8 @@ class TopologicalNavPred(object):
         eids = [x['edge_id'] for x in self.models]
         mods = [x['model_id'] for x in self.models]
         ords = [x['order'] for x in self.models]
+        tids = [x['time_model_id'] for x in self.models]
+        tords = [x['t_order'] for x in self.models]
 
         fremgoal = fremenserver.msg.FremenGoal()
         fremgoal.operation = 'forecast'
@@ -133,45 +136,79 @@ class TopologicalNavPred(object):
 
         prob = list(ps.probabilities)
 
+        for j in range(len(mods)):
+            if prob[j] < 0.01 :
+                prob[j] = 0.01
+            i=get_model(mods[j], self.models)
+            edges_ids.append(eids[j])
+
+
+        fremgoal = fremenserver.msg.FremenGoal()
+        fremgoal.operation = 'forecast'
+        fremgoal.ids = tids
+        fremgoal.times.append(epoch)
+        #print i["order"]
+        fremgoal.order = -1
+        fremgoal.orders = tords#i["order"]
+        
+        self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
+    
+        # Waits for the server to finish performing the action.
+        self.FremenClient.wait_for_result()
+    
+        # Prints out the result of executing the action
+        ps = self.FremenClient.get_result()  # A FibonacciResult
+
+        print ps
+
+        speeds = list(ps.probabilities)
+
+        for j in range(len(mods)):
+            if speeds[j]>0.01:
+                dur.append(rospy.Duration(self.models[j]["dist"]/speeds[j]))
+            else:
+                dur.append(rospy.Duration(self.models[j]["dist"]/0.01))
+
+
         # print mods
         # print ords
         # print prob        
         
-        for j in range(len(mods)):
-            
-            i=get_model(mods[j], self.models)
-            edges_ids.append(eids[j])
-         
-            #print ps.probabilities[0]
-            if prob[j] < 0.01 :
-                prob[j] = 0.01
-            
-            dur_c=[]
-            if prob[j] >=0.1:
-                est_dur = i["dist"]/prob[j]
-                dur_c.append(est_dur)
-            else :
-                est_dur = i["dist"]/0.1
-                dur_c.append(est_dur)
-            
-            
-            for j in i['models']:
-                if j['st'] :
-                    dur_c.append(j['optime'])
-                    
-            ava= rospy.Duration(sum(dur_c) / float(len(dur_c)))
-            dur.append(ava)
+#        for j in range(len(mods)):
+#            
+#         
+#            #print ps.probabilities[0]
+#            if prob[j] < 0.01 :
+#                prob[j] = 0.01
+#            
+#            dur_c=[]
+#            if prob[j] >=0.1:
+#                est_dur = i["dist"]/prob[j]
+#                dur_c.append(est_dur)
+#            else :
+#                est_dur = i["dist"]/0.1
+#                dur_c.append(est_dur)
+#            
+#            
+#            for j in i['models']:
+#                if j['st'] :
+#                    dur_c.append(j['optime'])
+#                    
+#            ava= rospy.Duration(sum(dur_c) / float(len(dur_c)))
+#            dur.append(ava)
 
 
        
         for i in self.unknowns:
             edges_ids.append(i["edge_id"])
             prob.append(0.5)
-            est_dur = rospy.Duration(i["dist"]/0.5)
+            est_dur = rospy.Duration(i["dist"]/0.1)
+            speeds.append(0.1)
             dur.append(est_dur)
 
 
-        #print edges_ids, prob, dur
+        for k in range(len(edges_ids)):
+            print edges_ids[k], prob[k], dur[k].secs, speeds[k]
         return edges_ids, prob, dur
         
 
@@ -244,13 +281,15 @@ class TopologicalNavPred(object):
                     val={}
                     val["edge_id"]=j.edge_id
                     val["model_id"]=self.lnodes.name+'__'+j.edge_id
+                    val["time_model_id"]=self.lnodes.name+'__'+j.edge_id+'_time'
                     val["ori"]=i.name
                     val["dest"]=j.node
                     ddn=get_node(self.lnodes, j.node)
-                    if j.top_vel>= 0.1:
-                        val["dist"]= get_distance_to_node(i,ddn)/j.top_vel
-                    else :
-                        val["dist"]= get_distance_to_node(i,ddn)/0.1
+                    val["dist"]= get_distance_to_node(i,ddn)                    
+#                    if j.top_vel>= 0.1:
+#                        val["dist"]= get_distance_to_node(i,ddn)/j.top_vel
+#                    else :
+#                        val["dist"]= get_distance_to_node(i,ddn)/0.1
                     self.eids.append(val)
         fdbmsg = 'Done. %d edges found' %len(self.edgid)
         rospy.loginfo(fdbmsg)
@@ -285,7 +324,7 @@ class TopologicalNavPred(object):
         self._feedback.result = "Finished after %.3f seconds" %elapsed_time 
         self._as.publish_feedback(self._feedback)       #Publish Feedback
 
-        #rospy.loginfo("Finished after %.3f seconds" %elapsed_time)
+        #rospy.loginfo("Finished after %.3f sechttp://9gag.com/gag/aGR3z60onds" %elapsed_time)
         
         if not self.cancelled :     
             self._result.success = True
@@ -325,17 +364,23 @@ class TopologicalNavPred(object):
             # print len(available)
             edge_mod={}
             edge_mod["model_id"]= i["model_id"]#self.lnodes.name+'__'+i["edge_id"]
+            edge_mod["time_model_id"]=i["time_model_id"]
             edge_mod["dist"]= i["dist"]#self.lnodes.name+'__'+i["edge_id"]
             edge_mod["models"]=[]
             edge_mod["order"]=-1
+            edge_mod["t_order"]=-1
             edge_mod["edge_id"]=i["edge_id"]
             
             for j in available:                
                 val = {}
                 if j[0].status == 'success':
                     val["st"] = 1
+                    val["speed"] = i["dist"]/j[0].operation_time
+                    if val["speed"]>1:
+                        val["speed"]=1.0
                 else:
                     val["st"] = 0
+                    val["speed"] = 0.0
                 val["epoch"] = int(datetime.strptime(j[0].date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
                 val["optime"] = j[0].operation_time
                 edge_mod["models"].append(val)
@@ -355,19 +400,43 @@ class TopologicalNavPred(object):
             # print "-------CREATING MODEL----------"
             
             mid = i["model_id"]
-            # print mid
+            tmid = i["time_model_id"]
+          
+            print "Creating models:"
+            print mid, tmid
             #print i["dist"]
+            stimes=[]
             times=[]
             states=[]
+            speeds=[]
+            #print "adding %d meassurements" %len(i["models"])
             for j in i["models"]:
                 times.append(j["epoch"])
                 states.append(j["st"])
+                #print j
+                if j["speed"]>0:
+                    speeds.append(j["speed"])
+                    stimes.append(j["epoch"])                
+            i["order"] = self.add_and_eval_models(mid,times,states)
+            
+            print "###########################################"
+            print "Generating speed models: ", tmid
+            print "epochs (%d): " %len(stimes)
+            print stimes
+            print "speeds (%d): " %len(speeds)
+            print speeds
+            i["t_order"] = self.add_and_eval_models(tmid,stimes,speeds)
+            print "Done Model Order %d" %i["t_order"]
+            
             #print times
             #print states
+
+
+    def add_and_eval_models(self, model_id, epochs, states):
             fremgoal = fremenserver.msg.FremenGoal()
             fremgoal.operation = 'add'
-            fremgoal.id = mid
-            fremgoal.times = times
+            fremgoal.id = model_id
+            fremgoal.times = epochs
             fremgoal.states = states
             
             # Sends the goal to the action server.
@@ -377,14 +446,14 @@ class TopologicalNavPred(object):
             self.FremenClient.wait_for_result()
             
             # Prints out the result of executing the action
-            ps = self.FremenClient.get_result()  # A FibonacciResult
+            ps = self.FremenClient.get_result()
             #print ps
             
             # print "--- EVALUATE ---"
             frevgoal = fremenserver.msg.FremenGoal()
             frevgoal.operation = 'evaluate'
-            frevgoal.id = mid
-            frevgoal.times = times
+            frevgoal.id = model_id
+            frevgoal.times = epochs
             frevgoal.states = states
             frevgoal.order = 5
             
@@ -398,9 +467,9 @@ class TopologicalNavPred(object):
             pse = self.FremenClient.get_result()  # A FibonacciResult
             # print pse.errors
             # print "chosen order %d" %pse.errors.index(min(pse.errors))
-            i["order"] = pse.errors.index(min(pse.errors))
+            return pse.errors.index(min(pse.errors))
 
-
+        
 
 if __name__ == '__main__':
     rospy.init_node('topological_prediction')

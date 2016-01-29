@@ -67,7 +67,7 @@ class VisualiseMap(object):
         rospy.loginfo("Done ...")
 
         self.map_markers = topological_navigation.map_marker.TopologicalVis()
-
+        self.pol_markers = topological_navigation.policies.PoliciesVis()
         rospy.loginfo("All Done ...")
 
        

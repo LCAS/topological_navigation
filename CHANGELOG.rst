@@ -2,6 +2,27 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.39 (2016-01-28)
+-------------------
+* removing annoying print
+* print warning when no route to node
+* Impossible tests now require the navigation to fail on its own accord
+  Currently, the impossible tests, i.e., blocking the way or the final node, require that the graceful death attempt is successful, meaning that the robot is able to navigate back to start after the navigation to end failed. With this PR, a new field for the service is added, giving feedback if the navigation timed out or if it failed on its own accord. Impossible tests are therefore only passed, if the navigation failed without timing out and if graceful death was successful.
+* now execute policy server when it can't reach the position of the final node
+* If the path or final waypoint is completely blocked the test will succeed if the robot is able to fail gracefully.
+* Removing support for dynamic human tests. These have been postponed in simulation.
+* Adding more tests with humans blocking waypoints.
+* making sure topological navigation fails when it should
+* Adding description of new tests and how to create a topo map that uses the passive morse objects added to readme.
+* Change in test files assuming that maps always are prefixed with `mb_test` and just append a number for the correct one.
+* * Adding obstacle nodes
+  * Making sure that position injection worked
+  * Adding untested support for dynamic human tests by playing a bag file and positioning the human correctly.
+  * Other minor improvements
+* Using new mba_test builder script for simulation to also include passive objects as obstacles.
+* Update README.md
+* Contributors: Christian Dondrup, Jaime Pulido Fentanes, Marc Hanheide
+
 0.0.38 (2015-11-17)
 -------------------
 * Updating readme

@@ -425,7 +425,9 @@ class TopologicalNavPred(object):
             print stimes
             print "speeds (%d): " %len(speeds)
             print speeds
-            i["t_order"] = self.add_and_eval_models(tmid,stimes,speeds)
+            
+            i["t_order"] = self.add_and_eval_value_models(tmid,stimes,speeds)
+#            i["t_order"] = self.add_and_eval_models(tmid,stimes,speeds)
             print "Done Model Order %d" %i["t_order"]
             
             #print times
@@ -469,6 +471,50 @@ class TopologicalNavPred(object):
             # print "chosen order %d" %pse.errors.index(min(pse.errors))
             return pse.errors.index(min(pse.errors))
 
+
+    def add_and_eval_value_models(self, model_id, epochs, states):
+            fremgoal = fremenserver.msg.FremenGoal()
+            fremgoal.operation = 'addvalues'
+            fremgoal.id = model_id
+            fremgoal.times = epochs
+            #fremgoal.states = states
+            fremgoal.values = states
+            
+            # Sends the goal to the action server.
+            self.FremenClient.send_goal(fremgoal)
+            
+            print "Sending data to fremenserver"
+            
+            
+            # Waits for the server to finish performing the action.
+            self.FremenClient.wait_for_result()
+            
+            print "fremenserver done"
+            
+            # Prints out the result of executing the action
+            ps = self.FremenClient.get_result()
+            print "fremenserver result:"
+            print ps
+            
+            # print "--- EVALUATE ---"
+            frevgoal = fremenserver.msg.FremenGoal()
+            frevgoal.operation = 'evaluate'
+            frevgoal.id = model_id
+            frevgoal.times = epochs
+            frevgoal.states = states
+            frevgoal.order = 5
+            
+            # Sends the goal to the action server.
+            self.FremenClient.send_goal(frevgoal)
+            
+            # Waits for the server to finish performing the action.
+            self.FremenClient.wait_for_result()
+            
+            # Prints out the result of executing the action
+            pse = self.FremenClient.get_result()  # A FibonacciResult
+            # print pse.errors
+            # print "chosen order %d" %pse.errors.index(min(pse.errors))
+            return pse.errors.index(min(pse.errors))
         
 
 if __name__ == '__main__':

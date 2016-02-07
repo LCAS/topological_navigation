@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.40 (2016-02-07)
+-------------------
 * adding missing install targets
 * prediction changes
 * Contributors: Jailander, Jaime Pulido Fentanes

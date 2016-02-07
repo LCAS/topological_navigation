@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.40 (2016-02-07)
+-------------------
 * prediction of traversal duration using speeds that are properly fremenised
 * adding policy visualisation
 * prediction changes

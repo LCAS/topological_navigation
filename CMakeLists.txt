@@ -76,8 +76,10 @@ catkin_package(
    scripts/add_content.py
    scripts/add_edge.py
    scripts/add_node.py
+   scripts/check_map
    scripts/crop_map.py
    scripts/dummy_topological_navigation.py
+   scripts/draw_predicted_map.py
    scripts/insert_map.py
    scripts/joy_add_node.py
    scripts/joy_add_waypoint.py
@@ -90,7 +92,9 @@ catkin_package(
    scripts/map_to_yaml.py
    scripts/migrate.py
    scripts/node_rm.py
+   scripts/node_metadata.py
    scripts/rm_map_from_db.py
+   scripts/rename_node
    scripts/tmap_from_waypoints.py
    scripts/tmap_to_yaml.py
    scripts/topological_map_update.py

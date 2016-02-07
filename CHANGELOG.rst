@@ -2,6 +2,14 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* prediction of traversal duration using speeds that are properly fremenised
+* adding policy visualisation
+* prediction changes
+* policies visualisation
+* Contributors: Jaime Pulido Fentanes
+
 0.0.39 (2016-01-28)
 -------------------
 * removing annoying print

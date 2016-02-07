@@ -2,6 +2,12 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* adding missing install targets
+* prediction changes
+* Contributors: Jailander, Jaime Pulido Fentanes
+
 0.0.39 (2016-01-28)
 -------------------
 * removing prints and repeated node

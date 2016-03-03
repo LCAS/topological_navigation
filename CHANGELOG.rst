@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* removing map name from query
+* Contributors: Jaime Pulido Fentanes
+
 0.0.40 (2016-02-07)
 -------------------
 * adding missing install targets

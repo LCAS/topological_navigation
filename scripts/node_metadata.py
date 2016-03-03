@@ -13,7 +13,7 @@ from topological_utils.queries import get_nodes
 from topological_utils.srv import *
 
 def handle_query_nodes(req):
-    print "Queried for %s %s %s"%(req.map_name, req.pointset, req.meta_category)
+    print "Queried for %s %s"%(req.pointset, req.meta_category)
     
     resp = NodeMetadataResponse()
     resp.name=[]
@@ -21,7 +21,7 @@ def handle_query_nodes(req):
     resp.goto_node=[]
     resp.node_type = []
     
-    nodes = get_nodes(req.map_name, req.pointset, req.meta_category)
+    nodes = get_nodes(req.pointset, req.meta_category)
     
     for node in nodes:
         for gui_node in node[1]["contains"]: 

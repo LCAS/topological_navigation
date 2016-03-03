@@ -34,17 +34,18 @@ def get_maps():
     return maps
 
 
-def get_nodes(map_name, point_set, meta_query):
+def get_nodes(point_set, meta_query):
 
     msg_store = MessageStoreProxy(collection="topological_maps")
 
     query_meta = {}
     query_meta["pointset"] = {}
-    query_meta["map"] = {}
+    #query_meta["map"] = {}
     query_meta["contains.category"] = {}
     query_meta["pointset"]['$regex'] = point_set
-    query_meta["map"]['$regex'] = map_name
+    #query_meta["map"]['$regex'] = map_name
     query_meta["contains.category"]['$regex'] = meta_query
+
 
     nodes = msg_store.query(TopologicalNode._type, {}, query_meta);
     available = len(nodes) > 0

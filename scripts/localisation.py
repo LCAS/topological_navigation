@@ -18,11 +18,41 @@ from strands_navigation_msgs.msg import TopologicalMap
 from topological_navigation.tmap_utils import *
 #import topological_navigation.msg
 
+from threading import Thread
+
+
+class LocaliseByTopicSubscriber(object):
+    """
+    Helper class for localise by topic subcription. Callable to start subsriber
+    thread.
+    """
+    def __init__(self, topic, callback):
+        self.topic = topic
+        self.callback = callback
+        self.sub = None
+        self.t = None
+
+    def __call__(self):
+        """
+        When called start a new thread that waits for the topic type and then
+        subscribes. This is therefore non blocking and waits in the background.
+        """
+        self.t = Thread(target=self.subscribe)
+        self.t.start()
+
+    def subscribe(self):
+        """
+        Get the topic type and subscribe to topic. Subscriber is kept alive as
+        long as the instance of the class is alive.
+        """
+        topic_type = rostopic.get_topic_class(self.topic, True)[0]
+        rospy.loginfo("Subscribing to %s" % self.topic)
+        self.sub = rospy.Subscriber(self.topic, topic_type, self.callback)
 
 
 class TopologicalNavLoc(object):
-       
-    
+
+
     def __init__(self, name) :
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
@@ -33,31 +63,34 @@ class TopologicalNavLoc(object):
 
         self.wp_pub = rospy.Publisher('/closest_node', String, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('/current_node', String, latch=True, queue_size=1)
-        
+
         self.force_check=True
         self.rec_map=False
         self.loc_by_topic=[]
-        self.persist={}        
-        
+        self.persist={}
+
         self.current_pose=Pose()
         self.previous_pose=Pose()
-        self.previous_pose.position.x=1000 #just give a random big value so this is tested 
-        
+        self.previous_pose.position.x=1000 #just give a random big value so this is tested
+
         #This service returns a list of nodes that have a given tag
         self.get_tagged_srv=rospy.Service('/topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
-        
+
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
-        
+
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
-        
+
 
         rospy.loginfo("Subscribing to localise topics")
+        subscribers = []
         for j in self.nodes_by_topic:
-            toptyp = rostopic.get_topic_class(j['topic'])
-            rospy.loginfo("Subscribing to %s" %j['topic'])
-            rospy.Subscriber(j['topic'], toptyp[0], self.Callback, callback_args=j)
+            # Nested lambda function to preserve the scope of j.
+            subscribe = LocaliseByTopicSubscriber(j['topic'], (lambda y: lambda x: self.Callback(x,y))(j))
+            # Calling instance of class to start subsribing thread. Append to
+            # list to keep the instance alive and the subscriber active.
+            subscribers.append(subscribe())
 
         rospy.loginfo("Subscribing to robot pose")
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
@@ -85,13 +118,13 @@ class TopologicalNavLoc(object):
             #print self.distances
             closeststr='none'
             currentstr='none'
-            
+
             not_loc=True
             if self.loc_by_topic:
                 #print self.loc_by_topic
                 for i in self.loc_by_topic:
                     if not_loc:
-                        if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic 
+                        if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
                             test_node=get_node(self.tmap, i['name'])
                             if self.point_in_poly(test_node, msg):
                                 not_loc=False
@@ -112,7 +145,7 @@ class TopologicalNavLoc(object):
                             closeststr=currentstr
                             not_loc=False
                     ind+=1
-                          
+
                 ind = 0
                 not_loc=True
                 while not_loc and ind<len(self.distances) and closeststr=='none' :
@@ -144,7 +177,7 @@ class TopologicalNavLoc(object):
 
     """
      MapCallback
-     
+
      This function receives the Topological Map
     """
     def MapCallback(self, msg) :
@@ -152,7 +185,7 @@ class TopologicalNavLoc(object):
         self.nodes_by_topic=[]
         self.nogos=[]
 
-        self.tmap = msg        
+        self.tmap = msg
         self.rec_map=True
         self.update_loc_by_topic()
         #print "NO GO NODES"
@@ -162,9 +195,9 @@ class TopologicalNavLoc(object):
 
     """
     update_loc_by_topic
-     
+
      This function updates the localisation by topic variables
-    """               
+    """
     def update_loc_by_topic(self) :
         for i in self.tmap.nodes:
             if i.localise_by_topic:
@@ -181,13 +214,13 @@ class TopologicalNavLoc(object):
 
 
     def Callback(self, msg, item):
-        #needed for not checking the localise by topic when the robot hasn't moved and making sure it does when the new 
+        #needed for not checking the localise by topic when the robot hasn't moved and making sure it does when the new
         #position is close (<10) to the last one it was detected
         if self.force_check:
             dist = 1.0
         else:
             dist = get_distance(self.current_pose, self.previous_pose)
-                   
+
         if dist>0.10:
             #print self.persist
             val = getattr(msg, item['field'])
@@ -200,7 +233,7 @@ class TopologicalNavLoc(object):
 
                 #if item['name'] not in self.loc_by_topic:
                 if item['name'] not in [x['name'] for x in self.loc_by_topic] and self.persist[item['name']] < item['persistency']:
-                    #if item['persistency'] 
+                    #if item['persistency']
                     self.loc_by_topic.append(item)
                     self.previous_pose = self.current_pose
                     self.force_check=False
@@ -229,7 +262,7 @@ class TopologicalNavLoc(object):
             tagnodes = resp1.nodes
         except rospy.ServiceException, e:
             rospy.logerr("Service call failed: %s"%e)
-        
+
         ldis = [x['node'].name for x in self.distances]
         for i in ldis:
             if i in tagnodes:
@@ -239,7 +272,7 @@ class TopologicalNavLoc(object):
 
     """
      Get No_Go_Nodes
-     
+
      This function gets the list of No go nodes
     """
     def get_no_go_nodes(self):
@@ -251,16 +284,16 @@ class TopologicalNavLoc(object):
             return resp1.nodes
         except rospy.ServiceException, e:
             rospy.logerr("Service call failed: %s"%e)
-        
+
 
 
     def point_in_poly(self,node,pose):
         x=pose.position.x-node.pose.position.x
         y=pose.position.y-node.pose.position.y
-        
+
         n = len(node.verts)
         inside = False
-    
+
         p1x = node.verts[0].x
         p1y = node.verts[0].y
         for i in range(n+1):

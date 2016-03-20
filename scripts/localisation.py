@@ -26,9 +26,10 @@ class LocaliseByTopicSubscriber(object):
     Helper class for localise by topic subcription. Callable to start subsriber
     thread.
     """
-    def __init__(self, topic, callback):
+    def __init__(self, topic, callback, callback_args):
         self.topic = topic
         self.callback = callback
+        self.callback_args = callback_args
         self.sub = None
         self.t = None
 
@@ -47,7 +48,12 @@ class LocaliseByTopicSubscriber(object):
         """
         topic_type = rostopic.get_topic_class(self.topic, True)[0]
         rospy.loginfo("Subscribing to %s" % self.topic)
-        self.sub = rospy.Subscriber(self.topic, topic_type, self.callback)
+        self.sub = rospy.Subscriber(
+            name=self.topic,
+            data_class=topic_type,
+            callback=self.callback,
+            callback_args=self.callback_args
+        )
 
 
 class TopologicalNavLoc(object):
@@ -86,9 +92,12 @@ class TopologicalNavLoc(object):
         rospy.loginfo("Subscribing to localise topics")
         subscribers = []
         for j in self.nodes_by_topic:
-            # Nested lambda function to preserve the scope of j.
             # Append to list to keep the instance alive and the subscriber active.
-            subscribers.append(LocaliseByTopicSubscriber(j['topic'], (lambda y: lambda x: self.Callback(x,y))(j)))
+            subscribers.append(LocaliseByTopicSubscriber(
+                topic=j['topic'],
+                callback=self.Callback,
+                callback_args=j
+            ))
             # Calling instance of class to start subsribing thread.
             subscribers[-1]()
 

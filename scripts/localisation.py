@@ -87,10 +87,10 @@ class TopologicalNavLoc(object):
         subscribers = []
         for j in self.nodes_by_topic:
             # Nested lambda function to preserve the scope of j.
-            subscribe = LocaliseByTopicSubscriber(j['topic'], (lambda y: lambda x: self.Callback(x,y))(j))
-            # Calling instance of class to start subsribing thread. Append to
-            # list to keep the instance alive and the subscriber active.
-            subscribers.append(subscribe())
+            # Append to list to keep the instance alive and the subscriber active.
+            subscribers.append(LocaliseByTopicSubscriber(j['topic'], (lambda y: lambda x: self.Callback(x,y))(j)))
+            # Calling instance of class to start subsribing thread.
+            subscribers[-1]()
 
         rospy.loginfo("Subscribing to robot pose")
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)

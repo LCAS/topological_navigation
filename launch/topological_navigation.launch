@@ -2,6 +2,7 @@
 	<!-- declare arg to be passed in -->
 	<arg name="map"/>
 	<arg name="mon_nav_config_file"  default="" />
+	<arg name="max_bumper_recoveries" default=".inf"/>
 	<arg name="wait_reset_bumper_duration" default="0.0"/>
 	<arg name="topological_navigation_retries" default="3"/>
 	<arg name="execute_policy_retries" default="3"/>
@@ -12,6 +13,7 @@
 
  	<node pkg="monitored_navigation" type="monitored_nav.py" name="monitored_nav" output="screen" args="$(arg mon_nav_config_file)">
 		<param name="wait_reset_bumper_duration" value="$(arg wait_reset_bumper_duration)"/>
+		<rosparam param="/monitored_navigation/recover_states/recover_bumper" subst_value="True">[True, $(arg max_bumper_recoveries)]</rosparam>
 	</node>
 
 	<!-- <node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/> -->

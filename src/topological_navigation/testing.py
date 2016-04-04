@@ -20,13 +20,15 @@ def create_cross_map(width, height, nodeSeparation):
     originNode = TopologicalNode(name='ChargingPoint', pose=Pose(position=Point(xOrigin, yOrigin, 0)))
     nodes['ChargingPoint'] = originNode
 
-
+    count = 1
 
     # horizontal nodes
     prevNodeName = ''
     for x in range(-(width/2),(width/2)+1):
     	if x != 0:
-            nodeName = 'h_%s'%x
+            # nodeName = 'h_%s'%x
+            nodeName = 'WayPoint%s' % count
+            count += 1
             node = TopologicalNode(name=nodeName, pose=Pose(position=Point(x * nodeSeparation, yOrigin, 0)))
             nodes[nodeName] = node
         else:
@@ -53,7 +55,9 @@ def create_cross_map(width, height, nodeSeparation):
     prevNodeName = ''
     for y in range(-(height/2),(height/2)+1): 
         if y != 0: 
-            nodeName = 'v_%s'%y
+            # nodeName = 'v_%s'%y
+            nodeName = 'WayPoint%s' % count
+            count += 1
             node = TopologicalNode(name=nodeName, pose=Pose(position=Point(xOrigin, y * nodeSeparation, 0)))
             nodes[nodeName] = node
         else:

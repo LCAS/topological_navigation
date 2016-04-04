@@ -26,6 +26,7 @@ class DummyTopologicalNavigator():
         self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
 
         self.policy_result   =  ExecutePolicyModeResult()   
+        self.policy_feedback = ExecutePolicyModeFeedback()
         self.policy_server = actionlib.SimpleActionServer('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction, execute_cb = self.policy_callback, auto_start = False)
 
         self.cn_pub = rospy.Publisher('/current_node', String, queue_size=1)
@@ -54,38 +55,57 @@ class DummyTopologicalNavigator():
 
 
     def policy_callback(self, goal):
-        print 'called with policy goal %s'%goal
+        
+        # print 'called with policy goal %s'%goal
 
+        # this no longer seems valid
         # target is the one which is not in the source list
-        if len(goal.route.source) == 0:
-            target_node = self.cn
-        else:
-            target_node = self.node_names - set(goal.route.source)
+        # if len(goal.route.source) == 0:
+        #     target_node = self.cn
+        # else:
+        #     target_node = self.node_names - set(goal.route.source)
 
-        print target_node
+        
 
-        if self.time_srv:
-            target = rospy.get_rostime() + self.time_srv(self.cn, target_node).travel_time
-            while not rospy.is_shutdown() and not self.policy_server.is_preempt_requested() and rospy.get_rostime() < target:
-                rospy.sleep(0.5)
-        else:
-            rospy.sleep(1)
+        target_node = None
+        
+        if self.cn in goal.route.source:
+            # get index of current state from source list, and map it to edge to take
+            edge = goal.route.edge_id[goal.route.source.index(self.cn)]
+            # split edge to get target waypoint
+            target_node = edge.split('_')[1]
+
+            # print target_node
+
+            if self.time_srv:
+                target = rospy.get_rostime() + self.time_srv(self.cn, target_node).travel_time
+                while not rospy.is_shutdown() and not self.policy_server.is_preempt_requested() and rospy.get_rostime() < target:
+                    rospy.sleep(0.5)
+            else:
+                rospy.sleep(1)
+
+            self.policy_feedback.route_status = target_node
+            self.policy_server.publish_feedback(self.policy_feedback)
 
         if self.policy_server.is_preempt_requested():
-            print "done preempted"            
+            # print "done preempted"            
             self.policy_result.success = False
             self.policy_server.set_preempted(self.policy_result)
+        elif target_node is None:
+            # print "done failed to find target node"     
+            self.policy_result.success = False       
+            self.policy_server.set_succeeded(self.policy_result)            
         else:
-            print "done normal"     
+            # print "done normal"     
             self.cn = target_node            
             self.policy_result.success = True       
             self.policy_server.set_succeeded(self.policy_result)
         
-        print "policy mode execution complete" 
+        # print "policy mode execution complete" 
      
 
     def nav_callback(self, goal):
-        print 'called with nav goal %s'%goal.target
+        # print 'called with nav goal %s'%goal.target
 
         self.nav_feedback.route = 'Starting...'
         self.nav_server.publish_feedback(self.nav_feedback)
@@ -103,11 +123,11 @@ class DummyTopologicalNavigator():
             rospy.sleep(1)
 
         if self.nav_server.is_preempt_requested():
-            print "done preempted"            
+            # print "done preempted"            
             self.nav_result.success = False
             self.nav_server.set_preempted(self.nav_result)
         else:
-            print "done normal"     
+            # print "done normal"     
             self.cn = goal.target            
             self.nav_result.success = True       
             self.nav_server.set_succeeded(self.nav_result)
@@ -115,7 +135,7 @@ class DummyTopologicalNavigator():
         self.nav_feedback.route = goal.target
         self.nav_server.publish_feedback(self.nav_feedback)
 
-        print "nav complete" 
+        # print "nav complete" 
 
     def create_and_insert_map(self, size = 5, separation = 5.0):
         self.nodes = topological_navigation.testing.create_cross_map(width = size, height = size, nodeSeparation = separation)

@@ -56,7 +56,7 @@ class DummyTopologicalNavigator():
 
     def policy_callback(self, goal):
         
-        # print 'called with policy goal %s'%goal
+        print 'called with policy goal %s'%goal
 
         # this no longer seems valid
         # target is the one which is not in the source list
@@ -75,7 +75,7 @@ class DummyTopologicalNavigator():
             # split edge to get target waypoint
             target_node = edge.split('_')[1]
 
-            # print target_node
+            print target_node
 
             if self.time_srv:
                 target = rospy.get_rostime() + self.time_srv(self.cn, target_node).travel_time
@@ -94,7 +94,7 @@ class DummyTopologicalNavigator():
         elif target_node is None:
             # print "done failed to find target node"     
             self.policy_result.success = False       
-            self.policy_server.set_succeeded(self.policy_result)            
+            self.policy_server.set_aborted()
         else:
             # print "done normal"     
             self.cn = target_node            

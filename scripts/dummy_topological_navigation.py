@@ -84,20 +84,27 @@ class DummyTopologicalNavigator():
             else:
                 rospy.sleep(1)
 
-            self.policy_feedback.route_status = target_node
-            self.policy_server.publish_feedback(self.policy_feedback)
-
+            
         if self.policy_server.is_preempt_requested():
             # print "done preempted"            
             self.policy_result.success = False
             self.policy_server.set_preempted(self.policy_result)
         elif target_node is None:
+
+
             # print "done failed to find target node"     
             self.policy_result.success = False       
             self.policy_server.set_aborted()
         else:
             # print "done normal"     
+
             self.cn = target_node            
+
+            self.policy_feedback.route_status = self.cn 
+            self.policy_server.publish_feedback(self.policy_feedback)
+
+            rospy.sleep(0.1)
+
             self.policy_result.success = True       
             self.policy_server.set_succeeded(self.policy_result)
         
@@ -122,6 +129,9 @@ class DummyTopologicalNavigator():
         else:
             rospy.sleep(1)
 
+        self.nav_feedback.route = goal.target
+        self.nav_server.publish_feedback(self.nav_feedback)
+
         if self.nav_server.is_preempt_requested():
             # print "done preempted"            
             self.nav_result.success = False
@@ -132,10 +142,8 @@ class DummyTopologicalNavigator():
             self.nav_result.success = True       
             self.nav_server.set_succeeded(self.nav_result)
         
-        self.nav_feedback.route = goal.target
-        self.nav_server.publish_feedback(self.nav_feedback)
 
-        # print "nav complete" 
+         # print "nav complete" 
 
     def create_and_insert_map(self, size = 5, separation = 5.0):
         self.nodes = topological_navigation.testing.create_cross_map(width = size, height = size, nodeSeparation = separation)

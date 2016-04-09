@@ -10,6 +10,8 @@ from strands_navigation_msgs.msg import *
 import actionlib 
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String
+from topological_navigation.load_maps_from_yaml import YamlMapLoader
+
 
 class DummyTopologicalNavigator():
 
@@ -18,6 +20,7 @@ class DummyTopologicalNavigator():
             self.map_name = map_name
         else:
             self.map_name = self.create_and_insert_map(size = size)
+        
         self.manager = map_manager(self.map_name)
         self.node_names = set([node.name for node in self.manager.nodes.nodes])
         
@@ -146,7 +149,7 @@ class DummyTopologicalNavigator():
          # print "nav complete" 
 
     def create_and_insert_map(self, size = 5, separation = 5.0):
-        self.nodes = topological_navigation.testing.create_cross_map(width = size, height = size, nodeSeparation = separation)
+        self.nodes = topological_navigation.testing.create_line_map(width = size, nodeSeparation = separation)
         self.top_map_store = MessageStoreProxy(collection='topological_maps')
 
         map_name = 'dummy_map'
@@ -167,10 +170,18 @@ class DummyTopologicalNavigator():
 
 if __name__ == '__main__':
     rospy.init_node('dummy_topological_navigator')
-    size = rospy.get_param('~size', 5)
+    size = rospy.get_param('~size', 20)
     sim_times = rospy.get_param('~simulate_time', False)
     map_name =  rospy.get_param('~map', None)
-    if map_name:
+    map_file = rospy.get_param('~yaml_map', None)
+
+    if map_file is not None and len(map_file) > 0:
+        rospy.loginfo('loading map from yaml: %s' % map_file)
+        map_loader = YamlMapLoader()
+        data = map_loader.read_maps(map_file)
+        map_loader.insert_maps(data=data, force=True)
+        map_name = data[0][0]['node']['map']        
+    elif map_name is not None and len(map_name) > 0:
         rospy.loginfo('simulating map: %s' % map_name)
         rospy.set_param('topological_map_name', map_name)        
     else:

@@ -16,7 +16,7 @@ from topological_navigation.load_maps_from_yaml import YamlMapLoader
 class DummyTopologicalNavigator():
 
     def __init__(self, size, simulate_time, map_name=None):
-        if map_name:
+        if map_name is not None:
             self.map_name = map_name
         else:
             self.map_name = self.create_and_insert_map(size = size)
@@ -36,14 +36,19 @@ class DummyTopologicalNavigator():
         self.cl_pub = rospy.Publisher('/closest_node', String, queue_size=1)
         self.cn = 'ChargingPoint'
         self.simulate_time = simulate_time
-        self.time_srv = None
+        
         if self.simulate_time:
-            from strands_navigation_msgs.srv import EstimateTravelTime
-            time_srv_name = 'topological_navigation/travel_time_estimator'
+            from strands_navigation_msgs.srv import PredictEdgeState
+            time_srv_name = 'topological_prediction/predict_edges'
             try:
-                rospy.wait_for_service(time_srv_name, timeout=10)
-                self.time_srv = rospy.ServiceProxy(time_srv_name, EstimateTravelTime)
+                rospy.wait_for_service(time_srv_name, timeout=120)
+                self.time_srv = rospy.ServiceProxy(time_srv_name, PredictEdgeState)
+                response = self.time_srv(rospy.get_rostime())
+                self.edge_times = {response.edge_ids[i]: response.durations[i] for i in range(len(response.edge_ids))}
+                # print self.edge_times
+
             except Exception, e:
+                print e
                 rospy.logwarn('travel time service not available')
             
 
@@ -59,7 +64,7 @@ class DummyTopologicalNavigator():
 
     def policy_callback(self, goal):
         
-        print 'called with policy goal %s'%goal
+        # print 'called with policy goal %s'%goal
 
         # this no longer seems valid
         # target is the one which is not in the source list
@@ -80,8 +85,8 @@ class DummyTopologicalNavigator():
 
             print target_node
 
-            if self.time_srv:
-                target = rospy.get_rostime() + self.time_srv(self.cn, target_node).travel_time
+            if self.simulate_time:
+                target = rospy.get_rostime() + self.edge_times[edge]
                 while not rospy.is_shutdown() and not self.policy_server.is_preempt_requested() and rospy.get_rostime() < target:
                     rospy.sleep(0.5)
             else:
@@ -125,8 +130,10 @@ class DummyTopologicalNavigator():
 
         # wait for completion or prempt
 
-        if self.time_srv:
-            target = rospy.get_rostime() + self.time_srv(self.cn, goal.target).travel_time
+        if self.simulate_time:
+            # target = rospy.get_rostime() + self.edge_times[edge]
+            # lack of edge info so faking for now
+            target = rospy.get_rostime() + rospy.Duration(20)
             while not rospy.is_shutdown() and not self.nav_server.is_preempt_requested() and rospy.get_rostime() < target:
                 rospy.sleep(0.5)
         else:
@@ -181,9 +188,12 @@ if __name__ == '__main__':
         data = map_loader.read_maps(map_file)
         map_loader.insert_maps(data=data, force=True)
         map_name = data[0][0]['node']['map']        
+        rospy.set_param('topological_map_name', map_name)        
+
     elif map_name is not None and len(map_name) > 0:
         rospy.loginfo('simulating map: %s' % map_name)
         rospy.set_param('topological_map_name', map_name)        
+
     else:
         rospy.set_param('topological_map_name', 'dummy_map')
 

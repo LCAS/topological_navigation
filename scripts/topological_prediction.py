@@ -9,6 +9,7 @@ import sys
 import math
 import time
 
+from threading import Lock
 from datetime import datetime
 
 import actionlib
@@ -57,6 +58,7 @@ class TopologicalNavPred(object):
         self.lnodes = []
         self.map_received =False
         self.range = epochs
+        self.srv_lock=Lock()
         name= rospy.get_name()
         action_name = name+'/build_temporal_model'
 
@@ -120,102 +122,88 @@ class TopologicalNavPred(object):
         fremgoal.operation = 'forecast'
         fremgoal.ids = mods
         fremgoal.times.append(epoch)
+        
         #print i["order"]
         fremgoal.order = -1
         fremgoal.orders = ords#i["order"]
         
         self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
-    
         # Waits for the server to finish performing the action.
-        self.FremenClient.wait_for_result()
-    
-        # Prints out the result of executing the action
-        ps = self.FremenClient.get_result()  # A FibonacciResult
+        self.FremenClient.wait_for_result(timeout=rospy.Duration(10.0))
 
-        print ps
-
-        prob = list(ps.probabilities)
-
-        for j in range(len(mods)):
-            if prob[j] < 0.01 :
-                prob[j] = 0.01
-            i=get_model(mods[j], self.models)
-            edges_ids.append(eids[j])
-
-
-        fremgoal = fremenserver.msg.FremenGoal()
-        fremgoal.operation = 'forecast'
-        fremgoal.ids = tids
-        fremgoal.times.append(epoch)
-        #print i["order"]
-        fremgoal.order = -1
-        fremgoal.orders = tords#i["order"]
+        if self.FremenClient.get_state() == actionlib.GoalStatus.SUCCEEDED:
+            
         
-        self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
+            # Prints out the result of executing the action
+            ps = self.FremenClient.get_result()  # A FibonacciResult
     
-        # Waits for the server to finish performing the action.
-        self.FremenClient.wait_for_result()
+            print ps
     
-        # Prints out the result of executing the action
-        ps = self.FremenClient.get_result()  # A FibonacciResult
-
-        print ps
-
-        speeds = list(ps.probabilities)
-
-        for j in range(len(mods)):
-            if speeds[j]>0.01:
-                dur.append(rospy.Duration(self.models[j]["dist"]/speeds[j]))
-            else:
-                dur.append(rospy.Duration(self.models[j]["dist"]/0.01))
-
-
-        # print mods
-        # print ords
-        # print prob        
+    
+            prob = list(ps.probabilities)
+    
+            for j in range(len(mods)):
+                if prob[j] < 0.01 :
+                    prob[j] = 0.01
+                i=get_model(mods[j], self.models)
+                edges_ids.append(eids[j])
+    
+    
+            fremgoal = fremenserver.msg.FremenGoal()
+            fremgoal.operation = 'forecast'
+            fremgoal.ids = tids
+            fremgoal.times.append(epoch)
+            #print i["order"]
+            fremgoal.order = -1
+            fremgoal.orders = tords#i["order"]
+            
+            self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
         
-#        for j in range(len(mods)):
-#            
-#         
-#            #print ps.probabilities[0]
-#            if prob[j] < 0.01 :
-#                prob[j] = 0.01
-#            
-#            dur_c=[]
-#            if prob[j] >=0.1:
-#                est_dur = i["dist"]/prob[j]
-#                dur_c.append(est_dur)
-#            else :
-#                est_dur = i["dist"]/0.1
-#                dur_c.append(est_dur)
-#            
-#            
-#            for j in i['models']:
-#                if j['st'] :
-#                    dur_c.append(j['optime'])
-#                    
-#            ava= rospy.Duration(sum(dur_c) / float(len(dur_c)))
-#            dur.append(ava)
-
-
-       
-        for i in self.unknowns:
-            edges_ids.append(i["edge_id"])
-            prob.append(0.5)
-            est_dur = rospy.Duration(i["dist"]/0.1)
-            speeds.append(0.1)
-            dur.append(est_dur)
-
-
-        for k in range(len(edges_ids)):
-            print edges_ids[k], prob[k], dur[k].secs, speeds[k]
-        return edges_ids, prob, dur
+            # Waits for the server to finish performing the action.
+            self.FremenClient.wait_for_result(timeout=rospy.Duration(10.0))
+        
+            # Prints out the result of executing the action
+            ps = self.FremenClient.get_result()  # A FibonacciResult
+    
+            print ps
+    
+            speeds = list(ps.probabilities)
+    
+            for j in range(len(mods)):
+                if speeds[j]>0.01:
+                    dur.append(rospy.Duration(self.models[j]["dist"]/speeds[j]))
+                else:
+                    dur.append(rospy.Duration(self.models[j]["dist"]/0.01))
+    
+           
+            for i in self.unknowns:
+                edges_ids.append(i["edge_id"])
+                prob.append(0.5)
+                est_dur = rospy.Duration(i["dist"]/0.1)
+                speeds.append(0.1)
+                dur.append(est_dur)
+    
+    
+            for k in range(len(edges_ids)):
+                print edges_ids[k], prob[k], dur[k].secs, speeds[k]
+            return edges_ids, prob, dur
+        elif not rospy.is_shutdown():
+            rospy.logwarn("NO PREDICTIONS RECEIVED FROM FREMENSERVER WILL TRY AGAIN...")
+            if not self.FremenClient.wait_for_server(rospy.Duration(10.0)):
+                rospy.logerr("NO CONNECTION TO FREMENSERVER...")
+                rospy.logwarn("WAITING FOR FREMENSERVER...")
+                self.FremenClient= actionlib.SimpleActionClient('fremenserver', fremenserver.msg.FremenAction)
+                self.FremenClient.wait_for_server()
+                rospy.loginfo(" ...done")
+                self.create_temporal_models()
+                rospy.logwarn("WILL TRY TO GET PREDICTIONS AGAIN...")
+            return self.get_predict(epoch)
         
 
     def predict_edge_cb(self, req):
-        # print req
-        return self.get_predict(req.epoch.secs)
-
+        with self.srv_lock:
+            return self.get_predict(req.epoch.secs)
+            
 
 
     def get_entropies(self, epoch):

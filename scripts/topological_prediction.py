@@ -123,23 +123,16 @@ class TopologicalNavPred(object):
         fremgoal.ids = mods
         fremgoal.times.append(epoch)
         
-        #print i["order"]
         fremgoal.order = -1
-        fremgoal.orders = ords#i["order"]
+        fremgoal.orders = ords
         
-        self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
-        # Waits for the server to finish performing the action.
+        self.FremenClient.send_goal(fremgoal)
         self.FremenClient.wait_for_result(timeout=rospy.Duration(10.0))
 
         if self.FremenClient.get_state() == actionlib.GoalStatus.SUCCEEDED:
             
-        
-            # Prints out the result of executing the action
-            ps = self.FremenClient.get_result()  # A FibonacciResult
-    
+            ps = self.FremenClient.get_result()
             print ps
-    
-    
             prob = list(ps.probabilities)
     
             for j in range(len(mods)):
@@ -175,10 +168,10 @@ class TopologicalNavPred(object):
                 else:
                     dur.append(rospy.Duration(self.models[j]["dist"]/0.01))
     
-           
+            ## Filling up values for edges with no stats available
             for i in self.unknowns:
                 edges_ids.append(i["edge_id"])
-                prob.append(0.5)
+                prob.append(1.0)                            # a priory probabilities (no stats)
                 est_dur = rospy.Duration(i["dist"]/0.1)
                 speeds.append(0.1)
                 dur.append(est_dur)
@@ -234,15 +227,13 @@ class TopologicalNavPred(object):
       
         for i in self.unknowns:
             edges_ids.append(i["edge_id"])
-            prob.append(1.0)                # a priori probabilities (no stats)
-
+            prob.append(0.5)                # a priory entropies (no stats)
 
         return edges_ids, prob, dur
 
 
 
     def edge_entropies_cb(self, req):
-        # print req
         return self.get_entropies(req.epoch.secs)
 
 
@@ -443,14 +434,9 @@ class TopologicalNavPred(object):
             frevgoal.states = states
             frevgoal.order = 5
             
-            # Sends the goal to the action server.
             self.FremenClient.send_goal(frevgoal)
-            
-            # Waits for the server to finish performing the action.
             self.FremenClient.wait_for_result()
-            
-            # Prints out the result of executing the action
-            pse = self.FremenClient.get_result()  # A FibonacciResult
+            pse = self.FremenClient.get_result()  
             # print pse.errors
             # print "chosen order %d" %pse.errors.index(min(pse.errors))
             return pse.errors.index(min(pse.errors))

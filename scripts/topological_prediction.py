@@ -235,13 +235,9 @@ class TopologicalNavPred(object):
         fremgoal.order = -1
         fremgoal.orders = ords#i["order"]
         
-        self.FremenClient.send_goal(fremgoal)#,self.done_cb, self.active_cb, self.feedback_cb)
-    
-        # Waits for the server to finish performing the action.
+        self.FremenClient.send_goal(fremgoal)
         self.FremenClient.wait_for_result()
-    
-        # Prints out the result of executing the action
-        ps = self.FremenClient.get_result()  # A FibonacciResult
+        ps = self.FremenClient.get_result()
 
         print ps
 
@@ -250,9 +246,9 @@ class TopologicalNavPred(object):
       
         for i in self.unknowns:
             edges_ids.append(i["edge_id"])
-            prob.append(0.5)
+            prob.append(1.0)                # a priori probabilities (no stats)
 
-        #print edges_ids, prob, dur
+
         return edges_ids, prob, dur
 
 
@@ -373,7 +369,7 @@ class TopologicalNavPred(object):
             
             for j in available:                
                 val = {}
-                if j[0].status == 'success':
+                if j[0].status != 'fatal':
                     val["st"] = 1
                     val["speed"] = i["dist"]/j[0].operation_time
                     if val["speed"]>1:

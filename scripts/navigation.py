@@ -216,6 +216,7 @@ class TopologicalNavServer(object):
             o_node = get_node(self.lnodes, self.closest_node)
             g_node = get_node(self.lnodes, target)
             
+            rospy.loginfo("Navigating Take : %d", tries)
             # Everything is Awesome!!!
             # Target and Origin are Different and none of them is None
             if (g_node is not None) and (o_node is not None) and (g_node.name != o_node.name) :
@@ -223,12 +224,16 @@ class TopologicalNavServer(object):
                 route = rsearch.search_route(o_node.name, target)
                 print route
                 if route:
+                    rospy.loginfo("Navigating Case 1")
                     self.publish_route(route, target)
                     result, inc = self.followRoute(route, target)
+                    rospy.loginfo("Navigating Case 1 -> res: %d", inc)
                 else:
                     rospy.logerr("There is no route to this node check your edges ...")
+                    rospy.loginfo("Navigating Case 1b")
                     result = False
                     inc = 1
+                    rospy.loginfo("Navigating Case 1b -> res: %d", inc)
             else :
                 # Target and Origin are the same
                 if(g_node.name == o_node.name) :
@@ -243,10 +248,13 @@ class TopologicalNavServer(object):
                     
        
                     if action_server is None:
+                        rospy.loginfo("Navigating Case 2")
                         rospy.loginfo("Action not taken, outputing success")
                         result=True
                         inc=0
+                        rospy.loginfo("Navigating Case 2 -> res: %d", inc)
                     else:
+                        rospy.loginfo("Navigating Case 2a")
                         rospy.loginfo("Getting to exact pose")
                         self.current_target = o_node.name
                         result, inc = self.monitored_navigation(g_node.pose, action_server)
@@ -254,12 +262,16 @@ class TopologicalNavServer(object):
                         print result
                         if not result:
                             inc=1
+                        rospy.loginfo("Navigating Case 2a -> res: %d", inc)
                 else:
+                    rospy.loginfo("Navigating Case 3")
                     rospy.loginfo("Target or Origin Nodes were not found on Map")
                     self.cancelled = True
                     result=False
                     inc=1
+                    rospy.loginfo("Navigating Case 3a -> res: %d", inc)
             tries+=inc
+            rospy.loginfo("Navigating next try: %d", tries)
 
 
         if (not self.cancelled) and (not self.preempted) :

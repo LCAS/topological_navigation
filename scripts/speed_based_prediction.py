@@ -57,8 +57,9 @@ class TopologicalSpeedPred(object):
         self.edge_to_duration = {}
 
         while not self.map_received:
-            rospy.sleep(rospy.Duration(0.1))
+            rospy.sleep(rospy.Duration(1))
             rospy.loginfo("Waiting for Topological map ...")
+
 
         rospy.loginfo("... Got Topological map")
 
@@ -89,8 +90,12 @@ class TopologicalSpeedPred(object):
     def map_callback(self, tmap) :
         self.edge_to_duration = {}
         
+        print 'tmap ', tmap   
+
         for i in tmap.nodes :
+            print i
             for j in i.edges:
+                print j
                 if j.edge_id not in self.edge_to_duration:                                    
                     destination = get_node(tmap, j.node)
                     if j.top_vel >=  0.1:

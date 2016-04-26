@@ -31,6 +31,7 @@ class TravelTimeEstimator(object):
     def estimate_travel_time(self, req):
         self.service_lock.acquire()
 
+        print req
 
         if req.start not in self.nodes:
             raise Exception('Unknown start node: %s' % req.start)

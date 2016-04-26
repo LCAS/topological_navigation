@@ -33,6 +33,31 @@ class LocaliseByTopicSubscriber(object):
         self.sub = None
         self.t = None
 
+    def get_topic_type(self, topic, blocking=False):
+        """
+        Get the topic type.
+        !!! Overriden from rostopic !!!
+
+        :param topic: topic name, ``str``
+        :param blocking: (default False) block until topic becomes available, ``bool``
+
+        :returns: topic type, real topic name and fn to evaluate the message instance
+          if the topic points to a field within a topic, e.g. /rosout/msg. fn is None otherwise. ``(str, str, fn)``
+        :raises: :exc:`ROSTopicException` If master cannot be contacted
+        """
+        topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
+        if topic_type:
+            return topic_type, real_topic, msg_eval
+        elif blocking:
+            sys.stderr.write("WARNING: topic [%s] does not appear to be published yet\n"%topic)
+            while not rospy.is_shutdown():
+                topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
+                if topic_type:
+                    return topic_type, real_topic, msg_eval
+                else:
+                    rostopic._sleep(10.) # Change! Waiting for 10 seconds instead of 0.1 to reduce load
+        return None, None, None
+
     def __call__(self):
         """
         When called start a new thread that waits for the topic type and then
@@ -46,6 +71,7 @@ class LocaliseByTopicSubscriber(object):
         Get the topic type and subscribe to topic. Subscriber is kept alive as
         long as the instance of the class is alive.
         """
+        rostopic.get_topic_type = self.get_topic_type # Monkey patch
         topic_type = rostopic.get_topic_class(self.topic, True)[0]
         rospy.loginfo("Subscribing to %s" % self.topic)
         self.sub = rospy.Subscriber(
@@ -154,7 +180,7 @@ class TopologicalNavLoc(object):
                             closeststr=currentstr
                             not_loc=False
                     ind+=1
-
+                          
                 ind = 0
                 not_loc=True
                 while not_loc and ind<len(self.distances) and closeststr=='none' :
@@ -242,7 +268,7 @@ class TopologicalNavLoc(object):
 
                 #if item['name'] not in self.loc_by_topic:
                 if item['name'] not in [x['name'] for x in self.loc_by_topic] and self.persist[item['name']] < item['persistency']:
-                    #if item['persistency']
+                    #if item['persistency'] 
                     self.loc_by_topic.append(item)
                     self.previous_pose = self.current_pose
                     self.force_check=False

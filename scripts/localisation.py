@@ -337,15 +337,15 @@ class TopologicalNavLoc(object):
         ind = 0
         while not_loc and ind<len(distances) and ind<3 :
             if self.point_in_poly(distances[ind]['node'], req.pose) :
-                currentstr=str(self.distances[ind]['node'].name)
+                currentstr=str(distances[ind]['node'].name)
                 closeststr=currentstr
                 not_loc=False
             ind+=1
 
         ind = 0
-        while not_loc and ind<len(self.distances) :
-            if self.distances[ind]['node'].name not in self.nogos :
-                closeststr=str(self.distances[ind]['node'].name)
+        while not_loc and ind<len(distances) :
+            if distances[ind]['node'].name not in self.nogos :
+                closeststr=str(distances[ind]['node'].name)
                 not_loc=False
             ind+=1
             

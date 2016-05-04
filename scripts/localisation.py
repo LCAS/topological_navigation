@@ -107,6 +107,7 @@ class TopologicalNavLoc(object):
 
         #This service returns a list of nodes that have a given tag
         self.get_tagged_srv=rospy.Service('/topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
+        self.get_tagged_srv=rospy.Service('/topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
@@ -136,21 +137,35 @@ class TopologicalNavLoc(object):
         rospy.loginfo("All Done ...")
         rospy.spin()
 
+    """
+     get_distances_to_pose
 
+     This function returns the distance from each waypoint to a pose in an organised way
+    """
+    def get_distances_to_pose(self, pose):
+        distances=[]
+        for i in self.tmap.nodes:
+            d= get_distance_node_pose(i, pose)#get_distance_to_node(i, msg)
+            a={}
+            a['node'] = i
+            a['dist'] = d
+            distances.append(a)
+    
+        distances = sorted(distances, key=lambda k: k['dist'])
+        return distances
+
+    """
+     PoseCallback
+
+     This function receives the Robot Pose and localises 
+     the robot in topological space
+    """
     def PoseCallback(self, msg):
         self.current_pose = msg
         if(self.throttle%self.throttle_val==0):
             #rospy.loginfo("NO GO NODES: %s" %self.nogos)
-            self.distances=[]
-            for i in self.tmap.nodes:
-                d= get_distance_node_pose(i, msg)#get_distance_to_node(i, msg)
-                a={}
-                a['node'] = i
-                a['dist'] = d
-                self.distances.append(a)
-
-            self.distances = sorted(self.distances, key=lambda k: k['dist'])
-            #print self.distances
+            self.distances =[]
+            self.distances = self.get_distances_to_pose(msg)
             closeststr='none'
             currentstr='none'
 
@@ -183,6 +198,7 @@ class TopologicalNavLoc(object):
                           
                 ind = 0
                 not_loc=True
+                # No go nodes and Nodes localisable by topic are ONLY closest node when the robot is within them
                 while not_loc and ind<len(self.distances) and closeststr=='none' :
                     if self.distances[ind]['node'].name not in self.nogos and self.distances[ind]['node'].name not in self.names_by_topic :
                         closeststr=str(self.distances[ind]['node'].name)
@@ -304,6 +320,39 @@ class TopologicalNavLoc(object):
                 tlist.append(i)
         rlist.append(tlist)
         return rlist
+
+    """
+     localise_pose_cb
+
+     This function gets the node and closest node for a pose
+    """
+    def localise_pose_cb(self, req):
+        not_loc=True
+        distances=[]
+        distances=self.get_distances_to_pose(req.pose)
+        closeststr='none'
+        currentstr='none'
+
+
+        ind = 0
+        while not_loc and ind<len(distances) and ind<3 :
+            if self.point_in_poly(distances[ind]['node'], req.pose) :
+                currentstr=str(distances[ind]['node'].name)
+                closeststr=currentstr
+                not_loc=False
+            ind+=1
+
+        ind = 0
+        while not_loc and ind<len(distances) :
+            if distances[ind]['node'].name not in self.nogos :
+                closeststr=str(distances[ind]['node'].name)
+                not_loc=False
+            ind+=1
+            
+        return currentstr, closeststr
+
+
+        
 
     """
      Get No_Go_Nodes

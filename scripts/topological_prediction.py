@@ -176,9 +176,10 @@ class TopologicalNavPred(object):
                 speeds.append(0.1)
                 dur.append(est_dur)
     
-    
+               
             for k in range(len(edges_ids)):
                 print edges_ids[k], prob[k], dur[k].secs, speeds[k]
+
             return edges_ids, prob, dur
         elif not rospy.is_shutdown():
             rospy.logwarn("NO PREDICTIONS RECEIVED FROM FREMENSERVER WILL TRY AGAIN...")
@@ -201,7 +202,7 @@ class TopologicalNavPred(object):
 
     def get_entropies(self, epoch):
         # print "requesting prediction for time %d" %epoch
-        edges_ids=[]
+        #edges_ids=[]
         dur=[]
         
         eids = [x['edge_id'] for x in self.models]
@@ -226,10 +227,12 @@ class TopologicalNavPred(object):
 
       
         for i in self.unknowns:
-            edges_ids.append(i["edge_id"])
-            prob.append(0.5)                # a priory entropies (no stats)
+            eids.append(i["edge_id"])
+            prob.append(1.0)                # a priory entropies (no stats)
 
-        return edges_ids, prob, dur
+        print len(eids), len(prob)
+
+        return eids, prob, dur
 
 
 

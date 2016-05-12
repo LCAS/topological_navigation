@@ -195,7 +195,7 @@ class TopologicalNavLoc(object):
                             closeststr=currentstr
                             not_loc=False
                     ind+=1
-
+                          
                 ind = 0
                 not_loc=True
                 # No go nodes and Nodes localisable by topic are ONLY closest node when the robot is within them
@@ -284,7 +284,7 @@ class TopologicalNavLoc(object):
 
                 #if item['name'] not in self.loc_by_topic:
                 if item['name'] not in [x['name'] for x in self.loc_by_topic] and self.persist[item['name']] < item['persistency']:
-                    #if item['persistency']
+                    #if item['persistency'] 
                     self.loc_by_topic.append(item)
                     self.previous_pose = self.current_pose
                     self.force_check=False

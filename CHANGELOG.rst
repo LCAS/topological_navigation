@@ -2,6 +2,38 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#300 <https://github.com/strands-project/strands_navigation/issues/300>`_ from bfalacerda/indigo-devel
+  allowing setting of max bumper recoveries param at startup
+* Improving sampling for topological prediction
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel
+* Changing a priori entropy
+* bug fix (introduced by copy paste)
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel
+  Conflicts:
+  topological_navigation/scripts/localisation.py
+* 0.0.42
+* updated changelogs
+* Removing lambda function
+* calling the instance does not return anything. appending to list first and the calling.
+* Making localise by topic wait for the topic to be published
+* 0.0.41
+* updated changelogs
+* Adding localise_pose service which returns the node and closest node for a pose.
+  And fixing conflicts
+* fixing a priory entropies and probabilities and tidy up code
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into tsc-deployment
+* making a priory probabilities 1 and considering non fatal as successful.
+* Making navigation nodes respawnable
+* Implementing service lock for topological prediction
+* Added ability to load dummy maps from yaml
+* Monkey patching localisation by topic to wait longer between polls
+* Using more standard waypoint names to fit with other systems
+* printing messages for debugging
+* allowing setting of max bumper recoveries param at startup
+* Contributors: Bruno Lacerda, Christian Dondrup, Jaime Pulido Fentanes, Jenkins, Nick Hawes, jailander
+
 0.0.42 (2016-03-21)
 -------------------
 * Removing lambda function

@@ -102,7 +102,7 @@ class DummyTopologicalNavigator():
 
             # print "done failed to find target node"     
             self.policy_result.success = False       
-            self.policy_server.set_aborted()
+            self.policy_server.set_succeeded()
         else:
             # print "done normal"     
 
@@ -187,7 +187,7 @@ if __name__ == '__main__':
         map_loader = YamlMapLoader()
         data = map_loader.read_maps(map_file)
         map_loader.insert_maps(data=data, force=True)
-        map_name = data[0][0]['node']['map']        
+        map_name = data[0][0]['node']['pointset']        
         rospy.set_param('topological_map_name', map_name)        
 
     elif map_name is not None and len(map_name) > 0:

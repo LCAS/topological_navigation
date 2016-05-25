@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.43 (2016-05-25)
+-------------------
 * Merge pull request `#300 <https://github.com/strands-project/strands_navigation/issues/300>`_ from bfalacerda/indigo-devel
   allowing setting of max bumper recoveries param at startup
 * Improving sampling for topological prediction

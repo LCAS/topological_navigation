@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>topological_utils</name>
-  <version>0.0.42</version>
+  <version>0.0.43</version>
   <description>The topological_utils package</description>
 
   <maintainer email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</maintainer>

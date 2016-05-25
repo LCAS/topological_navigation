@@ -2,6 +2,20 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Using pointset rather than map name.
+* 0.0.42
+* updated changelogs
+* 0.0.41
+* updated changelogs
+* Using predictions for edge times
+* Added ability to load dummy maps from yaml
+* Better feedback timing as required by mdp exec.
+* Aborting axserver on failure
+* Simulating policy execution better.
+* Contributors: Jenkins, Nick Hawes
+
 0.0.42 (2016-03-21)
 -------------------
 

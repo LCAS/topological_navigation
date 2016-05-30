@@ -2,32 +2,10 @@
 
 import sys
 import rospy
-import actionlib
-import pymongo
-import json
-import sys
-import math
-import time
 import yaml
-
-from datetime import datetime
 
 import actionlib
 from actionlib_msgs.msg import *
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Header
-from std_msgs.msg import String
-from nav_msgs.srv import *
-
-
-import strands_navigation_msgs.msg
-from strands_navigation_msgs.msg import TopologicalNode
-from mongodb_store.message_store import MessageStoreProxy
-from strands_navigation_msgs.msg import NavStatistics
-from strands_navigation_msgs.msg import TopologicalMap
-
-from topological_navigation.tmap_utils import *
 
 from strands_navigation_msgs.srv import *
 from strands_navigation_msgs.msg import *
@@ -36,6 +14,17 @@ from strands_navigation_msgs.msg import *
 def usage():
     print "Run with a yaml file containing edge prediction information:"
     print "\t rosrun topological_navigation manual_edge_predictions.py <yaml file>"
+
+# Examaple yaml format:
+# - edge_id: WayPoint0_WayPoint1
+#   duration: 1.0
+#   success_probability: 1.0
+# - edge_id: WayPoint0_WayPoint4
+#   duration: 1.0
+#   success_probability: 1.0
+# - edge_id: WayPoint1_WayPoint2
+#   duration: 1.0
+#   success_probability: 1.0
 
 
 class YamlConfiguredPredictor(object):

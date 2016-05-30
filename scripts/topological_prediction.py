@@ -5,21 +5,19 @@ import rospy
 import actionlib
 import random
 import numpy
-#import pymongo
-#import json
-#import math
-#import time
+
 
 from threading import Lock
 from datetime import datetime
 
-from actionlib_msgs.msg import *
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Header
-from std_msgs.msg import String
-from nav_msgs.srv import *
+#from actionlib_msgs.msg import *
+#from geometry_msgs.msg import Pose
+#from geometry_msgs.msg import PoseStamped
+#from std_msgs.msg import Header
+#from std_msgs.msg import String
+#from nav_msgs.srv import *
 
+import std_msgs.msg
 
 import strands_navigation_msgs.msg
 #from strands_navigation_msgs.msg import TopologicalNode
@@ -55,6 +53,7 @@ class TopologicalNavPred(object):
     _result   = strands_navigation_msgs.msg.BuildTopPredictionResult()
 
     def __init__(self, epochs) :
+        rospy.on_shutdown(self._on_node_shutdown)
         self.lnodes = []
         self.map_received =False
         self.range = epochs
@@ -62,15 +61,15 @@ class TopologicalNavPred(object):
         name= rospy.get_name()
         action_name = name+'/build_temporal_model'
         
+        # Get Topological Map        
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
-        
         while not self.map_received:
             rospy.sleep(rospy.Duration(0.1))
             rospy.loginfo("Waiting for Topological map ...")
-
         rospy.loginfo("... Got Topological map")
 
+        # Creating fremen server client
         rospy.loginfo("Creating fremen server client.")
         self.FremenClient= actionlib.SimpleActionClient('fremenserver', fremenserver.msg.FremenAction)
         self.FremenClient.wait_for_server()
@@ -85,11 +84,20 @@ class TopologicalNavPred(object):
         self._as.start()
         rospy.loginfo(" ...done")
 
-        self.create_temporal_models()        
-
+        #self.create_temporal_models() #now its done on the fremen_start_cb
 
         self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         self.predict_srv=rospy.Service('/topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
+
+
+        rospy.loginfo("Set-Up Fremenserver monitors")
+        #Fremen Server Monitor
+        self.fremen_monitor = rospy.Timer(rospy.Duration(10), self.monitor_cb)
+        # Subscribe to fremen server start topic
+        rospy.Subscriber('/fremenserver_start', std_msgs.msg.Bool, self.fremen_start_cb)
+        rospy.loginfo("... Done")
+
+
         rospy.loginfo("All Done ...")
         rospy.spin()
 
@@ -102,6 +110,19 @@ class TopologicalNavPred(object):
     def MapCallback(self, msg) :
         self.lnodes = msg
         self.map_received = True
+
+
+    """
+     fremen_start_cb
+     
+     This function creates the models when the fremenserver is started
+    """
+    def fremen_start_cb(self, msg) :
+        if msg.data:
+            rospy.logwarn("FREMENSERVER restart detected will generate new models now")
+            with self.srv_lock:
+                self.create_temporal_models()
+
 
     """
      create_temporal_models
@@ -158,7 +179,7 @@ class TopologicalNavPred(object):
      
      This function fill the data structures using the navigation stats
     """
-    def gather_stats(self):
+    def gather_stats(self):    
         stats_collection = rospy.get_param('~stats_collection', 'nav_stats')
         msg_store = MessageStoreProxy(collection=stats_collection)
         to_add=[]
@@ -584,7 +605,18 @@ class TopologicalNavPred(object):
         self.cancelled = True
 
 
+    """
+     monitor_cb
+     
+     This function monitors if fremenserver is still active
+    """
+    def monitor_cb(self, events) :
+        if not self.FremenClient.wait_for_server(timeout = rospy.Duration(1)):
+            rospy.logerr("NO FREMEN SERVER FOUND. Fremenserver restart might be required")
 
+
+    def _on_node_shutdown(self):
+        self.fremen_monitor.shutdown()
 
         
 

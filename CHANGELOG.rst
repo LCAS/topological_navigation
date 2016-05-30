@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.44 (2016-05-30)
+-------------------
 * Added install for new script.
 * Cleaned up a bit.
 * Added simple node to report manually provided edge predictions from a yaml file.

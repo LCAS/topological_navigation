@@ -131,6 +131,7 @@ include_directories(
    scripts/execute_policy_server.py
    scripts/topological_prediction.py
    scripts/get_simple_policy.py
+   scripts/manual_edge_predictions.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

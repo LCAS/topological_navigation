@@ -2,6 +2,14 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added install for new script.
+* Cleaned up a bit.
+* Added simple node to report manually provided edge predictions from a yaml file.
+* Adding Fremenserver monitors to topological prediction
+* Contributors: Jaime Pulido Fentanes, Nick Hawes
+
 0.0.43 (2016-05-25)
 -------------------
 * Merge pull request `#300 <https://github.com/strands-project/strands_navigation/issues/300>`_ from bfalacerda/indigo-devel

@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.45 (2016-06-06)
+-------------------
 * removed race condition, but this really needs a better fix
 * Contributors: Nick Hawes
 

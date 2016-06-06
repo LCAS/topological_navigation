@@ -84,7 +84,7 @@ class TopologicalNavPred(object):
         self._as.start()
         rospy.loginfo(" ...done")
 
-        #self.create_temporal_models() #now its done on the fremen_start_cb
+        self.create_temporal_models() #now its done on the fremen_start_cb
 
         self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         self.predict_srv=rospy.Service('/topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)

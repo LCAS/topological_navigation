@@ -2,6 +2,11 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.0 (2016-06-09)
+------------------
+* adding move base as a run dependency on topological_navigation (`#315 <https://github.com/strands-project/strands_navigation/issues/315>`_)
+* Contributors: Jaime Pulido Fentanes
+
 0.0.45 (2016-06-06)
 -------------------
 * removed race condition, but this really needs a better fix

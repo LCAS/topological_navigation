@@ -133,20 +133,20 @@ class TopologicalNavPred(object):
         self.unknowns = []
         
         rospy.loginfo("Creating Data Structures")
-        start_time = rospy.Time.now()
+        #start_time = rospy.Time.now()
         self.get_list_of_edges()
-        elapsed_time1 = rospy.Time.now()-start_time
-        print elapsed_time1.secs+(elapsed_time1.nsecs/1e09)
+        #elapsed_time1 = rospy.Time.now()-start_time
+        #print elapsed_time1.secs+(elapsed_time1.nsecs/1e09)
         rospy.loginfo("Gathering Data")
         to_add=self.gather_stats()
-        elapsed_time2 = rospy.Time.now()-start_time
-        print elapsed_time2.secs+(elapsed_time2.nsecs/1e09)
+        #elapsed_time2 = rospy.Time.now()-start_time
+        #print elapsed_time2.secs+(elapsed_time2.nsecs/1e09)
         rospy.loginfo("Create Fremen Models")
         self.create_fremen_models(to_add)
         rospy.loginfo(" ...done")
-        elapsed_time3 = rospy.Time.now()-start_time
-        print elapsed_time3.secs+(elapsed_time3.nsecs/1e09)
-        print elapsed_time1.secs+(elapsed_time1.nsecs/1e09), elapsed_time2.secs+(elapsed_time2.nsecs/1e09)
+        #elapsed_time3 = rospy.Time.now()-start_time
+        #print elapsed_time3.secs+(elapsed_time3.nsecs/1e09)
+        #print elapsed_time1.secs+(elapsed_time1.nsecs/1e09), elapsed_time2.secs+(elapsed_time2.nsecs/1e09)
 
     """
      get_list_of_edges
@@ -256,16 +256,16 @@ class TopologicalNavPred(object):
                     stimes.append(j["epoch"])                
             i["order"] = self.add_and_eval_models(mid,times,states)
             
-            print "###########################################"
-            print "Generating speed models: ", tmid
-            print "epochs (%d): " %len(stimes)
-            print stimes
-            print "speeds (%d): " %len(speeds)
-            print speeds
+#            print "###########################################"
+#            print "Generating speed models: ", tmid
+#            print "epochs (%d): " %len(stimes)
+#            print stimes
+#            print "speeds (%d): " %len(speeds)
+#            print speeds
             
             i["t_order"] = self.add_and_eval_value_models(tmid,stimes,speeds)
 #            i["t_order"] = self.add_and_eval_models(tmid,stimes,speeds)
-            print "Done Model Order %d" %i["t_order"]
+            #print "Done Model Order %d" %i["t_order"]
             
             #print times
             #print states
@@ -386,18 +386,18 @@ class TopologicalNavPred(object):
         # Sends the goal to the action server.
         self.FremenClient.send_goal(fremgoal)
         
-        print "Sending data to fremenserver"
+        #print "Sending data to fremenserver"
         
         
         # Waits for the server to finish performing the action.
         self.FremenClient.wait_for_result()
         
-        print "fremenserver done"
+        #print "fremenserver done"
         
         # Prints out the result of executing the action
         ps = self.FremenClient.get_result()
-        print "fremenserver result:"
-        print ps
+        #print "fremenserver result:"
+        #print ps
         
         # print "--- EVALUATE ---"
         frevgoal = fremenserver.msg.FremenGoal()
@@ -473,7 +473,7 @@ class TopologicalNavPred(object):
             # Prints out the result of executing the action
             ps = self.FremenClient.get_result()  # A FibonacciResult
     
-            print ps
+            #print ps
     
             speeds = list(ps.probabilities)
     
@@ -492,8 +492,8 @@ class TopologicalNavPred(object):
                 dur.append(est_dur)
     
                
-            for k in range(len(edges_ids)):
-                print edges_ids[k], prob[k], dur[k].secs, speeds[k]
+#            for k in range(len(edges_ids)):
+#                print edges_ids[k], prob[k], dur[k].secs, speeds[k]
 
             return edges_ids, prob, dur
         elif not rospy.is_shutdown():
@@ -536,7 +536,7 @@ class TopologicalNavPred(object):
         self.FremenClient.wait_for_result()
         ps = self.FremenClient.get_result()
 
-        print ps
+        #print ps
 
         prob = list(ps.entropies)
 
@@ -545,7 +545,7 @@ class TopologicalNavPred(object):
             eids.append(i["edge_id"])
             prob.append(1.0)                # a priory entropies (no stats)
 
-        print len(eids), len(prob)
+        #print len(eids), len(prob)
 
         return eids, prob, dur
 
@@ -632,9 +632,9 @@ if __name__ == '__main__':
             ind = sys.argv.index('-range')
             epochs.append(int(sys.argv[ind+1]))
             epochs.append(int(sys.argv[ind+2]))
-            print epochs
+            #print epochs
         else:
-            print "gathering all the stats"        
+            #print "gathering all the stats"        
             epochs=[0, rospy.get_rostime().to_sec()]
 
     server = TopologicalNavPred(epochs)

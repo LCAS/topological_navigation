@@ -2,6 +2,13 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Removing Prints from topological prediction
+* Printing debug info and attempt to fix eternal retry problem
+* adding move base as a run dependency on topological_navigation
+* Contributors: Jaime Pulido Fentanes
+
 1.0.0 (2016-06-09)
 ------------------
 * adding move base as a run dependency on topological_navigation (`#315 <https://github.com/strands-project/strands_navigation/issues/315>`_)

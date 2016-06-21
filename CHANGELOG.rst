@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2016-06-21)
+------------------
 * Removing Prints from topological prediction
 * Printing debug info and attempt to fix eternal retry problem
 * adding move base as a run dependency on topological_navigation

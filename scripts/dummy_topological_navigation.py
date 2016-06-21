@@ -11,7 +11,7 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
-
+import random
 
 class DummyTopologicalNavigator():
 
@@ -34,7 +34,7 @@ class DummyTopologicalNavigator():
 
         self.cn_pub = rospy.Publisher('/current_node', String, queue_size=1)
         self.cl_pub = rospy.Publisher('/closest_node', String, queue_size=1)
-        self.cn = 'none'
+        self.cn = random.choice(list(self.node_names))
         self.simulate_time = simulate_time
         
         if self.simulate_time:

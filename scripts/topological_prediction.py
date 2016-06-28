@@ -61,6 +61,7 @@ class TopologicalNavPred(object):
         name= rospy.get_name()
         action_name = name+'/build_temporal_model'
         
+       
         # Get Topological Map        
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
@@ -184,6 +185,19 @@ class TopologicalNavPred(object):
         msg_store = MessageStoreProxy(collection=stats_collection)
         to_add=[]
 
+        self.sucesses = rospy.get_param('/topological_prediction/success_values', ['success','failed'])
+        self.fails = rospy.get_param('/topological_prediction/fail_values', ['fatal'])
+        
+        print "++++++++++++++++++++++++++++++++++"
+        print "++++++++++++++++++++++++++++++++++"        
+        print "successes:"
+        print self.sucesses
+        print "fails:"
+        print self.fails
+        print "++++++++++++++++++++++++++++++++++"        
+        print "++++++++++++++++++++++++++++++++++"
+
+
         for i in self.eids:
             query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}                
             query_meta={}            
@@ -211,18 +225,21 @@ class TopologicalNavPred(object):
             
             for j in available:                
                 val = {}
-                if j[0].status != 'fatal':
+                if j[0].status in self.fails:
                     val["st"] = 1
                     val["speed"] = i["dist"]/j[0].operation_time
                     if val["speed"]>1:
                         val["speed"]=1.0
-                else:
+                    val["epoch"] = int(datetime.strptime(j[0].date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
+                    val["optime"] = j[0].operation_time
+                    edge_mod["models"].append(val)
+                elif j[0].status in self.sucesses:
                     val["st"] = 0
                     val["speed"] = 0.0
-                val["epoch"] = int(datetime.strptime(j[0].date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
-                val["optime"] = j[0].operation_time
-                edge_mod["models"].append(val)
-                
+                    val["epoch"] = int(datetime.strptime(j[0].date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
+                    val["optime"] = j[0].operation_time
+                    edge_mod["models"].append(val)
+
             if len(available) > 0 :
                 to_add.append(edge_mod)
             else :

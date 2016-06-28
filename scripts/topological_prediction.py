@@ -185,8 +185,9 @@ class TopologicalNavPred(object):
         msg_store = MessageStoreProxy(collection=stats_collection)
         to_add=[]
 
-        self.sucesses = rospy.get_param('/topological_prediction/success_values', ['success','failed'])
-        self.fails = rospy.get_param('/topological_prediction/fail_values', ['fatal'])
+        self.sucesses = rospy.get_param('/topological_prediction/success_values', ['success'])
+        self.fails = rospy.get_param('/topological_prediction/fail_values', ['fatal','failed'])
+        
         
         print "++++++++++++++++++++++++++++++++++"
         print "++++++++++++++++++++++++++++++++++"        

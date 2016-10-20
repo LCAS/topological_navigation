@@ -62,6 +62,7 @@ class PolicyExecutionServer(object):
         
         self.cancelled = False
         self.preempted = False
+        self.nav_preempted = False
         #self.aborted = False
         self.current_action = 'none'
         self.current_route = None
@@ -566,14 +567,19 @@ class PolicyExecutionServer(object):
 
             self.stat.set_ended(self.current_node)
 
+
             if result :
-                self.stat.status= "success"
-                #rospy.loginfo("navigation finished on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                if self.goal_reached:
+                    #rospy.loginfo("navigation finished on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                    self.stat.status= "success"
+                else:
+                    #rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                    self.stat.status= "fatal"
             else :
-                if self.current_node != 'none' :
+                if self.goal_failed:
                     #rospy.loginfo("navigation failed on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
                     self.stat.status= "failed"
-                else :
+                else:
                     #rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
                     self.stat.status= "fatal"
             
@@ -615,7 +621,9 @@ class PolicyExecutionServer(object):
                 result = True
         else :
             result = True
+            
         return result
+
 
 
     """

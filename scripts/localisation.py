@@ -180,11 +180,14 @@ class TopologicalNavLoc(object):
                                 not_loc=False
                                 closeststr=str(i['name'])
                                 currentstr=str(i['name'])
+                                self.force_check = False
                         else:                               # If not, it is localised!!!
                             not_loc=False
                             closeststr=str(i['name'])
                             currentstr=str(i['name'])
-
+                            self.force_check = False
+            else:
+                self.force_check = True
 
             if not_loc:
                 ind = 0
@@ -287,9 +290,9 @@ class TopologicalNavLoc(object):
                     #if item['persistency'] 
                     self.loc_by_topic.append(item)
                     self.previous_pose = self.current_pose
-                    self.force_check=False
-                else:
-                    self.force_check=True
+                    #self.force_check=False
+#                else:
+#                    self.force_check=True
             else:
                 if item['name'] in self.persist:
                     self.persist.pop(item['name'])
@@ -298,7 +301,7 @@ class TopologicalNavLoc(object):
                     #self.loc_by_topic.remove(item['name'])
                     self.loc_by_topic.remove(item)
                     self.previous_pose = self.current_pose
-                    self.force_check=True
+#                    self.force_check=True
 
 
 

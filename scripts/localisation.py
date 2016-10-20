@@ -171,7 +171,7 @@ class TopologicalNavLoc(object):
 
             not_loc=True
             if self.loc_by_topic:
-                #print self.loc_by_topic
+#                print self.loc_by_topic
                 for i in self.loc_by_topic:
                     if not_loc:
                         if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
@@ -273,11 +273,10 @@ class TopologicalNavLoc(object):
             dist = get_distance(self.current_pose, self.previous_pose)
 
         if dist>0.10:
-            #print self.persist
             val = getattr(msg, item['field'])
             if val == item['val'] :
                 if self.persist.has_key(item['name']):
-                    if self.persist[item['name']] < item['persistency']:
+                    if self.persist[item['name']] <= item['persistency']:
                         self.persist[item['name']]+=1
                 else:
                     self.persist[item['name']]=0
@@ -287,7 +286,7 @@ class TopologicalNavLoc(object):
                     #if item['persistency'] 
                     self.loc_by_topic.append(item)
                     self.previous_pose = self.current_pose
-                    self.force_check=False
+                    #self.force_check=False
                 else:
                     self.force_check=True
             else:

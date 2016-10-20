@@ -46,8 +46,9 @@ class TopologicalVis(object):
 
             for j in i.edges : 
                 marker = self.get_edge_marker(i, j, idn)
-                self.map_markers.markers.append(marker)
-                idn += 1
+                if marker:
+                    self.map_markers.markers.append(marker)
+                    idn += 1
                 
             marker = self.get_zone_marker(i, idn)
             self.map_markers.markers.append(marker)
@@ -64,16 +65,20 @@ class TopologicalVis(object):
         V1=Point()
         V2=Point()
         V1= node.pose.position
-        V2= tmap_utils.get_node(self.lnodes, edge.node).pose.position
-        marker.scale.x = 0.1
-        marker.color.a = 0.6
-        marker.color.r = 0.1
-        marker.color.g = 0.1
-        marker.color.b = 0.1
-        marker.points.append(V1)
-        marker.points.append(V2)
-        
-        return marker
+        to_node=tmap_utils.get_node(self.lnodes, edge.node)
+        if to_node:
+            V2= to_node.pose.position
+            marker.scale.x = 0.1
+            marker.color.a = 0.6
+            marker.color.r = 0.1
+            marker.color.g = 0.1
+            marker.color.b = 0.1
+            marker.points.append(V1)
+            marker.points.append(V2)       
+            return marker
+        else:
+            rospy.logwarn("No node %s found" %edge.node)
+            return None
     
 
     def get_node_marker(self, node, idn):

@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.2 (2016-10-31)
+------------------
 * bug fix
 * fixes localise by topic and conflicts
 * Revert "2lbtfix"

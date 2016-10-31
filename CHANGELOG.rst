@@ -2,6 +2,20 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* bug fix
+* fixes localise by topic and conflicts
+* Revert "2lbtfix"
+* forcing check of localise byt topic
+* makes sense
+* now it will draw topological map despite of missing nodes for edges
+* changing default values for model building params and setting params
+* fixing nav stats
+* changing default values
+* now the parameters `/topological_prediction/success_values` and `/topological_prediction/fail_values` and be used to set the values considered for failures and successes
+* Contributors: Jaime Pulido Fentanes
+
 1.0.1 (2016-06-21)
 ------------------
 * Removing Prints from topological prediction

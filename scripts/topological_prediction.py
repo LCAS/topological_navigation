@@ -64,10 +64,11 @@ class TopologicalNavPred(object):
        
         # Get Topological Map        
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        
         rospy.loginfo("Waiting for Topological map ...")
         while not self.map_received:
-            rospy.sleep(rospy.Duration(0.1))
-            rospy.loginfo("Waiting for Topological map ...")
+            rospy.sleep(rospy.Duration(1.0))
+            #rospy.loginfo("Waiting for Topological map ...")
         rospy.loginfo("... Got Topological map")
 
         # Creating fremen server client
@@ -99,6 +100,9 @@ class TopologicalNavPred(object):
         rospy.loginfo("... Done")
 
 
+        rospy.loginfo("Subscribing to new stats ...")
+        rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.StatsCallback, queue_size=10)
+        
         rospy.loginfo("All Done ...")
         rospy.spin()
 
@@ -123,6 +127,76 @@ class TopologicalNavPred(object):
             rospy.logwarn("FREMENSERVER restart detected will generate new models now")
             with self.srv_lock:
                 self.create_temporal_models()
+
+
+    def StatsCallback(self, msg):
+        print "New Stat: ", msg
+        model_name = self.lnodes.name+'__'+msg.edge_id
+        #time_model_name = self.lnodes.name+'__'+msg.edge_id+'_time'
+        epoch = int(datetime.strptime(msg.date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
+
+        model = get_model(model_name, self.models)
+        time_model_name = model["time_model_id"]
+        distance = model['dist']
+
+
+        print epoch, model_name, time_model_name
+
+        if msg.status in self.sucesses:
+            status = 1
+            speed = distance/msg.operation_time
+            if speed>1:
+                speed=1.0
+            time = msg.operation_time
+        elif msg.status in self.fails:
+            status = 0
+            speed = 0.0
+            time = msg.operation_time
+
+        print [status], time, [speed]
+
+        fremgoal = fremenserver.msg.FremenGoal()
+        fremgoal.operation = 'add'
+        fremgoal.id = model_name
+        fremgoal.times = [epoch]
+        fremgoal.states = [status]
+        
+        # Sends the goal to the action server.
+        self.FremenClient.send_goal(fremgoal)
+        
+        # Waits for the server to finish performing the action.
+        self.FremenClient.wait_for_result()
+        
+        # Prints out the result of executing the action
+        ps = self.FremenClient.get_result()
+
+        print fremgoal, ps
+
+
+        fremgoalt = fremenserver.msg.FremenGoal()
+        fremgoalt.operation = 'addvalues'
+        fremgoalt.id = time_model_name
+        fremgoalt.times = [epoch]
+        fremgoalt.states = [0.5]
+        fremgoalt.values = [speed]
+        
+        # Sends the goal to the action server.
+        self.FremenClient.send_goal(fremgoalt)
+        
+        #print "Sending data to fremenserver"
+        
+        
+        # Waits for the server to finish performing the action.
+        self.FremenClient.wait_for_result()
+        
+        #print "fremenserver done"
+        
+        # Prints out the result of executing the action
+        ps = self.FremenClient.get_result()
+        print fremgoalt, ps
+
+
+        
 
 
     """
@@ -227,7 +301,7 @@ class TopologicalNavPred(object):
             
             for j in available:                
                 val = {}
-                if j[0].status in self.fails:
+                if j[0].status in self.sucesses:
                     val["st"] = 1
                     val["speed"] = i["dist"]/j[0].operation_time
                     if val["speed"]>1:
@@ -235,7 +309,7 @@ class TopologicalNavPred(object):
                     val["epoch"] = int(datetime.strptime(j[0].date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
                     val["optime"] = j[0].operation_time
                     edge_mod["models"].append(val)
-                elif j[0].status in self.sucesses:
+                elif j[0].status in self.fails:
                     val["st"] = 0
                     val["speed"] = 0.0
                     val["epoch"] = int(datetime.strptime(j[0].date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))

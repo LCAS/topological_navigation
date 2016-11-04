@@ -130,7 +130,7 @@ class TopologicalNavPred(object):
 
 
     def StatsCallback(self, msg):
-        print "New Stat: ", msg
+        #print "New Stat: ", msg
         model_name = self.lnodes.name+'__'+msg.edge_id
         #time_model_name = self.lnodes.name+'__'+msg.edge_id+'_time'
         epoch = int(datetime.strptime(msg.date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
@@ -140,20 +140,20 @@ class TopologicalNavPred(object):
         distance = model['dist']
 
 
-        print epoch, model_name, time_model_name
+        #print epoch, model_name, time_model_name
 
         if msg.status in self.sucesses:
             status = 1
             speed = distance/msg.operation_time
             if speed>1:
                 speed=1.0
-            time = msg.operation_time
+            #time = msg.operation_time
         elif msg.status in self.fails:
             status = 0
             speed = 0.0
-            time = msg.operation_time
+            #time = msg.operation_time
 
-        print [status], time, [speed]
+        #print [status], time, [speed]
 
         fremgoal = fremenserver.msg.FremenGoal()
         fremgoal.operation = 'add'
@@ -170,7 +170,7 @@ class TopologicalNavPred(object):
         # Prints out the result of executing the action
         ps = self.FremenClient.get_result()
 
-        print fremgoal, ps
+        #print fremgoal, ps
 
 
         fremgoalt = fremenserver.msg.FremenGoal()
@@ -193,7 +193,7 @@ class TopologicalNavPred(object):
         
         # Prints out the result of executing the action
         ps = self.FremenClient.get_result()
-        print fremgoalt, ps
+        #print fremgoalt, ps
 
 
         

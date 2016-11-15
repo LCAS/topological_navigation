@@ -82,6 +82,12 @@ class LocaliseByTopicSubscriber(object):
         )
 
 
+    def close(self):
+        self.sub.unregister()
+
+    def __del__(self):
+        self.close()
+
 class TopologicalNavLoc(object):
 
 
@@ -92,7 +98,7 @@ class TopologicalNavLoc(object):
         self.node="Unknown"
         self.wpstr="Unknown"
         self.cnstr="Unknown"
-
+        self.subscribers=[]
         self.wp_pub = rospy.Publisher('/closest_node', String, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('/current_node', String, latch=True, queue_size=1)
 
@@ -116,17 +122,7 @@ class TopologicalNavLoc(object):
             rospy.sleep(rospy.Duration.from_sec(0.1))
 
 
-        rospy.loginfo("Subscribing to localise topics")
-        subscribers = []
-        for j in self.nodes_by_topic:
-            # Append to list to keep the instance alive and the subscriber active.
-            subscribers.append(LocaliseByTopicSubscriber(
-                topic=j['topic'],
-                callback=self.Callback,
-                callback_args=j
-            ))
-            # Calling instance of class to start subsribing thread.
-            subscribers[-1]()
+        
 
         rospy.loginfo("Subscribing to robot pose")
         rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
@@ -246,6 +242,21 @@ class TopologicalNavLoc(object):
         self.nogos = self.get_no_go_nodes()
         #print self.nogos
 
+        rospy.loginfo("Subscribing to localise topics")
+
+        for i in self.subscribers:
+            del i
+
+        self.subscribers = []
+        for j in self.nodes_by_topic:
+            # Append to list to keep the instance alive and the subscriber active.
+            self.subscribers.append(LocaliseByTopicSubscriber(
+                topic=j['topic'],
+                callback=self.Callback,
+                callback_args=j
+            ))
+            # Calling instance of class to start subsribing thread.
+            self.subscribers[-1]()
 
     """
     update_loc_by_topic

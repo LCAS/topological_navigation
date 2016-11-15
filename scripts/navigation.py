@@ -58,7 +58,8 @@ class TopologicalNavServer(object):
         self.closest_node = "Unknown"
         self.actions_needed=[]
 
-        self.move_base_actions = ['move_base','human_aware_navigation']        
+        move_base_actions = ['move_base','human_aware_navigation','han_adapt_speed','han_vc_corridor','han_vc_junction']
+        self.move_base_actions = rospy.get_param('~move_base_actions', move_base_actions)     
 
         self.navigation_activated=False
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)

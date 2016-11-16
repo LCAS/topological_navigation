@@ -45,6 +45,7 @@ def get_model(name, models):
     for i in models:
         if i["model_id"] == name:
             return i
+    return None
 
 
 class TopologicalNavPred(object):
@@ -61,15 +62,15 @@ class TopologicalNavPred(object):
         name= rospy.get_name()
         action_name = name+'/build_temporal_model'
         
-       
-        # Get Topological Map        
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        self.ignore_map_name = rospy.get_param("~ignore_map_name", False)
         
-        rospy.loginfo("Waiting for Topological map ...")
-        while not self.map_received:
-            rospy.sleep(rospy.Duration(1.0))
-            #rospy.loginfo("Waiting for Topological map ...")
-        rospy.loginfo("... Got Topological map")
+        if self.ignore_map_name:
+            rospy.logwarn("Ignoring map name in model creation. All stats will be considered")
+            print self.ignore_map_name
+        else:
+            rospy.logwarn("Using map name in model creation. Only stats for current map will be considered")
+            print self.ignore_map_name
+       
 
         # Creating fremen server client
         rospy.loginfo("Creating fremen server client.")
@@ -86,7 +87,16 @@ class TopologicalNavPred(object):
         self._as.start()
         rospy.loginfo(" ...done")
 
-        self.create_temporal_models() #now its done on the fremen_start_cb
+
+        # Get Topological Map        
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        
+        rospy.loginfo("Waiting for Topological map ...")
+        while not self.map_received:
+            rospy.sleep(rospy.Duration(1.0))
+            #rospy.loginfo("Waiting for Topological map ...")
+        rospy.loginfo("... Got Topological map")
+
 
         self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         self.predict_srv=rospy.Service('/topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
@@ -101,110 +111,127 @@ class TopologicalNavPred(object):
 
 
         rospy.loginfo("Subscribing to new stats ...")
-        rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.StatsCallback, queue_size=10)
+        rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.stats_callback, queue_size=10)
         
         rospy.loginfo("All Done ...")
         rospy.spin()
 
 
-    """
-     MapCallback
-     
-     This function receives the Topological Map
-    """
+
     def MapCallback(self, msg) :
+        """
+         MapCallback
+         
+         This function receives the Topological Map
+        """
         self.lnodes = msg
         self.map_received = True
+        if self.ignore_map_name:
+            self.model_base_name='topological-prediction'
+        else:
+            self.model_base_name= self.lnodes.name
+            
+        rospy.logwarn("New topological map detected will generate new models now")
+        with self.srv_lock:
+            self.create_temporal_models()
 
 
-    """
-     fremen_start_cb
-     
-     This function creates the models when the fremenserver is started
-    """
     def fremen_start_cb(self, msg) :
+        """
+         fremen_start_cb
+         
+         This function creates the models when the fremenserver is started
+        """
         if msg.data:
             rospy.logwarn("FREMENSERVER restart detected will generate new models now")
             with self.srv_lock:
                 self.create_temporal_models()
 
 
-    def StatsCallback(self, msg):
+    def stats_callback(self, msg):
+        """
+         stats_callback
+         
+         This function adds values to known models when an edge is traversed
+        """
         #print "New Stat: ", msg
-        model_name = self.lnodes.name+'__'+msg.edge_id
+        model_name = self.model_base_name+'__'+msg.edge_id
         #time_model_name = self.lnodes.name+'__'+msg.edge_id+'_time'
         epoch = int(datetime.strptime(msg.date_started, "%A, %B %d %Y, at %H:%M:%S hours").strftime('%s'))
 
         model = get_model(model_name, self.models)
-        time_model_name = model["time_model_id"]
-        distance = model['dist']
-
-
-        #print epoch, model_name, time_model_name
-
-        if msg.status in self.sucesses:
-            status = 1
-            speed = distance/msg.operation_time
-            if speed>1:
-                speed=1.0
-            #time = msg.operation_time
-        elif msg.status in self.fails:
-            status = 0
-            speed = 0.0
-            #time = msg.operation_time
-
-        #print [status], time, [speed]
-
-        fremgoal = fremenserver.msg.FremenGoal()
-        fremgoal.operation = 'add'
-        fremgoal.id = model_name
-        fremgoal.times = [epoch]
-        fremgoal.states = [status]
         
-        # Sends the goal to the action server.
-        self.FremenClient.send_goal(fremgoal)
-        
-        # Waits for the server to finish performing the action.
-        self.FremenClient.wait_for_result()
-        
-        # Prints out the result of executing the action
-        ps = self.FremenClient.get_result()
+        if model:
+            time_model_name = model["time_model_id"]
+            distance = model['dist']
+    
+    
+            #print epoch, model_name, time_model_name
+    
+            if msg.status in self.sucesses:
+                status = 1
+                speed = distance/msg.operation_time
+                if speed>1:
+                    speed=1.0
+                #time = msg.operation_time
+            elif msg.status in self.fails:
+                status = 0
+                speed = 0.0
+                #time = msg.operation_time
+    
+            #print [status], time, [speed]
+    
+            fremgoal = fremenserver.msg.FremenGoal()
+            fremgoal.operation = 'add'
+            fremgoal.id = model_name
+            fremgoal.times = [epoch]
+            fremgoal.states = [status]
+            
+            # Sends the goal to the action server.
+            self.FremenClient.send_goal(fremgoal)
+            
+            # Waits for the server to finish performing the action.
+            self.FremenClient.wait_for_result()
+            
+            # Prints out the result of executing the action
+            ps = self.FremenClient.get_result()
+    
+            #print fremgoal, ps
+    
+    
+            fremgoalt = fremenserver.msg.FremenGoal()
+            fremgoalt.operation = 'addvalues'
+            fremgoalt.id = time_model_name
+            fremgoalt.times = [epoch]
+            fremgoalt.states = [0.5]
+            fremgoalt.values = [speed]
+            
+            # Sends the goal to the action server.
+            self.FremenClient.send_goal(fremgoalt)
+            
+            #print "Sending data to fremenserver"
+            
+            
+            # Waits for the server to finish performing the action.
+            self.FremenClient.wait_for_result()
+            
+            #print "fremenserver done"
+            
+            # Prints out the result of executing the action
+            ps = self.FremenClient.get_result()
+            #print fremgoalt, ps
+        else:
+            rospy.logwarn("Model %s hasn't been created yet. No info will be added to the models until models are built again" %model_name)
 
-        #print fremgoal, ps
-
-
-        fremgoalt = fremenserver.msg.FremenGoal()
-        fremgoalt.operation = 'addvalues'
-        fremgoalt.id = time_model_name
-        fremgoalt.times = [epoch]
-        fremgoalt.states = [0.5]
-        fremgoalt.values = [speed]
-        
-        # Sends the goal to the action server.
-        self.FremenClient.send_goal(fremgoalt)
-        
-        #print "Sending data to fremenserver"
-        
-        
-        # Waits for the server to finish performing the action.
-        self.FremenClient.wait_for_result()
-        
-        #print "fremenserver done"
-        
-        # Prints out the result of executing the action
-        ps = self.FremenClient.get_result()
-        #print fremgoalt, ps
-
-
         
 
 
-    """
-     create_temporal_models
-     
-     This function creates the temporal models used for prediction
-    """
     def create_temporal_models(self):
+        """
+         create_temporal_models
+         
+         This function creates the temporal models used for prediction
+        """
         self.unknowns = []
         
         rospy.loginfo("Creating Data Structures")
@@ -223,12 +250,13 @@ class TopologicalNavPred(object):
         #print elapsed_time3.secs+(elapsed_time3.nsecs/1e09)
         #print elapsed_time1.secs+(elapsed_time1.nsecs/1e09), elapsed_time2.secs+(elapsed_time2.nsecs/1e09)
 
-    """
-     get_list_of_edges
-     
-     This function creates the memory structures per edge of the topological map
-    """
+
     def get_list_of_edges(self):
+        """
+         get_list_of_edges
+         
+         This function creates the memory structures per edge of the topological map
+        """
         self.edgid=[]
         self.eids = []                                  #Empty previous models
         rospy.loginfo("Querying for list of edges")
@@ -238,8 +266,8 @@ class TopologicalNavPred(object):
                     self.edgid.append(j.edge_id)
                     val={}
                     val["edge_id"]=j.edge_id
-                    val["model_id"]=self.lnodes.name+'__'+j.edge_id
-                    val["time_model_id"]=self.lnodes.name+'__'+j.edge_id+'_time'
+                    val["model_id"]=self.model_base_name+'__'+j.edge_id
+                    val["time_model_id"]=self.model_base_name+'__'+j.edge_id+'_time'
                     val["ori"]=i.name
                     val["dest"]=j.node
                     ddn=get_node(self.lnodes, j.node)
@@ -249,12 +277,12 @@ class TopologicalNavPred(object):
         rospy.loginfo(fdbmsg)
 
 
-    """
-     gather_stats
-     
-     This function fill the data structures using the navigation stats
-    """
     def gather_stats(self):    
+        """
+         gather_stats
+         
+         This function fill the data structures using the navigation stats
+        """
         stats_collection = rospy.get_param('~stats_collection', 'nav_stats')
         msg_store = MessageStoreProxy(collection=stats_collection)
         to_add=[]
@@ -275,7 +303,10 @@ class TopologicalNavPred(object):
 
 
         for i in self.eids:
-            query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}                
+            if self.ignore_map_name:
+                query = {"edge_id":i["edge_id"]}
+            else:
+                query = {"topological_map": self.lnodes.name, "edge_id":i["edge_id"]}                
             query_meta={}            
             
             if len(self.range) == 2:               
@@ -648,14 +679,12 @@ class TopologicalNavPred(object):
         return self.get_entropies(req.epoch.secs)
 
 
-
-
-    """
-     BuildCallBack
-     
-     This Functions is called when the Action Server is called to build the models again
-    """
     def BuildCallback(self, goal):
+        """
+         BuildCallBack
+         
+         This Functions is called when the Action Server is called to build the models again
+        """
         with self.srv_lock:
             self.cancelled = False
     
@@ -698,12 +727,12 @@ class TopologicalNavPred(object):
         self.cancelled = True
 
 
-    """
-     monitor_cb
-     
-     This function monitors if fremenserver is still active
-    """
     def monitor_cb(self, events) :
+        """
+         monitor_cb
+         
+         This function monitors if fremenserver is still active
+        """        
         if not self.FremenClient.wait_for_server(timeout = rospy.Duration(1)):
             rospy.logerr("NO FREMEN SERVER FOUND. Fremenserver restart might be required")
 

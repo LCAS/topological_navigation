@@ -10,17 +10,10 @@ import numpy
 from threading import Lock
 from datetime import datetime
 
-#from actionlib_msgs.msg import *
-#from geometry_msgs.msg import Pose
-#from geometry_msgs.msg import PoseStamped
-#from std_msgs.msg import Header
-#from std_msgs.msg import String
-#from nav_msgs.srv import *
 
 import std_msgs.msg
 
 import strands_navigation_msgs.msg
-#from strands_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import TopologicalMap
@@ -40,6 +33,7 @@ def usage():
     print "\t rosrun topological_navigation topological_prediction.py -range from_epoch -1"
     print "For all the stats until one date:"
     print "\t rosrun topological_navigation topological_prediction.py -range 0 to_epoch"
+
 
 def get_model(name, models):
     for i in models:
@@ -347,6 +341,7 @@ class TopologicalNavPred(object):
                     val["optime"] = j[0].operation_time
                     edge_mod["models"].append(val)
 
+            edge_mod["samples"]=len(edge_mod["models"])
             if len(available) > 0 :
                 to_add.append(edge_mod)
             else :
@@ -389,8 +384,9 @@ class TopologicalNavPred(object):
             
             i["t_order"] = self.add_and_eval_value_models(tmid,stimes,speeds)
 #            i["t_order"] = self.add_and_eval_models(tmid,stimes,speeds)
-            #print "Done Model Order %d" %i["t_order"]
-            
+            print "Done Model Order %d" %i["t_order"]
+            print "samples", len(i["models"])
+            print "------------------------------------"            
             #print times
             #print states
 
@@ -556,6 +552,7 @@ class TopologicalNavPred(object):
         ords = [x['order'] for x in self.models]
         tids = [x['time_model_id'] for x in self.models]
         tords = [x['t_order'] for x in self.models]
+        samples = [x['samples'] for x in self.models]
 
         fremgoal = fremenserver.msg.FremenGoal()
         fremgoal.operation = 'forecast'
@@ -575,8 +572,10 @@ class TopologicalNavPred(object):
             prob = list(ps.probabilities)
     
             for j in range(len(mods)):
-                if prob[j] < 0.01 :
-                    prob[j] = 0.01
+                alpha=numpy.exp(-samples[j]/50)
+                prob[j]=(prob[j]*(1-alpha))+(0.5*alpha)
+                if prob[j] < 0.05 :
+                    prob[j] = 0.05
                 i=get_model(mods[j], self.models)
                 edges_ids.append(eids[j])
     

@@ -569,14 +569,14 @@ class PolicyExecutionServer(object):
 
 
             if result :
-                rospy.loginfo("navigation finished on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                rospy.loginfo("navigation finished successfully")
                 self.stat.status= "success"
             else :
-                if self.goal_failed:
-                    rospy.loginfo("navigation failed on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                if not self.cancelled:
+                    rospy.loginfo("navigation failed")
                     self.stat.status= "failed"
                 else:
-                    rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                    rospy.loginfo("Fatal fail")
                     self.stat.status= "fatal"
             
             self.publish_stats()

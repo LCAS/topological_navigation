@@ -75,7 +75,7 @@ class PolicyExecutionServer(object):
         
         self.navigation_activated=False
         self._action_name = '/topological_navigation/execute_policy_mode'
-        self.stats_pub = rospy.Publisher('/execute_policy_mode/Statistics', NavStatistics, queue_size=1)
+        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics, queue_size=1)
 
 
         self.lnodes = []
@@ -569,18 +569,14 @@ class PolicyExecutionServer(object):
 
 
             if result :
-                if self.goal_reached:
-                    #rospy.loginfo("navigation finished on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
-                    self.stat.status= "success"
-                else:
-                    #rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
-                    self.stat.status= "fatal"
+                rospy.loginfo("navigation finished on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                self.stat.status= "success"
             else :
                 if self.goal_failed:
-                    #rospy.loginfo("navigation failed on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                    rospy.loginfo("navigation failed on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
                     self.stat.status= "failed"
                 else:
-                    #rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
+                    rospy.loginfo("Fatal fail on %s (%d/%d)" %(dt_text,operation_time,time_to_wp))
                     self.stat.status= "fatal"
             
             self.publish_stats()

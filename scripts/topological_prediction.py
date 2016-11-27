@@ -119,15 +119,18 @@ class TopologicalNavPred(object):
          This function receives the Topological Map
         """
         self.lnodes = msg
-        self.map_received = True
+
         if self.ignore_map_name:
             self.model_base_name='topological-prediction'
         else:
             self.model_base_name= self.lnodes.name
-            
-        rospy.logwarn("New topological map detected will generate new models now")
-        with self.srv_lock:
-            self.create_temporal_models()
+
+        if self.map_received:  
+            rospy.logwarn("New topological map detected will generate new models now")
+            with self.srv_lock:
+                self.create_temporal_models()
+
+        self.map_received = True
 
 
     def fremen_start_cb(self, msg) :

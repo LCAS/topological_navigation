@@ -2,6 +2,23 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* now the actions in the edges of the topological map have different colours, the markers have namespaces and there is a legend with the colours and the action names
+* Implementing formula for keeping probabilities of under explored edge… (`#336 <https://github.com/strands-project/strands_navigation/issues/336>`_)
+  * Implementing formula for keeping probabilities of under explored edges higher
+  * Stats on same topic and not builiding fremen models when first topological map arrives
+  * fixing bug in previous PR
+* fixing bug in previous PR
+* Stats on same topic and not builiding fremen models when first topological map arrives
+* Implementing formula for keeping probabilities of under explored edges higher
+* Topological prediction now works properly with map switching and using nav_stats only when models have been created
+* moving localisation subscriber to map callback
+* adding new action to move_base type actions and making it a param
+* removing prints
+* now models will be updated as robot navigates (model building is still necessary one in a while)
+* Contributors: Jaime Pulido Fentanes, jailander
+
 1.0.2 (2016-10-31)
 ------------------
 * bug fix

@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.3 (2017-01-11)
+------------------
 * now the actions in the edges of the topological map have different colours, the markers have namespaces and there is a legend with the colours and the action names
 * Implementing formula for keeping probabilities of under explored edge… (`#336 <https://github.com/strands-project/strands_navigation/issues/336>`_)
   * Implementing formula for keeping probabilities of under explored edges higher

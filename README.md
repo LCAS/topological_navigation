@@ -216,8 +216,13 @@ To edit the topological map you can use the following methods
 
 1. It is necessary to insert a basic map in the DB and run the topological system based on it for this a launch file is provided and it can be used in the following way:
 
-  `roslaunch topological_utils create_topological_map.launch met_map:='name_of_metric_map' top_map:='name_of_topological_map'`
+  * Launch 2d navigation using for example:
+  `roslaunch strands_movebase movebase.launch map:=/path/to/your/map.yaml with_chest_xtion:=false`
   
+  * Launch empty topological map:
+  `roslaunch topological_navigation topological_navigation_empty_map.launch map:='name_of_topological_map'`
+
+
 This will create a basic map and run the topological system with it.
 
 2. Once this is done you can run **Rviz**, `rosrun rviz rviz` and create two *marker array* interfaces `/topological_node_zones_array` and `/topological_edges_array` optionally an additional *marker array* interface can be created `/topological_nodes_array`. This will allow the visualization of the topological map.

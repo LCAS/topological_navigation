@@ -577,7 +577,7 @@ class TopologicalNavPred(object):
             for j in range(len(mods)):
                 #alpha=numpy.exp(-samples[j]/50)
                 #prob[j]=(prob[j]*(1-alpha))+(0.5*alpha)
-                if samples[j] <= 5:
+                if samples[j] <= 10:
                     prob[j]=1.0
 
                 if prob[j] < 0.05 :
@@ -607,10 +607,13 @@ class TopologicalNavPred(object):
             speeds = list(ps.probabilities)
     
             for j in range(len(mods)):
-                if speeds[j]>0.01:
-                    dur.append(rospy.Duration(self.models[j]["dist"]/speeds[j]))
+                if samples[j] <= 10:
+                    dur.append(rospy.Duration(self.models[j]["dist"]/0.5)) #default scitos speed
                 else:
-                    dur.append(rospy.Duration(self.models[j]["dist"]/0.01))
+                    if speeds[j]>0.01:
+                        dur.append(rospy.Duration(self.models[j]["dist"]/speeds[j]))
+                    else:
+                        dur.append(rospy.Duration(self.models[j]["dist"]/0.01))
     
             ## Filling up values for edges with no stats available
             for i in self.unknowns:

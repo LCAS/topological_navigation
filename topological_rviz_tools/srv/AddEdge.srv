@@ -1,0 +1,18 @@
+# This service allows you to add an edge by providing two poses on the map, and
+# will add an edge to the topological map based on the closest nodes to those
+# clicked locations.
+
+# Pose of where the first mouse click happened
+geometry_msgs/Pose first
+# Pose of where the second mouse click happened
+geometry_msgs/Pose second
+
+# If there are nodes within this distance of a click location (for either the
+# start or end node), the edge will not be created
+float32 max_distance
+
+# If true, add two edges - one from first->second, one from second->first
+bool bidirectional
+---
+bool success
+string message

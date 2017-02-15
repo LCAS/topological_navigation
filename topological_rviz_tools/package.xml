@@ -1,0 +1,35 @@
+<package>
+  <name>topological_rviz_tools</name>
+  <version>0.0.1</version>
+  <description>
+    Topological map construction for strands
+  </description>
+  <maintainer email="staniasm@cs.bham.ac.uk">Michal Staniaszek</maintainer>
+  <license>BSD</license>
+
+  <author>Michal Staniaszek</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>qtbase5-dev</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>strands_navigation_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rviz</build_depend>
+
+  <run_depend>libqt5-core</run_depend>
+  <run_depend>libqt5-gui</run_depend>
+  <run_depend>libqt5-widgets</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>strands_navigation_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>rviz</run_depend>
+
+  <export>
+      <rviz plugin="${prefix}/plugin_description.xml"/>
+  </export>
+</package>

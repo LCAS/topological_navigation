@@ -12,9 +12,7 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
-
 from strands_navigation_msgs.msg import TopologicalMap
-#from strands_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
 
 
@@ -27,9 +25,9 @@ class WaypointControllers(object):
         #print map_name
         self._marker_server = InteractiveMarkerServer("topological_map_markers")   
         self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
-    
     def update_map(self, msg) :
         print "updating node controllers..."
         self.topo_map = topological_map(msg.name, msg=msg)
@@ -38,7 +36,6 @@ class WaypointControllers(object):
       
         for i in self.topo_map.nodes :
             self._create_marker(i.name, i._get_pose(), i.name)
-
 
     """
      MapCallback
@@ -68,31 +65,17 @@ class WaypointControllers(object):
         box_marker.color.b = 0.5
         box_marker.color.a = 1.0
 
-        # create a non-interactive control which contains the box
+        # create an interactive control which contains the arrow and
+        # allows movement within the x-y plane.
         box_control = InteractiveMarkerControl()
         box_control.always_visible = True
+        box_control.orientation.w = 1
+        box_control.orientation.x = 0
+        box_control.orientation.y = 1
+        box_control.orientation.z = 0
+        box_control.interaction_mode = InteractiveMarkerControl.MOVE_PLANE
         box_control.markers.append( box_marker )
         marker.controls.append( box_control )
-
-        # move x
-        control = InteractiveMarkerControl()
-        control.orientation.w = 1
-        control.orientation.x = 1
-        control.orientation.y = 0
-        control.orientation.z = 0
-        control.name = "move_x"
-        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
-        marker.controls.append(control)
-
-        #move y
-        control = InteractiveMarkerControl()
-        control.orientation.w = 1
-        control.orientation.x = 0
-        control.orientation.y = 0
-        control.orientation.z = 1
-        control.name = "move_y"
-        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
-        marker.controls.append(control)
 
         #rotate z
         control = InteractiveMarkerControl()

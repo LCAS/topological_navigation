@@ -3,28 +3,32 @@
   <arg name="map" default="$(find tsc_bringup)/maps/tsc_1611/tsc_1611.yaml"/>
   <arg name="db_path" default="/storage/mongodb_store"/>
   <arg name="rviz" default="true"/>
+  <arg name="standalone" default="true"/>
 
-  <include file="$(find mongodb_store)/launch/mongodb_store.launch">
-    <arg name="db_path" value="$(arg db_path)"/>
-  </include>
+  <group if="$(arg standalone)">
+    <include file="$(find mongodb_store)/launch/mongodb_store.launch">
+      <arg name="db_path" value="$(arg db_path)"/>
+    </include>
 
-  <node pkg="tf" type="static_transform_publisher" name="map_odom_bc" args="1 0 0 0 0 0 1 odom map 100" />
+    <node pkg="tf" type="static_transform_publisher" name="map_odom_bc" args="1 0 0 0 0 0 1 odom map 100" />
 
-  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
 
-  <node pkg="topological_navigation" name="topological_map_manager" type="map_manager.py" args="$(arg topmap)" output="screen"/>
+    <node pkg="topological_navigation" name="topological_map_manager" type="map_manager.py" args="$(arg topmap)" output="screen"/>
 
-  <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch">
-    <arg name="map" value="$(arg topmap)"/>
-  </include>
+    <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch">
+      <arg name="map" value="$(arg topmap)"/>
+    </include>
 
-  <node pkg="topological_navigation" name="visualise_map" type="visualise_map.py" args="$(arg topmap)" output="screen"/>
+    <node pkg="topological_navigation" name="visualise_map" type="visualise_map.py" args="$(arg topmap)" output="screen"/>
+
+    <group if="$(arg rviz)">
+      <node name="rviz" pkg="rviz" type="rviz" args="-d $(find topological_rviz_tools)/conf/topological_rviz_tools.rviz" output="screen"/>
+    </group>
+  </group>
 
   <node pkg="topological_rviz_tools" name="topmap_interface" type="python_topmap_interface.py" output="screen">
     <param name="map_name" value="$(arg topmap)"/>
   </node>
 
-  <group if="$(arg rviz)">
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find topological_rviz_tools)/conf/topological_rviz_tools.rviz" output="screen"/>
-  </group>
 </launch>

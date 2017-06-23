@@ -2,8 +2,8 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.4 (2017-06-23)
+------------------
 * set version to 1.0.3 as the rest of repository
 * Topmap editor (`#344 <https://github.com/strands-project/strands_navigation/issues/344>`_)
   * Initial commit

@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.4 (2017-06-23)
+------------------
 * Modifications to topological map tools to accommodate topological map editor (`#345 <https://github.com/strands-project/strands_navigation/issues/345>`_)
   * fix weird space-colon
   * Easier translational movement of waypoints, generic node field updater

@@ -2,6 +2,30 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Modifications to topological map tools to accommodate topological map editor (`#345 <https://github.com/strands-project/strands_navigation/issues/345>`_)
+  * fix weird space-colon
+  * Easier translational movement of waypoints, generic node field updater
+  Moving the waypoints that are displayed in the topological map in rviz is now
+  easier - just uses 2D planar motion as opposed to multiple handles for the x and
+  y dimensions.
+  Added a function which calls into the database to update any property of a node.
+  * Fixed not loading map after update, correctly updates edges on node rename
+  This should really not be the file being used - it seems like the one in util is
+  used to change things and as such is more up to date.
+  * remove unnecessary if
+  * update function for edge action and top_vel
+  * add deprecation warnings to topological_map.py - should use manager.py instead
+  * start on work to make manager services more useful for modifying map
+  * add callback for getting tags for a specific node
+  * partial switch to the using manager, updating and adding tags
+  * fix message fields and add messages to generation
+  * small script to insert empty map into a database
+  * add edge removal service
+  * change callbacks so that functions can be called without service
+* Contributors: Michal Staniaszek
+
 1.0.3 (2017-01-11)
 ------------------
 

@@ -1,7 +1,7 @@
 <launch>
-  <arg name="topmap" default="tsc_1611"/>
-  <arg name="map" default="$(find tsc_bringup)/maps/tsc_1611/tsc_1611.yaml"/>
-  <arg name="db_path" default="/storage/mongodb_store"/>
+  <arg name="topmap"/>
+  <arg name="map"/>
+  <arg name="db_path"/>
   <arg name="rviz" default="true"/>
   <arg name="standalone" default="true"/>
 

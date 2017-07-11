@@ -321,9 +321,6 @@ class topological_map(object):
             rm_id = str(i[1]['_id'])
             msg_store.delete(rm_id)
 
-        # need to reload the map when a node is deleted, for consistency
-        self.loadMap(self.name)
-
     @deprecated
     def map_from_msg(self, nodes):
         #self.topol_map = msg.pointset

@@ -19,6 +19,29 @@ TopologicalMapPanel::TopologicalMapPanel(QWidget* parent)
   properties_view_ = new rviz::PropertyTreeWidget();
 
   ros::NodeHandle nh;
+  ros::Rate r(10);
+  while(!ros::service::exists("/topological_map_manager/remove_topological_node", true))
+  {
+    r.sleep();
+    ROS_INFO("Waiting for remove_topological_node service\n");
+  }
+  while(!ros::service::exists("/topological_map_manager/add_tag_to_node", true))
+  {
+    r.sleep();
+    ROS_INFO("Waiting for add_tag_to_node service\n");
+  }
+
+  while(!ros::service::exists("/topological_map_manager/rm_tag_from_node", true))
+  {
+    r.sleep();
+    ROS_INFO("Waiting for rm_tag_from_node service\n");
+  }
+
+  while(!ros::service::exists("/topological_map_manager/remove_edge", true))
+  {
+    r.sleep();
+    ROS_INFO("Waiting for remove_edge service\n");
+  }
   delNodeSrv_ = nh.serviceClient<strands_navigation_msgs::RmvNode>("/topological_map_manager/remove_topological_node", true);
   addTagSrv_ = nh.serviceClient<strands_navigation_msgs::AddTag>("/topological_map_manager/add_tag_to_node", true);
   delTagSrv_ = nh.serviceClient<strands_navigation_msgs::AddTag>("/topological_map_manager/rm_tag_from_node", true);

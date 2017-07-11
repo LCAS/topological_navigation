@@ -50,9 +50,18 @@ TopmapNodeTool::~TopmapNodeTool()
 // set it invisible.
 void TopmapNodeTool::onInitialize()
 {
+  
   ros::NodeHandle nh;
+  ros::Rate r(10);
+  while(!ros::service::exists("/topological_map_manager/add_topological_node", true))
+  {
+    r.sleep();
+    ROS_INFO("Waiting for add_topological_node service\n");
+  }
+
   addNodeSrv_ = nh.serviceClient<strands_navigation_msgs::AddNode>("/topological_map_manager/add_topological_node", true);
   update_map_ = nh.advertise<std_msgs::Time>("/update_map", 5);
+
 }
 
 // Activation and deactivation

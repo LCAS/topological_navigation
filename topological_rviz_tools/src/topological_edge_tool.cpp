@@ -65,6 +65,12 @@ TopmapEdgeTool::~TopmapEdgeTool()
 void TopmapEdgeTool::onInitialize()
 {
   ros::NodeHandle nh;
+  ros::Rate r(10);
+  while(!ros::service::exists("/topmap_interface/add_edge", true))
+  {
+    r.sleep();
+    ROS_INFO("Waiting for add_edge service\n");
+  }
   addEdgeSrv_ = nh.serviceClient<topological_rviz_tools::AddEdge>("/topmap_interface/add_edge", true);
   markerPub_ = nh.advertise<visualization_msgs::Marker>("edge_tool_marker", 0);
   update_map_ = nh.advertise<std_msgs::Time>("/update_map", 5);

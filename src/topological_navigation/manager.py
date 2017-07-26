@@ -433,7 +433,7 @@ class map_manager(object):
         return self.update_node_name(req.node_name, req.new_name)
 
     def update_node_name(self, node_name, new_name):
-        if req.new_name in self.names:
+        if new_name in self.names:
             return False, "node with name {0} already exists".format(req.new_name)
 
         msg_store = MessageStoreProxy(collection='topological_maps')

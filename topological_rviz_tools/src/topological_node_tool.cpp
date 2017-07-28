@@ -50,7 +50,7 @@ TopmapNodeTool::~TopmapNodeTool()
 // set it invisible.
 void TopmapNodeTool::onInitialize()
 {
-  
+
   ros::NodeHandle nh;
   ros::Rate r(10);
   while(!ros::service::exists("/topological_map_manager/add_topological_node", true))
@@ -92,10 +92,13 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
   Ogre::Vector3 intersection;
   Ogre::Plane ground_plane(Ogre::Vector3::UNIT_Z, 0.0f);
   if(rviz::getPointOnPlaneFromWindowXY(event.viewport,
-                                         ground_plane,
-                                         event.x, event.y, intersection))
+					 ground_plane,
+					 event.x, event.y, intersection))
   {
-    if (event.leftDown()){
+    bool left = event.leftDown();
+    bool right = event.rightDown();
+
+    if (right || left) {
       geometry_msgs::Pose clicked = geometry_msgs::Pose();
       clicked.position.x = intersection.x;
       clicked.position.y = intersection.y;
@@ -104,6 +107,11 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
       // map, and then reset the poses.
       strands_navigation_msgs::AddNode srv;
       srv.request.pose = clicked;
+
+      // If rmb pressed, don't add edges to nodes close to the new node location
+      if (right){
+	srv.request.add_close_nodes = false;
+      }
 
       if (addNodeSrv_.call(srv)){
 	if (srv.response.success) {
@@ -119,8 +127,8 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
       }
       return Render | Finished;
     }
-    return Render;
   }
+  return Render;
 }
 
 } // end namespace topological_rviz_tools

@@ -102,7 +102,7 @@ void TopologicalMapPanel::onDeleteClicked()
 
   QMessageBox box;
   char* buf = new char[100];
-  sprintf(buf, "Delete %d nodes, %d edges and %d tags?", nodes_to_delete.size(), tags_to_delete.size(), edges_to_delete.size());
+  sprintf(buf, "Delete %d nodes, %d edges and %d tags?", nodes_to_delete.size(), edges_to_delete.size(), tags_to_delete.size());
   std::string info_msg = buf;
   delete buf;
   

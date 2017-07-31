@@ -162,6 +162,7 @@ class map_manager(object):
         #print len(available)
         if len(available) != 1:
              succeded = False
+             meta_out = None
              print 'there are no nodes or more than 1 with that name'
         else:
             succeded = True
@@ -195,6 +196,7 @@ class map_manager(object):
     def add_tag_cb(self, msg):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
         succeded = True
+        meta_out = None
         for j in msg.node:
 
             msg_store = MessageStoreProxy(collection='topological_maps')
@@ -240,6 +242,7 @@ class map_manager(object):
             available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
             #print len(available)
             succeded = False
+            meta_out = None
             for i in available:
                 msgid= i[1]['_id']
                 if 'tag' in i[1]:
@@ -256,6 +259,7 @@ class map_manager(object):
 
     def modify_tag_cb(self, msg):
         succeded = True
+        meta_out = None
         for node in msg.node:
             msg_store = MessageStoreProxy(collection='topological_maps')
             query = {"name" : node, "pointset": self.nodes.name}

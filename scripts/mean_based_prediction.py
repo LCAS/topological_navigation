@@ -52,7 +52,7 @@ class TopologicalMeanPred(object):
         self.edge_to_duration = {}
         self.edge_to_probability = {}
         self.map = None
-        rospy.Subscriber('/topological_map', TopologicalMap, self.map_callback)
+        rospy.Subscriber('topological_map', TopologicalMap, self.map_callback)
         
         rospy.loginfo("Waiting for Topological map and building model ...")
         
@@ -75,7 +75,7 @@ class TopologicalMeanPred(object):
         rospy.loginfo(" ...done")
 
 
-        self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
+        self.predict_srv=rospy.Service('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 

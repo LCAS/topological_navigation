@@ -26,17 +26,17 @@ class PoliciesVis(object):
         #self.update_needed=False
         
         rospy.loginfo("Creating Publishers ...")
-        self.policies_pub = rospy.Publisher('/topological_edges_policies', MarkerArray)
+        self.policies_pub = rospy.Publisher('topological_edges_policies', MarkerArray)
         rospy.loginfo("Done ...")
         
         
         rospy.loginfo("Creating subscriber ...")      
-        self.subs = rospy.Subscriber("/mdp_plan_exec/current_policy_mode", NavRoute, self.policies_callback)       
+        self.subs = rospy.Subscriber("mdp_plan_exec/current_policy_mode", NavRoute, self.policies_callback)       
         rospy.loginfo("Done ...")
 
         #Waiting for Topological Map        
         self.map_received=False
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)      
         rospy.loginfo("Waiting for Topological map ...")        
         while not self.map_received and not self._killall :
             rospy.sleep(rospy.Duration.from_sec(0.05))

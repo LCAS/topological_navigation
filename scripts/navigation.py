@@ -62,16 +62,16 @@ class TopologicalNavServer(object):
         self.move_base_actions = rospy.get_param('~move_base_actions', move_base_actions)     
 
         self.navigation_activated=False
-        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
-        self.edge_pub = rospy.Publisher('/topological_navigation/Edge', CurrentEdge)
-        self.route_pub = rospy.Publisher('/topological_navigation/Route', strands_navigation_msgs.msg.TopologicalRoute)
-        self.cur_edge = rospy.Publisher('/current_edge', String)
+        self.stats_pub = rospy.Publisher('topological_navigation/Statistics', NavStatistics)
+        self.edge_pub = rospy.Publisher('topological_navigation/Edge', CurrentEdge)
+        self.route_pub = rospy.Publisher('topological_navigation/Route', strands_navigation_msgs.msg.TopologicalRoute)
+        self.cur_edge = rospy.Publisher('current_edge', String)
         self.monit_nav_cli= False
 
         
         #Waiting for Topological Map        
         self._map_received=False
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")        
         while not self._map_received :
             rospy.sleep(rospy.Duration.from_sec(0.05))
@@ -99,14 +99,14 @@ class TopologicalNavServer(object):
 
         #Subscribing to Localisation Topics
         rospy.loginfo("Subscribing to Localisation Topics")
-        rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
-        rospy.Subscriber('/current_node', String, self.currentNodeCallback)
+        rospy.Subscriber('closest_node', String, self.closestNodeCallback)
+        rospy.Subscriber('current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
 
         
         #Creating Reconfigure Client
         rospy.loginfo("Creating Reconfigure Client")
-        self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
+        self.rcnfclient = dynamic_reconfigure.client.Client('move_base/DWAPlannerROS')
         config = self.rcnfclient.get_configuration()
         self.dyt = config['yaw_goal_tolerance']
 

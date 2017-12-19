@@ -16,7 +16,7 @@ class SearchPolicyServer(object):
 
         #Waiting for Topological Map        
         self._map_received=False
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)      
         rospy.loginfo("Waiting for Topological map ...")        
         while not self._map_received :
             rospy.sleep(rospy.Duration.from_sec(0.05))
@@ -24,15 +24,15 @@ class SearchPolicyServer(object):
 
         self._top_loc=False
         rospy.loginfo("Waiting for Topological localisation ...")
-        rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
+        rospy.Subscriber('closest_node', String, self.closestNodeCallback)
         while not self._top_loc :
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
 
 
         #This service returns any given map
-        self.get_map_srv=rospy.Service('/get_simple_policy/get_route_to', strands_navigation_msgs.srv.GetRouteTo, self.get_route_cb)
-        self.get_map_srv=rospy.Service('/get_simple_policy/get_route_between', strands_navigation_msgs.srv.GetRouteBetween, self.get_routeb_cb)
+        self.get_map_srv=rospy.Service('get_simple_policy/get_route_to', strands_navigation_msgs.srv.GetRouteTo, self.get_route_cb)
+        self.get_map_srv=rospy.Service('get_simple_policy/get_route_between', strands_navigation_msgs.srv.GetRouteBetween, self.get_routeb_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 

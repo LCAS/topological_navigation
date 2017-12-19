@@ -69,13 +69,13 @@ class PolicyExecutionServer(object):
         self.n_tries = rospy.get_param('~retries', 3)
         
         rospy.on_shutdown(self._on_node_shutdown)
-        self.move_base_actions = ['move_base','human_aware_navigation']
+        self.move_base_actions = ['move_base']
         self.needed_actions=[]
         
         
         self.navigation_activated=False
-        self._action_name = '/topological_navigation/execute_policy_mode'
-        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics, queue_size=1)
+        self._action_name = 'topological_navigation/execute_policy_mode'
+        self.stats_pub = rospy.Publisher('topological_navigation/Statistics', NavStatistics, queue_size=1)
 
 
         self.lnodes = []
@@ -98,12 +98,12 @@ class PolicyExecutionServer(object):
 
         #Subscribing to Localisation Topics
         rospy.loginfo("Waiting for Localisation Topics")
-        self.current_node = rospy.wait_for_message('/current_node', String)
-        self.closest_node = rospy.wait_for_message('/closest_node', String) 	
+        self.current_node = rospy.wait_for_message('current_node', String)
+        self.closest_node = rospy.wait_for_message('closest_node', String) 	
 
         rospy.loginfo("Subscribing to Localisation Topics")
-        rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
-        rospy.Subscriber('/current_node', String, self.currentNodeCallback)
+        rospy.Subscriber('closest_node', String, self.closestNodeCallback)
+        rospy.Subscriber('current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
 
         mb_service_created=False
@@ -114,7 +114,7 @@ class PolicyExecutionServer(object):
         #Creating Reconfigure Client
         for i in self.needed_move_base_actions:
             client = None
-            rcnfsrvrname= '/'+i+'/DWAPlannerROS'
+            rcnfsrvrname= rospy.get_namespace() + i+'/DWAPlannerROS'
             test_service = rcnfsrvrname+'/set_parameters'
             
             service_created=False
@@ -142,7 +142,7 @@ class PolicyExecutionServer(object):
             self.dyt = config['move_base']['yaw_goal_tolerance']
         else:
             while not mb_service_created and not self.cancelled:
-                rcnfsrvrname= '/move_base/DWAPlannerROS'
+                rcnfsrvrname= 'move_base/DWAPlannerROS'
                 test_service = rcnfsrvrname+'/set_parameters'
                 rospy.logwarn("%s must be created! will keep trying until its there" %rcnfsrvrname)
                 service_names = rosservice.get_service_list()
@@ -541,7 +541,7 @@ class PolicyExecutionServer(object):
             #dt_text=self.stat.get_start_time_str()
 
             if action in self.move_base_actions and node_in_route :
-                rospy.set_param("/move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))
+                rospy.set_param("move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))
 
             if next_action in self.move_base_actions :
                 params = { 'yaw_goal_tolerance' : 6.28318531, 'max_vel_x':top_vel, 'max_trans_vel':top_vel}   #360 degrees tolerance
@@ -563,7 +563,7 @@ class PolicyExecutionServer(object):
             else:
                 self.do_reconf_movebase(params, 'move_base')
             
-            rospy.set_param("/move_base/NavfnROS/default_tolerance",0.0)
+            rospy.set_param("move_base/NavfnROS/default_tolerance",0.0)
 
             self.stat.set_ended(self.current_node)
 

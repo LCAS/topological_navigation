@@ -83,7 +83,7 @@ class TopologicalNavPred(object):
 
 
         # Get Topological Map        
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)
         
         rospy.loginfo("Waiting for Topological map ...")
         while not self.map_received:
@@ -92,20 +92,20 @@ class TopologicalNavPred(object):
         rospy.loginfo("... Got Topological map")
 
 
-        self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
-        self.predict_srv=rospy.Service('/topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
+        self.predict_srv=rospy.Service('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
+        self.predict_srv=rospy.Service('topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
 
 
         rospy.loginfo("Set-Up Fremenserver monitors")
         #Fremen Server Monitor
         self.fremen_monitor = rospy.Timer(rospy.Duration(10), self.monitor_cb)
         # Subscribe to fremen server start topic
-        rospy.Subscriber('/fremenserver_start', std_msgs.msg.Bool, self.fremen_start_cb)
+        rospy.Subscriber('fremenserver_start', std_msgs.msg.Bool, self.fremen_start_cb)
         rospy.loginfo("... Done")
 
 
         rospy.loginfo("Subscribing to new stats ...")
-        rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.stats_callback, queue_size=10)
+        rospy.Subscriber('topological_navigation/Statistics', NavStatistics, self.stats_callback, queue_size=10)
         
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -284,11 +284,11 @@ class TopologicalNavPred(object):
         msg_store = MessageStoreProxy(collection=stats_collection)
         to_add=[]
 
-        self.sucesses = rospy.get_param('/topological_prediction/success_values', ['success','failed'])
-        self.fails = rospy.get_param('/topological_prediction/fail_values', ['fatal'])
+        self.sucesses = rospy.get_param('topological_prediction/success_values', ['success','failed'])
+        self.fails = rospy.get_param('topological_prediction/fail_values', ['fatal'])
         
-        rospy.set_param('/topological_prediction/success_values',self.sucesses)
-        rospy.set_param('/topological_prediction/fail_values',self.fails)
+        rospy.set_param('topological_prediction/success_values',self.sucesses)
+        rospy.set_param('topological_prediction/fail_values',self.fails)
         print "++++++++++++++++++++++++++++++++++"
         print "++++++++++++++++++++++++++++++++++"        
         print "successes:"
@@ -396,7 +396,7 @@ class TopologicalNavPred(object):
 
     def add_and_eval_models(self, model_id, epochs, states):
         # Choosing the samples used for model building and evaluation
-        sampling_type = rospy.get_param('/door_prediction/model_building/sampling_type', 0) #0 for ordered (extrapolation), 1 for random (intrapolation)
+        sampling_type = rospy.get_param('door_prediction/model_building/sampling_type', 0) #0 for ordered (extrapolation), 1 for random (intrapolation)
         
         if len(epochs)>0:
             if sampling_type == 0:
@@ -464,7 +464,7 @@ class TopologicalNavPred(object):
 
     def add_and_eval_value_models(self, model_id, epochs, states):
         # Choosing the samples used for model building and evaluation
-        sampling_type = rospy.get_param('/door_prediction/model_building/sampling_type', 0) #0 for ordered (extrapolation), 1 for random (intrapolation)
+        sampling_type = rospy.get_param('door_prediction/model_building/sampling_type', 0) #0 for ordered (extrapolation), 1 for random (intrapolation)
 
         if len(epochs)>0:
             if sampling_type == 0:

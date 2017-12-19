@@ -29,8 +29,8 @@ class node_manager(object):
 
     def __init__(self) :
         self.in_feedback=False
-        #map_name = rospy.get_param('/topological_map_name', 'top_map')
-        self._node_server = InteractiveMarkerServer("topological_map_add_rm_node")
+        #map_name = rospy.get_param('topological_map_name', 'top_map')
+        self._node_server = InteractiveMarkerServer("/topological_map_add_rm_node")
         rospy.loginfo(" ... Init done")
         self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
@@ -113,7 +113,7 @@ class node_manager(object):
             self.in_feedback=True
 
             try:
-                current = rospy.wait_for_message('/current_node', std_msgs.msg.String, timeout=10.0)
+                current = rospy.wait_for_message('current_node', std_msgs.msg.String, timeout=10.0)
             except rospy.ROSException :
                 rospy.logwarn("Failed to get current node")
                 return
@@ -121,7 +121,7 @@ class node_manager(object):
             print current.data
             if current.data == 'none':
                 try:
-                    pos = rospy.wait_for_message('/robot_pose', Pose, timeout=10.0)
+                    pos = rospy.wait_for_message('robot_pose', Pose, timeout=10.0)
                 except rospy.ROSException :
                     rospy.logwarn("Failed to get robot pose")
                     return

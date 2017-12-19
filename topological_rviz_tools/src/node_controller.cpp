@@ -7,7 +7,7 @@ NodeController::NodeController()
   : rviz::Property()
 {
   ros::NodeHandle nh_;
-  top_sub_ = nh_.subscribe("/topological_map", 1, &NodeController::topmapCallback, this);
+  top_sub_ = nh_.subscribe("topological_map", 1, &NodeController::topmapCallback, this);
 }
 
 void NodeController::initialize()

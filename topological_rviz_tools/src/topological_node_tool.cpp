@@ -103,6 +103,7 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
       clicked.position.x = intersection.x;
       clicked.position.y = intersection.y;
       clicked.position.z = intersection.z;
+      clicked.orientation.w = 1.0;
       // On the second click, send the edge to the service to be added to the
       // map, and then reset the poses.
       strands_navigation_msgs::AddNode srv;

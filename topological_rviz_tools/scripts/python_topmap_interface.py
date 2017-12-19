@@ -26,7 +26,7 @@ class TopmapInterface(object):
         self.topmap = None
         self.new_nodes = 0
 
-        self.topmap_sub = rospy.Subscriber("topological_map", TopologicalMap, self.topmap_cb)
+        self.topmap_sub = rospy.Subscriber("/topological_map", TopologicalMap, self.topmap_cb)
         self.add_edge_srv = rospy.Service("~add_edge", topological_rviz_tools.srv.AddEdge, self.add_edge)
 
         self.manager_add_edge = rospy.ServiceProxy("/topological_map_manager/add_edges_between_nodes", strands_navigation_msgs.srv.AddEdge)

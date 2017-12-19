@@ -21,7 +21,7 @@ from topological_navigation.topological_map import *
 class addWaypoint(object):
 
     def __init__(self, filename) :
-        rospy.Subscriber('/joy', sensor_msgs.msg.Joy, self.JoyCallback)      
+        rospy.Subscriber('joy', sensor_msgs.msg.Joy, self.JoyCallback)      
         self.filename = filename
         #fh = open(filename, "a")
         #fh.close
@@ -38,7 +38,7 @@ class addWaypoint(object):
     def add_waypoint(self) :
 
         try:
-            p = rospy.wait_for_message('/robot_pose', Pose, timeout=10.0)
+            p = rospy.wait_for_message('robot_pose', Pose, timeout=10.0)
         except rospy.ROSException :
             rospy.logwarn("Failed to get robot pose")
             return

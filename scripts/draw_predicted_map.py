@@ -45,9 +45,9 @@ def usage():
 
 
 def predict_edges(epoch):
-    rospy.wait_for_service('/topological_prediction/predict_edges')
+    rospy.wait_for_service('topological_prediction/predict_edges')
     try:
-        get_prediction = rospy.ServiceProxy('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState)
+        get_prediction = rospy.ServiceProxy('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState)
         print "Requesting prediction for %s"%epoch
         resp1 = get_prediction(epoch)
         return resp1
@@ -273,7 +273,7 @@ class DrawMap(object):
 
     def loadTMap(self) :
         try:
-            msg = rospy.wait_for_message('/topological_map', TopologicalMap, timeout=10.0)
+            msg = rospy.wait_for_message('topological_map', TopologicalMap, timeout=10.0)
             return msg
         except rospy.ROSException :
             rospy.logwarn("Failed to get topological map")

@@ -38,9 +38,9 @@ class TopologicalMapVis(object):
         
         self._point_set=filename
 
-        self.map_pub = rospy.Publisher('/topological_nodes_array', MarkerArray)
-        self.map_zone_pub = rospy.Publisher('/topological_node_zones_array', MarkerArray)
-        self.map_edge_pub = rospy.Publisher('/topological_edges_array', MarkerArray)
+        self.map_pub = rospy.Publisher('topological_nodes_array', MarkerArray)
+        self.map_zone_pub = rospy.Publisher('topological_node_zones_array', MarkerArray)
+        self.map_edge_pub = rospy.Publisher('topological_edges_array', MarkerArray)
 
         self.menu_handler = MenuHandler()
         

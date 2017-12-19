@@ -54,7 +54,7 @@ class EdgeAnalysis(object):
 #        self.unknowns = []
 
         self.map_received =False
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)       
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)       
         rospy.loginfo("Waiting for Topological map ...")
         
         while not self.map_received:

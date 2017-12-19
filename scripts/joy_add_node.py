@@ -22,8 +22,8 @@ class topologicalNodeAdd(object):
 
     def __init__(self, base_name, dist) :
         self.map_received = False
-        rospy.Subscriber('/joy', sensor_msgs.msg.Joy, self.JoyCallback)      
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.Subscriber('joy', sensor_msgs.msg.Joy, self.JoyCallback)      
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)      
 
         self.button = rospy.get_param('~button', 1)
 
@@ -48,7 +48,7 @@ class topologicalNodeAdd(object):
     def add_node(self) :
 
         try:
-            current = rospy.wait_for_message('/current_node', std_msgs.msg.String, timeout=10.0)
+            current = rospy.wait_for_message('current_node', std_msgs.msg.String, timeout=10.0)
         except rospy.ROSException :
             rospy.logwarn("Failed to get current node")
             return
@@ -56,7 +56,7 @@ class topologicalNodeAdd(object):
         print current.data
         if current.data == 'none':
             try:
-                pos = rospy.wait_for_message('/robot_pose', Pose, timeout=10.0)
+                pos = rospy.wait_for_message('robot_pose', Pose, timeout=10.0)
             except rospy.ROSException :
                 rospy.logwarn("Failed to get robot pose")
                 return

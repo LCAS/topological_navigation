@@ -27,7 +27,7 @@ class LocaliseByTopicSubscriber(object):
     thread.
     """
     def __init__(self, topic, callback, callback_args):
-        self.topic = topic
+        self.topic = rospy.get_namespace() + topic
         self.callback = callback
         self.callback_args = callback_args
         self.sub = None
@@ -246,7 +246,6 @@ class TopologicalNavLoc(object):
 
         for i in self.subscribers:
             del i
-
         self.subscribers = []
         for j in self.nodes_by_topic:
             # Append to list to keep the instance alive and the subscriber active.

@@ -13,7 +13,7 @@ import calendar
 from datetime import datetime
 
 
-from actionlib_msgs.msg import *
+from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String
 
 from strands_navigation_msgs.msg import MonitoredNavigationAction
@@ -66,6 +66,7 @@ class PolicyExecutionServer(object):
         #self.aborted = False
         self.current_action = 'none'
         self.current_route = None
+        self.nfails = 0
         self.n_tries = rospy.get_param('~retries', 3)
         
         rospy.on_shutdown(self._on_node_shutdown)
@@ -209,8 +210,6 @@ class PolicyExecutionServer(object):
                 #print "new node reached %s" %self.current_node
                 if self.navigation_activated :  #is the action server active?
                     self.stat.set_at_node()
-                    self._feedback.route_status = self.current_node 
-                    self._as.publish_feedback(self._feedback)       #Publish Feedback
                     # If the current action is a move_base type action and there is a new node in the route connected 
                     # by another move_base type action the goal will be set as reached so a new goal can be called in
                     # execute_policy
@@ -315,13 +314,12 @@ class PolicyExecutionServer(object):
         self.navigation_activated=True
         no_reset=False
         
-        nfails=0            # number of continous failures
 #        print "---------------------------------------------------------"
 #        print "HERE WE GO AGAIN"        
 #        print "---------------------------------------------------------"        
         while keep_executing :
 #            print "#####################################################"
-            rospy.loginfo("Navigating from %s: %d tries", self.current_node,nfails)
+            rospy.loginfo("Navigating from %s: %d tries", self.current_node,self.nfails)
 #            print "#####################################################"
             if self.current_node in route.source and not self.cancelled :
                 rospy.loginfo("case A")
@@ -331,7 +329,7 @@ class PolicyExecutionServer(object):
                     if no_reset:        #if previous action was just navigate to waypoint before trying no move_base action do not reset fail counter
                         no_reset=False
                     else:
-                        nfails=0
+                        self.nfails=0
                     nod_ind = route.source.index(self.current_node)
 #                    self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                     self.current_action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
@@ -348,8 +346,7 @@ class PolicyExecutionServer(object):
                         #rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
                 else :
                     #print "case A.2"
-                    nfails+=1
-                    if nfails < self.n_tries :
+                    if self.nfails < self.n_tries :
                         nod_ind = route.source.index(self.current_node)
 #                        action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                         action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
@@ -368,7 +365,6 @@ class PolicyExecutionServer(object):
                 #rospy.loginfo("case B")
                 if self.cancelled:
                     print "case B.1"
-                    nfails+=1
                     # Execution was preempted or aborted
                     success = False
                     keep_executing = False
@@ -381,8 +377,7 @@ class PolicyExecutionServer(object):
                     if self.current_node == 'none' :
                         #print "case B.2.1"
                         # if current_node is none then is a failure
-                        nfails+=1
-                        if nfails < self.n_tries :
+                        if self.nfails < self.n_tries :
                             if self.closest_node in route.source :
                                 # Retry using policy from closest node
                                 nod_ind = route.source.index(self.closest_node)
@@ -428,17 +423,15 @@ class PolicyExecutionServer(object):
                         if no_reset:  #if previous action was just navigate to waypoint before trying no move_base action do not reset fail counter
                             no_reset=False
                         else:
-                            nfails=0
+                            self.nfails=0
 
                         if not cl_node.localise_by_topic:
-                            if nfails < self.n_tries :
+                            if self.nfails < self.n_tries :
                                 rospy.loginfo('Do move_base to %s' %self.current_node)
                                 self.current_action = 'move_base'
                                 success=self.navigate_to(self.current_action,self.current_node)
                                 if success :
                                     keep_executing = False
-                                else:
-                                    nfails+=1
                             else:
                                 keep_executing = False
                         else:
@@ -473,8 +466,7 @@ class PolicyExecutionServer(object):
                         target = j.node
                 found = True
         if not found:
-            self._feedback.route_status = self.current_node
-            self._as.publish_feedback(self._feedback)
+            self.publish_feedback(GoalStatus.ABORTED)
             rospy.logwarn("source node not found")
         return action,target
 
@@ -555,7 +547,7 @@ class PolicyExecutionServer(object):
             else:
                 self.do_reconf_movebase(params, 'move_base')
                 
-            result = self.monitored_navigation(target_pose, action)
+            (succeeded, status) = self.monitored_navigation(target_pose, action)
             params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
 
             if action in self.move_base_actions:
@@ -568,32 +560,41 @@ class PolicyExecutionServer(object):
             self.stat.set_ended(self.current_node)
 
 
-            if result :
+            if succeeded :
                 rospy.loginfo("navigation finished successfully")
                 self.stat.status= "success"
+                self.publish_feedback(GoalStatus.SUCCEEDED)
             else :
-                if not self.cancelled:
-                    rospy.loginfo("navigation failed")
-                    self.stat.status= "failed"
-                else:
+                if self.cancelled:
                     rospy.loginfo("Fatal fail")
                     self.stat.status= "fatal"
-            
+                    self.publish_feedback(GoalStatus.PREEMPTED)
+                else:
+                    rospy.loginfo("navigation failed")
+                    self.stat.status= "failed"
+                    self.nfails+=1
+                    if self.nfails >= self.n_tries:
+                        self.publish_feedback(GoalStatus.ABORTED)
             self.publish_stats()
+                   #Publish Feedback
+
 
         else :
             # That node is not on the map
-            result = False
-        return result
+            succeeded = False
+        return succeeded
 
-
+    def publish_feedback(self, nav_outcome):
+        self._feedback.current_wp = self.current_node
+        self._feedback.status = nav_outcome
+        self._as.publish_feedback(self._feedback)
 
     """
      Monitored Navigation
      
     """
     def monitored_navigation(self, pose, command):
-        result = True
+        succeeded = True
         goal=MonitoredNavigationGoal()
         goal.action_server=command
         goal.target_pose.header.frame_id = "map"
@@ -610,15 +611,15 @@ class PolicyExecutionServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
 
 
+
         if status != GoalStatus.SUCCEEDED :
             if not self.goal_reached:
-                result = False
+                succeeded = False
             else:
-                result = True
+                succeeded = True #preempted nav in order to send a new goal, i.e., from the topo nav pov the navigation succeeded
         else :
-            result = True
-            
-        return result
+            succeeded = True
+        return (succeeded, status)
 
 
 

@@ -577,8 +577,6 @@ class PolicyExecutionServer(object):
                         self.publish_feedback(GoalStatus.ABORTED)
             self.publish_stats()
                    #Publish Feedback
-
-
         else :
             # That node is not on the map
             succeeded = False
@@ -612,13 +610,11 @@ class PolicyExecutionServer(object):
 
 
 
-        if status != GoalStatus.SUCCEEDED :
-            if not self.goal_reached:
-                succeeded = False
-            else:
-                succeeded = True #preempted nav in order to send a new goal, i.e., from the topo nav pov the navigation succeeded
-        else :
+        if status == GoalStatus.SUCCEEDED or self.goal_reached:
             succeeded = True
+        else:
+            succeeded = False #preempted nav in order to send a new goal, i.e., from the topo nav pov the navigation succeeded
+            
         return (succeeded, status)
 
 

@@ -108,7 +108,8 @@ class DummyTopologicalNavigator():
 
             self.cn = target_node            
 
-            self.policy_feedback.route_status = self.cn 
+            self.policy_feedback.current_wp = self.cn 
+            self.policy_feedback.status = GoalStatus.SUCCEEDED
             self.policy_server.publish_feedback(self.policy_feedback)
 
             rospy.sleep(0.1)

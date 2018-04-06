@@ -444,6 +444,7 @@ class PolicyExecutionServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.1))
         self.navigation_activated = False
         self.current_route = None
+        self.nfails=0
         return success
 
 

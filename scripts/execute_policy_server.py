@@ -584,7 +584,14 @@ class PolicyExecutionServer(object):
         return succeeded
 
     def publish_feedback(self, nav_outcome):
-        self._feedback.current_wp = self.current_node
+        if self.current_node == 'none': #Happens due to lag in fetch system
+            rospy.sleep(0.5)
+            if self.current_node == 'none':
+                self._feedback.current_wp = self.closest_node
+            else:
+                self._feedback.current_wp = self.current_node
+        else:
+            self._feedback.current_wp = self.current_node
         self._feedback.status = nav_outcome
         self._as.publish_feedback(self._feedback)
 

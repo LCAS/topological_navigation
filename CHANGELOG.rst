@@ -2,6 +2,29 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add speed based prediction to install scripts
+* Merge pull request `#342 <https://github.com/strands-project/strands_navigation/issues/342>`_ from bfalacerda/predictions
+  optimistic nav predictions until 10 samples
+* Merge pull request `#351 <https://github.com/strands-project/strands_navigation/issues/351>`_ from heuristicus/indigo-devel
+  Can now place nodes with RMB to stop automatic edge creation
+* Merge pull request `#352 <https://github.com/strands-project/strands_navigation/issues/352>`_ from heuristicus/patch-2
+  Ensure that meta out is defined to prevent crashes
+* Ensure that meta out is defined to prevent crashes
+* Can now place nodes with RMB to stop automatic edge creation
+  Fix deletion dialogue, edges and tags were swapped
+* Merge pull request `#350 <https://github.com/strands-project/strands_navigation/issues/350>`_ from heuristicus/patch-1
+  Fix crash on attempting to change node name
+* Fix crash on attempting to change node name
+* Merge pull request `#349 <https://github.com/strands-project/strands_navigation/issues/349>`_ from mudrole1/indigo-devel
+  Adding waiting for the add_node service
+* Removed loadMap() in the delete method
+* optimistic predictions until 10 samples
+* Merge branch 'prediction-hacking' of https://github.com/Jailander/strands_navigation into predictions
+* creating optimistic predictions
+* Contributors: Bruno Lacerda, Jaime Pulido Fentanes, Lenka Mudrova, Michal Staniaszek, Nick Hawes
+
 1.0.4 (2017-06-23)
 ------------------
 * Modifications to topological map tools to accommodate topological map editor (`#345 <https://github.com/strands-project/strands_navigation/issues/345>`_)

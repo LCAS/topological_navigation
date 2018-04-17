@@ -2,6 +2,29 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel
+* Merge pull request `#353 <https://github.com/strands-project/strands_navigation/issues/353>`_ from heuristicus/rviz_update
+  Topological rviz tools topic names made more descriptive
+* Merge pull request `#351 <https://github.com/strands-project/strands_navigation/issues/351>`_ from heuristicus/indigo-devel
+  Can now place nodes with RMB to stop automatic edge creation
+* more descriptive names for topics displayed in rviz
+* Can now place nodes with RMB to stop automatic edge creation
+  Fix deletion dialogue, edges and tags were swapped
+* Merge pull request `#349 <https://github.com/strands-project/strands_navigation/issues/349>`_ from mudrole1/indigo-devel
+  Adding waiting for the add_node service
+* Adding waiting for services
+* Update topological_edge_tool.cpp
+* Adding waiting for the add_node service
+* Merge pull request `#348 <https://github.com/strands-project/strands_navigation/issues/348>`_ from heuristicus/indigo-devel
+  add standalone flag for when navigation is running
+* Merge pull request `#347 <https://github.com/strands-project/strands_navigation/issues/347>`_ from mudrole1/indigo-devel
+  Update strands_rviz_topmap.launch
+* Update strands_rviz_topmap.launch
+* add standalone flag for when navigation is running
+* Contributors: Bruno Lacerda, Lenka Mudrova, Michal Staniaszek, Nick Hawes
+
 1.0.4 (2017-06-23)
 ------------------
 * set version to 1.0.3 as the rest of repository

@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.5 (2018-04-17)
+------------------
 * add speed based prediction to install scripts
 * Merge pull request `#342 <https://github.com/strands-project/strands_navigation/issues/342>`_ from bfalacerda/predictions
   optimistic nav predictions until 10 samples

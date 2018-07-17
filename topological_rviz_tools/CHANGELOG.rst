@@ -2,6 +2,9 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.0.5 (2018-04-17)
 ------------------
 * Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel

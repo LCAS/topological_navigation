@@ -2,6 +2,24 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#358 <https://github.com/strands-project/strands_navigation/issues/358>`_ from Jailander/rasberry-devel
+  re-adding ability to work with other planners
+* Fixes bug on service call for adding node
+* re-adding ability to work with other planners
+* Revert "Revert "Revert "Adding the ability to work with local planners other than DWA"""
+  This reverts commit b0ea99543615e6dfc8dbb2cb9969ce1da6ae546c.
+* Revert "Fixing bug on add node service marker"
+  This reverts commit 0a364cbfda27ea5971eeb871e286cfd186ceca1c.
+* Revert "Revert "Adding the ability to work with local planners other than DWA""
+  This reverts commit e11a93bf79b01e17889eb3e00750b8f588385f93.
+* Revert "Adding the ability to work with local planners other than DWA"
+  This reverts commit b86ca393944362eb9c0cf21884810f5c0f8862e2.
+* Fixing bug on add node service marker
+* Adding the ability to work with local planners other than DWA
+* Contributors: Jaime Pulido Fentanes
+
 1.0.5 (2018-04-17)
 ------------------
 * add speed based prediction to install scripts

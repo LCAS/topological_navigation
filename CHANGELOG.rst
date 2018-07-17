@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.6 (2018-07-17)
+------------------
 * Merge pull request `#358 <https://github.com/strands-project/strands_navigation/issues/358>`_ from Jailander/rasberry-devel
   re-adding ability to work with other planners
 * Fixes bug on service call for adding node

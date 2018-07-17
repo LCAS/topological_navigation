@@ -67,6 +67,7 @@ class PolicyExecutionServer(object):
         self.current_action = 'none'
         self.current_route = None
         self.n_tries = rospy.get_param('~retries', 3)
+        self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
         
         rospy.on_shutdown(self._on_node_shutdown)
         self.move_base_actions = ['move_base','human_aware_navigation']
@@ -114,9 +115,13 @@ class PolicyExecutionServer(object):
         #Creating Reconfigure Client
         for i in self.needed_move_base_actions:
             client = None
-            rcnfsrvrname= '/'+i+'/DWAPlannerROS'
+            rcnfsrvrname= '/'+i+'/'+self.move_base_reconf_service#'/TebLocalPlannerROS'
             test_service = rcnfsrvrname+'/set_parameters'
-            
+#            rcnfsrvrname= '/'+i+'/DWAPlannerROS'
+#            test_service = rcnfsrvrname+'/set_parameters'
+
+
+
             service_created=False
             service_created_tries=50
             while service_created_tries>0 and not self.cancelled :              

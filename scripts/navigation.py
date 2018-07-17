@@ -60,6 +60,9 @@ class TopologicalNavServer(object):
 
         move_base_actions = ['move_base','human_aware_navigation','han_adapt_speed','han_vc_corridor','han_vc_junction']
         self.move_base_actions = rospy.get_param('~move_base_actions', move_base_actions)     
+        
+        self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
+        
 
         self.navigation_activated=False
         self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics)
@@ -106,7 +109,9 @@ class TopologicalNavServer(object):
         
         #Creating Reconfigure Client
         rospy.loginfo("Creating Reconfigure Client")
-        self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
+        #self.rcnfclient = dynamic_reconfigure.client.Client('/move_base/DWAPlannerROS')
+        rcfsrvnm='/move_base/'+self.move_base_reconf_service
+        self.rcnfclient = dynamic_reconfigure.client.Client(rcfsrvnm)#'/move_base/TebLocalPlannerROS')
         config = self.rcnfclient.get_configuration()
         self.dyt = config['yaw_goal_tolerance']
 

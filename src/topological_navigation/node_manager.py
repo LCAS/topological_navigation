@@ -127,7 +127,7 @@ class node_manager(object):
                     return
                 
                 add_node = rospy.ServiceProxy('/topological_map_manager/add_topological_node', strands_navigation_msgs.srv.AddNode)
-                add_node('',pos)
+                add_node('',pos,True)
             
                 map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)        
                 map_update.publish(rospy.Time.now())            

@@ -165,6 +165,8 @@ if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
 
   add_rostest(tests/travel_time_estimator.test)
-  add_rostest(tests/navigation_scenarios.test)
+
+#  temporarily disabling Morse based tests
+#  add_rostest(tests/navigation_scenarios.test)
 
 endif()

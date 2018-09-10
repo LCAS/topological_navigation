@@ -115,7 +115,7 @@ class PolicyExecutionServer(object):
         #Creating Reconfigure Client
         for i in self.needed_move_base_actions:
             client = None
-            rcnfsrvrname= rospy.get_namespace() + i+'/DWAPlannerROS'
+            rcnfsrvrname= rospy.get_namespace() + i+'/' +rospy.get_param('~move_base_planner', 'DWAPlannerROS')
             test_service = rcnfsrvrname+'/set_parameters'
             
             service_created=False

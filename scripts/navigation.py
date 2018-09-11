@@ -152,11 +152,11 @@ class TopologicalNavServer(object):
         params = { 'yaw_goal_tolerance' : cytol, '':cxygtol }   # No orientation restrictions, 'max_vel_x':ctopvel,
         print "reconfiguring move_base with %s" %params
         print intermediate
-        self.reconf_movebase_params(params)
+        self.reconfigure_movebase_params(params)
         
         
         
-    def reconf_movebase_params(self, params):
+    def reconfigure_movebase_params(self, params):
         translated_params = {}
         translation = DYNPARAM_MAPPING[self.move_base_planner]
         for k, v in params.iteritems():
@@ -164,17 +164,17 @@ class TopologicalNavServer(object):
                 translated_params[translation[k]] = v
             else:
                 rospy.logwarn('%s has no dynparam translation for %s' % (self.move_base_planner, k))
-        self.do_movebase_reconf(translated_params)
+        self._do_movebase_reconf(translated_params)
 
 
-    def do_movebase_reconf(self, params):
+    def _do_movebase_reconf(self, params):
         try:
             self.rcnfclient.update_configuration(params)
         except rospy.ServiceException as exc:
             rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
 
     def reset_reconf(self):
-        self.do_movebase_reconf(self.init_dynparams)
+        self._do_movebase_reconf(self.init_dynparams)
 
 
     def get_edge_id(self, orig, dest, a):
@@ -389,7 +389,7 @@ class TopologicalNavServer(object):
                 print 'Do move_base to %s' %self.closest_node#(route.source[0])
                 inf = o_node.pose
                 params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
-                self.reconf_movebase_params(params)
+                self.reconfigure_movebase_params(params)
                 
                 self.current_target = Orig
                 nav_ok, inc= self.monitored_navigation(inf,'move_base')
@@ -463,7 +463,7 @@ class TopologicalNavServer(object):
             inf = cnode.pose
             nav_ok, inc = self.monitored_navigation(inf, a)
             params = { 'yaw_goal_tolerance' : 0.087266, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance   'max_vel_x':0.55,
-            self.reconf_movebase_params(params)
+            self.reconfigure_movebase_params(params)
             
             
             

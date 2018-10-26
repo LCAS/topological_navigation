@@ -2,6 +2,18 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* added install for extra dirs (`#365 <https://github.com/strands-project/strands_navigation/issues/365>`_)
+* Merge pull request `#364 <https://github.com/strands-project/strands_navigation/issues/364>`_ from heuristicus/rviz_update
+  Standalone easier to run on strands robots
+* Standalone easier to run on strands robots
+  Would have to run with rviz=false and then run rviz on the main PC if the
+  database is on on of the side PCs. With this change can run the database on the
+  side PC and then run this with launch_db:=false to not have to run rviz
+  separately
+* Contributors: Marc Hanheide, Michal Staniaszek, Nick Hawes
+
 1.0.6 (2018-07-17)
 ------------------
 

@@ -2,6 +2,11 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Temporarily disabling Morse-based tests (`#360 <https://github.com/strands-project/strands_navigation/issues/360>`_)
+* Contributors: Jaime Pulido Fentanes
+
 1.0.6 (2018-07-17)
 ------------------
 * Merge pull request `#358 <https://github.com/strands-project/strands_navigation/issues/358>`_ from Jailander/rasberry-devel

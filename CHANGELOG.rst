@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.7 (2018-10-26)
+------------------
 * Merge pull request `#354 <https://github.com/strands-project/strands_navigation/issues/354>`_ from gpdas/indigo-devel
   tmap to yaml  - adding meta info to nodes
 * Code cleanup

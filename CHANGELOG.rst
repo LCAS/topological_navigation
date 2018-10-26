@@ -2,6 +2,17 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#354 <https://github.com/strands-project/strands_navigation/issues/354>`_ from gpdas/indigo-devel
+  tmap to yaml  - adding meta info to nodes
+* Code cleanup
+  Minor cleanup in usage information printing
+* tmap to yaml export - adding meta info to nodes
+  When a yaml file is created from a tmap, it misses some tags and so is not as per the (yaml) format for topological map. So a yaml file exported from tmap cannot be imported to mongodb.
+  A small fix is done by adding some meta tag to the objects in the yaml file
+* Contributors: Jaime Pulido Fentanes, gpdas
+
 1.0.6 (2018-07-17)
 ------------------
 

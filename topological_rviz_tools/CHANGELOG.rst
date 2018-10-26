@@ -2,8 +2,8 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.7 (2018-10-26)
+------------------
 * added install for extra dirs (`#365 <https://github.com/strands-project/strands_navigation/issues/365>`_)
 * Merge pull request `#364 <https://github.com/strands-project/strands_navigation/issues/364>`_ from heuristicus/rviz_update
   Standalone easier to run on strands robots

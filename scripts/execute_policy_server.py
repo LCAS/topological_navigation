@@ -226,7 +226,7 @@ class PolicyExecutionServer(object):
         if mb_action in self.rcnfclient:
             try:
                 self.rcnfclient[mb_action].update_configuration(params)
-            except rospy.ServiceException as exc:
+            except  dynamic_reconfigure.DynamicReconfigureCallbackException as exc:
                 rospy.logwarn("I couldn't reconfigure %s parameters. Caught service exception: %s. will continue with previous params" % (mb_action, exc))
         else:
             rospy.logwarn("No dynamic reconfigure for %s" % mb_action)

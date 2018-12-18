@@ -140,7 +140,7 @@ class PolicyExecutionServer(object):
             
         #Creating Reconfigure Client
         for i in self.needed_move_base_actions:
-           service_created = self.create_reconfigure_client(i)
+            service_created = self.create_reconfigure_client(i)
 
             if service_created and i == 'move_base':
                 mb_service_created = True

@@ -30,14 +30,14 @@ from math import fabs
 def model_client():
     #Creating monitored navigation client    
     rospy.loginfo("Getting model build server")
-    client = actionlib.SimpleActionClient('/topological_prediction/build_temporal_model', BuildTopPredictionAction)
+    client = actionlib.SimpleActionClient('topological_prediction/build_temporal_model', BuildTopPredictionAction)
     client.wait_for_server()
     rospy.loginfo(" ...done")
     return client
 
 def prediction_client():
-    rospy.wait_for_service('/topological_prediction/predict_edges')
-    return rospy.ServiceProxy('/topological_prediction/predict_edges', PredictEdgeState)
+    rospy.wait_for_service('topological_prediction/predict_edges')
+    return rospy.ServiceProxy('topological_prediction/predict_edges', PredictEdgeState)
 
 
 def to_epoch(ptime):

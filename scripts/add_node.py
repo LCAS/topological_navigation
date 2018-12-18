@@ -22,7 +22,7 @@ class topologicalNodeAdd(object):
     def __init__(self, pointset, name, dist) :
 
         try:
-            pos = rospy.wait_for_message('/robot_pose', Pose, timeout=10.0)
+            pos = rospy.wait_for_message('robot_pose', Pose, timeout=10.0)
         except rospy.ROSException :
             rospy.logwarn("Failed to get robot pose")
             return

@@ -30,10 +30,10 @@ class DummyTopologicalNavigator():
 
         self.policy_result   =  ExecutePolicyModeResult()   
         self.policy_feedback = ExecutePolicyModeFeedback()
-        self.policy_server = actionlib.SimpleActionServer('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction, execute_cb = self.policy_callback, auto_start = False)
+        self.policy_server = actionlib.SimpleActionServer('topological_navigation/execute_policy_mode', ExecutePolicyModeAction, execute_cb = self.policy_callback, auto_start = False)
 
-        self.cn_pub = rospy.Publisher('/current_node', String, queue_size=1)
-        self.cl_pub = rospy.Publisher('/closest_node', String, queue_size=1)
+        self.cn_pub = rospy.Publisher('current_node', String, queue_size=1)
+        self.cl_pub = rospy.Publisher('closest_node', String, queue_size=1)
         self.cn = random.choice(list(self.node_names))
         self.simulate_time = simulate_time
         
@@ -108,7 +108,8 @@ class DummyTopologicalNavigator():
 
             self.cn = target_node            
 
-            self.policy_feedback.route_status = self.cn 
+            self.policy_feedback.current_wp = self.cn 
+            self.policy_feedback.status = GoalStatus.SUCCEEDED
             self.policy_server.publish_feedback(self.policy_feedback)
 
             rospy.sleep(0.1)

@@ -49,7 +49,7 @@ class TopologicalSpeedPred(object):
         name= rospy.get_name()
         action_name = name+'/build_temporal_model'
 
-        rospy.Subscriber('/topological_map', TopologicalMap, self.map_callback)
+        rospy.Subscriber('topological_map', TopologicalMap, self.map_callback)
         
         rospy.loginfo("Waiting for Topological map ...")
         
@@ -73,7 +73,7 @@ class TopologicalSpeedPred(object):
         rospy.loginfo(" ...done")
 
 
-        self.predict_srv=rospy.Service('/topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
+        self.predict_srv=rospy.Service('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 

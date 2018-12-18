@@ -27,7 +27,7 @@ class LocaliseByTopicSubscriber(object):
     thread.
     """
     def __init__(self, topic, callback, callback_args):
-        self.topic = topic
+        self.topic = rospy.get_namespace() + topic
         self.callback = callback
         self.callback_args = callback_args
         self.sub = None
@@ -99,8 +99,8 @@ class TopologicalNavLoc(object):
         self.wpstr="Unknown"
         self.cnstr="Unknown"
         self.subscribers=[]
-        self.wp_pub = rospy.Publisher('/closest_node', String, latch=True, queue_size=1)
-        self.cn_pub = rospy.Publisher('/current_node', String, latch=True, queue_size=1)
+        self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)
+        self.cn_pub = rospy.Publisher('current_node', String, latch=True, queue_size=1)
 
         self.force_check=True
         self.rec_map=False
@@ -112,8 +112,8 @@ class TopologicalNavLoc(object):
         self.previous_pose.position.x=1000 #just give a random big value so this is tested
 
         #This service returns a list of nodes that have a given tag
-        self.get_tagged_srv=rospy.Service('/topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
-        self.get_tagged_srv=rospy.Service('/topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
+        self.get_tagged_srv=rospy.Service('topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
+        self.get_tagged_srv=rospy.Service('topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
@@ -125,7 +125,7 @@ class TopologicalNavLoc(object):
         
 
         rospy.loginfo("Subscribing to robot pose")
-        rospy.Subscriber("/robot_pose", Pose, self.PoseCallback)
+        rospy.Subscriber("robot_pose", Pose, self.PoseCallback)
 
         rospy.loginfo("NODES BY TOPIC: %s" %self.names_by_topic)
         rospy.loginfo("NO GO NODES: %s" %self.nogos)
@@ -246,7 +246,6 @@ class TopologicalNavLoc(object):
 
         for i in self.subscribers:
             del i
-
         self.subscribers = []
         for j in self.nodes_by_topic:
             # Append to list to keep the instance alive and the subscriber active.

@@ -26,17 +26,17 @@ class PoliciesVis(object):
         #self.update_needed=False
         
         rospy.loginfo("Creating Publishers ...")
-        self.policies_pub = rospy.Publisher('/topological_edges_policies', MarkerArray)
+        self.policies_pub = rospy.Publisher('topological_edges_policies', MarkerArray)
         rospy.loginfo("Done ...")
         
         
         rospy.loginfo("Creating subscriber ...")      
-        self.subs = rospy.Subscriber("/mdp_plan_exec/current_policy_mode", NavRoute, self.policies_callback)       
+        self.subs = rospy.Subscriber("mdp_plan_exec/current_policy_mode", NavRoute, self.policies_callback)       
         rospy.loginfo("Done ...")
 
         #Waiting for Topological Map        
         self.map_received=False
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)      
         rospy.loginfo("Waiting for Topological map ...")        
         while not self.map_received and not self._killall :
             rospy.sleep(rospy.Duration.from_sec(0.05))
@@ -57,14 +57,19 @@ class PoliciesVis(object):
 
         print 'updating '+str(total)+' edges'        
         while counter < total :
-            print 'Creating edge '+str(counter) 
-            ori = self.get_node(self.lnodes, self.route_nodes.source[counter])
+            print 'Creating edge '+str(counter)
+            source = self.route_nodes.source[counter]
+            ori = self.get_node(self.lnodes, source)
             targ = self.find_action(ori.name, self.route_nodes.edge_id[counter])
             if targ:
                 #print ori.name,ori.pose.position      
                 target = self.get_node(self.lnodes, targ)
-                #print target.name,target.pose.position 
-                self.create_edge(ori.pose.position, target.pose.position)
+                self.added_sources.append(source)
+                #print target.name,target.pose.position
+                if targ in self.added_sources:
+                    self.create_edge(ori.pose.position, target.pose.position, "blue")
+                else:
+                    self.create_edge(ori.pose.position, target.pose.position, "red")
             counter+=1
         
         
@@ -76,10 +81,12 @@ class PoliciesVis(object):
         print "All Done"
 
 
-    def create_edge(self, point1, point2):
+    def create_edge(self, point1, point2, color):
         marker = Marker()
         marker.header.frame_id = "/map"
         marker.type = marker.ARROW
+        
+        
         pose = Pose()
         
         pose.position.x = point1.x
@@ -101,6 +108,14 @@ class PoliciesVis(object):
         marker.color.r = 0.9
         marker.color.g = 0.1
         marker.color.b = 0.1
+        if color == "red":
+            marker.color.r = 0.9
+            marker.color.g = 0.1
+            marker.color.b = 0.1
+        if color == "blue":
+            marker.color.r = 0.1
+            marker.color.g = 0.1
+            marker.color.b = 0.9
         marker.pose = pose
         self.map_edges.markers.append(marker)
 
@@ -146,6 +161,7 @@ class PoliciesVis(object):
 
     def policies_callback(self, msg) :
         print "GOT policies"
+        self.added_sources = []
         self.route_nodes = msg
         self._update_everything()
 

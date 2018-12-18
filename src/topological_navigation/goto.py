@@ -26,11 +26,11 @@ class go_to_controllers(object):
     def __init__(self) :
         self.in_feedback=False
         #self.timer = Timer(1.0, self.timer_callback)
-        #map_name = rospy.get_param('/topological_map_name', 'top_map')
+        #map_name = rospy.get_param('topological_map_name', 'top_map')
         self._goto_server = InteractiveMarkerServer("go_to_node")
         self.client = actionlib.SimpleActionClient('topological_navigation', topological_navigation.msg.GotoNodeAction)
         self.client.wait_for_server()
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo(" ... Go to Initialised")
 
 

@@ -15,12 +15,12 @@ class TopologicalVis(object):
     def __init__(self) :
         self.actions=[]
         self.map_markers = MarkerArray()
-        self.topmap_pub = rospy.Publisher('/topological_map_visualisation', MarkerArray, queue_size = 1, latch=True)
+        self.topmap_pub = rospy.Publisher('topological_map_visualisation', MarkerArray, queue_size = 1, latch=True)
         self._killall=False
         self.lnodes = None
         #Waiting for Topological Map        
         self.map_received=False
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)      
+        rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)      
         rospy.loginfo("Waiting for Topological map ...")        
         while not self.map_received and not self._killall :
             rospy.sleep(rospy.Duration.from_sec(0.05))

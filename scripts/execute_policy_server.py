@@ -13,7 +13,7 @@ import calendar
 from datetime import datetime
 
 
-from actionlib_msgs.msg import *
+from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String
 
 from strands_navigation_msgs.msg import MonitoredNavigationAction
@@ -44,6 +44,27 @@ def get_node(top_map, node_name):
             return i
     return None
 
+
+# a list of parameters top nav is allowed to change 
+# and their mapping from dwa speak 
+# if not listed then the param is not sent, 
+# e.g. TrajectoryPlannerROS doesn't have tolerances
+DYNPARAM_MAPPING = {
+        'DWAPlannerROS': {
+            'yaw_goal_tolerance': 'yaw_goal_tolerance',
+            'xy_goal_tolerance': 'xy_goal_tolerance',
+            'max_vel_x': 'max_vel_x',
+            'max_trans_vel' : 'max_trans_vel',
+        },
+
+        'TrajectoryPlannerROS': {
+            'max_vel_x': 'max_vel_x',
+            'max_trans_vel' : 'max_vel_x',
+        },
+    }
+
+
+
 """
  Class for Policy Execution
 
@@ -66,17 +87,18 @@ class PolicyExecutionServer(object):
         #self.aborted = False
         self.current_action = 'none'
         self.current_route = None
+        self.nfails = 0
         self.n_tries = rospy.get_param('~retries', 3)
         self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
         
         rospy.on_shutdown(self._on_node_shutdown)
-        self.move_base_actions = ['move_base','human_aware_navigation']
+        self.move_base_actions = ['move_base']
         self.needed_actions=[]
         
         
         self.navigation_activated=False
-        self._action_name = '/topological_navigation/execute_policy_mode'
-        self.stats_pub = rospy.Publisher('/topological_navigation/Statistics', NavStatistics, queue_size=1)
+        self._action_name = 'topological_navigation/execute_policy_mode'
+        self.stats_pub = rospy.Publisher('topological_navigation/Statistics', NavStatistics, queue_size=1)
 
 
         self.lnodes = []
@@ -99,71 +121,37 @@ class PolicyExecutionServer(object):
 
         #Subscribing to Localisation Topics
         rospy.loginfo("Waiting for Localisation Topics")
-        self.current_node = rospy.wait_for_message('/current_node', String)
-        self.closest_node = rospy.wait_for_message('/closest_node', String) 	
+        self.current_node = rospy.wait_for_message('current_node', String)
+        self.closest_node = rospy.wait_for_message('closest_node', String)  
 
         rospy.loginfo("Subscribing to Localisation Topics")
-        rospy.Subscriber('/closest_node', String, self.closestNodeCallback)
-        rospy.Subscriber('/current_node', String, self.currentNodeCallback)
+        rospy.Subscriber('closest_node', String, self.closestNodeCallback)
+        rospy.Subscriber('current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
 
         mb_service_created=False
-        self.rcnfclient={}
+        self.rcnfclient = {}
+        self.init_dynparams = {}
+
         config = {}
         
+
+        self.move_base_planner = rospy.get_param('~move_base_planner', 'DWAPlannerROS')
             
         #Creating Reconfigure Client
         for i in self.needed_move_base_actions:
-            client = None
-            rcnfsrvrname= '/'+i+'/'+self.move_base_reconf_service#'/TebLocalPlannerROS'
-            test_service = rcnfsrvrname+'/set_parameters'
-#            rcnfsrvrname= '/'+i+'/DWAPlannerROS'
-#            test_service = rcnfsrvrname+'/set_parameters'
+           service_created = self.create_reconfigure_client(i)
 
-
-
-            service_created=False
-            service_created_tries=50
-            while service_created_tries>0 and not self.cancelled :              
-                service_names = rosservice.get_service_list()
-                if test_service in service_names:
-                    rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
-                    client = dynamic_reconfigure.client.Client(rcnfsrvrname, timeout=10)
-                    self.rcnfclient[i] = client
-                    config[i] = self.rcnfclient[i].get_configuration()
-                    service_created=True
-                    service_created_tries=0
-                else:
-                    service_created_tries-=1
-                    if service_created_tries>0:
-                        rospy.logwarn("I couldn't create reconfigure client %s. remaining tries %d" %(rcnfsrvrname,service_created_tries))
-                        rospy.sleep(1)
-                    else:
-                        rospy.logerr("I couldn't create reconfigure client %s. is %s running?" %(rcnfsrvrname, i))
             if service_created and i == 'move_base':
-                mb_service_created=True
+                mb_service_created = True
                 
-        if mb_service_created:
-            self.dyt = config['move_base']['yaw_goal_tolerance']
-        else:
+        if not mb_service_created:
             while not mb_service_created and not self.cancelled:
-                rcnfsrvrname= '/move_base/DWAPlannerROS'
-                test_service = rcnfsrvrname+'/set_parameters'
+                rospy.sleep(1)
                 rospy.logwarn("%s must be created! will keep trying until its there" %rcnfsrvrname)
-                service_names = rosservice.get_service_list()
-                if test_service in service_names:
-                    rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
-                    client = dynamic_reconfigure.client.Client(rcnfsrvrname, timeout=10)
-                    self.rcnfclient['move_base'] = client
-                    config['move_base'] = self.rcnfclient['move_base'].get_configuration()
-                    mb_service_created=True
-                else:
-                    rospy.sleep(1)
-
+                mb_service_created = self.create_reconfigure_client('move_base')
         
         if not self.cancelled:
-            self.dyt = config['move_base']['yaw_goal_tolerance']
-            rospy.loginfo("default yaw tolerance %f" %self.dyt)
     
             #Creating Action Server
             rospy.loginfo("Creating action server.")
@@ -178,6 +166,75 @@ class PolicyExecutionServer(object):
             rospy.spin()
 
 
+    def create_reconfigure_client(self, mb_action):
+        """
+        Creates the dynamic reconfigure clients for the given actions
+        """
+        rcnfsrvrname= rospy.get_namespace() + mb_action +'/' + self.move_base_planner
+        test_service = rcnfsrvrname+'/set_parameters'
+        
+        service_created = False
+        service_created_tries = 50
+        while service_created_tries > 0 and not self.cancelled:              
+            service_names = rosservice.get_service_list()
+            if test_service in service_names:
+                rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
+                client = dynamic_reconfigure.client.Client(rcnfsrvrname, timeout=10)
+                self.rcnfclient[mb_action] = client
+                self.init_dynparams[mb_action] = client.get_configuration()
+                return True
+            else:
+                service_created_tries -= 1
+                if service_created_tries > 0:
+                    rospy.logwarn("I couldn't create reconfigure client %s. remaining tries %d" % (rcnfsrvrname,service_created_tries))
+                    rospy.sleep(1)
+                else:
+                    rospy.logerr("I couldn't create reconfigure client %s. is %s running?" % (rcnfsrvrname, i))
+        return False
+
+
+    def store_initial_parameters(self):
+        for mb_action, client in self.rcnfclient.iteritems():
+            try:
+                self.init_dynparams[mb_action] = client.get_configuration()
+            except Exception as e:
+                rospy.logwarn("I couldn't store initial move_base parameters. Caught exception: %s. will continue with previous params", exc)
+
+
+    def reset_reconfigure_params(self, mb_action):
+        if mb_action in self.init_dynparams:
+            self._do_movebase_reconf(mb_action, self.init_dynparams[mb_action])
+        else:
+            rospy.logwarn('No initial parameters stored for %s' % mb_action)
+
+
+
+
+    def reconfigure_movebase_params(self, mb_action, params):
+        translated_params = {}
+        translation = DYNPARAM_MAPPING[self.move_base_planner]
+        for k, v in params.iteritems():
+            if k in translation:
+                translated_params[translation[k]] = v
+            else:
+                rospy.logwarn('%s has no dynparam translation for %s' % (self.move_base_planner, k))
+        self._do_movebase_reconf(mb_action, translated_params)
+
+    """
+    Reconfigure Move Base
+     
+    """
+    def _do_movebase_reconf(self, mb_action, params):
+        if mb_action in self.rcnfclient:
+            try:
+                self.rcnfclient[mb_action].update_configuration(params)
+            except  dynamic_reconfigure.DynamicReconfigureCallbackException as exc:
+                rospy.logwarn("I couldn't reconfigure %s parameters. Caught service exception: %s. will continue with previous params" % (mb_action, exc))
+        else:
+            rospy.logwarn("No dynamic reconfigure for %s" % mb_action)
+
+
+
     """
      Preempt CallBack
      
@@ -188,10 +245,9 @@ class PolicyExecutionServer(object):
         self._result.success = False
         self.navigation_activated = False
         self.monNavClient.cancel_all_goals()
-        params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
-        self.do_reconf_movebase(params, 'move_base')
         #self._as.set_preempted(self._result)
-    
+        for mb_action in self.move_base_actions:
+            self.reset_reconfigure_params(mb_action)
 
     """
      Closest Node CallBack
@@ -214,8 +270,6 @@ class PolicyExecutionServer(object):
                 #print "new node reached %s" %self.current_node
                 if self.navigation_activated :  #is the action server active?
                     self.stat.set_at_node()
-                    self._feedback.route_status = self.current_node 
-                    self._as.publish_feedback(self._feedback)       #Publish Feedback
                     # If the current action is a move_base type action and there is a new node in the route connected 
                     # by another move_base type action the goal will be set as reached so a new goal can be called in
                     # execute_policy
@@ -255,7 +309,8 @@ class PolicyExecutionServer(object):
         self.cancelled = False
         self.preempted = False
 
-                
+        self.store_initial_parameters()
+
         result = self.followRoute(goal.route)
     
         if not self.cancelled :     
@@ -320,13 +375,12 @@ class PolicyExecutionServer(object):
         self.navigation_activated=True
         no_reset=False
         
-        nfails=0            # number of continous failures
 #        print "---------------------------------------------------------"
 #        print "HERE WE GO AGAIN"        
 #        print "---------------------------------------------------------"        
         while keep_executing :
 #            print "#####################################################"
-            rospy.loginfo("Navigating from %s: %d tries", self.current_node,nfails)
+            rospy.loginfo("Navigating from %s: %d tries", self.current_node,self.nfails)
 #            print "#####################################################"
             if self.current_node in route.source and not self.cancelled :
                 rospy.loginfo("case A")
@@ -336,7 +390,7 @@ class PolicyExecutionServer(object):
                     if no_reset:        #if previous action was just navigate to waypoint before trying no move_base action do not reset fail counter
                         no_reset=False
                     else:
-                        nfails=0
+                        self.nfails=0
                     nod_ind = route.source.index(self.current_node)
 #                    self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                     self.current_action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
@@ -353,8 +407,7 @@ class PolicyExecutionServer(object):
                         #rospy.loginfo("There is NO edge between %s and %s will ABORT policy execution",route.source[nod_ind], route.target[nod_ind])
                 else :
                     #print "case A.2"
-                    nfails+=1
-                    if nfails < self.n_tries :
+                    if self.nfails < self.n_tries :
                         nod_ind = route.source.index(self.current_node)
 #                        action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                         action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
@@ -373,7 +426,6 @@ class PolicyExecutionServer(object):
                 #rospy.loginfo("case B")
                 if self.cancelled:
                     print "case B.1"
-                    nfails+=1
                     # Execution was preempted or aborted
                     success = False
                     keep_executing = False
@@ -386,8 +438,7 @@ class PolicyExecutionServer(object):
                     if self.current_node == 'none' :
                         #print "case B.2.1"
                         # if current_node is none then is a failure
-                        nfails+=1
-                        if nfails < self.n_tries :
+                        if self.nfails < self.n_tries :
                             if self.closest_node in route.source :
                                 # Retry using policy from closest node
                                 nod_ind = route.source.index(self.closest_node)
@@ -433,17 +484,15 @@ class PolicyExecutionServer(object):
                         if no_reset:  #if previous action was just navigate to waypoint before trying no move_base action do not reset fail counter
                             no_reset=False
                         else:
-                            nfails=0
+                            self.nfails=0
 
                         if not cl_node.localise_by_topic:
-                            if nfails < self.n_tries :
+                            if self.nfails < self.n_tries :
                                 rospy.loginfo('Do move_base to %s' %self.current_node)
                                 self.current_action = 'move_base'
                                 success=self.navigate_to(self.current_action,self.current_node)
                                 if success :
                                     keep_executing = False
-                                else:
-                                    nfails+=1
                             else:
                                 keep_executing = False
                         else:
@@ -456,6 +505,7 @@ class PolicyExecutionServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.1))
         self.navigation_activated = False
         self.current_route = None
+        self.nfails=0
         return success
 
 
@@ -478,8 +528,7 @@ class PolicyExecutionServer(object):
                         target = j.node
                 found = True
         if not found:
-            self._feedback.route_status = self.current_node
-            self._as.publish_feedback(self._feedback)
+            self.publish_feedback(GoalStatus.ABORTED)
             rospy.logwarn("source node not found")
         return action,target
 
@@ -508,7 +557,7 @@ class PolicyExecutionServer(object):
         if tolerance == 0.0:
             tolerance = 0.48
         if ytolerance == 0.0:
-            ytolerance = self.dyt
+            ytolerance = 0.087266
         
         if self.current_route != None :
             if node in self.current_route.source:
@@ -546,7 +595,7 @@ class PolicyExecutionServer(object):
             #dt_text=self.stat.get_start_time_str()
 
             if action in self.move_base_actions and node_in_route :
-                rospy.set_param("/move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))
+                rospy.set_param("move_base/NavfnROS/default_tolerance",tolerance/math.sqrt(2))
 
             if next_action in self.move_base_actions :
                 params = { 'yaw_goal_tolerance' : 6.28318531, 'max_vel_x':top_vel, 'max_trans_vel':top_vel}   #360 degrees tolerance
@@ -555,50 +604,60 @@ class PolicyExecutionServer(object):
                     params = { 'yaw_goal_tolerance' : ytolerance, 'max_vel_x':top_vel, 'max_trans_vel':top_vel} #Node predetermined tolerance
                 else:                                                                    # Next action not move_base type
                     params = { 'yaw_goal_tolerance' : 0.523598776, 'max_vel_x':top_vel, 'max_trans_vel':top_vel}   #30 degrees tolerance
-            if action in self.move_base_actions:
-                self.do_reconf_movebase(params, action)
-            else:
-                self.do_reconf_movebase(params, 'move_base')
-                
-            result = self.monitored_navigation(target_pose, action)
-            params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
 
             if action in self.move_base_actions:
-                self.do_reconf_movebase(params, action)
-            else:
-                self.do_reconf_movebase(params, 'move_base')
+                self.reconfigure_movebase_params(action, params)
+                
+            (succeeded, status) = self.monitored_navigation(target_pose, action)
+
+            if action in self.move_base_actions:
+                self.reset_reconfigure_params(action)
             
-            rospy.set_param("/move_base/NavfnROS/default_tolerance",0.0)
+            rospy.set_param("move_base/NavfnROS/default_tolerance",0.0)
 
             self.stat.set_ended(self.current_node)
 
 
-            if result :
+            if succeeded :
                 rospy.loginfo("navigation finished successfully")
                 self.stat.status= "success"
+                self.publish_feedback(GoalStatus.SUCCEEDED)
             else :
-                if not self.cancelled:
-                    rospy.loginfo("navigation failed")
-                    self.stat.status= "failed"
-                else:
+                if self.cancelled:
                     rospy.loginfo("Fatal fail")
                     self.stat.status= "fatal"
-            
+                    self.publish_feedback(GoalStatus.PREEMPTED)
+                else:
+                    rospy.loginfo("navigation failed")
+                    self.stat.status= "failed"
+                    self.nfails+=1
+                    if self.nfails >= self.n_tries:
+                        self.publish_feedback(GoalStatus.ABORTED)
             self.publish_stats()
-
+                   #Publish Feedback
         else :
             # That node is not on the map
-            result = False
-        return result
+            succeeded = False
+        return succeeded
 
-
+    def publish_feedback(self, nav_outcome):
+        if self.current_node == 'none': #Happens due to lag in fetch system
+            rospy.sleep(0.5)
+            if self.current_node == 'none':
+                self._feedback.current_wp = self.closest_node
+            else:
+                self._feedback.current_wp = self.current_node
+        else:
+            self._feedback.current_wp = self.current_node
+        self._feedback.status = nav_outcome
+        self._as.publish_feedback(self._feedback)
 
     """
      Monitored Navigation
      
     """
     def monitored_navigation(self, pose, command):
-        result = True
+        succeeded = True
         goal=MonitoredNavigationGoal()
         goal.action_server=command
         goal.target_pose.header.frame_id = "map"
@@ -615,15 +674,13 @@ class PolicyExecutionServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
 
 
-        if status != GoalStatus.SUCCEEDED :
-            if not self.goal_reached:
-                result = False
-            else:
-                result = True
-        else :
-            result = True
+
+        if status == GoalStatus.SUCCEEDED or self.goal_reached:
+            succeeded = True
+        else:
+            succeeded = False #preempted nav in order to send a new goal, i.e., from the topo nav pov the navigation succeeded
             
-        return result
+        return (succeeded, status)
 
 
 
@@ -669,36 +726,14 @@ class PolicyExecutionServer(object):
                 if j.action not in self.needed_actions:
                     self.needed_actions.append(j.action)
 
-
-    """
-    Reconfigure Move Base
-     
-    """
-    def do_reconf_movebase(self, params, action):
-        if self.rcnfclient.has_key(action):
-            try:
-                self.rcnfclient[action].update_configuration(params)
-            except rospy.ServiceException as exc:
-                rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
-        else:
-            rospy.logwarn("No dynamic reconfigure for this action will try using move_base. You should solve this")
-            try:
-                self.rcnfclient['move_base'].update_configuration(params)
-            except rospy.ServiceException as exc:
-                rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. will continue with previous params", exc)
-
     """
      Node Shutdown CallBack
      
     """
     def _on_node_shutdown(self):
         self.cancelled = True
-        params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
-        self.do_reconf_movebase(params, 'move_base')
-        rospy.sleep(rospy.Duration.from_sec(0.2))
-        params = { 'yaw_goal_tolerance' : self.dyt,'max_trans_vel':0.55, 'max_vel_x':0.55, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance
-        self.do_reconf_movebase(params, 'move_base')
-        rospy.sleep(rospy.Duration.from_sec(0.2))
+        for mb_action in self.move_base_actions:
+            self.reset_reconfigure_params(mb_action)
 
 if __name__ == '__main__':
     mode="normal"

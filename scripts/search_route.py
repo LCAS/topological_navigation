@@ -27,7 +27,7 @@ class SearchRoute(object):
         rospy.loginfo("Waiting for Topological map ...")
 
         try:
-            msg = rospy.wait_for_message('/topological_map', TopologicalMap, timeout=10.0)
+            msg = rospy.wait_for_message('topological_map', TopologicalMap, timeout=10.0)
             self.top_map = msg
             self.lnodes = msg.nodes
         except rospy.ROSException :
@@ -37,7 +37,7 @@ class SearchRoute(object):
         rospy.loginfo("Waiting for Current Node ...")
               
         try:
-            msg = rospy.wait_for_message('/closest_node', String, timeout=10.0)
+            msg = rospy.wait_for_message('closest_node', String, timeout=10.0)
             cnode = msg.data
         except rospy.ROSException :
             rospy.logwarn("Failed to get closest node")

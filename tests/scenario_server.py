@@ -101,14 +101,14 @@ class ScenarioServer(object):
 
     def _clear_costmaps(self):
         try:
-            s = rospy.ServiceProxy("/move_base/clear_costmaps", Empty)
+            s = rospy.ServiceProxy("move_base/clear_costmaps", Empty)
             s.wait_for_service()
             s()
         except rospy.ServiceException as e:
             rospy.logerr(e)
 
     def _init_nav(self, pose):
-        pub = rospy.Publisher('/initialpose', PoseWithCovarianceStamped, queue_size=1)
+        pub = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
         rospy.sleep(1.0)
         initialPose = PoseWithCovarianceStamped()
         initialPose.header = pose.header
@@ -132,26 +132,26 @@ class ScenarioServer(object):
     def reset_pose_robot(self):
         rospy.loginfo("Enabling freerun ...")
         try:
-            s = rospy.ServiceProxy("/enable_motors", EnableMotors)
+            s = rospy.ServiceProxy("enable_motors", EnableMotors)
             s.wait_for_service()
             s(False)
         except (rospy.ROSInterruptException, rospy.ServiceException) as e:
             rospy.logwarn(e)
         rospy.loginfo("... enabled")
 
-        while self._robot_start_node != rospy.wait_for_message("/current_node", String).data and not rospy.is_shutdown():
+        while self._robot_start_node != rospy.wait_for_message("current_node", String).data and not rospy.is_shutdown():
             rospy.loginfo("+++ Please push the robot to '%s' +++" % self._robot_start_node)
             rospy.sleep(1)
         rospy.loginfo("+++ Robot at '%s' +++" % self._robot_start_node)
 
         while not rospy.is_shutdown():
-            sub = rospy.Subscriber("/robot_pose", Pose, self.robot_start_dist)
+            sub = rospy.Subscriber("robot_pose", Pose, self.robot_start_dist)
             rospy.loginfo("+++ Please confirm correct positioning with A button on joypad: distance %.2fm %.2fdeg +++" %(self._distances[0], self._distances[1]))
-            if self._robot_start_node != rospy.wait_for_message("/current_node", String).data:
+            if self._robot_start_node != rospy.wait_for_message("current_node", String).data:
                 self.reset_pose()
                 return
             try:
-                if rospy.wait_for_message("/teleop_joystick/action_buttons", action_buttons, timeout=1.).A:
+                if rospy.wait_for_message("teleop_joystick/action_buttons", action_buttons, timeout=1.).A:
                     break
             except rospy.ROSException:
                 pass
@@ -161,13 +161,13 @@ class ScenarioServer(object):
 
         rospy.loginfo("Enabling motors, resetting motor stop and barrier stopped ...")
         try:
-            s = rospy.ServiceProxy("/enable_motors", EnableMotors)
+            s = rospy.ServiceProxy("enable_motors", EnableMotors)
             s.wait_for_service()
             s(True)
-            s = rospy.ServiceProxy("/reset_motorstop", ResetMotorStop)
+            s = rospy.ServiceProxy("reset_motorstop", ResetMotorStop)
             s.wait_for_service()
             s()
-            s = rospy.ServiceProxy("/reset_barrier_stop", ResetBarrierStop)
+            s = rospy.ServiceProxy("reset_barrier_stop", ResetBarrierStop)
             s.wait_for_service()
             s()
         except (rospy.ROSInterruptException, rospy.ServiceException) as e:
@@ -235,7 +235,7 @@ class ScenarioServer(object):
         sock.close()
 
         while not rospy.is_shutdown():
-            rpose = rospy.wait_for_message("/robot_pose", Pose)
+            rpose = rospy.wait_for_message("robot_pose", Pose)
             rospy.loginfo("Setting initial amcl pose ...")
             self._init_nav(self._robot_start_pose)
             dist = self._get_pose_distance(rpose, self._robot_start_pose.pose)
@@ -262,11 +262,11 @@ class ScenarioServer(object):
 
     def graceful_fail(self):
         res = False
-        closest_node = rospy.wait_for_message("/closest_node", String).data
+        closest_node = rospy.wait_for_message("closest_node", String).data
         rospy.loginfo("Closest node: %s" % closest_node)
         if closest_node != self._robot_start_node:
             rospy.loginfo("Using policy execution from %s to %s" % (closest_node, self._robot_start_node))
-            s = rospy.ServiceProxy("/get_simple_policy/get_route_to", GetRouteTo)
+            s = rospy.ServiceProxy("get_simple_policy/get_route_to", GetRouteTo)
             s.wait_for_service()
             policy = s(self._robot_start_node)
             self.client.send_goal(ExecutePolicyModeGoal(route=policy.route))
@@ -276,7 +276,7 @@ class ScenarioServer(object):
         else:
             rospy.loginfo("Using topo nav from %s to %s" % (closest_node, self._robot_start_node))
             rospy.loginfo("Starting topo nav client...")
-            client = actionlib.SimpleActionClient("/topological_navigation", GotoNodeAction)
+            client = actionlib.SimpleActionClient("topological_navigation", GotoNodeAction)
             client.wait_for_server()
             rospy.loginfo(" ... done")
             client.send_goal(GotoNodeGoal(target=self._robot_start_node))
@@ -294,7 +294,7 @@ class ScenarioServer(object):
 
         self._robot_poses = []
         grace_res = False
-        sub = rospy.Subscriber("/robot_pose", Pose, self.robot_callback)
+        sub = rospy.Subscriber("robot_pose", Pose, self.robot_callback)
         rospy.loginfo("Sending goal to policy execution ...")
         print self._policy.route
         self.client.send_goal(ExecutePolicyModeGoal(route=self._policy.route))
@@ -366,7 +366,7 @@ class ScenarioServer(object):
 
         rospy.loginfo("Starting policy execution client...")
         # Has to be done here because the policy execution server waits for a topo map.
-        self.client = actionlib.SimpleActionClient("/topological_navigation/execute_policy_mode", ExecutePolicyModeAction)
+        self.client = actionlib.SimpleActionClient("topological_navigation/execute_policy_mode", ExecutePolicyModeAction)
         self.client.wait_for_server()
         rospy.loginfo(" ... started")
 
@@ -375,7 +375,7 @@ class ScenarioServer(object):
 
         # No try except to have exception break the test
         rospy.loginfo("Getting route ...")
-        s = rospy.ServiceProxy("/get_simple_policy/get_route_to", GetRouteTo)
+        s = rospy.ServiceProxy("get_simple_policy/get_route_to", GetRouteTo)
         s.wait_for_service()
         self._policy = s(self._robot_goal_node)
         rospy.loginfo(" ... done")

@@ -22,10 +22,10 @@ class edge_controllers(object):
     def __init__(self) :
         self.in_feedback=False        
         #self.timer = Timer(1.0, self.timer_callback)
-        #map_name = rospy.get_param('/topological_map_name', 'top_map')
+        #map_name = rospy.get_param('topological_map_name', 'top_map')
         self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
 
-        self._edge_server = InteractiveMarkerServer("topological_map_edges")
+        self._edge_server = InteractiveMarkerServer("/topological_map_edges")
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
 

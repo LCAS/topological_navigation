@@ -76,10 +76,17 @@ class TopologicalNavServer(object):
         self.closest_node = "Unknown"
         self.actions_needed=[]
 
-        move_base_actions = ['move_base','human_aware_navigation','han_adapt_speed','han_vc_corridor','han_vc_junction']
+        move_base_actions = ['move_base', 'human_aware_navigation','han_adapt_speed','han_vc_corridor','han_vc_junction']
         self.move_base_actions = rospy.get_param('~move_base_actions', move_base_actions)     
-        
-        self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
+
+
+        # what service are we using as move_base?
+        self.move_base_name = rospy.get_param('~move_base_name', 'move_base')     
+        if not self.move_base_name in self.move_base_actions:
+            self.move_base_actions.append(self.move_base_name)
+
+        # nh: not used any more?
+        # self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
         
 
         self.navigation_activated=False
@@ -98,9 +105,7 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         
-        
-#        rospy.set_param('topological_map_name', self.topol_map)
-
+    
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
@@ -127,14 +132,12 @@ class TopologicalNavServer(object):
         rospy.loginfo("All Done ...")
         rospy.spin()
 
-
     def init_reconfigure(self):
-        self.move_base_planner = rospy.get_param('~move_base_planner', 'DWAPlannerROS')
+        self.move_base_planner = rospy.get_param('~move_base_planner', 'move_base/DWAPlannerROS')
         #Creating Reconfigure Client
         rospy.loginfo("Creating Reconfigure Client")
-        self.rcnfclient = dynamic_reconfigure.client.Client('move_base/'+self.move_base_planner)
+        self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
         self.init_dynparams = self.rcnfclient.get_configuration()
-
 
     def reconf_movebase(self, cedg, cnode, intermediate):
 #        if cedg.top_vel <= 0.1:
@@ -153,7 +156,7 @@ class TopologicalNavServer(object):
         else:
             cytol = 6.283
         params = { 'yaw_goal_tolerance' : cytol, '':cxygtol }   # No orientation restrictions, 'max_vel_x':ctopvel,
-        print "reconfiguring move_base with %s" %params
+        print "reconfiguring %s with %s" % (self.move_base_name, params)
         print intermediate
         self.reconfigure_movebase_params(params)
         
@@ -161,7 +164,8 @@ class TopologicalNavServer(object):
         
     def reconfigure_movebase_params(self, params):
         translated_params = {}
-        translation = DYNPARAM_MAPPING[self.move_base_planner]
+        key = self.move_base_planner[self.move_base_planner.rfind('/') + 1:]
+        translation = DYNPARAM_MAPPING[key]
         for k, v in params.iteritems():
             if k in translation:
                 translated_params[translation[k]] = v
@@ -389,17 +393,15 @@ class TopologicalNavServer(object):
         if self.current_node == 'none' and a not in self.move_base_actions :
             if a not in self.move_base_actions:
                 self.next_action = a
-                print 'Do move_base to %s' %self.closest_node#(route.source[0])
+                print 'Do %s to %s' % (self.move_base_name, self.closest_node)
                 inf = o_node.pose
                 params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
                 self.reconfigure_movebase_params(params)
                 
                 self.current_target = Orig
-                nav_ok, inc= self.monitored_navigation(inf,'move_base')
+                nav_ok, inc= self.monitored_navigation(inf, self.move_base_name)
         else:
             if a not in self.move_base_actions :
-                #n_edges=len(Orig.edges)
-                action_server = 'move_base'
                 move_base_act= False
                 for i in o_node.edges :
                     # Check if there is a move_base action in the edages of this node
@@ -415,7 +417,7 @@ class TopologicalNavServer(object):
                 else:
                     rospy.loginfo("Getting to exact pose")
                     self.current_target = Orig
-                    nav_ok, inc = self.monitored_navigation(o_node.pose, action_server)
+                    nav_ok, inc = self.monitored_navigation(o_node.pose, self.move_base_name)
                     rospy.loginfo("going to waypoint in node resulted in")
                     print nav_ok
                 

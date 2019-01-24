@@ -146,7 +146,7 @@ For this purpose, there are `Chair`s, `OfficeChair`s, `WheelChair`s, and `Static
      pointset: mb_test16
    node:
      edges: []
-     localise_by_topic: '{"topic": "/battery_state", "field": "charging", "val": true}'
+     localise_by_topic: '{"topic": "battery_state", "field": "charging", "val": true}'
      map: mb_arena
      name: ObstacleStaticHuman1
      pointset: mb_test16
@@ -165,7 +165,7 @@ For this purpose, there are `Chair`s, `OfficeChair`s, `WheelChair`s, and `Static
      yaw_goal_tolerance: 0.1
 ```
 
-Where the important bit is the `localise_by_topic: '{"topic": "/battery_state", "field": "charging", "val": true}'` entry.
+Where the important bit is the `localise_by_topic: '{"topic": "battery_state", "field": "charging", "val": true}'` entry.
 
 After the map has been loaded the obstacles will be spawned at (or better moved to) the respective nodes before the robot starts navigating. Before each test the arena is cleared to make sure that no obstacles linger.
 

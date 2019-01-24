@@ -266,6 +266,6 @@ if __name__ == '__main__':
     print available    
     
     for i in available:
-        add_localise_by_topic(i, 'ChargingPoint', "{\"topic\":\"/battery_state\",\"field\":\"charging\", \"val\": true}")
+        add_localise_by_topic(i, 'ChargingPoint', "{\"topic\":\"battery_state\",\"field\":\"charging\", \"val\": true}")
 
     

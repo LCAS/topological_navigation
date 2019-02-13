@@ -107,12 +107,11 @@ if __name__ == "__main__":
     else:
         fig_file = os.path.abspath(sys.argv[1])
 
-
-    try:
-        map_plotter = TopoMapPlotter(fig_file, float(sys.argv[2]), float(sys.argv[3]))
-    except:
-        rospy.signal_shutdown("Couldn't create TopoMapPlotter object")
-    else:
-        map_plotter.plot_map()
+        try:
+            map_plotter = TopoMapPlotter(fig_file, float(sys.argv[2]), float(sys.argv[3]))
+        except:
+            rospy.signal_shutdown("Couldn't create TopoMapPlotter object")
+        else:
+            map_plotter.plot_map()
 
 #    rospy.spin()

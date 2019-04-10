@@ -178,7 +178,8 @@ class TopologicalNavServer(object):
         
         
     def reconfigure_movebase_params(self, params):
-        self.move_base_planner = rospy.get_param('~move_base_planner', 'move_base/DWAPlannerROS')
+        #self.move_base_planner = rospy.get_param('~move_base_planner', 'move_base/DWAPlannerROS')
+        self.init_dynparams = self.rcnfclient.get_configuration()
         translated_params = {}
         key = self.move_base_planner[self.move_base_planner.rfind('/') + 1:]
         translation = DYNPARAM_MAPPING[key]

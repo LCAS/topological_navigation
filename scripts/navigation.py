@@ -563,7 +563,7 @@ class TopologicalNavServer(object):
             rindex=rindex+1
 
 
-        self.reset_reconf() 
+        #self.reset_reconf() 
 
 
         self.navigation_activated=False

@@ -3,6 +3,8 @@
 import rospy
 import actionlib
 import sys
+import json
+
 
 import calendar
 from datetime import datetime
@@ -11,6 +13,8 @@ from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
+
+from rasberry_optimise.srv import ReconfAtEdges
 
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
@@ -87,7 +91,7 @@ class TopologicalNavServer(object):
 
         # nh: not used any more?
         # self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
-        
+      
 
         self.navigation_activated=False
         self.stats_pub = rospy.Publisher('topological_navigation/Statistics', NavStatistics)
@@ -128,6 +132,17 @@ class TopologicalNavServer(object):
         rospy.Subscriber('closest_node', String, self.closestNodeCallback)
         rospy.Subscriber('current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
+
+
+
+        # Check if using edge recofigure server
+        self.edge_reconfigure=rospy.get_param('~reconfigure_edges',False)
+        if self.edge_reconfigure:
+            self.current_edge_group='none'
+            rospy.loginfo("Using edge reconfigure ...")
+            self.edge_groups = rospy.get_param('/edge_nav_config_groups',False)
+
+
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -362,6 +377,42 @@ class TopologicalNavServer(object):
 
 
 
+    def edgeReconfigureManager(self, edge_id):
+        """
+        edgeReconfigureManager
+        
+        Checks if an edge requires reconfiguration of the 
+        """
+        
+#        print self.edge_groups
+        
+        edge_group='none'
+        for i in self.edge_groups:
+            egn = i.keys()[0]
+            print "CHeck Edge: ", edge_id, "in ", egn
+            if edge_id in i[egn]:
+                edge_group = egn
+                break
+            
+            
+        print "current group: ", self.current_edge_group
+        print "edge group: ", edge_group
+        
+        if edge_group is not self.current_edge_group and edge_group != 'none':
+            print "RECONFIGURING EDGE: ", edge_id
+            print "TO ", edge_group 
+            self.current_edge_group = edge_group
+            try:
+                rospy.wait_for_service('reconf_at_edges', timeout=3)
+                reconf_at_edges = rospy.ServiceProxy('reconf_at_edges', ReconfAtEdges)
+                resp1 = reconf_at_edges(edge_id)
+                print resp1.success
+            except rospy.ServiceException, e:
+                rospy.logerr("Service call failed: %s"%e)
+        print "-------"
+
+
+
     """
      Follow Route
      
@@ -441,6 +492,10 @@ class TopologicalNavServer(object):
             current_edge = '%s--%s' %(cedg.edge_id, self.topol_map)
             rospy.loginfo("Current edge: %s" %current_edge)
             self.cur_edge.publish(current_edge)
+            
+            # If we are using edge reconfigure
+            if self.edge_reconfigure:
+                self.edgeReconfigureManager(cedg.edge_id)                
 
                       
             self._feedback.route = '%s to %s using %s' %(route.source[rindex], cedg.node, a)
@@ -453,7 +508,6 @@ class TopologicalNavServer(object):
             # the current and following action are move_base or human_aware_navigation
             if rindex < route_len-1 and a1 in self.move_base_actions and a in self.move_base_actions :
                 self.reconf_movebase(cedg, cnode, True)
-                
             else:
                 if self.no_orientation:
                     self.reconf_movebase(cedg, cnode, True)

@@ -400,7 +400,7 @@ class TopologicalNavServer(object):
         print "current group: ", self.current_edge_group
         print "edge group: ", edge_group
         
-        if edge_group is not self.current_edge_group and edge_group != 'none':
+        if edge_group is not self.current_edge_group: # and edge_group != 'none':
             print "RECONFIGURING EDGE: ", edge_id
             print "TO ", edge_group 
             self.current_edge_group = edge_group

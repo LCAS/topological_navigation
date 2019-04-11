@@ -14,7 +14,7 @@ from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
 
-from rasberry_optimise.srv import ReconfAtEdges
+from strands_navigation_msgs.srv import ReconfAtEdges
 
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *

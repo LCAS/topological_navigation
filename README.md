@@ -260,7 +260,7 @@ However in some specific cases it might be necessary to localise the robot by me
 A typical localise by topic string will look like this:
 
 ```JSON
-"{"topic":"/battery_state","field":"charging","val":true}"
+"{"topic":"battery_state","field":"charging","val":true}"
 ```
 
 There are also some **optional** fields that can be set:

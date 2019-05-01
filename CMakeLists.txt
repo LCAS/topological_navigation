@@ -132,6 +132,7 @@ include_directories(
    scripts/topological_prediction.py
    scripts/get_simple_policy.py
    scripts/manual_edge_predictions.py
+   scripts/speed_based_prediction.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
@@ -164,6 +165,8 @@ if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
 
   add_rostest(tests/travel_time_estimator.test)
-  add_rostest(tests/navigation_scenarios.test)
+
+#  temporarily disabling Morse based tests
+#  add_rostest(tests/navigation_scenarios.test)
 
 endif()

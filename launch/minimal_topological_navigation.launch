@@ -2,8 +2,10 @@
 
 	<arg name="map"/>
 
-	<!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROSm Jackal and HSR TrajectoryPlannerROS.  -->
-	<arg name="move_base_planner" default="DWAPlannerROS"/>
+	<!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
+	<arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
+	<!-- What action is being used for move_base -->
+	<arg name="move_base_name" default="move_base"/>
 
 	<arg name="topological_navigation_retries" default="3"/>
 	<arg name="execute_policy_retries" default="3"/>
@@ -25,6 +27,8 @@
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
 		<param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
 		<param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
+		<param name="move_base_name" type="string" value="$(arg move_base_name)"/>
+
 	</node>
 
 <!-- 	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen" respawn="true">

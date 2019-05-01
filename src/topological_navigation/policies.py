@@ -81,7 +81,7 @@ class PoliciesVis(object):
         print "All Done"
 
 
-    def create_edge(self, point1, point2, color):
+    def create_edge(self, point1, point2, color="red"):
         marker = Marker()
         marker.header.frame_id = "/map"
         marker.type = marker.ARROW

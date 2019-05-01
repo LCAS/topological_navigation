@@ -2,6 +2,52 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.7 (2018-10-26)
+------------------
+* Temporarily disabling Morse-based tests (`#360 <https://github.com/strands-project/strands_navigation/issues/360>`_)
+* Contributors: Jaime Pulido Fentanes
+
+1.0.6 (2018-07-17)
+------------------
+* Merge pull request `#358 <https://github.com/strands-project/strands_navigation/issues/358>`_ from Jailander/rasberry-devel
+  re-adding ability to work with other planners
+* Fixes bug on service call for adding node
+* re-adding ability to work with other planners
+* Revert "Revert "Revert "Adding the ability to work with local planners other than DWA"""
+  This reverts commit b0ea99543615e6dfc8dbb2cb9969ce1da6ae546c.
+* Revert "Fixing bug on add node service marker"
+  This reverts commit 0a364cbfda27ea5971eeb871e286cfd186ceca1c.
+* Revert "Revert "Adding the ability to work with local planners other than DWA""
+  This reverts commit e11a93bf79b01e17889eb3e00750b8f588385f93.
+* Revert "Adding the ability to work with local planners other than DWA"
+  This reverts commit b86ca393944362eb9c0cf21884810f5c0f8862e2.
+* Fixing bug on add node service marker
+* Adding the ability to work with local planners other than DWA
+* Contributors: Jaime Pulido Fentanes
+
+1.0.5 (2018-04-17)
+------------------
+* add speed based prediction to install scripts
+* Merge pull request `#342 <https://github.com/strands-project/strands_navigation/issues/342>`_ from bfalacerda/predictions
+  optimistic nav predictions until 10 samples
+* Merge pull request `#351 <https://github.com/strands-project/strands_navigation/issues/351>`_ from heuristicus/indigo-devel
+  Can now place nodes with RMB to stop automatic edge creation
+* Merge pull request `#352 <https://github.com/strands-project/strands_navigation/issues/352>`_ from heuristicus/patch-2
+  Ensure that meta out is defined to prevent crashes
+* Ensure that meta out is defined to prevent crashes
+* Can now place nodes with RMB to stop automatic edge creation
+  Fix deletion dialogue, edges and tags were swapped
+* Merge pull request `#350 <https://github.com/strands-project/strands_navigation/issues/350>`_ from heuristicus/patch-1
+  Fix crash on attempting to change node name
+* Fix crash on attempting to change node name
+* Merge pull request `#349 <https://github.com/strands-project/strands_navigation/issues/349>`_ from mudrole1/indigo-devel
+  Adding waiting for the add_node service
+* Removed loadMap() in the delete method
+* optimistic predictions until 10 samples
+* Merge branch 'prediction-hacking' of https://github.com/Jailander/strands_navigation into predictions
+* creating optimistic predictions
+* Contributors: Bruno Lacerda, Jaime Pulido Fentanes, Lenka Mudrova, Michal Staniaszek, Nick Hawes
+
 1.0.4 (2017-06-23)
 ------------------
 * Modifications to topological map tools to accommodate topological map editor (`#345 <https://github.com/strands-project/strands_navigation/issues/345>`_)

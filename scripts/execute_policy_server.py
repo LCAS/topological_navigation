@@ -89,6 +89,7 @@ class PolicyExecutionServer(object):
         self.current_route = None
         self.nfails = 0
         self.n_tries = rospy.get_param('~retries', 3)
+        self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
         
         rospy.on_shutdown(self._on_node_shutdown)
         self.move_base_actions = ['move_base']
@@ -140,6 +141,7 @@ class PolicyExecutionServer(object):
         #Creating Reconfigure Client
         for i in self.needed_move_base_actions:
             service_created = self.create_reconfigure_client(i)
+
             if service_created and i == 'move_base':
                 mb_service_created = True
                 

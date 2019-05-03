@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <arg name="omni" default="false" />
+
+  <!-- Reconfigure -->
+  <node pkg="topological_navigation" type="reconf_at_edges_server.py" name="reconf_at_edges_server" output="screen" 
+        args="$(arg omni)" respawn="true">
+    <remap from="/move_base/DWAPlannerROS/set_parameters" to="move_base/DWAPlannerROS/set_parameters" />
+  </node>
+
+</launch>

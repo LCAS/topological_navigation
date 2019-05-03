@@ -7,13 +7,14 @@ class reconf_at_edges_server(object):
 
 
     def __init__(self):
-        self.edge_groups = rospy.get_param("edge_nav_reconfig_groups", {})
+        self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
         rospy.Service('reconf_at_edges', ReconfAtEdges, self.handle_reconf_at_edges)
 
 
     def handle_reconf_at_edges(self, req):
 
         self.success = False
+
         for group in self.edge_groups:
 
             if req.edge_id in self.edge_groups[group]["edges"]:

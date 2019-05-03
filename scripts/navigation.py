@@ -401,12 +401,13 @@ class TopologicalNavServer(object):
         if edge_group is not self.current_edge_group: # and edge_group != 'none':
             print "RECONFIGURING EDGE: ", edge_id
             print "TO ", edge_group
-            self.current_edge_group = edge_group
             try:
                 rospy.wait_for_service('reconf_at_edges', timeout=3)
                 reconf_at_edges = rospy.ServiceProxy('reconf_at_edges', ReconfAtEdges)
                 resp1 = reconf_at_edges(edge_id)
                 print resp1.success
+                if resp1.success: # set current_edge_group only if successful
+                    self.current_edge_group = edge_group
             except rospy.ServiceException, e:
                 rospy.logerr("Service call failed: %s"%e)
         print "-------"

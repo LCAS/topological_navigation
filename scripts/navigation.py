@@ -3,6 +3,8 @@
 import rospy
 import actionlib
 import sys
+import json
+
 
 import calendar
 from datetime import datetime
@@ -11,6 +13,8 @@ from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
+
+from strands_navigation_msgs.srv import ReconfAtEdges
 
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
@@ -28,9 +32,9 @@ import dynamic_reconfigure.client
 
 import strands_navigation_msgs.msg
 
-# a list of parameters top nav is allowed to change 
-# and their mapping from dwa speak 
-# if not listed then the param is not sent, 
+# a list of parameters top nav is allowed to change
+# and their mapping from dwa speak
+# if not listed then the param is not sent,
 # e.g. TrajectoryPlannerROS doesn't have tolerances
 DYNPARAM_MAPPING = {
         'DWAPlannerROS': {
@@ -48,7 +52,7 @@ DYNPARAM_MAPPING = {
 
 
 """
- Class for Topological Navigation 
+ Class for Topological Navigation
 
 """
 
@@ -58,7 +62,7 @@ class TopologicalNavServer(object):
 
     """
      Initialization for Topological Navigation Class
-    
+
     """
     def __init__(self, name, mode) :
         self.node_by_node = False
@@ -70,24 +74,24 @@ class TopologicalNavServer(object):
         self.current_action = 'none'
         self.next_action = 'none'
         self.n_tries = rospy.get_param('~retries', 3)
-        
+
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
         self.actions_needed=[]
 
         move_base_actions = ['move_base', 'human_aware_navigation','han_adapt_speed','han_vc_corridor','han_vc_junction']
-        self.move_base_actions = rospy.get_param('~move_base_actions', move_base_actions)     
+        self.move_base_actions = rospy.get_param('~move_base_actions', move_base_actions)
 
 
         # what service are we using as move_base?
-        self.move_base_name = rospy.get_param('~move_base_name', 'move_base')     
+        self.move_base_name = rospy.get_param('~move_base_name', 'move_base')
         if not self.move_base_name in self.move_base_actions:
             self.move_base_actions.append(self.move_base_name)
 
         # nh: not used any more?
         # self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
-        
+
 
         self.navigation_activated=False
         self.stats_pub = rospy.Publisher('topological_navigation/Statistics', NavStatistics)
@@ -96,16 +100,16 @@ class TopologicalNavServer(object):
         self.cur_edge = rospy.Publisher('current_edge', String)
         self.monit_nav_cli= False
 
-        
-        #Waiting for Topological Map        
+
+        #Waiting for Topological Map
         self._map_received=False
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
-        rospy.loginfo("Waiting for Topological map ...")        
+        rospy.loginfo("Waiting for Topological map ...")
         while not self._map_received :
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
-        
-    
+
+
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
@@ -128,6 +132,17 @@ class TopologicalNavServer(object):
         rospy.Subscriber('closest_node', String, self.closestNodeCallback)
         rospy.Subscriber('current_node', String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
+
+
+
+        # Check if using edge recofigure server
+        self.edge_reconfigure=rospy.get_param('~reconfigure_edges',False)
+        if self.edge_reconfigure:
+            self.current_edge_group='none'
+            rospy.loginfo("Using edge reconfigure ...")
+            self.edge_groups = rospy.get_param('/edge_nav_reconfig_groups', {})
+
+
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -159,10 +174,12 @@ class TopologicalNavServer(object):
         print "reconfiguring %s with %s" % (self.move_base_name, params)
         print intermediate
         self.reconfigure_movebase_params(params)
-        
-        
-        
+
+
+
     def reconfigure_movebase_params(self, params):
+        #self.move_base_planner = rospy.get_param('~move_base_planner', 'move_base/DWAPlannerROS')
+        self.init_dynparams = self.rcnfclient.get_configuration()
         translated_params = {}
         key = self.move_base_planner[self.move_base_planner.rfind('/') + 1:]
         translation = DYNPARAM_MAPPING[key]
@@ -196,13 +213,13 @@ class TopologicalNavServer(object):
                         break
             if found:
                 break
-        
+
         return edge_id
 
 
     """
      Update Map CallBack
-     
+
      This Function updates the Topological Map everytime it is called
     """
     def MapCallback(self, msg) :
@@ -214,7 +231,7 @@ class TopologicalNavServer(object):
 
     """
      Execute CallBack
-     
+
      This Functions is called when the Action Server is called
     """
     def executeCallback(self, goal):
@@ -245,7 +262,7 @@ class TopologicalNavServer(object):
 
     """
      Closest Node CallBack
-     
+
     """
     def closestNodeCallback(self, msg):
         self.closest_node=msg.data
@@ -255,7 +272,7 @@ class TopologicalNavServer(object):
 
     """
      Current Node CallBack
-     
+
     """
     def currentNodeCallback(self, msg):
         if self.current_node != msg.data :  #is there any change on this topic?
@@ -270,22 +287,22 @@ class TopologicalNavServer(object):
                     if self.current_node == self.current_target and self._target != self.current_target and self.next_action in self.move_base_actions and self.current_action in self.move_base_actions :
                         rospy.loginfo('intermediate node reached %s', self.current_node)
                         self.goal_reached=True
-                        
- 
+
+
     """
      Navigate
-     
+
      This function takes the target node and plans the actions that are required
      to reach it
-    """       
+    """
     def navigate(self, target):
         tries=0
         result = False
-        
+
         while tries <= self.n_tries and not result and not self.cancelled :
             o_node = get_node(self.lnodes, self.closest_node)
             g_node = get_node(self.lnodes, target)
-            
+
             rospy.loginfo("Navigating Take : %d", tries)
             # Everything is Awesome!!!
             # Target and Origin are Different and none of them is None
@@ -315,8 +332,8 @@ class TopologicalNavServer(object):
                         if  action_server in self.move_base_actions :
                             break
                         action_server=None
-                    
-       
+
+
                     if action_server is None:
                         rospy.loginfo("Navigating Case 2")
                         rospy.loginfo("Action not taken, outputing success")
@@ -362,9 +379,44 @@ class TopologicalNavServer(object):
 
 
 
+    def edgeReconfigureManager(self, edge_id):
+        """
+        edgeReconfigureManager
+
+        Checks if an edge requires reconfiguration of the
+        """
+
+#        print self.edge_groups
+
+        edge_group = 'none'
+        for group in self.edge_groups:
+            print "Check Edge: ", edge_id, "in ", group
+            if edge_id in self.edge_groups[group]["edges"]:
+                edge_group = group
+                break
+
+        print "current group: ", self.current_edge_group
+        print "edge group: ", edge_group
+
+        if edge_group is not self.current_edge_group: # and edge_group != 'none':
+            print "RECONFIGURING EDGE: ", edge_id
+            print "TO ", edge_group
+            try:
+                rospy.wait_for_service('reconf_at_edges', timeout=3)
+                reconf_at_edges = rospy.ServiceProxy('reconf_at_edges', ReconfAtEdges)
+                resp1 = reconf_at_edges(edge_id)
+                print resp1.success
+                if resp1.success: # set current_edge_group only if successful
+                    self.current_edge_group = edge_group
+            except rospy.ServiceException, e:
+                rospy.logerr("Service call failed: %s"%e)
+        print "-------"
+
+
+
     """
      Follow Route
-     
+
      This function follows the chosen route to reach the goal
     """
     def followRoute(self, route, target):
@@ -383,7 +435,7 @@ class TopologicalNavServer(object):
         rindex=0
         nav_ok=True
         route_len = len(route.edge_id)
-        
+
         o_node = get_node(self.lnodes, Orig)
         a = get_edge_from_id(self.lnodes, route.source[0], route.edge_id[0]).action#route[rindex]._get_action(route[rindex+1].name)
         rospy.loginfo("first action %s" %a)
@@ -397,7 +449,7 @@ class TopologicalNavServer(object):
                 inf = o_node.pose
                 params = { 'yaw_goal_tolerance' : 0.087266 }   #5 degrees tolerance
                 self.reconfigure_movebase_params(params)
-                
+
                 self.current_target = Orig
                 nav_ok, inc= self.monitored_navigation(inf, self.move_base_name)
         else:
@@ -409,7 +461,7 @@ class TopologicalNavServer(object):
                     if i.action in self.move_base_actions :
                         move_base_act = True
 
-                                       
+
                 if not move_base_act :
                     rospy.loginfo("Action not taken, outputing success")
                     nav_ok = True
@@ -420,7 +472,7 @@ class TopologicalNavServer(object):
                     nav_ok, inc = self.monitored_navigation(o_node.pose, self.move_base_name)
                     rospy.loginfo("going to waypoint in node resulted in")
                     print nav_ok
-                
+
 
         while rindex < (len(route.edge_id)) and not self.cancelled and nav_ok :
             #current action
@@ -442,7 +494,11 @@ class TopologicalNavServer(object):
             rospy.loginfo("Current edge: %s" %current_edge)
             self.cur_edge.publish(current_edge)
 
-                      
+            # If we are using edge reconfigure
+            if self.edge_reconfigure:
+                self.edgeReconfigureManager(cedg.edge_id)
+
+
             self._feedback.route = '%s to %s using %s' %(route.source[rindex], cedg.node, a)
             self._as.publish_feedback(self._feedback)
 
@@ -453,14 +509,13 @@ class TopologicalNavServer(object):
             # the current and following action are move_base or human_aware_navigation
             if rindex < route_len-1 and a1 in self.move_base_actions and a in self.move_base_actions :
                 self.reconf_movebase(cedg, cnode, True)
-                
             else:
                 if self.no_orientation:
                     self.reconf_movebase(cedg, cnode, True)
                 else:
                     self.reconf_movebase(cedg, cnode, False)
 
-                
+
             self.current_target = cedg.node
             #edg= self.get_edge_id(route[rindex].name, route[rindex+1].name, a)
             self.stat=nav_stats(route.source[rindex], cedg.node, self.topol_map, cedg.edge_id)
@@ -469,10 +524,10 @@ class TopologicalNavServer(object):
             nav_ok, inc = self.monitored_navigation(inf, a)
             params = { 'yaw_goal_tolerance' : 0.087266, 'xy_goal_tolerance':0.1 }   #5 degrees tolerance   'max_vel_x':0.55,
             self.reconfigure_movebase_params(params)
-            
-            
-            
-            
+
+
+
+
             not_fatal=nav_ok
             if self.cancelled :
                 nav_ok=True
@@ -498,16 +553,16 @@ class TopologicalNavServer(object):
 
             self.publish_stats()
 
-            
+
             current_edge = 'none'
-            self.cur_edge.publish(current_edge)            
-            
+            self.cur_edge.publish(current_edge)
+
             self.current_action = 'none'
             self.next_action = 'none'
             rindex=rindex+1
 
 
-        self.reset_reconf() 
+        self.reset_reconf()
 
 
         self.navigation_activated=False
@@ -521,7 +576,7 @@ class TopologicalNavServer(object):
             stroute.nodes.append(i)
         stroute.nodes.append(target)
         self.route_pub.publish(stroute)
-        
+
 
 
     def publish_stats(self):
@@ -558,7 +613,7 @@ class TopologicalNavServer(object):
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.get_rostime()
         goal.target_pose.pose = gpose
-        
+
         self.goal_reached=False
         self.monNavClient.send_goal(goal)
         status=self.monNavClient.get_state()
@@ -590,7 +645,7 @@ class TopologicalNavServer(object):
             else :
                 inc = 0
 
-            
+
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result, inc
 

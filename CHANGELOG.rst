@@ -2,6 +2,53 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#374 <https://github.com/strands-project/strands_navigation/issues/374>`_ from Jailander/edge-reconf
+  Move base parameters being reconfigured at edges
+* Merge pull request `#373 <https://github.com/strands-project/strands_navigation/issues/373>`_ from bfalacerda/indigo-devel
+  add local planner arg to single robot topo nav launch
+* Merge pull request `#1 <https://github.com/strands-project/strands_navigation/issues/1>`_ from gpdas/edge-reconf
+  reconfig_at_edges services added
+* update current_edge_group only if reconfig successful
+  reconf_at_edges service node now subscribes to param /edge_nav_reconfig_groups (removed relative ns)
+* reconfig_at_edges services added
+  1. edges_groups param is modified to have the parameter names and values for reconfiguration
+  2. added a node in topological_navigation for running the reconf_at_edges service - @adambinch
+  3. topological_navigation/navigation.py updated to use the modified param
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel
+* add local planner arg to single robot topo nav launch
+* Moving reconf server to strands
+* reconfiguring when no group (so default option can be used)
+* Reverting test
+* testing
+* Now resetting to the right set of params
+* bug fix
+* Re-configuring tolerance from latest set of parameters not original set
+* adding edge reconfigure manager
+* Corrected battery namespaces for localise by topic
+* Merge pull request `#369 <https://github.com/strands-project/strands_navigation/issues/369>`_ from strands-project/ori-indigo-devel
+  Support for multi-robot and different global planners
+* minor changes to work with move_base_flex. defaults should produce backward compatible behaviour still
+* Fixed typo and maintaining backward compatibility for policy visualisation
+* Corrected indentation
+* Merge remote-tracking branch 'ori/indigo-devel' into indigo-devel
+  Bringing in changes from ORI for multi-robot and different base planners.
+* respawn travel estimator when it dies
+* Using correct exception type for dynparam call
+* add different color to policy arrows
+* Updated top nav execution to handled different types of local planner for move_base.
+  Tested under navigation and policy execution, but not extensively.
+* Minimal topological navigation config with no extra dependencies and no monitored nav recoveries
+* top nav supports other planners for dynparam. still need to update policy exec
+* making topo nav feedback more robutst to possible lag in localisation - fetch issues
+* making sure number of fails gets reset after the fail threshold is reached
+* make code less contrived
+* correct feedback publishing from topo nav
+* multi-robot setup
+* update of absolute/relative topic names for multi-robot setup
+* Contributors: Bruno Lacerda, Jaime Pulido Fentanes, Marc Hanheide, Nick Hawes, gpdas
+
 1.0.7 (2018-10-26)
 ------------------
 * Temporarily disabling Morse-based tests (`#360 <https://github.com/strands-project/strands_navigation/issues/360>`_)

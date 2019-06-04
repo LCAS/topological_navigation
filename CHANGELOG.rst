@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.8 (2019-06-04)
+------------------
 * Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel
 * Merge pull request `#370 <https://github.com/strands-project/strands_navigation/issues/370>`_ from gpdas/plot_topo_map
   plot_topo_map

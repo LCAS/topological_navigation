@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.8 (2019-06-04)
+------------------
 * Merge pull request `#374 <https://github.com/strands-project/strands_navigation/issues/374>`_ from Jailander/edge-reconf
   Move base parameters being reconfigured at edges
 * Merge pull request `#373 <https://github.com/strands-project/strands_navigation/issues/373>`_ from bfalacerda/indigo-devel

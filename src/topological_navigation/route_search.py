@@ -16,17 +16,17 @@ class NodeToExpand(object):
 
     def __repr__(self):
         return "-------\n\t Node: \n\t name:%s \n\t Father:%s \n\t current_distance:%f \n\t distance to target: %f \n\t cost %f \n" %(self.name, self.father, self.current_distance, self.dist_to_target, self.cost)
-        
+
 
 class TopologicalRouteSearch(object):
-       
+
     def __init__(self, top_map) :
-        rospy.loginfo("Waiting for Topological map ...")
+#        rospy.loginfo("Waiting for Topological map ...")
         self.top_map = top_map
 
     """
      search_route
-     
+
      This function searches the route to reach the goal
     """
     def search_route(self, origin, target):
@@ -35,17 +35,17 @@ class TopologicalRouteSearch(object):
         to_expand=[]
         children=[]
         expanded=[]
-        
+
         #print 'searching route from %s to %s' %(orig.name, goal.name)
-        
+
         #self.get_distance_to_node(goal, orig)
         nte = NodeToExpand(orig.name, 'none', 0.0, get_distance_to_node(goal, orig))  #Node to Expand
         expanded.append(nte)
         #to_expand.append(nte)
-        
+
 #        exp_index=0
-        cen = orig      #currently expanded node 
-        
+        cen = orig      #currently expanded node
+
         children = get_conected_nodes(cen) #nodes current node is connected to
         #print children
         not_goal=True
@@ -68,7 +68,7 @@ class TopologicalRouteSearch(object):
                     for j in to_expand:
                         if i == j.name:
                             been_expanded = True
-                            
+
                     if not been_expanded:
                         nnn = get_node(self.top_map, i)
                         tdist = get_distance_to_node(goal, nnn)
@@ -86,7 +86,7 @@ class TopologicalRouteSearch(object):
                 else:
                     not_goal=False
                     route_found=False
-        
+
         route = NavRoute()
 #        print "===== RESULT ====="
         if route_found:
@@ -101,7 +101,7 @@ class TopologicalRouteSearch(object):
                         steps.append(i)
                         next_node = i.father
                         break
-            
+
             steps.reverse()
             val = len(steps)
             for i in range(1, val):
@@ -109,7 +109,7 @@ class TopologicalRouteSearch(object):
                 route.source.append(steps[i].father)
                 route.edge_id.append(edg[0].edge_id)
                 #route.append(r)
-        
+
             return route
         else:
             return None

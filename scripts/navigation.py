@@ -170,7 +170,7 @@ class TopologicalNavServer(object):
                 cytol = cnode.yaw_goal_tolerance
         else:
             cytol = 6.283
-        params = { 'yaw_goal_tolerance' : cytol, '':cxygtol }   # No orientation restrictions, 'max_vel_x':ctopvel,
+        params = { 'yaw_goal_tolerance' : cytol, 'xy_goal_tolerance':cxygtol }   # No orientation restrictions, 'max_vel_x':ctopvel,
         print "reconfiguring %s with %s" % (self.move_base_name, params)
         print intermediate
         self.reconfigure_movebase_params(params)

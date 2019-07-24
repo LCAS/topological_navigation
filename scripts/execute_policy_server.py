@@ -20,6 +20,7 @@ from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
 
+from strands_navigation_msgs.srv import ReconfAtEdges
 
 #from strands_navigation_msgs.msg import TopologicalNode
 from strands_navigation_msgs.msg import TopologicalMap
@@ -35,7 +36,7 @@ import dynamic_reconfigure.client
 
 """
     get_node
-    
+
     Given a topological map and a node name it returns the node object
 """
 def get_node(top_map, node_name):
@@ -45,9 +46,9 @@ def get_node(top_map, node_name):
     return None
 
 
-# a list of parameters top nav is allowed to change 
-# and their mapping from dwa speak 
-# if not listed then the param is not sent, 
+# a list of parameters top nav is allowed to change
+# and their mapping from dwa speak
+# if not listed then the param is not sent,
 # e.g. TrajectoryPlannerROS doesn't have tolerances
 DYNPARAM_MAPPING = {
         'DWAPlannerROS': {
@@ -77,10 +78,10 @@ class PolicyExecutionServer(object):
 
     """
      Initialization for Policy Execution Class
-    
+
     """
     def __init__(self) :
-        
+
         self.cancelled = False
         self.preempted = False
         self.nav_preempted = False
@@ -90,27 +91,27 @@ class PolicyExecutionServer(object):
         self.nfails = 0
         self.n_tries = rospy.get_param('~retries', 3)
         self.move_base_reconf_service = rospy.get_param('~move_base_reconf_service', 'DWAPlannerROS')
-        
+
         rospy.on_shutdown(self._on_node_shutdown)
         self.move_base_actions = ['move_base']
         self.needed_actions=[]
-        
-        
+
+
         self.navigation_activated=False
         self._action_name = 'topological_navigation/execute_policy_mode'
         self.stats_pub = rospy.Publisher('topological_navigation/Statistics', NavStatistics, queue_size=1)
 
 
         self.lnodes = []
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)       
-        rospy.loginfo("Waiting for Topological map ...")        
+        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        rospy.loginfo("Waiting for Topological map ...")
         while len(self.lnodes) == 0 :
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         self.needed_move_base_actions = [x for x in self.needed_actions if x in self.move_base_actions]
         if 'move_base' not in self.needed_move_base_actions:
             self.needed_move_base_actions.append('move_base')
-        
+
 
         #Creating monitored navigation client
         rospy.loginfo("Creating monitored navigation client.")
@@ -122,7 +123,7 @@ class PolicyExecutionServer(object):
         #Subscribing to Localisation Topics
         rospy.loginfo("Waiting for Localisation Topics")
         self.current_node = rospy.wait_for_message('current_node', String)
-        self.closest_node = rospy.wait_for_message('closest_node', String)  
+        self.closest_node = rospy.wait_for_message('closest_node', String)
 
         rospy.loginfo("Subscribing to Localisation Topics")
         rospy.Subscriber('closest_node', String, self.closestNodeCallback)
@@ -134,25 +135,31 @@ class PolicyExecutionServer(object):
         self.init_dynparams = {}
 
         config = {}
-        
+
+        # Check if using edge recofigure server
+        self.edge_reconfigure=rospy.get_param('~reconfigure_edges',False)
+        if self.edge_reconfigure:
+            self.current_edge_group='none'
+            rospy.loginfo("Using edge reconfigure ...")
+            self.edge_groups = rospy.get_param('/edge_nav_reconfig_groups', {})
 
         self.move_base_planner = rospy.get_param('~move_base_planner', 'DWAPlannerROS')
-            
+
         #Creating Reconfigure Client
         for i in self.needed_move_base_actions:
             service_created = self.create_reconfigure_client(i)
 
             if service_created and i == 'move_base':
                 mb_service_created = True
-                
+
         if not mb_service_created:
             while not mb_service_created and not self.cancelled:
                 rospy.sleep(1)
                 rospy.logwarn("%s must be created! will keep trying until its there" %rcnfsrvrname)
                 mb_service_created = self.create_reconfigure_client('move_base')
-        
+
         if not self.cancelled:
-    
+
             #Creating Action Server
             rospy.loginfo("Creating action server.")
             self._as = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, execute_cb = self.executeCallback, auto_start = False)
@@ -160,8 +167,8 @@ class PolicyExecutionServer(object):
             rospy.loginfo(" ...starting")
             self._as.start()
             rospy.loginfo(" ...done")
-    
-    
+
+
             rospy.loginfo("EPM All Done ...")
             rospy.spin()
 
@@ -172,10 +179,10 @@ class PolicyExecutionServer(object):
         """
         rcnfsrvrname= rospy.get_namespace() + mb_action +'/' + self.move_base_planner
         test_service = rcnfsrvrname+'/set_parameters'
-        
+
         service_created = False
         service_created_tries = 50
-        while service_created_tries > 0 and not self.cancelled:              
+        while service_created_tries > 0 and not self.cancelled:
             service_names = rosservice.get_service_list()
             if test_service in service_names:
                 rospy.loginfo("Creating Reconfigure Client %s" %rcnfsrvrname)
@@ -222,7 +229,7 @@ class PolicyExecutionServer(object):
 
     """
     Reconfigure Move Base
-     
+
     """
     def _do_movebase_reconf(self, mb_action, params):
         if mb_action in self.rcnfclient:
@@ -237,7 +244,7 @@ class PolicyExecutionServer(object):
 
     """
      Preempt CallBack
-     
+
     """
     def preemptCallback(self):
         self.cancelled = True
@@ -251,7 +258,7 @@ class PolicyExecutionServer(object):
 
     """
      Closest Node CallBack
-     
+
     """
     def closestNodeCallback(self, msg):
         self.closest_node=msg.data
@@ -260,7 +267,7 @@ class PolicyExecutionServer(object):
 
     """
      Current Node CallBack
-     
+
     """
     def currentNodeCallback(self, msg):
         if self.current_node != msg.data :  #is there any change on this topic?
@@ -270,10 +277,10 @@ class PolicyExecutionServer(object):
                 #print "new node reached %s" %self.current_node
                 if self.navigation_activated :  #is the action server active?
                     self.stat.set_at_node()
-                    # If the current action is a move_base type action and there is a new node in the route connected 
+                    # If the current action is a move_base type action and there is a new node in the route connected
                     # by another move_base type action the goal will be set as reached so a new goal can be called in
                     # execute_policy
-                    if self.current_action in self.move_base_actions and self.current_node in self.current_route.source : 
+                    if self.current_action in self.move_base_actions and self.current_node in self.current_route.source :
                         nod_ind = self.current_route.source.index(self.current_node)
                         next_action, target = self.find_action(self.current_route.source[nod_ind], self.current_route.edge_id[nod_ind])
                         if next_action in self.move_base_actions :
@@ -281,7 +288,7 @@ class PolicyExecutionServer(object):
                         else:
                             if self.current_node != self.current_target :
                                 #This means that the robot will try to execute the policies again which means navigating to the waypoint
-                                self.goal_failed=True                            
+                                self.goal_failed=True
 
 
     def get_edge(self, orig, dest, a):
@@ -296,13 +303,13 @@ class PolicyExecutionServer(object):
                         break
             if found:
                 break
-        
+
         return edge
 
 
     """
      Execute CallBack
-     
+
      This Functions is called when the Action Server is called
     """
     def executeCallback(self, goal):
@@ -312,8 +319,8 @@ class PolicyExecutionServer(object):
         self.store_initial_parameters()
 
         result = self.followRoute(goal.route)
-    
-        if not self.cancelled :     
+
+        if not self.cancelled :
             self._result.success = result
             #self._feedback.route_status = self.current_node
             #self._as.publish_feedback(self._feedback)
@@ -325,7 +332,7 @@ class PolicyExecutionServer(object):
             if self.preempted :
                 self._result.success = False
                 self._as.set_preempted(self._result)
-            else : 
+            else :
                 self._result.success = False
                 self._as.set_aborted(self._result)
         #self._feedback.route_status = 'Starting...'
@@ -334,10 +341,44 @@ class PolicyExecutionServer(object):
         #self.navigate(goal.target)
 
 
-    
+    def edgeReconfigureManager(self, edge_id):
+        """
+        edgeReconfigureManager
+
+        Checks if an edge requires reconfiguration of the
+        """
+
+#        print self.edge_groups
+
+        edge_group = 'none'
+        for group in self.edge_groups:
+            print "Check Edge: ", edge_id, "in ", group
+            if edge_id in self.edge_groups[group]["edges"]:
+                edge_group = group
+                break
+
+        print "current group: ", self.current_edge_group
+        print "edge group: ", edge_group
+
+        if edge_group is not self.current_edge_group: # and edge_group != 'none':
+            print "RECONFIGURING EDGE: ", edge_id
+            print "TO ", edge_group
+            try:
+                rospy.wait_for_service('reconf_at_edges', timeout=3)
+                reconf_at_edges = rospy.ServiceProxy('reconf_at_edges', ReconfAtEdges)
+                resp1 = reconf_at_edges(edge_id)
+                print resp1.success
+                if resp1.success: # set current_edge_group only if successful
+                    self.current_edge_group = edge_group
+            except rospy.ServiceException, e:
+                rospy.logerr("Service call failed: %s"%e)
+        print "-------"
+
+
+
     """
      Follow Route
-     
+
     """
     def followRoute(self, route):
 
@@ -354,30 +395,30 @@ class PolicyExecutionServer(object):
 
 
         #if self.current_node in route.source:
-                
+
         # execute policies
         result=self.execute_policy(route)
-        
-        
+
+
         #result=True
         return result
 
 
     """
      Execute Policy
-     
+
     """
     def execute_policy(self, route):
         keep_executing=True  # Flag Variable to remain in loop until all conditions are met
         success = True
-        
+
         self.current_route = route
         self.navigation_activated=True
         no_reset=False
-        
+
 #        print "---------------------------------------------------------"
-#        print "HERE WE GO AGAIN"        
-#        print "---------------------------------------------------------"        
+#        print "HERE WE GO AGAIN"
+#        print "---------------------------------------------------------"
         while keep_executing :
 #            print "#####################################################"
             rospy.loginfo("Navigating from %s: %d tries", self.current_node,self.nfails)
@@ -394,7 +435,7 @@ class PolicyExecutionServer(object):
                     nod_ind = route.source.index(self.current_node)
 #                    self.current_action = self.find_action(route.source[nod_ind], route.target[nod_ind])
                     self.current_action, target = self.find_action(route.source[nod_ind], route.edge_id[nod_ind])
-                    
+
                     if self.current_action != 'none':
                         # There is an edge between these two nodes
                         rospy.loginfo('%s -(%s)-> %s' %(route.source[nod_ind], self.current_action, target))
@@ -433,7 +474,7 @@ class PolicyExecutionServer(object):
                 else :
                     #print "case B.2"
                     # No action associated with current node
-                    #print "%s not in:" %self.current_node 
+                    #print "%s not in:" %self.current_node
                     #print route.source
                     if self.current_node == 'none' :
                         #print "case B.2.1"
@@ -458,7 +499,7 @@ class PolicyExecutionServer(object):
                                         self.current_action = 'move_base'
                                         success=self.navigate_to(self.current_action,self.closest_node)
                                         #if previous action was just navigate to waypoint before trying no move_base action do not reset fail counter
-                                        no_reset=True 
+                                        no_reset=True
                                 else:
                                     rospy.loginfo("case C")
                                     # No edge between Closest Node and its target Abort execution
@@ -512,7 +553,7 @@ class PolicyExecutionServer(object):
 
     """
      Find Action
-         
+
     """
 #    def find_action(self, source, target):
     def find_action(self, source, edge_id):
@@ -537,7 +578,7 @@ class PolicyExecutionServer(object):
 
     """
      Navigate to
-     
+
     """
     def navigate_to(self, action, node):
         self.current_target=node
@@ -552,13 +593,13 @@ class PolicyExecutionServer(object):
                 tolerance=i.xy_goal_tolerance
                 ytolerance= i.yaw_goal_tolerance
                 break
-        
+
         #temporary safety measures (Until all maps are updated)
         if tolerance == 0.0:
             tolerance = 0.48
         if ytolerance == 0.0:
             ytolerance = 0.087266
-        
+
         if self.current_route != None :
             if node in self.current_route.source:
                 routeind = self.current_route.source.index(node)
@@ -574,10 +615,10 @@ class PolicyExecutionServer(object):
             next_action = 'none'
             node_in_route = False
             #print "no route"
-        
+
         if found:
             self.current_action = action
-            
+
             #self.stat=nav_stats(route[rindex].name, route[rindex+1].name, self.topol_map, edg)
             # Creating Navigation Object
             edg= self.get_edge(self.current_node, node, action)
@@ -590,7 +631,7 @@ class PolicyExecutionServer(object):
                     top_vel = edg.top_vel
                 else:
                     top_vel = 0.55
-            
+
             self.stat=nav_stats(self.current_node, node, self.topol_map, edge_id)
             #dt_text=self.stat.get_start_time_str()
 
@@ -607,12 +648,15 @@ class PolicyExecutionServer(object):
 
             if action in self.move_base_actions:
                 self.reconfigure_movebase_params(action, params)
-                
+
+            if edge_id != "none" and self.edge_reconfigure:
+                self.edgeReconfigureManager(edge_id)
+
             (succeeded, status) = self.monitored_navigation(target_pose, action)
 
             if action in self.move_base_actions:
                 self.reset_reconfigure_params(action)
-            
+
             rospy.set_param("move_base/NavfnROS/default_tolerance",0.0)
 
             self.stat.set_ended(self.current_node)
@@ -654,7 +698,7 @@ class PolicyExecutionServer(object):
 
     """
      Monitored Navigation
-     
+
     """
     def monitored_navigation(self, pose, command):
         succeeded = True
@@ -668,7 +712,7 @@ class PolicyExecutionServer(object):
         self.goal_failed=False
         self.monNavClient.send_goal(goal)
         status=self.monNavClient.get_state()
-        
+
         while (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) and not self.cancelled and not self.goal_reached and not self.goal_failed :
             status=self.monNavClient.get_state()
             rospy.sleep(rospy.Duration.from_sec(0.05))
@@ -679,14 +723,14 @@ class PolicyExecutionServer(object):
             succeeded = True
         else:
             succeeded = False #preempted nav in order to send a new goal, i.e., from the topo nav pov the navigation succeeded
-            
+
         return (succeeded, status)
 
 
 
     """
      Publish Stats
-     
+
     """
     def publish_stats(self):
         pubst = NavStatistics()
@@ -715,7 +759,7 @@ class PolicyExecutionServer(object):
 
     """
      Map CallBack
-     
+
     """
     def MapCallback(self, msg) :
         self.topol_map = msg.name
@@ -728,7 +772,7 @@ class PolicyExecutionServer(object):
 
     """
      Node Shutdown CallBack
-     
+
     """
     def _on_node_shutdown(self):
         self.cancelled = True

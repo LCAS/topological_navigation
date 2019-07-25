@@ -30,6 +30,9 @@ class TopologicalRouteSearch(object):
      This function searches the route to reach the goal
     """
     def search_route(self, origin, target):
+        if origin == "none" or target == "none" or origin == target:
+            return None
+
         goal = get_node(self.top_map, target)
         orig = get_node(self.top_map, origin)
         to_expand=[]

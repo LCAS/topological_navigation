@@ -98,9 +98,9 @@ class TopologicalRouteSearch(object):
                         # update existing NTE with new data if a shorter route to it is found
                         if nte.current_distance+cdist < old_expand_node.current_distance:
                             old_expand_node.father = nte.name
-                            old_expand_node.current_dist = nte.current_distance+cdist
+                            old_expand_node.current_distance = nte.current_distance+cdist
                             old_expand_node.dist_to_target = tdist
-                            old_expand_node.cost = old_expand_node.current_dist + old_expand_node.dist_to_target
+                            old_expand_node.cost = old_expand_node.current_distance + old_expand_node.dist_to_target
                             if to_be_expanded:
                                 # re-sort to_expand with new costs
                                 to_expand = sorted(to_expand, key=lambda node: node.cost)
@@ -138,6 +138,7 @@ class TopologicalRouteSearch(object):
                 route.edge_id.append(edg[0].edge_id)
                 #route.append(r)
 
+            #print route
             return route
         else:
             return None

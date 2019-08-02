@@ -22,7 +22,7 @@ class NodeToExpand(object):
 class TopologicalRouteSearch(object):
 
     def __init__(self, top_map) :
-        rospy.loginfo("Waiting for Topological map ...")
+#        rospy.loginfo("Waiting for Topological map ...")
         self.top_map = top_map
 
     """
@@ -31,6 +31,9 @@ class TopologicalRouteSearch(object):
      This function searches the route to reach the goal
     """
     def search_route(self, origin, target):
+        if origin == "none" or target == "none" or origin == target:
+            return None
+
         goal = get_node(self.top_map, target)
         orig = get_node(self.top_map, origin)
         to_expand=[]
@@ -72,7 +75,7 @@ class TopologicalRouteSearch(object):
                             # found it. skip remaining
                             break
                     if not been_expanded:
-                        # not in expanded, search in to_expand
+                        # not in expanded, search in to_expand. can't be in both
                         for j in to_expand:
                             if i == j.name:
                                 been_expanded = True

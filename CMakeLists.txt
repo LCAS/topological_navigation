@@ -94,6 +94,7 @@ catkin_package(
    scripts/node_rm.py
    scripts/node_metadata.py
    scripts/plot_topo_map.py
+   scripts/plot_yaml.py
    scripts/rm_map_from_db.py
    scripts/rename_node
    scripts/tmap_from_waypoints.py

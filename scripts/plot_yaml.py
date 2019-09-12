@@ -8,7 +8,6 @@
 
 import os
 import sys
-import rospy
 import matplotlib.pyplot
 import yaml
 
@@ -105,7 +104,6 @@ class TopoMapPlotter(object):
         fig.savefig(self.fig_file)
 
 if __name__ == "__main__":
-    rospy.init_node("plot_yaml")
 
     if len(sys.argv) < 5:
         rospy.loginfo("Usage is plot_yaml <path_to_yaml_topomap> <path_to_plot_file> <fig_width_inches> <fig_height_inches>")

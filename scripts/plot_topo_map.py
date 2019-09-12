@@ -77,7 +77,10 @@ class TopoMapPlotter(object):
         for node_name in self.node_names:
             x = self.nodes[node_name].pose.position.x
             y = self.nodes[node_name].pose.position.y
-            ax.text(x-x_delta/4.0, y + y_delta/4.0, node_name.strip(strip_str), fontsize=10)
+            _node_name = node_name
+            if strip_str in node_name:
+                _node_name = node_name.strip(strip_str)
+            ax.text(x-x_delta/4.0, y + y_delta/4.0, _node_name, fontsize=10)
 
         for node_name in self.node_names:
             from_x = self.nodes[node_name].pose.position.x

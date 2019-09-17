@@ -109,15 +109,18 @@ class TopoMapPlotter(object):
 if __name__ == "__main__":
 
     if len(sys.argv) < 5:
-        rospy.loginfo("Usage is plot_yaml <path_to_yaml_topomap> <path_to_plot_file> <fig_width_inches> <fig_height_inches>")
+        print("Usage is plot_yaml <path_to_yaml_topomap> <path_to_plot_file> <fig_width_inches> <fig_height_inches>")
     else:
         yaml_map = os.path.abspath(sys.argv[1])
         fig_file = os.path.abspath(sys.argv[2])
 
         try:
+            assert os.path.exists(yaml_map)
             map_plotter = TopoMapPlotter(yaml_map, fig_file, float(sys.argv[3]), float(sys.argv[4]))
+        except AssertionError:
+            print("yaml map does not exist")
         except:
-            rospy.signal_shutdown("Couldn't create TopoMapPlotter object")
+            print("Couldn't create TopoMapPlotter object")
         else:
             map_plotter.plot_map(strip_str="WayPoint")
 

@@ -2,6 +2,39 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* scripts to add/remove tags to yaml topomaps (`#381 <https://github.com/strands-project/strands_navigation/issues/381>`_)
+  * scripts to add/remove tags to yaml topomaps
+  usage:
+  add_node_tags.py <in_yaml_topomap> out_yaml_topomap> <node-tag-config-yaml>
+  remove_node_tags.py <in_yaml_topomap> out_yaml_topomap> <node-tag-config-yaml>
+  takes a yaml formatted config file for node tags.
+  example
+  ```
+  charging_node:
+  - WayPoint10
+  door_transitions:
+  - WayPoint4
+  - WayPoint5
+  - WayPoint24
+  - WayPoint25
+  ```
+  * bug fix and cleanup
+* Merge pull request `#380 <https://github.com/strands-project/strands_navigation/issues/380>`_ from gpdas/plot_yaml_fix
+  fixed remaining rospy references
+* fixed remaining rospy references
+* Merge pull request `#379 <https://github.com/strands-project/strands_navigation/issues/379>`_ from gpdas/plot_topo_map
+  new script to plot topomaps from yaml files
+* fix strip_str
+  removes strip_str from node_name only if the full string is in the node_name
+* removed ros dependency
+* install target added for new script
+* new script to plot topomaps from yaml files
+  1. plot_yaml.py
+  2. minor modification to plot_topo_map.py
+* Contributors: Gautham P Das, Jaime Pulido Fentanes, gpdas
+
 1.0.8 (2019-06-04)
 ------------------
 * Merge branch 'indigo-devel' of https://github.com/strands-project/strands_navigation into indigo-devel

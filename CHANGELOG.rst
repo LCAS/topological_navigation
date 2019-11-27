@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2019-11-27)
+------------------
 * Merge pull request `#377 <https://github.com/strands-project/strands_navigation/issues/377>`_ from gpdas/fix_route_search
   Fix route search
 * variable name fix

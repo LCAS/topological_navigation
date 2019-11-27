@@ -2,6 +2,25 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#377 <https://github.com/strands-project/strands_navigation/issues/377>`_ from gpdas/fix_route_search
+  Fix route search
+* variable name fix
+* Merge branch 'indigo-devel' into fix_route_search
+* Merge pull request `#376 <https://github.com/strands-project/strands_navigation/issues/376>`_ from gpdas/exec_policy_reconf_edge
+  enable edge_reconfig for execute_policy_mode server
+* fix TopologicalRouteSearch
+  1. As of now, an expanded node (in expanded or to_expand) are not updated when a shorter path to it is found. This is fixed.
+  2. Some performance improvements by limiting loop iterations searching for expanded_node
+* TopologicalRouteSearch checks origin and target are the same
+* enable edge_reconfig for execute_policy_mode server
+  1. edge reconfig ported from topological_navigation/navigation.py
+  2. minor fixes in
+  - topological_navigation/navigation.py
+  - topological_navigation/route_search.py
+* Contributors: Jaime Pulido Fentanes, gpdas
+
 1.0.8 (2019-06-04)
 ------------------
 * Merge pull request `#374 <https://github.com/strands-project/strands_navigation/issues/374>`_ from Jailander/edge-reconf

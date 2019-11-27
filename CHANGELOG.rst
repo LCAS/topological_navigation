@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2019-11-27)
+------------------
 * scripts to add/remove tags to yaml topomaps (`#381 <https://github.com/strands-project/strands_navigation/issues/381>`_)
   * scripts to add/remove tags to yaml topomaps
   usage:

@@ -1,0 +1,62 @@
+#!/usr/bin/python
+
+"""
+Outputs a list of available topological maps
+"""
+
+from topological_utils.queries import get_maps
+from strands_navigation_msgs.msg import TopologicalNode
+from mongodb_store.message_store import MessageStoreProxy
+import sys
+
+if __name__ == "__main__":
+    if len(sys.argv)!=2:
+        print "Usage: check_map map_name"
+        sys.exit(1)
+    map_name = sys.argv[1]
+    print "Checking map '%s'" % map_name
+    maps = get_maps()
+    if map_name not in maps:
+        print "!!! MAP DOES NOT EXIST !!!"
+        sys.exit(1)
+    map_details = maps[map_name]
+    print "-" * 50
+    print "Name:            ", map_name
+    print "Number of nodes: ", map_details["number_nodes"]
+    print "Edge actions:    ", str(list(map_details["edge_actions"]))
+    print "Last modified:   ", map_details["last_modified"]
+    print "-" * 50
+
+    msg_store = MessageStoreProxy(collection='topological_maps')
+    
+    nodes = zip(*msg_store.query(TopologicalNode._type, {}, {'pointset':map_name}))[0]
+    node_names = [node.name for node in nodes]
+
+    
+    
+    print "Checking consistency..."
+    valid = True
+
+    count = map(lambda x: node_names.count(x), node_names)
+    duplicates = [node_names[i] for i, cnt in enumerate(count) if cnt > 1]
+    if len(duplicates) !=0:
+        print "  !!! Duplicated nodes: %s" % ", ".join(set(duplicates))
+
+    edge_ids = []
+    for node in nodes:
+        for edge in node.edges:
+            if edge.node not in node_names:
+                print "  !!! Node '%s' has an edge to non-existent node '%s'" % (node.name, edge.node)
+                valid = False
+            if len(edge.edge_id) < 1:
+                print "  !!! Node '%s' has an edge with a invalid blank id field" % node.name
+                valid = False
+            elif edge.edge_id in edge_ids:
+                print "  !!! Node '%s' has an edge with a duplicate edge id '%s'." % (node.name, edge.edge_id)
+                valid = False
+            else:
+                edge_ids.append(edge.edge_id)
+    if not valid:
+        print "FAILED."
+    else:
+        print "PASSED."

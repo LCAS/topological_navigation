@@ -1,0 +1,41 @@
+<launch>
+	<!-- declare arg to be passed in -->
+	<arg name="map"/>
+	<arg name="mon_nav_config_file"  default="" />
+	<arg name="max_bumper_recoveries" default=".inf"/>
+	<arg name="wait_reset_bumper_duration" default="0.0"/>
+	<arg name="topological_navigation_retries" default="3"/>
+	<arg name="execute_policy_retries" default="3"/>
+	<arg name="machine" default="localhost" />
+	<arg name="user" default="" />
+	<arg name="move_base_reconf_service" default="DWAPlannerROS" />
+
+	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
+
+ 	<node pkg="monitored_navigation" type="monitored_nav.py" name="monitored_nav" output="screen" args="$(arg mon_nav_config_file)">
+		<param name="wait_reset_bumper_duration" value="$(arg wait_reset_bumper_duration)"/>
+		<rosparam param="/monitored_navigation/recover_states/recover_bumper" subst_value="True">[True, $(arg max_bumper_recoveries)]</rosparam>
+	</node>
+
+	<!-- <node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/> -->
+	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)" respawn="true"/>
+
+	<node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true"/>
+
+	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true"/>
+	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
+		<param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
+		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
+	</node>
+	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen" respawn="true">
+		<param name="retries" type="int" value="$(arg execute_policy_retries)"/>
+		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
+	</node>
+
+	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)" respawn="true"/>
+
+	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>
+	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true"/>
+
+
+</launch>

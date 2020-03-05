@@ -325,13 +325,18 @@ class TopologicalNavServer(object):
                 # Target and Origin are the same
                 if(g_node.name == o_node.name) :
                     rospy.loginfo("Target and Origin Nodes are the same")
-                    # Check if there is a move_base action in the edages of this node
+                    # Check if there is a move_base action in the edges of this node and choose the earliest one in the 
+                    # list of move_base ations
                     # if not is dangerous to move
+                    act_ind=100
+                    action_server=None
                     for i in g_node.edges:
-                        action_server= i.action
-                        if  action_server in self.move_base_actions :
-                            break
-                        action_server=None
+                        c_action_server= i.action
+                        if  c_action_server in self.move_base_actions :
+                            c_ind = self.move_base_actions.index(c_action_server)
+                            if c_ind < act_ind:
+                                act_ind = c_ind
+                                action_server=c_action_server
 
 
                     if action_server is None:

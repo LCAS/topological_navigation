@@ -34,6 +34,9 @@ class map_manager(object):
             self.names=[]
             rospy.set_param('topological_map_name', self.nodes.pointset)
 
+        self.yaw_goal_tolerance = 0.1
+        self.xy_goal_tolerance = 0.3
+
 
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
         self.last_updated = rospy.Time.now()
@@ -372,8 +375,7 @@ class map_manager(object):
     def add_topological_node_cb(self, req):
         return self.add_topological_node(req.name, req.pose, req.add_close_nodes)
 
-    def add_topological_node(self, node_name, node_pose, add_close_nodes):
-        dist = 8.0
+    def add_topological_node(self, node_name, node_pose, add_close_nodes, dist=8.0):
         #Get New Node Name
         if node_name:
             name = node_name
@@ -399,8 +401,8 @@ class map_manager(object):
         node.map = self.nodes.map
         node.pointset = self.name
         node.pose = node_pose
-        node.yaw_goal_tolerance = 0.1
-        node.xy_goal_tolerance = 0.3
+        node.yaw_goal_tolerance = self.yaw_goal_tolerance
+        node.xy_goal_tolerance = self.xy_goal_tolerance
         node.localise_by_topic = ''
         vertices=[(0.69, 0.287), (0.287, 0.69), (-0.287, 0.69), (-0.69, 0.287), (-0.69, -0.287), (-0.287, -0.69), (0.287, -0.69), (0.69, -0.287)]
         for j in vertices :
@@ -439,7 +441,7 @@ class map_manager(object):
 
     def update_node_name(self, node_name, new_name):
         if new_name in self.names:
-            return False, "node with name {0} already exists".format(req.new_name)
+            return False, "node with name {0} already exists".format(new_name)
 
         msg_store = MessageStoreProxy(collection='topological_maps')
         # The query retrieves the node name with the given name from the given pointset.

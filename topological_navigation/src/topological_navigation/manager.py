@@ -370,7 +370,16 @@ class map_manager(object):
             rospy.logerr("Available data: "+str(available))
             return False
 
+    def generate_circle_vertices(self, radius=0.75, number=8):
+        separation_angle = 2 * math.pi / number
+        start_angle = separation_angle / 2
+        current_angle = start_angle
+        points = []
+        for i in range(0, number):
+            points.append((math.cos(current_angle) * radius, math.sin(current_angle) * radius))
+            current_angle += separation_angle
 
+        return points
 
     def add_topological_node_cb(self, req):
         return self.add_topological_node(req.name, req.pose, req.add_close_nodes)
@@ -404,7 +413,7 @@ class map_manager(object):
         node.yaw_goal_tolerance = self.yaw_goal_tolerance
         node.xy_goal_tolerance = self.xy_goal_tolerance
         node.localise_by_topic = ''
-        vertices=[(0.69, 0.287), (0.287, 0.69), (-0.287, 0.69), (-0.69, 0.287), (-0.69, -0.287), (-0.287, -0.69), (0.287, -0.69), (0.69, -0.287)]
+        vertices=self.generate_circle_vertices()
         for j in vertices :
             v = strands_navigation_msgs.msg.Vertex()
             v.x = float(j[0])

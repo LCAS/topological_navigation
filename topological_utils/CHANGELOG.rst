@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.1 (2020-04-08)
+------------------
 * Merge pull request `#2 <https://github.com/LCAS/topological_navigation/issues/2>`_ from Jailander/master
   Importing original version of topological navigation
 * Merge branch 'temp_topoutils_only' of ../strands_navigation

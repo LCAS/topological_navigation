@@ -2,6 +2,14 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#2 <https://github.com/LCAS/topological_navigation/issues/2>`_ from Jailander/master
+  Importing original version of topological navigation
+* Merge branch 'temp_topoutils_only' of ../strands_navigation
+* moving files into the correct folder
+* Contributors: Marc Hanheide, jailander
+
 1.1.0 (2019-11-27)
 ------------------
 * scripts to add/remove tags to yaml topomaps (`#381 <https://github.com/strands-project/strands_navigation/issues/381>`_)

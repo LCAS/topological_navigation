@@ -2,6 +2,21 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#6 <https://github.com/LCAS/topological_navigation/issues/6>`_ from Jailander/master
+  Choosing move base action to approach node position following actions…
+* Choosing move base action to approach node position following actions order defined in move_base_actions parameter.
+  This is very useful to establish priorities across the map
+* Merge pull request `#5 <https://github.com/LCAS/topological_navigation/issues/5>`_ from adambinch/fix
+  Added reconf at edges server as an install target.
+* Added reconf at edges server as an install target.
+* Merge pull request `#2 <https://github.com/LCAS/topological_navigation/issues/2>`_ from Jailander/master
+  Importing original version of topological navigation
+* Merge branch 'temp_toponav_only' of ../strands_navigation
+* moving all files into correct folder
+* Contributors: Jaime Pulido Fentanes, Marc Hanheide, adambinch, jailander
+
 1.1.0 (2019-11-27)
 ------------------
 * Merge pull request `#377 <https://github.com/strands-project/strands_navigation/issues/377>`_ from gpdas/fix_route_search

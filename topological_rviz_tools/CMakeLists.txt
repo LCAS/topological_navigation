@@ -97,6 +97,11 @@ foreach (dir launch images conf)
 endforeach(dir)
 
 
+install(PROGRAMS
+  scripts/python_topmap_interface.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 
 install(FILES
   plugin_description.xml

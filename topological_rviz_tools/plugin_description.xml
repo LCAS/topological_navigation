@@ -1,0 +1,24 @@
+<library path="lib/libtopological_rviz_tools">
+  <class name="topological_rviz_tools/TopologicalMap"
+         type="topological_rviz_tools::TopologicalMapPanel"
+         base_class_type="rviz::Panel">
+    <description>
+      Tool for manipulating strands topological map
+    </description>
+  </class>
+  <class name="topological_rviz_tools/TopmapEdge"
+         type="topological_rviz_tools::TopmapEdgeTool"
+         base_class_type="rviz::Tool">
+    <description>
+      Tool for manipulating edges in the strands topological map
+    </description>
+  </class>
+  <class name="topological_rviz_tools/TopmapNode"
+         type="topological_rviz_tools::TopmapNodeTool"
+         base_class_type="rviz::Tool">
+    <description>
+      Tool for adding nodes in the strands topological map
+    </description>
+  </class>
+
+</library>

@@ -1,0 +1,43 @@
+<launch>
+  <arg name="topmap"/>
+  <arg name="map"/>
+  <arg name="rviz" default="true"/>
+  <!-- If standalone, launches everything necessary to edit the topological map,
+       including dummy navigation -->
+  <arg name="standalone" default="true"/>
+  <!-- By default, the database will also be launched. On the strands robots the
+       database might be on one of the side PCs, while you need rviz running on
+       the main pc. Setting this option to false you can run the database on the
+       correct machine before starting -->
+  <arg name="launch_db" default="true"/>
+
+  <group if="$(arg standalone)">
+    <group if="$(arg launch_db)">
+      <arg name="db_path"/>
+      <include file="$(find mongodb_store)/launch/mongodb_store.launch">
+	<arg name="db_path" value="$(arg db_path)"/>
+      </include>
+    </group>
+
+    <node pkg="tf" type="static_transform_publisher" name="map_odom_bc" args="1 0 0 0 0 0 1 odom map 100" />
+
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
+
+    <node pkg="topological_navigation" name="topological_map_manager" type="map_manager.py" args="$(arg topmap)" output="screen"/>
+
+    <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch">
+      <arg name="map" value="$(arg topmap)"/>
+    </include>
+
+    <node pkg="topological_navigation" name="visualise_map" type="visualise_map.py" args="$(arg topmap)" output="screen"/>
+
+    <group if="$(arg rviz)">
+      <node name="rviz" pkg="rviz" type="rviz" args="-d $(find topological_rviz_tools)/conf/topological_rviz_tools.rviz" output="screen"/>
+    </group>
+  </group>
+
+  <node pkg="topological_rviz_tools" name="topmap_interface" type="python_topmap_interface.py" output="screen">
+    <param name="map_name" value="$(arg topmap)"/>
+  </node>
+
+</launch>

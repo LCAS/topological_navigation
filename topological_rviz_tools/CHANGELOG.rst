@@ -2,8 +2,8 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2020-04-20)
+------------------
 * Merge pull request `#8 <https://github.com/LCAS/topological_navigation/issues/8>`_ from heuristicus/move_topo_rviz_tools
   Move topo rviz tools from strands_navigation
 * added install for topmap interface

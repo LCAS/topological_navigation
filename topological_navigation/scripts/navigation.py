@@ -43,6 +43,12 @@ DYNPARAM_MAPPING = {
             'max_vel_x': 'max_vel_x',
             'max_trans_vel' : 'max_trans_vel',
         },
+                
+        'TebLocalPlannerROS': {
+            'yaw_goal_tolerance': 'yaw_goal_tolerance',
+            'xy_goal_tolerance': 'xy_goal_tolerance',
+            'max_vel_x': 'max_vel_x',
+        },
 
         'TrajectoryPlannerROS': {
             'max_vel_x': 'max_vel_x',

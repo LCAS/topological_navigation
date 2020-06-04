@@ -4,7 +4,6 @@
   <arg name="mon_nav_config_file"  default="" />
   <arg name="topological_navigation_retries" default="3"/>
   <arg name="execute_policy_retries" default="3"/>
-  <arg name="run_goto_node" default="false"/>
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROSm Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="DWAPlannerROS"/>
   <group ns="$(arg robot_id)"> 
@@ -19,10 +18,6 @@
     <node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen" respawn="true">
         <param name="retries" type="int" value="$(arg execute_policy_retries)"/>
         <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
-    </node>
-
-    <node if="$(arg run_goto_node)" pkg="topological_navigation" name="go_to_node" type="go_to_node.py" output="screen">
-        <remap from="/$(arg robot_id)/topological_map" to="/topological_map"/>
     </node>
   </group>
 </launch>

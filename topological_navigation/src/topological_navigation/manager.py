@@ -4,6 +4,7 @@ import rospy
 import sys
 import pymongo
 import json
+import yaml
 
 import std_msgs.msg
 
@@ -19,11 +20,14 @@ def node_dist(node1,node2):
 
 class map_manager(object):
 
-    def __init__(self, name, load=True) :
+    def __init__(self, name, load=True, load_from_file=False) :
         self.name = name
 
         if load:
-            self.nodes = self.loadMap(name)
+            if not load_from_file:
+                self.nodes = self.loadMap(name)
+            else:
+                self.nodes = self.load_map_from_file(name)
             self.names = self.create_list_of_nodes()
 
             rospy.set_param('topological_map_name', self.nodes.pointset)
@@ -693,7 +697,6 @@ class map_manager(object):
 
         message_list = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, {}, query_meta)
 
-
         points.name = point_set
         points.pointset = point_set
         for i in message_list:
@@ -702,6 +705,69 @@ class map_manager(object):
 
         points.map = points.nodes[0].map
         return points
+    
+    
+    def load_map_from_file(self, filename):
+        points = strands_navigation_msgs.msg.TopologicalMap()
+        
+        with open(filename, 'r') as f:
+            try:
+                tmap = yaml.safe_load(f)
+            except yaml.YAMLError as exc:
+                print(exc)
+                return points
+        
+        point_set = tmap[0]["meta"]["pointset"]
+        points.name = point_set
+        points.pointset = point_set
+        points.map = tmap[0]["meta"]["map"]
+        
+        for node in tmap:
+            msg = strands_navigation_msgs.msg.TopologicalNode()
+            msg.name = node["meta"]["node"]
+            msg.map = node["meta"]["map"]
+            msg.pointset = node["meta"]["pointset"]
+            
+            msg.pose.position.x = node["node"]["pose"]["position"]["x"]
+            msg.pose.position.y = node["node"]["pose"]["position"]["y"]
+            msg.pose.position.z = node["node"]["pose"]["position"]["z"]
+            
+            msg.pose.orientation.x = node["node"]["pose"]["orientation"]["x"]
+            msg.pose.orientation.y = node["node"]["pose"]["orientation"]["y"]
+            msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
+            msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
+            
+            msg.yaw_goal_tolerance = node["node"]["yaw_goal_tolerance"]
+            msg.xy_goal_tolerance = node["node"]["xy_goal_tolerance"]
+            
+            verts = node["node"]["verts"]
+            msgs_verts = []
+            for v in verts:
+                msg_v = strands_navigation_msgs.msg.Vertex()
+                msg_v.x = v["x"]
+                msg_v.y = v["y"]
+                msgs_verts.append(msg_v)
+            msg.verts = msgs_verts
+            
+            edges = node["node"]["edges"]
+            msgs_edges = []
+            for e in edges:
+                msg_e = strands_navigation_msgs.msg.Edge()
+                msg_e.edge_id = e["edge_id"]
+                msg_e.node = e["node"]
+                msg_e.action = e["action"]
+                msg_e.top_vel = e["top_vel"]
+                msg_e.map_2d = e["map_2d"]
+                msg_e.inflation_radius = e["inflation_radius"]
+                msg_e.recovery_behaviours_config = e["recovery_behaviours_config"]
+                msgs_edges.append(msg_e)
+            msg.edges = msgs_edges
+            
+            msg.localise_by_topic = node["node"]["localise_by_topic"]
+            points.nodes.append(msg)
+        
+        return points
+    
 
     def create_list_of_nodes(self):
         names=[]

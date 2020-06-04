@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
   <arg name="map"/>
-  <!-- This is a setting for the map visualisation. If true, it will provide the green arrows on waypoints to use for
-       navigation from rviz. If false, those will not be available. Setting this to false is required when running
-       multiple instances topological_navigation, otherwise the map visualisation will probably not work -->
-  <arg name="enable_goto_node" default="true"/>
   <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)" respawn="true"/>
   <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true"/>
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(eval map + ' -edit' if not enable_goto_node else '')" output="screen" respawn="true"/>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)" respawn="true"/>
   <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator"/>
   <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true"/>
 </launch>

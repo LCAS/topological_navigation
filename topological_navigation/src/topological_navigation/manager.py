@@ -717,16 +717,16 @@ class map_manager(object):
                 return points
             
         
-        point_set = tmap[0]["meta"]["pointset"]
+        point_set = tmap[0]["node"]["pointset"]
         points.name = point_set
         points.pointset = point_set
-        points.map = self.set_val(tmap[0]["meta"], "map", "map")
+        points.map = self.set_val(tmap[0]["node"], "map", "map")
         
         for node in tmap:
             msg = strands_navigation_msgs.msg.TopologicalNode()
-            msg.name = node["meta"]["node"]
-            msg.map = self.set_val(node["meta"], "map", "map")
-            msg.pointset = node["meta"]["pointset"]
+            msg.name = node["node"]["name"]
+            msg.map = self.set_val(node["node"], "map", "map")
+            msg.pointset = node["node"]["pointset"]
             
             msg.pose.position.x = node["node"]["pose"]["position"]["x"]
             msg.pose.position.y = node["node"]["pose"]["position"]["y"]
@@ -737,8 +737,8 @@ class map_manager(object):
             msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
             msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
             
-            msg.yaw_goal_tolerance = self.set_val(node["node"], "yaw_goal_tolerance", self.yaw_goal_tolerance)
-            msg.xy_goal_tolerance = self.set_val(node["node"], "xy_goal_tolerance", self.xy_goal_tolerance)
+            msg.yaw_goal_tolerance = node["node"]["yaw_goal_tolerance"]
+            msg.xy_goal_tolerance = node["node"]["xy_goal_tolerance"]
             
             verts = node["node"]["verts"]
             msgs_verts = []

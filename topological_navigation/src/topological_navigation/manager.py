@@ -712,7 +712,7 @@ class map_manager(object):
         with open(filename, 'r') as f:
             try:
                 tmap = yaml.safe_load(f)
-            except yaml.YAMLError as exc:
+            except Exception as exc:
                 print(exc)
                 return points
             

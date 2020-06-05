@@ -22,6 +22,8 @@ class map_manager(object):
 
     def __init__(self, name, load=True, load_from_file=False) :
         self.name = name
+        self.yaw_goal_tolerance = 0.1
+        self.xy_goal_tolerance = 0.3
 
         if load:
             if not load_from_file:
@@ -37,9 +39,6 @@ class map_manager(object):
             self.nodes.pointset = name
             self.names=[]
             rospy.set_param('topological_map_name', self.nodes.pointset)
-
-        self.yaw_goal_tolerance = 0.1
-        self.xy_goal_tolerance = 0.3
 
 
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
@@ -716,16 +715,17 @@ class map_manager(object):
             except yaml.YAMLError as exc:
                 print(exc)
                 return points
+            
         
         point_set = tmap[0]["meta"]["pointset"]
         points.name = point_set
         points.pointset = point_set
-        points.map = tmap[0]["meta"]["map"]
+        points.map = self.set_val(tmap[0]["meta"], "map", "map")
         
         for node in tmap:
             msg = strands_navigation_msgs.msg.TopologicalNode()
             msg.name = node["meta"]["node"]
-            msg.map = node["meta"]["map"]
+            msg.map = self.set_val(node["meta"], "map", "map")
             msg.pointset = node["meta"]["pointset"]
             
             msg.pose.position.x = node["node"]["pose"]["position"]["x"]
@@ -737,8 +737,8 @@ class map_manager(object):
             msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
             msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
             
-            msg.yaw_goal_tolerance = node["node"]["yaw_goal_tolerance"]
-            msg.xy_goal_tolerance = node["node"]["xy_goal_tolerance"]
+            msg.yaw_goal_tolerance = self.set_val(node["node"], "yaw_goal_tolerance", self.yaw_goal_tolerance)
+            msg.xy_goal_tolerance = self.set_val(node["node"], "xy_goal_tolerance", self.xy_goal_tolerance)
             
             verts = node["node"]["verts"]
             msgs_verts = []
@@ -756,17 +756,30 @@ class map_manager(object):
                 msg_e.edge_id = e["edge_id"]
                 msg_e.node = e["node"]
                 msg_e.action = e["action"]
-                msg_e.top_vel = e["top_vel"]
-                msg_e.map_2d = e["map_2d"]
-                msg_e.inflation_radius = e["inflation_radius"]
-                msg_e.recovery_behaviours_config = e["recovery_behaviours_config"]
+                msg_e.top_vel = self.set_val(e, "top_vel", 0.55)
+                msg_e.map_2d = self.set_val(e, "map_2d", "map")
+                msg_e.inflation_radius = self.set_val(e, "inflation_radius", 0.0)
+                msg_e.recovery_behaviours_config = self.set_val(e, "recovery_behaviours_config", "")
                 msgs_edges.append(msg_e)
             msg.edges = msgs_edges
             
-            msg.localise_by_topic = node["node"]["localise_by_topic"]
+            msg.localise_by_topic = self.set_val(node["node"], "localise_by_topic", "")
             points.nodes.append(msg)
-        
+            
+        # check:
+        # if multiple nodes with the same name
+        # each edge goes to a node that exists
+        # all nodes have the same pointset
         return points
+    
+    
+    def set_val(self, d, key, def_val):
+        try:
+            val = d[key]
+        except:
+            val = def_val
+            
+        return val
     
 
     def create_list_of_nodes(self):

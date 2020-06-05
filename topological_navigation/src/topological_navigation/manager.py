@@ -715,8 +715,8 @@ class map_manager(object):
             except Exception as exc:
                 print(exc)
                 return points
+
             
-        
         point_set = tmap[0]["node"]["pointset"]
         points.name = point_set
         points.pointset = point_set
@@ -766,10 +766,8 @@ class map_manager(object):
             msg.localise_by_topic = self.set_val(node["node"], "localise_by_topic", "")
             points.nodes.append(msg)
             
-        # check:
-        # if multiple nodes with the same name
-        # each edge goes to a node that exists
-        # all nodes have the same pointset
+        self.map_check(points)
+            
         return points
     
     
@@ -780,6 +778,14 @@ class map_manager(object):
             val = def_val
             
         return val
+    
+    
+    def map_check(self, points):
+        # check:
+        # if multiple nodes with the same name
+        # each edge goes to a node that exists
+        # all nodes have the same pointset
+        map_ok = True
     
 
     def create_list_of_nodes(self):

@@ -5,6 +5,7 @@ import sys
 import pymongo
 import json
 import yaml
+import re
 
 import std_msgs.msg
 
@@ -22,6 +23,7 @@ class map_manager(object):
 
     def __init__(self, name, load=True, load_from_file=False) :
         self.name = name
+        self.map_ok = True
         self.yaw_goal_tolerance = 0.1
         self.xy_goal_tolerance = 0.3
 
@@ -703,6 +705,7 @@ class map_manager(object):
             points.nodes.append(b)
 
         points.map = points.nodes[0].map
+        self.map_check(points)
         return points
     
     
@@ -720,12 +723,12 @@ class map_manager(object):
         point_set = tmap[0]["node"]["pointset"]
         points.name = point_set
         points.pointset = point_set
-        points.map = self.set_val(tmap[0]["node"], "map", "map")
+        points.map = self.set_val(tmap[0]["node"], "map", "map") # optional
         
         for node in tmap:
             msg = strands_navigation_msgs.msg.TopologicalNode()
             msg.name = node["node"]["name"]
-            msg.map = self.set_val(node["node"], "map", "map")
+            msg.map = self.set_val(node["node"], "map", "map") # optional
             msg.pointset = node["node"]["pointset"]
             
             msg.pose.position.x = node["node"]["pose"]["position"]["x"]
@@ -756,38 +759,78 @@ class map_manager(object):
                 msg_e.edge_id = e["edge_id"]
                 msg_e.node = e["node"]
                 msg_e.action = e["action"]
-                msg_e.top_vel = self.set_val(e, "top_vel", 0.55)
-                msg_e.map_2d = self.set_val(e, "map_2d", "map")
-                msg_e.inflation_radius = self.set_val(e, "inflation_radius", 0.0)
-                msg_e.recovery_behaviours_config = self.set_val(e, "recovery_behaviours_config", "")
+                msg_e.top_vel = self.set_val(e, "top_vel", 0.55) # optional
+                msg_e.map_2d = self.set_val(e, "map_2d", "map") # optional
+                msg_e.inflation_radius = self.set_val(e, "inflation_radius", 0.0) # optional
+                msg_e.recovery_behaviours_config = self.set_val(e, "recovery_behaviours_config", "") # optional
                 msgs_edges.append(msg_e)
             msg.edges = msgs_edges
             
-            msg.localise_by_topic = self.set_val(node["node"], "localise_by_topic", "")
+            msg.localise_by_topic = self.set_val(node["node"], "localise_by_topic", "") # optional
             points.nodes.append(msg)
             
         self.map_check(points)
-            
         return points
     
     
     def set_val(self, d, key, def_val):
-        try:
+        if key in d.keys():
             val = d[key]
-        except:
+        else:
             val = def_val
-            
         return val
     
     
-    def map_check(self, points):
-        # check:
-        # if multiple nodes with the same name
-        # each edge goes to a node that exists
-        # all nodes have the same pointset
-        map_ok = True
-    
+    def map_check(self, nodes):
+        
+        self.map_ok = True
+        
+        # check that all nodes have the same pointset
+        pointsets = [node.pointset for node in nodes.nodes]
+        if len(set(pointsets)) > 1:
+            rospy.logwarn("multiple poinsets found: {}".format(set(pointsets)))
+            self.map_ok = False
+        
+        # check for duplicate node names
+        print "\n"
+        names = [node.name for node in nodes.nodes]
+        names.sort()
+        for name in set(names):
+            n = names.count(name)
+            if n > 1:
+                rospy.logwarn("{} instances of node with name '{}' found".format(n, name))
+                self.map_ok = False
+        
+        edge_ids = []
+        for node in nodes.nodes:
+            for e in node.edges:
+                edge_ids.append(node.name + "_" + e.node)
+        edge_ids.sort()
 
+        # check for duplicate edges
+        print "\n"
+        for e in set(edge_ids):
+            edge_nodes = re.match("(.*)_(.*)", e).groups()
+            origin = edge_nodes[0]
+            destination = edge_nodes[1]
+ 
+            n = edge_ids.count(e)
+            if n > 1:
+                rospy.logwarn("{} instances of edge with origin '{}' and destination '{}' found".format(n, origin, destination))
+                self.map_ok = False
+        
+        # check that an edge's destination node exists
+        print "\n"         
+        for e in set(edge_ids):
+            edge_nodes = re.match("(.*)_(.*)", e).groups()
+            origin = edge_nodes[0]
+            destination = edge_nodes[1]
+ 
+            if destination not in names:
+                rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
+                self.map_ok = False
+                
+            
     def create_list_of_nodes(self):
         names=[]
         for i in self.nodes.nodes :

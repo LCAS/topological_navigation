@@ -2,6 +2,8 @@
 <launch>
 	<!-- declare arg to be passed in -->
 	<arg name="map"/>
+	<arg name="file"/>
+	<arg name="load_map_from_file"  default="false" />
 	<arg name="mon_nav_config_file"  default="" />
 	<arg name="max_bumper_recoveries" default=".inf"/>
 	<arg name="wait_reset_bumper_duration" default="0.0"/>
@@ -19,7 +21,8 @@
 	</node>
 
 	<!-- <node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/> -->
-	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)" respawn="true"/>
+	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="-f $(arg file)" respawn="true" if="$(arg load_map_from_file)"/>
+	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)" respawn="true" unless="$(arg load_map_from_file)"/>
 
 	<node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true"/>
 
@@ -33,7 +36,7 @@
 		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
 	</node>
 
-	<node pkg="topological_navigation" type="navstats_loger.py" name="topological_navstats_logger" respawn="true"/>
+	<node pkg="topological_navigation" type="navstats_loger.py" name="topological_navstats_logger" respawn="true" unless="$(arg load_map_from_file)"/>
 	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)" respawn="true"/>
 
 	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>

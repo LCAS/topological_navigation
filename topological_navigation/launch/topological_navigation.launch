@@ -1,3 +1,4 @@
+<?xml version="1.0" ?>
 <launch>
 	<!-- declare arg to be passed in -->
 	<arg name="map"/>
@@ -32,6 +33,7 @@
 		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
 	</node>
 
+	<node pkg="topological_navigation" type="navstats_loger.py" name="topological_navstats_logger" respawn="true"/>
 	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)" respawn="true"/>
 
 	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>

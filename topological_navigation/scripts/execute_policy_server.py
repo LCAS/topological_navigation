@@ -24,7 +24,7 @@ from strands_navigation_msgs.srv import ReconfAtEdges
 
 #from strands_navigation_msgs.msg import TopologicalNode
 from strands_navigation_msgs.msg import TopologicalMap
-from mongodb_store.message_store import MessageStoreProxy
+#from mongodb_store.message_store import MessageStoreProxy
 #from topological_navigation.topological_node import *
 from topological_navigation.navigation_stats import *
 

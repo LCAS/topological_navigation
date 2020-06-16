@@ -91,13 +91,17 @@ class LocaliseByTopicSubscriber(object):
 class TopologicalNavLoc(object):
 
 
-    def __init__(self, name) :
+    def __init__(self, name, wtags) :
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
         self.throttle = self.throttle_val
         self.node="Unknown"
         self.wpstr="Unknown"
         self.cnstr="Unknown"
+        
+        # TODO: remove Temporary arg until tags functionality is MongoDB independent
+        self.with_tags=wtags
+
         self.subscribers=[]
         self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('current_node', String, latch=True, queue_size=1)
@@ -113,15 +117,13 @@ class TopologicalNavLoc(object):
 
         #This service returns a list of nodes that have a given tag
         self.get_tagged_srv=rospy.Service('topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
-        self.get_tagged_srv=rospy.Service('topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
+        self.loc_pos_srv=rospy.Service('topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo("Waiting for Topological map ...")
 
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
-
-
         
 
         rospy.loginfo("Subscribing to robot pose")
@@ -239,7 +241,13 @@ class TopologicalNavLoc(object):
         self.rec_map=True
         self.update_loc_by_topic()
         #print "NO GO NODES"
-        self.nogos = self.get_no_go_nodes()
+        # TODO: remove Temporary arg until tags functionality is MongoDB independent
+        if self.with_tags:
+            self.nogos = self.get_no_go_nodes()
+        else:
+            self.nogos=[]
+        
+              
         #print self.nogos
 
         rospy.loginfo("Subscribing to localise topics")
@@ -409,4 +417,10 @@ class TopologicalNavLoc(object):
 
 if __name__ == '__main__':
     rospy.init_node('topological_localisation')
-    server = TopologicalNavLoc(rospy.get_name())
+    wtags=True
+    argc = len(sys.argv)
+    if argc > 1:
+        if '-notags' in sys.argv:
+            wtags = False
+    server = TopologicalNavLoc(rospy.get_name(), wtags)
+    

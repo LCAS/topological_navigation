@@ -44,6 +44,10 @@ class TopologicalVis(object):
             self.map_markers.markers.append(marker)
             idn += 1
 
+            marker = self.get_name_marker(i,idn)
+            self.map_markers.markers.append(marker)
+            idn += 1
+
             for j in i.edges : 
                 marker = self.get_edge_marker(i, j, idn)
                 if marker:
@@ -79,6 +83,22 @@ class TopologicalVis(object):
         marker.color.g = col[1]
         marker.color.b = col[2]
         marker.ns='/legend'
+        return marker
+
+
+    def get_name_marker(self, node, idn):
+        marker = Marker()
+        marker.id = idn
+        marker.header.frame_id = "/map"
+        marker.type = marker.TEXT_VIEW_FACING
+        marker.text= node.name
+        marker.pose = node.pose
+        marker.scale.z = 0.12
+        marker.color.a = 0.9
+        marker.color.r = 0.3
+        marker.color.g = 0.3
+        marker.color.b = 0.3
+        marker.ns='/names'
         return marker
         
         
@@ -118,7 +138,7 @@ class TopologicalVis(object):
         marker.scale.x = 0.2
         marker.scale.y = 0.2
         marker.scale.z = 0.2
-        marker.color.a = 1.0
+        marker.color.a = 0.4
         marker.color.r = 0.2
         marker.color.g = 0.2
         marker.color.b = 0.7

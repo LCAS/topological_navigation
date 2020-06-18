@@ -6,6 +6,7 @@ import pymongo
 import json
 import yaml
 import re
+import itertools
 
 import std_msgs.msg
 
@@ -90,17 +91,27 @@ class map_manager(object):
 
 
     def get_tags_cb(self, req):
-        host = rospy.get_param("mongodb_host")
-        port = rospy.get_param("mongodb_port")
-        client = pymongo.MongoClient(host, port)
-
-        db=client.message_store
-        collection=db["topological_maps"]
-        available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
-        tt=[]
-        #for i in available:
-        tt.append(available)
+        
+        if not self.load_from_file:
+            host = rospy.get_param("mongodb_host")
+            port = rospy.get_param("mongodb_port")
+            client = pymongo.MongoClient(host, port)
+    
+            db=client.message_store
+            collection=db["topological_maps"]
+            available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
+            tt=[]
+            #for i in available:
+            tt.append(available)
+        else:
+            tt = []
+            for node in self.tmap:
+                if "tag" in node["meta"]:
+                   for tag in node["meta"]["tag"]:
+                       tt.append(tag)
+            tt = [set(tt)]
         return tt
+    
 
     def get_node_tags_cb(self, req):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
@@ -248,8 +259,7 @@ class map_manager(object):
                             a = []
                             a.append(msg.tag)
                             node["meta"][ "tag"] = a
-                            
-                        meta_out = node["meta"]
+                        meta_out = str(node["meta"])
 
         return succeded, meta_out
 

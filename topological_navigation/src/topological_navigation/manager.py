@@ -6,7 +6,6 @@ import pymongo
 import json
 import yaml
 import re
-import itertools
 
 import std_msgs.msg
 

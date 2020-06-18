@@ -42,14 +42,17 @@ import topological_navigation.map_marker
 class VisualiseMap(object):
     _killall_timers=False
 
-    def __init__(self, name, filename, edit_mode, noedit_mode) :
+    def __init__(self, name, edit_mode, noedit_mode) :
         rospy.on_shutdown(self._on_node_shutdown)
 
         self.update_needed=False
         self.in_feedback=False
-        self._point_set=filename
+        #self._point_set=filename
         self._edit_mode = edit_mode
         self._noedit_mode = noedit_mode
+
+        self.map_markers = topological_navigation.map_marker.TopologicalVis()
+        self.pol_markers = topological_navigation.policies.PoliciesVis()
         
         if not noedit_mode:
             rospy.loginfo("Edge Controllers ...")
@@ -71,8 +74,7 @@ class VisualiseMap(object):
             
         rospy.loginfo("Done ...")
 
-        self.map_markers = topological_navigation.map_marker.TopologicalVis()
-        self.pol_markers = topological_navigation.policies.PoliciesVis()
+
         rospy.loginfo("All Done ...")
 
        
@@ -84,13 +86,14 @@ class VisualiseMap(object):
 if __name__ == '__main__':
     edit_mode=False
     noedit_mode=False
-    mapname=str(sys.argv[1])
+    #mapname=str(sys.argv[1])
     argc = len(sys.argv)
-    if argc > 2:
+    print argc
+    if argc > 1:
         if '-edit' in sys.argv or '-e' in sys.argv :
             edit_mode = True
         if '-noedit' in sys.argv or '-n' in sys.argv :
             noedit_mode=True
     rospy.init_node('topological_visualisation')
-    server = VisualiseMap(rospy.get_name(),mapname, edit_mode, noedit_mode)
+    server = VisualiseMap(rospy.get_name(), edit_mode, noedit_mode)
     rospy.spin()

@@ -90,27 +90,38 @@ class map_manager(object):
 
 
     def get_tags_cb(self, req):
-        
-        if not self.load_from_file:
-            host = rospy.get_param("mongodb_host")
-            port = rospy.get_param("mongodb_port")
-            client = pymongo.MongoClient(host, port)
-    
-            db=client.message_store
-            collection=db["topological_maps"]
-            available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
-            tt=[]
-            #for i in available:
-            tt.append(available)
-        else:
-            tt = []
-            for node in self.tmap:
-                if "tag" in node["meta"]:
-                   for tag in node["meta"]["tag"]:
-                       tt.append(tag)
-            tt = [set(tt)]
+        """
+        get tags callback
+        This function is the callback for the get tags service
+        It returns a list of available tags in the map
+        """
+        tt = self.get_tags_from_file() if self.load_from_file else self.get_tags_from_mongo()
         return tt
     
+    
+    def get_tags_from_mongo(self):
+        host = rospy.get_param("mongodb_host")
+        port = rospy.get_param("mongodb_port")
+        client = pymongo.MongoClient(host, port)
+
+        db=client.message_store
+        collection=db["topological_maps"]
+        available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
+        tt=[]
+        #for i in available:
+        tt.append(available)
+        return tt
+
+
+    def get_tags_from_file(self):
+        tt = []
+        for node in self.tmap:
+            if "tag" in node["meta"]:
+               for tag in node["meta"]["tag"]:
+                   tt.append(tag)
+        tt = [set(tt)]
+        return tt
+
 
     def get_node_tags_cb(self, req):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
@@ -213,55 +224,66 @@ class map_manager(object):
 
 
     def add_tag_cb(self, msg):
+          """
+        add tag callback
+        This function adds the callback for the add tags service
+        It adds tag to a node in the map
+        """
+        succeded, meta_out = self.add_tag_to_file(msg) if self.load_from_file else self.add_tag_to_mongo(msg)
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
-        if not self.load_from_file:
-            succeded = True
-            meta_out = None
-            for j in msg.node:
-    
-                msg_store = MessageStoreProxy(collection='topological_maps')
-                query = {"name" : j, "pointset": self.nodes.name}
-                query_meta = {}
-                query_meta["pointset"] = self.nodes.name
-                query_meta["map"] = self.nodes.map
-    
-                #print query, query_meta
-                available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
-                #print len(available)
-                for i in available:
-                    msgid= i[1]['_id']
-                    if 'tag' in i[1]:
-                        if not msg.tag in i[1]['tag']:
-                            i[1]['tag'].append(msg.tag)
-                    else:
-                        a=[]
-                        a.append(msg.tag)
-                        i[1]['tag']=a
-                    meta_out = str(i[1])
-    
-                    msg_store.update_id(msgid, i[0], i[1], upsert = False)
-                    #print trstr
-                if len(available) == 0:
-                     succeded = False
-                     
-        else:
-            succeded = False
-            meta_out = None
-            for j in msg.node:
-                for node in self.tmap:
-                    if j == node["meta"]["node"] and j == node["node"]["name"]:
-                        succeded = True
-                        if "tag" in node["meta"]:
-                            if msg.tag not in node["meta"]["tag"]:
-                                node["meta"]["tag"].append(msg.tag)
-                        else:
-                            a = []
-                            a.append(msg.tag)
-                            node["meta"][ "tag"] = a
-                        meta_out = str(node["meta"])
 
         return succeded, meta_out
 
+
+    def add_tag_to_mongo(self, msg):
+        succeded = True
+        meta_out = None
+        for j in msg.node:
+
+            msg_store = MessageStoreProxy(collection='topological_maps')
+            query = {"name" : j, "pointset": self.nodes.name}
+            query_meta = {}
+            query_meta["pointset"] = self.nodes.name
+            query_meta["map"] = self.nodes.map
+
+            #print query, query_meta
+            available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+            #print len(available)
+            for i in available:
+                msgid= i[1]['_id']
+                if 'tag' in i[1]:
+                    if not msg.tag in i[1]['tag']:
+                        i[1]['tag'].append(msg.tag)
+                else:
+                    a=[]
+                    a.append(msg.tag)
+                    i[1]['tag']=a
+                meta_out = str(i[1])
+
+                msg_store.update_id(msgid, i[0], i[1], upsert = False)
+                #print trstr
+            if len(available) == 0:
+                 succeded = False
+        return succeded, meta_out
+        
+    
+    def add_tag_to_file(self, msg):
+        succeded = False
+        meta_out = None
+        for j in msg.node:
+            for node in self.tmap:
+                if j == node["meta"]["node"] and j == node["node"]["name"]:
+                    succeded = True
+                    if "tag" in node["meta"]:
+                        if msg.tag not in node["meta"]["tag"]:
+                            node["meta"]["tag"].append(msg.tag)
+                    else:
+                        a = []
+                        a.append(msg.tag)
+                        node["meta"][ "tag"] = a
+                    meta_out = str(node["meta"])
+        return succeded, meta_out
+       
 
     def rm_tag_cb(self, msg):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))

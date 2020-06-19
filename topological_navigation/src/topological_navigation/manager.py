@@ -23,6 +23,7 @@ class map_manager(object):
 
     def __init__(self, name, load=True, load_from_file=False) :
         self.name = name
+        self.load_from_file = load_from_file
         self.map_ok = True
         self.yaw_goal_tolerance = 0.1
         self.xy_goal_tolerance = 0.3
@@ -31,7 +32,7 @@ class map_manager(object):
             if not load_from_file:
                 self.nodes = self.loadMap(name)
             else:
-                self.nodes = self.load_map_from_file(name)
+                self.nodes, self.tmap = self.load_map_from_file(name)
             self.names = self.create_list_of_nodes()
 
             rospy.set_param('topological_map_name', self.nodes.pointset)
@@ -89,17 +90,27 @@ class map_manager(object):
 
 
     def get_tags_cb(self, req):
-        host = rospy.get_param("mongodb_host")
-        port = rospy.get_param("mongodb_port")
-        client = pymongo.MongoClient(host, port)
-
-        db=client.message_store
-        collection=db["topological_maps"]
-        available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
-        tt=[]
-        #for i in available:
-        tt.append(available)
+        
+        if not self.load_from_file:
+            host = rospy.get_param("mongodb_host")
+            port = rospy.get_param("mongodb_port")
+            client = pymongo.MongoClient(host, port)
+    
+            db=client.message_store
+            collection=db["topological_maps"]
+            available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
+            tt=[]
+            #for i in available:
+            tt.append(available)
+        else:
+            tt = []
+            for node in self.tmap:
+                if "tag" in node["meta"]:
+                   for tag in node["meta"]["tag"]:
+                       tt.append(tag)
+            tt = [set(tt)]
         return tt
+    
 
     def get_node_tags_cb(self, req):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
@@ -203,34 +214,51 @@ class map_manager(object):
 
     def add_tag_cb(self, msg):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
-        succeded = True
-        meta_out = None
-        for j in msg.node:
-
-            msg_store = MessageStoreProxy(collection='topological_maps')
-            query = {"name" : j, "pointset": self.nodes.name}
-            query_meta = {}
-            query_meta["pointset"] = self.nodes.name
-            query_meta["map"] = self.nodes.map
-
-            #print query, query_meta
-            available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
-            #print len(available)
-            for i in available:
-                msgid= i[1]['_id']
-                if 'tag' in i[1]:
-                    if not msg.tag in i[1]['tag']:
-                        i[1]['tag'].append(msg.tag)
-                else:
-                    a=[]
-                    a.append(msg.tag)
-                    i[1]['tag']=a
-                meta_out = str(i[1])
-
-                msg_store.update_id(msgid, i[0], i[1], upsert = False)
-                #print trstr
-            if len(available) == 0:
-                 succeded = False
+        if not self.load_from_file:
+            succeded = True
+            meta_out = None
+            for j in msg.node:
+    
+                msg_store = MessageStoreProxy(collection='topological_maps')
+                query = {"name" : j, "pointset": self.nodes.name}
+                query_meta = {}
+                query_meta["pointset"] = self.nodes.name
+                query_meta["map"] = self.nodes.map
+    
+                #print query, query_meta
+                available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+                #print len(available)
+                for i in available:
+                    msgid= i[1]['_id']
+                    if 'tag' in i[1]:
+                        if not msg.tag in i[1]['tag']:
+                            i[1]['tag'].append(msg.tag)
+                    else:
+                        a=[]
+                        a.append(msg.tag)
+                        i[1]['tag']=a
+                    meta_out = str(i[1])
+    
+                    msg_store.update_id(msgid, i[0], i[1], upsert = False)
+                    #print trstr
+                if len(available) == 0:
+                     succeded = False
+                     
+        else:
+            succeded = False
+            meta_out = None
+            for j in msg.node:
+                for node in self.tmap:
+                    if j == node["meta"]["node"] and j == node["node"]["name"]:
+                        succeded = True
+                        if "tag" in node["meta"]:
+                            if msg.tag not in node["meta"]["tag"]:
+                                node["meta"]["tag"].append(msg.tag)
+                        else:
+                            a = []
+                            a.append(msg.tag)
+                            node["meta"][ "tag"] = a
+                        meta_out = str(node["meta"])
 
         return succeded, meta_out
 
@@ -723,12 +751,12 @@ class map_manager(object):
         point_set = tmap[0]["node"]["pointset"]
         points.name = point_set
         points.pointset = point_set
-        points.map = self.set_val(tmap[0]["node"], "map", "map") # optional
+        points.map, tmap[0]["node"] = self.set_val(tmap[0]["node"], "map", "map") # optional
         
         for node in tmap:
             msg = strands_navigation_msgs.msg.TopologicalNode()
             msg.name = node["node"]["name"]
-            msg.map = self.set_val(node["node"], "map", "map") # optional
+            msg.map, node["node"] = self.set_val(node["node"], "map", "map") # optional
             msg.pointset = node["node"]["pointset"]
             
             msg.pose.position.x = node["node"]["pose"]["position"]["x"]
@@ -743,42 +771,43 @@ class map_manager(object):
             msg.yaw_goal_tolerance = node["node"]["yaw_goal_tolerance"]
             msg.xy_goal_tolerance = node["node"]["xy_goal_tolerance"]
             
-            verts = node["node"]["verts"]
             msgs_verts = []
-            for v in verts:
+            for v in node["node"]["verts"]:
                 msg_v = strands_navigation_msgs.msg.Vertex()
                 msg_v.x = v["x"]
                 msg_v.y = v["y"]
                 msgs_verts.append(msg_v)
             msg.verts = msgs_verts
             
-            edges = node["node"]["edges"]
             msgs_edges = []
-            for e in edges:
+            for e in node["node"]["edges"]:
                 msg_e = strands_navigation_msgs.msg.Edge()
                 msg_e.edge_id = e["edge_id"]
                 msg_e.node = e["node"]
                 msg_e.action = e["action"]
-                msg_e.top_vel = self.set_val(e, "top_vel", 0.55) # optional
-                msg_e.map_2d = self.set_val(e, "map_2d", "map") # optional
-                msg_e.inflation_radius = self.set_val(e, "inflation_radius", 0.0) # optional
-                msg_e.recovery_behaviours_config = self.set_val(e, "recovery_behaviours_config", "") # optional
+                msg_e.top_vel, e = self.set_val(e, "top_vel", 0.55) # optional
+                msg_e.map_2d, e = self.set_val(e, "map_2d", "map") # optional
+                msg_e.inflation_radius, e = self.set_val(e, "inflation_radius", 0.0) # optional
+                msg_e.recovery_behaviours_config, e = self.set_val(e, "recovery_behaviours_config", "") # optional
                 msgs_edges.append(msg_e)
             msg.edges = msgs_edges
             
-            msg.localise_by_topic = self.set_val(node["node"], "localise_by_topic", "") # optional
+            msg.localise_by_topic, node["node"] = self.set_val(node["node"], "localise_by_topic", "") # optional
             points.nodes.append(msg)
             
         self.map_check(points)
-        return points
+        return points, tmap
     
     
     def set_val(self, d, key, def_val):
-        if key in d.keys():
+        
+        if key in d:
             val = d[key]
         else:
             val = def_val
-        return val
+            d[key] = def_val
+            
+        return val, d
     
     
     def map_check(self, nodes):

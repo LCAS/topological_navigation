@@ -92,26 +92,37 @@ class map_manager(object):
     def get_tags_cb(self, req):
         
         if not self.load_from_file:
-            host = rospy.get_param("mongodb_host")
-            port = rospy.get_param("mongodb_port")
-            client = pymongo.MongoClient(host, port)
-    
-            db=client.message_store
-            collection=db["topological_maps"]
-            available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
-            tt=[]
-            #for i in available:
-            tt.append(available)
+            tt = self.get_tags_from_database()
         else:
-            tt = []
-            for node in self.tmap:
-                if "tag" in node["meta"]:
-                   for tag in node["meta"]["tag"]:
-                       tt.append(tag)
-            tt = [set(tt)]
+            tt = self.get_tags_from_file()
         return tt
     
-
+    
+    def get_tags_from_database(self):
+        
+        host = rospy.get_param("mongodb_host")
+        port = rospy.get_param("mongodb_port")
+        client = pymongo.MongoClient(host, port)
+    
+        db=client.message_store
+        collection=db["topological_maps"]
+        available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
+        tt=[]
+        #for i in available:
+        tt.append(available)
+        return tt
+    
+    
+    def get_tags_from_file(self):
+        
+        tt = []
+        for node in self.tmap:
+            if "tag" in node["meta"]:
+               for tag in node["meta"]["tag"]:
+                   tt.append(tag)
+        return [set(tt)]
+        
+    
     def get_node_tags_cb(self, req):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
         succeded = True

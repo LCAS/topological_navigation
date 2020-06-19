@@ -114,12 +114,7 @@ class map_manager(object):
     
     
     def get_tags_from_file(self):
-        
-        tt = []
-        for node in self.tmap:
-            if "tag" in node["meta"]:
-               for tag in node["meta"]["tag"]:
-                   tt.append(tag)
+        tt = [tag for node in self.tmap if "tag" in node["meta"] for tag in node["meta"]["tag"]]
         return [set(tt)]
         
     

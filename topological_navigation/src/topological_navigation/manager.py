@@ -100,10 +100,11 @@ class map_manager(object):
     
     
     def get_tags_from_mongo(self):
+
         host = rospy.get_param("mongodb_host")
         port = rospy.get_param("mongodb_port")
         client = pymongo.MongoClient(host, port)
-
+    
         db=client.message_store
         collection=db["topological_maps"]
         available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
@@ -111,18 +112,13 @@ class map_manager(object):
         #for i in available:
         tt.append(available)
         return tt
-
-
+    
+    
     def get_tags_from_file(self):
-        tt = []
-        for node in self.tmap:
-            if "tag" in node["meta"]:
-               for tag in node["meta"]["tag"]:
-                   tt.append(tag)
-        tt = [set(tt)]
-        return tt
-
-
+        tt = [tag for node in self.tmap if "tag" in node["meta"] for tag in node["meta"]["tag"]]
+        return [set(tt)]
+        
+    
     def get_node_tags_cb(self, req):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
         succeded = True
@@ -147,6 +143,7 @@ class map_manager(object):
              tags = []
 
         return succeded, tags
+      
 
     def get_tagged_nodes(self, tag):
         mm=[]
@@ -231,7 +228,6 @@ class map_manager(object):
         """
         succeded, meta_out = self.add_tag_to_file(msg) if self.load_from_file else self.add_tag_to_mongo(msg)
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
-
         return succeded, meta_out
 
 
@@ -264,6 +260,7 @@ class map_manager(object):
                 #print trstr
             if len(available) == 0:
                  succeded = False
+
         return succeded, meta_out
         
     
@@ -314,6 +311,7 @@ class map_manager(object):
                 meta_out = str(i[1])
 
         return succeded, meta_out
+      
 
     def modify_tag_cb(self, msg):
         succeded = True
@@ -343,6 +341,7 @@ class map_manager(object):
                  succeded = False
 
         return succeded, meta_out
+      
 
     def get_topological_map_cb(self, req):
         nodes = self.loadMap(req.pointset)
@@ -378,6 +377,7 @@ class map_manager(object):
 
     def add_edge_cb(self, req):
         return self.add_edge(req.origin, req.destination, req.action, req.edge_id)
+      
 
     def add_edge(self, or_waypoint, de_waypoint, action, edge_id) :
 
@@ -424,6 +424,7 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available))
             return False
+          
 
     def generate_circle_vertices(self, radius=0.75, number=8):
         separation_angle = 2 * math.pi / number
@@ -435,9 +436,11 @@ class map_manager(object):
             current_angle += separation_angle
 
         return points
+      
 
     def add_topological_node_cb(self, req):
         return self.add_topological_node(req.name, req.pose, req.add_close_nodes)
+      
 
     def add_topological_node(self, node_name, node_pose, add_close_nodes, dist=8.0):
         #Get New Node Name
@@ -499,9 +502,11 @@ class map_manager(object):
 
         msg_store.insert(node,meta)
         return True
+      
 
     def update_node_name_cb(self, req):
         return self.update_node_name(req.node_name, req.new_name)
+      
 
     def update_node_name(self, node_name, new_name):
         if new_name in self.names:
@@ -553,9 +558,11 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available))
             return False, "multiple nodes with the name existed, or node not found"
+          
 
     def update_node_waypoint_cb(self, req):
         return self.update_node_waypoint(req.name, req.pose)
+      
 
     def update_node_waypoint(self, name, pose):
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -574,9 +581,11 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available))
             return False
+          
 
     def update_node_tolerance_cb(self, req):
         return self.update_node_tolerance(req.node_name, req.xy_tolerance, req.yaw_tolerance)
+      
 
     def update_node_tolerance(self, name, new_xy, new_yaw):
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -600,6 +609,7 @@ class map_manager(object):
     def remove_node_cb(self, req):
         res = self.remove_node(req.name)
         return res
+      
 
     def remove_node(self, node_name) :
         rospy.loginfo('Removing Node: '+node_name)
@@ -643,6 +653,7 @@ class map_manager(object):
 
     def remove_edge_cb(self, req):
         return self.remove_edge(req.edge_id)
+      
 
     def remove_edge(self, edge_name) :
         #print 'removing edge: '+edge_name
@@ -666,9 +677,11 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available)) 
             return False
+          
 
     def update_edge_cb(self, req):
         return self.update_edge(req.edge_id, req.action, req.top_vel)
+      
 
     def update_edge(self, edge_id, action, top_vel):
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -712,7 +725,6 @@ class map_manager(object):
 
     def get_edges_between_cb(self, req):
          return self.get_edges_between(req.nodea, req.nodeb)
-
 
 
     def loadMap(self, point_set) :

@@ -6,6 +6,7 @@ import pymongo
 import json
 import yaml
 import re
+import uuid
 
 import std_msgs.msg
 
@@ -221,7 +222,7 @@ class map_manager(object):
 
 
     def add_tag_cb(self, msg):
-          """
+        """
         add tag callback
         This function adds the callback for the add tags service
         It adds tag to a node in the map
@@ -864,16 +865,14 @@ class map_manager(object):
                 rospy.logwarn("{} instances of node with name '{}' found".format(n, name))
                 self.map_ok = False
         
-        edge_ids = []
-        for node in nodes.nodes:
-            for e in node.edges:
-                edge_ids.append(node.name + "_" + e.node)
+        sep = "_" + str(uuid.uuid4()) + "_"
+        edge_ids = [node.name + sep + e.node for node in nodes.nodes for e in node.edges]
         edge_ids.sort()
 
         # check for duplicate edges
         print "\n"
         for e in set(edge_ids):
-            edge_nodes = re.match("(.*)_(.*)", e).groups()
+            edge_nodes = re.match("(.*)" + sep + "(.*)", e).groups()
             origin = edge_nodes[0]
             destination = edge_nodes[1]
  
@@ -885,7 +884,7 @@ class map_manager(object):
         # check that an edge's destination node exists
         print "\n"         
         for e in set(edge_ids):
-            edge_nodes = re.match("(.*)_(.*)", e).groups()
+            edge_nodes = re.match("(.*)" + sep + "(.*)", e).groups()
             origin = edge_nodes[0]
             destination = edge_nodes[1]
  

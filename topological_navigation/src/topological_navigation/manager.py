@@ -81,6 +81,7 @@ class map_manager(object):
         self.add_edges_srv=rospy.Service('/topological_map_manager/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
         self.update_edge_srv=rospy.Service('/topological_map_manager/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         self.remove_edge_srv=rospy.Service('/topological_map_manager/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
+        
 
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
@@ -118,9 +119,19 @@ class map_manager(object):
     def get_tags_from_file(self):
         tt = [tag for node in self.tmap if "tag" in node["meta"] for tag in node["meta"]["tag"]]
         return [set(tt)]
-        
+    
     
     def get_node_tags_cb(self, req):
+        """
+        get node tags callback
+        This function is the callback for the get node tags service
+        It returns a list of available tags from a node
+        """
+        succeded, tags = self.get_node_tags_from_file(req) if self.load_from_file else self.get_node_tags_from_mongo(req)
+        return succeded, tags
+        
+    
+    def get_node_tags_from_mongo(self, req):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
         succeded = True
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -144,8 +155,29 @@ class map_manager(object):
              tags = []
 
         return succeded, tags
-      
-
+    
+    
+    def get_node_tags_from_file(self, req):
+        
+        num_available = 0
+        for node in self.tmap:
+            if node["meta"]["node"] == req.node_name and node["node"]["name"] == req.node_name:
+                if 'tag' in node["meta"]:
+                    tags = node["meta"]["tag"]
+                else:
+                    tags = []
+                    
+                num_available+=1
+                
+        if num_available == 1:
+            succeded = True
+        else:
+            succeded = False
+            tags = []
+            
+        return succeded, tags
+                
+            
     def get_tagged_nodes(self, tag):
         mm=[]
         a=[]

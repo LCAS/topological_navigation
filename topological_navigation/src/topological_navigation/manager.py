@@ -125,7 +125,7 @@ class map_manager(object):
         """
         get node tags callback
         This function is the callback for the get node tags service
-        It returns a list of available tags from a node
+        It returns a list of a node's tags
         """
         succeded, tags = self.get_node_tags_from_file(req) if self.load_from_file else self.get_node_tags_from_mongo(req)
         return succeded, tags
@@ -176,9 +176,19 @@ class map_manager(object):
             tags = []
             
         return succeded, tags
+    
+    
+    def get_tagged_nodes(self, tag):
+        """
+        get tagged nodes callback
+        This function is the callback for the get tagged nodes service
+        It returns a list of the nodes that have the tag tag
+        """
+        mm = self.get_tagged_nodes_from_file(tag) if self.load_from_file else self.get_tagged_nodes_from_mongo(tag)
+        return mm
                 
             
-    def get_tagged_nodes(self, tag):
+    def get_tagged_nodes_from_mongo(self, tag):
         mm=[]
         a=[]
 
@@ -199,6 +209,20 @@ class map_manager(object):
 
         mm.append(a)
 
+        return mm
+    
+    
+    def get_tagged_nodes_from_file(self, tag):
+        mm = []
+        a=[]
+        
+        for node in self.tmap:
+            if "tag" in node["meta"]:
+                if tag in node["meta"]["tag"]:
+                    a.append(node["node"]["name"])
+                    
+        mm.append(a)
+        
         return mm
 
 

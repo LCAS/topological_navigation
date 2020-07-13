@@ -162,7 +162,7 @@ class map_manager(object):
         num_available = 0
         for node in self.tmap:
             if node["meta"]["node"] == req.node_name and node["node"]["name"] == req.node_name:
-                if 'tag' in node["meta"]:
+                if "tag" in node["meta"]:
                     tags = node["meta"]["tag"]
                 else:
                     tags = []

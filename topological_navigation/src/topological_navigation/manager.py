@@ -6,6 +6,7 @@ import pymongo
 import json
 import yaml
 import re
+import uuid
 
 import std_msgs.msg
 
@@ -23,6 +24,7 @@ class map_manager(object):
 
     def __init__(self, name, load=True, load_from_file=False) :
         self.name = name
+        self.load_from_file = load_from_file
         self.map_ok = True
         self.yaw_goal_tolerance = 0.1
         self.xy_goal_tolerance = 0.3
@@ -31,7 +33,7 @@ class map_manager(object):
             if not load_from_file:
                 self.nodes = self.loadMap(name)
             else:
-                self.nodes = self.load_map_from_file(name)
+                self.nodes, self.tmap = self.load_map_from_file(name)
             self.names = self.create_list_of_nodes()
 
             rospy.set_param('topological_map_name', self.nodes.pointset)
@@ -79,6 +81,7 @@ class map_manager(object):
         self.add_edges_srv=rospy.Service('/topological_map_manager/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
         self.update_edge_srv=rospy.Service('/topological_map_manager/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         self.remove_edge_srv=rospy.Service('/topological_map_manager/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
+        
 
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
@@ -89,10 +92,21 @@ class map_manager(object):
 
 
     def get_tags_cb(self, req):
+        """
+        get tags callback
+        This function is the callback for the get tags service
+        It returns a list of available tags in the map
+        """
+        tt = self.get_tags_from_file() if self.load_from_file else self.get_tags_from_mongo()
+        return tt
+    
+    
+    def get_tags_from_mongo(self):
+
         host = rospy.get_param("mongodb_host")
         port = rospy.get_param("mongodb_port")
         client = pymongo.MongoClient(host, port)
-
+    
         db=client.message_store
         collection=db["topological_maps"]
         available = collection.find({"pointset": self.nodes.name}).distinct("_meta.tag")
@@ -100,8 +114,24 @@ class map_manager(object):
         #for i in available:
         tt.append(available)
         return tt
-
+    
+    
+    def get_tags_from_file(self):
+        tt = [tag for node in self.tmap if "tag" in node["meta"] for tag in node["meta"]["tag"]]
+        return [set(tt)]
+    
+    
     def get_node_tags_cb(self, req):
+        """
+        get node tags callback
+        This function is the callback for the get node tags service
+        It returns a list of a node's tags
+        """
+        succeded, tags = self.get_node_tags_from_file(req) if self.load_from_file else self.get_node_tags_from_mongo(req)
+        return succeded, tags
+        
+    
+    def get_node_tags_from_mongo(self, req):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
         succeded = True
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -125,8 +155,40 @@ class map_manager(object):
              tags = []
 
         return succeded, tags
-
+    
+    
+    def get_node_tags_from_file(self, req):
+        
+        num_available = 0
+        for node in self.tmap:
+            if node["meta"]["node"] == req.node_name and node["node"]["name"] == req.node_name:
+                if "tag" in node["meta"]:
+                    tags = node["meta"]["tag"]
+                else:
+                    tags = []
+                    
+                num_available+=1
+                
+        if num_available == 1:
+            succeded = True
+        else:
+            succeded = False
+            tags = []
+            
+        return succeded, tags
+    
+    
     def get_tagged_nodes(self, tag):
+        """
+        get tagged nodes callback
+        This function is the callback for the get tagged nodes service
+        It returns a list of the nodes that have the tag tag
+        """
+        mm = self.get_tagged_nodes_from_file(tag) if self.load_from_file else self.get_tagged_nodes_from_mongo(tag)
+        return mm
+                
+            
+    def get_tagged_nodes_from_mongo(self, tag):
         mm=[]
         a=[]
 
@@ -147,6 +209,20 @@ class map_manager(object):
 
         mm.append(a)
 
+        return mm
+    
+    
+    def get_tagged_nodes_from_file(self, tag):
+        mm = []
+        a=[]
+        
+        for node in self.tmap:
+            if "tag" in node["meta"]:
+                if tag in node["meta"]["tag"]:
+                    a.append(node["node"]["name"])
+                    
+        mm.append(a)
+        
         return mm
 
 
@@ -202,7 +278,17 @@ class map_manager(object):
 
 
     def add_tag_cb(self, msg):
+        """
+        add tag callback
+        This function adds the callback for the add tags service
+        It adds tag to a node in the map
+        """
+        succeded, meta_out = self.add_tag_to_file(msg) if self.load_from_file else self.add_tag_to_mongo(msg)
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
+        return succeded, meta_out
+
+
+    def add_tag_to_mongo(self, msg):
         succeded = True
         meta_out = None
         for j in msg.node:
@@ -233,7 +319,25 @@ class map_manager(object):
                  succeded = False
 
         return succeded, meta_out
-
+        
+    
+    def add_tag_to_file(self, msg):
+        succeded = False
+        meta_out = None
+        for j in msg.node:
+            for node in self.tmap:
+                if j == node["meta"]["node"] and j == node["node"]["name"]:
+                    succeded = True
+                    if "tag" in node["meta"]:
+                        if msg.tag not in node["meta"]["tag"]:
+                            node["meta"]["tag"].append(msg.tag)
+                    else:
+                        a = []
+                        a.append(msg.tag)
+                        node["meta"][ "tag"] = a
+                    meta_out = str(node["meta"])
+        return succeded, meta_out
+       
 
     def rm_tag_cb(self, msg):
         #rospy.loginfo('Adding Tag '+msg.tag+' to '+str(msg.node))
@@ -264,6 +368,7 @@ class map_manager(object):
                 meta_out = str(i[1])
 
         return succeded, meta_out
+      
 
     def modify_tag_cb(self, msg):
         succeded = True
@@ -293,6 +398,7 @@ class map_manager(object):
                  succeded = False
 
         return succeded, meta_out
+      
 
     def get_topological_map_cb(self, req):
         nodes = self.loadMap(req.pointset)
@@ -328,6 +434,7 @@ class map_manager(object):
 
     def add_edge_cb(self, req):
         return self.add_edge(req.origin, req.destination, req.action, req.edge_id)
+      
 
     def add_edge(self, or_waypoint, de_waypoint, action, edge_id) :
 
@@ -374,6 +481,7 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available))
             return False
+          
 
     def generate_circle_vertices(self, radius=0.75, number=8):
         separation_angle = 2 * math.pi / number
@@ -385,9 +493,11 @@ class map_manager(object):
             current_angle += separation_angle
 
         return points
+      
 
     def add_topological_node_cb(self, req):
         return self.add_topological_node(req.name, req.pose, req.add_close_nodes)
+      
 
     def add_topological_node(self, node_name, node_pose, add_close_nodes, dist=8.0):
         #Get New Node Name
@@ -449,9 +559,11 @@ class map_manager(object):
 
         msg_store.insert(node,meta)
         return True
+      
 
     def update_node_name_cb(self, req):
         return self.update_node_name(req.node_name, req.new_name)
+      
 
     def update_node_name(self, node_name, new_name):
         if new_name in self.names:
@@ -503,9 +615,11 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available))
             return False, "multiple nodes with the name existed, or node not found"
+          
 
     def update_node_waypoint_cb(self, req):
         return self.update_node_waypoint(req.name, req.pose)
+      
 
     def update_node_waypoint(self, name, pose):
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -524,9 +638,11 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available))
             return False
+          
 
     def update_node_tolerance_cb(self, req):
         return self.update_node_tolerance(req.node_name, req.xy_tolerance, req.yaw_tolerance)
+      
 
     def update_node_tolerance(self, name, new_xy, new_yaw):
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -550,6 +666,7 @@ class map_manager(object):
     def remove_node_cb(self, req):
         res = self.remove_node(req.name)
         return res
+      
 
     def remove_node(self, node_name) :
         rospy.loginfo('Removing Node: '+node_name)
@@ -593,6 +710,7 @@ class map_manager(object):
 
     def remove_edge_cb(self, req):
         return self.remove_edge(req.edge_id)
+      
 
     def remove_edge(self, edge_name) :
         #print 'removing edge: '+edge_name
@@ -616,9 +734,11 @@ class map_manager(object):
             rospy.logerr("Impossible to store in DB "+str(len(available))+" waypoints found after query")
             rospy.logerr("Available data: "+str(available)) 
             return False
+          
 
     def update_edge_cb(self, req):
         return self.update_edge(req.edge_id, req.action, req.top_vel)
+      
 
     def update_edge(self, edge_id, action, top_vel):
         msg_store = MessageStoreProxy(collection='topological_maps')
@@ -662,7 +782,6 @@ class map_manager(object):
 
     def get_edges_between_cb(self, req):
          return self.get_edges_between(req.nodea, req.nodeb)
-
 
 
     def loadMap(self, point_set) :
@@ -723,12 +842,12 @@ class map_manager(object):
         point_set = tmap[0]["node"]["pointset"]
         points.name = point_set
         points.pointset = point_set
-        points.map = self.set_val(tmap[0]["node"], "map", "map") # optional
+        points.map, tmap[0]["node"] = self.set_val(tmap[0]["node"], "map", "map") # optional
         
         for node in tmap:
             msg = strands_navigation_msgs.msg.TopologicalNode()
             msg.name = node["node"]["name"]
-            msg.map = self.set_val(node["node"], "map", "map") # optional
+            msg.map, node["node"] = self.set_val(node["node"], "map", "map") # optional
             msg.pointset = node["node"]["pointset"]
             
             msg.pose.position.x = node["node"]["pose"]["position"]["x"]
@@ -743,42 +862,43 @@ class map_manager(object):
             msg.yaw_goal_tolerance = node["node"]["yaw_goal_tolerance"]
             msg.xy_goal_tolerance = node["node"]["xy_goal_tolerance"]
             
-            verts = node["node"]["verts"]
             msgs_verts = []
-            for v in verts:
+            for v in node["node"]["verts"]:
                 msg_v = strands_navigation_msgs.msg.Vertex()
                 msg_v.x = v["x"]
                 msg_v.y = v["y"]
                 msgs_verts.append(msg_v)
             msg.verts = msgs_verts
             
-            edges = node["node"]["edges"]
             msgs_edges = []
-            for e in edges:
+            for e in node["node"]["edges"]:
                 msg_e = strands_navigation_msgs.msg.Edge()
                 msg_e.edge_id = e["edge_id"]
                 msg_e.node = e["node"]
                 msg_e.action = e["action"]
-                msg_e.top_vel = self.set_val(e, "top_vel", 0.55) # optional
-                msg_e.map_2d = self.set_val(e, "map_2d", "map") # optional
-                msg_e.inflation_radius = self.set_val(e, "inflation_radius", 0.0) # optional
-                msg_e.recovery_behaviours_config = self.set_val(e, "recovery_behaviours_config", "") # optional
+                msg_e.top_vel, e = self.set_val(e, "top_vel", 0.55) # optional
+                msg_e.map_2d, e = self.set_val(e, "map_2d", "map") # optional
+                msg_e.inflation_radius, e = self.set_val(e, "inflation_radius", 0.0) # optional
+                msg_e.recovery_behaviours_config, e = self.set_val(e, "recovery_behaviours_config", "") # optional
                 msgs_edges.append(msg_e)
             msg.edges = msgs_edges
             
-            msg.localise_by_topic = self.set_val(node["node"], "localise_by_topic", "") # optional
+            msg.localise_by_topic, node["node"] = self.set_val(node["node"], "localise_by_topic", "") # optional
             points.nodes.append(msg)
             
         self.map_check(points)
-        return points
+        return points, tmap
     
     
     def set_val(self, d, key, def_val):
-        if key in d.keys():
+        
+        if key in d:
             val = d[key]
         else:
             val = def_val
-        return val
+            d[key] = def_val
+            
+        return val, d
     
     
     def map_check(self, nodes):
@@ -801,16 +921,14 @@ class map_manager(object):
                 rospy.logwarn("{} instances of node with name '{}' found".format(n, name))
                 self.map_ok = False
         
-        edge_ids = []
-        for node in nodes.nodes:
-            for e in node.edges:
-                edge_ids.append(node.name + "_" + e.node)
+        sep = "_" + str(uuid.uuid4()) + "_"
+        edge_ids = [node.name + sep + e.node for node in nodes.nodes for e in node.edges]
         edge_ids.sort()
 
         # check for duplicate edges
         print "\n"
         for e in set(edge_ids):
-            edge_nodes = re.match("(.*)_(.*)", e).groups()
+            edge_nodes = re.match("(.*)" + sep + "(.*)", e).groups()
             origin = edge_nodes[0]
             destination = edge_nodes[1]
  
@@ -822,7 +940,7 @@ class map_manager(object):
         # check that an edge's destination node exists
         print "\n"         
         for e in set(edge_ids):
-            edge_nodes = re.match("(.*)_(.*)", e).groups()
+            edge_nodes = re.match("(.*)" + sep + "(.*)", e).groups()
             origin = edge_nodes[0]
             destination = edge_nodes[1]
  

@@ -306,7 +306,10 @@ class TopologicalNavServer(object):
             rospy.loginfo("Navigating Take : %d", tries)
             # Everything is Awesome!!!
             # Target and Origin are Different and none of them is None
-            if (g_node is not None) and (o_node is not None) and (g_node.name != o_node.name) :
+            if (g_node is None) or (o_node is None):
+                rospy.logerr("One of the node names does not exist in the map. Aborting.")
+                break
+            elif g_node.name != o_node.name:
                 rsearch = TopologicalRouteSearch(self.lnodes)
                 route = rsearch.search_route(o_node.name, target)
                 print route

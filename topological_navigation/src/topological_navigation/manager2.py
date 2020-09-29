@@ -5,6 +5,8 @@ Created on Tue Sep 29 16:06:36 2020
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #########################################################################################################
+import rospy
+
 default_verts = [{'x': 0.689,  'y': 0.287},  {'x': 0.287,  'y': 0.689},   {'x': -0.287, 'y': 0.689},
                  {'x': -0.689, 'y': 0.287},  {'x': -0.689, 'y': -0.287},  {'x': -0.287, 'y': -0.689},
                  {'x': 0.287,  'y': -0.689}, {'x': 0.689,  'y': -0.287}]
@@ -43,7 +45,7 @@ class map_manager_2(object):
             self.tmap2["pointset"] = self.pointset
             self.tmap2["transformation"] = self.transformation
             self.tmap2["meta"] = {}
-            self.tmap2["meta"]["last_updated"] = 0.0 #rospy.Time.now()
+            self.tmap2["meta"]["last_updated"] = rospy.Time.now()
             self.tmap2["nodes"] = []
         else:
             self.name = tmap2["name"]

@@ -53,7 +53,7 @@ class map_manager(object):
         
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
-        self.map2_pub.publish(self.tmap2) # publish new map type as a string
+        self.map2_pub.publish(std_msgs.msg.String(repr(self.tmap2))) # publish new map type as a string
 
         rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
         #This service returns any given map
@@ -988,8 +988,5 @@ class map_manager(object):
                 
                 manager2.add_edge_to_node(node.name, edge.node, edge.action, config)
                 
-        tmap2 = std_msgs.msg.String()
-        tmap2.data = repr(manager2.tmap2)
-                
-        return tmap2
+        return manager2.tmap2
 ###################################################################################################################

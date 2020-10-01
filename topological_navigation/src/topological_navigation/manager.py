@@ -965,10 +965,9 @@ class map_manager(object):
     
     def tmap_to_tmap2(self):
         
-        nodes = self.nodes
-        manager2 = map_manager_2(name=nodes.name, metric_map=nodes.map, pointset=nodes.pointset)
+        manager2 = map_manager_2(self.nodes.name, self.nodes.map, self.nodes.pointset)
         
-        for node in nodes.nodes:
+        for node in self.nodes.nodes:
             
             pose = message_converter.convert_ros_message_to_dictionary(node.pose)
             verts = [message_converter.convert_ros_message_to_dictionary(vert) for vert in node.verts]

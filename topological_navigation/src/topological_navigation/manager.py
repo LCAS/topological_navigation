@@ -13,6 +13,8 @@ import std_msgs.msg
 from strands_navigation_msgs.msg import *
 from strands_navigation_msgs.srv import *
 from mongodb_store.message_store import MessageStoreProxy
+from topological_navigation.manager2 import map_manager_2
+from rospy_message_converter import message_converter
 
 
 
@@ -35,6 +37,7 @@ class map_manager(object):
             else:
                 self.nodes, self.tmap = self.load_map_from_file(name)
             self.names = self.create_list_of_nodes()
+            self.tmap2 = self.tmap_to_tmap2() # convert map to new format
 
             rospy.set_param('topological_map_name', self.nodes.pointset)
         else:
@@ -46,8 +49,11 @@ class map_manager(object):
 
 
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
+        self.map2_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)
+        
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
+        self.map2_pub.publish(std_msgs.msg.String(repr(self.tmap2))) # publish new map type as a string
 
         rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
         #This service returns any given map
@@ -86,8 +92,10 @@ class map_manager(object):
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
         self.nodes = self.loadMap(self.name)
+        self.tmap2 = self.tmap_to_tmap2()
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
+        self.map2_pub.publish(std_msgs.msg.String(repr(self.tmap2))) # publish new map type as a string
         self.names = self.create_list_of_nodes()
 
 
@@ -955,3 +963,31 @@ class map_manager(object):
             names.append(i.name)
         names.sort()
         return names
+    
+    
+    def tmap_to_tmap2(self):
+        
+        manager2 = map_manager_2(self.nodes.name, self.nodes.map, self.nodes.pointset)
+        
+        for node in self.nodes.nodes:
+            
+            pose = message_converter.convert_ros_message_to_dictionary(node.pose)
+            verts = [message_converter.convert_ros_message_to_dictionary(vert) for vert in node.verts]
+            
+            properties = {}
+            properties["xy_goal_tolerance"] = node.xy_goal_tolerance
+            properties["yaw_goal_tolerance"] = node.yaw_goal_tolerance
+            
+            manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties)
+            
+            for edge in node.edges:
+                
+                config = {}
+                config["inflation_radius"] = edge.inflation_radius
+                config["top_vel"] = edge.top_vel
+                config["recovery_behaviours_config"] = edge.recovery_behaviours_config
+                
+                manager2.add_edge_to_node(node.name, edge.node, edge.action, config)
+                
+        return manager2.tmap2
+###################################################################################################################

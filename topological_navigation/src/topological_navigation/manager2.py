@@ -5,7 +5,10 @@ Created on Tue Sep 29 16:06:36 2020
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #########################################################################################################
-import rospy
+import rospy, tf2_ros
+from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
+from rospy_message_converter import message_converter
+
 
 default_verts = [{'x': 0.689,  'y': 0.287},  {'x': 0.287,  'y': 0.689},   {'x': -0.287, 'y': 0.689},
                  {'x': -0.689, 'y': 0.287},  {'x': -0.689, 'y': -0.287},  {'x': -0.287, 'y': -0.689},
@@ -32,8 +35,8 @@ class map_manager_2(object):
             self.transformation["translation"]["x"] = 0.0
             self.transformation["translation"]["y"] = 0.0
             self.transformation["translation"]["z"] = 0.0
-            self.transformation["child"] = self.name
-            self.transformation["parent"] = self.metric_map
+            self.transformation["child"] = "topo_map"
+            self.transformation["parent"] = "map"
         else:
             self.transformation = transformation
             
@@ -52,6 +55,23 @@ class map_manager_2(object):
             self.pointset = tmap2["pointset"]
             self.transformation = tmap2["transformation"]
             self.tmap2 = tmap2
+            
+        self.broadcaster = tf2_ros.StaticTransformBroadcaster()
+        self.broadcast_transform()
+        
+        
+    def broadcast_transform(self):
+        
+        trans = message_converter.convert_dictionary_to_ros_message('geometry_msgs/Vector3', self.transformation["translation"])
+        rot = message_converter.convert_dictionary_to_ros_message('geometry_msgs/Quaternion', self.transformation["rotation"])
+        
+        msg = TransformStamped()
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = self.transformation["parent"]
+        msg.child_frame_id = self.transformation["child"]
+        msg.transform.translation = trans
+        msg.transform.rotation = rot
+        self.broadcaster.sendTransform(msg)
         
         
     def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", restrictions=None):

@@ -1,97 +1,25 @@
 #!/usr/bin/env python
+###################################################################################################################
+import sys, rospy, json, rostopic
+import strands_navigation_msgs.srv
 
-import sys
-import rospy
-import json
-
-
-import rostopic
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-import strands_navigation_msgs.srv
 
 from strands_navigation_msgs.msg import TopologicalNode
 from strands_navigation_msgs.msg import TopologicalMap
 
 from topological_navigation.tmap_utils import *
-#import topological_navigation.msg
-
 from threading import Thread
 
-
-class LocaliseByTopicSubscriber(object):
-    """
-    Helper class for localise by topic subcription. Callable to start subsriber
-    thread.
-    """
-    def __init__(self, topic, callback, callback_args):
-        self.topic = rospy.get_namespace() + topic
-        self.callback = callback
-        self.callback_args = callback_args
-        self.sub = None
-        self.t = None
-
-    def get_topic_type(self, topic, blocking=False):
-        """
-        Get the topic type.
-        !!! Overriden from rostopic !!!
-
-        :param topic: topic name, ``str``
-        :param blocking: (default False) block until topic becomes available, ``bool``
-
-        :returns: topic type, real topic name and fn to evaluate the message instance
-          if the topic points to a field within a topic, e.g. /rosout/msg. fn is None otherwise. ``(str, str, fn)``
-        :raises: :exc:`ROSTopicException` If master cannot be contacted
-        """
-        topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
-        if topic_type:
-            return topic_type, real_topic, msg_eval
-        elif blocking:
-            sys.stderr.write("WARNING: topic [%s] does not appear to be published yet\n"%topic)
-            while not rospy.is_shutdown():
-                topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
-                if topic_type:
-                    return topic_type, real_topic, msg_eval
-                else:
-                    rostopic._sleep(10.) # Change! Waiting for 10 seconds instead of 0.1 to reduce load
-        return None, None, None
-
-    def __call__(self):
-        """
-        When called start a new thread that waits for the topic type and then
-        subscribes. This is therefore non blocking and waits in the background.
-        """
-        self.t = Thread(target=self.subscribe)
-        self.t.start()
-
-    def subscribe(self):
-        """
-        Get the topic type and subscribe to topic. Subscriber is kept alive as
-        long as the instance of the class is alive.
-        """
-        rostopic.get_topic_type = self.get_topic_type # Monkey patch
-        topic_type = rostopic.get_topic_class(self.topic, True)[0]
-        rospy.loginfo("Subscribing to %s" % self.topic)
-        self.sub = rospy.Subscriber(
-            name=self.topic,
-            data_class=topic_type,
-            callback=self.callback,
-            callback_args=self.callback_args
-        )
-
-
-    def close(self):
-        self.sub.unregister()
-
-    def __del__(self):
-        self.close()
 
 class TopologicalNavLoc(object):
 
 
-    def __init__(self, name, wtags) :
+    def __init__(self, name, wtags):
+        
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
         self.throttle = self.throttle_val
@@ -125,7 +53,6 @@ class TopologicalNavLoc(object):
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
         
-
         rospy.loginfo("Subscribing to robot pose")
         rospy.Subscriber("robot_pose", Pose, self.PoseCallback)
 
@@ -135,33 +62,31 @@ class TopologicalNavLoc(object):
         rospy.loginfo("All Done ...")
         rospy.spin()
 
-    """
-     get_distances_to_pose
 
-     This function returns the distance from each waypoint to a pose in an organised way
-    """
     def get_distances_to_pose(self, pose):
+        """
+        This function returns the distance from each waypoint to a pose in an organised way
+        """
         distances=[]
         for i in self.tmap.nodes:
-            d= get_distance_node_pose(i, pose)#get_distance_to_node(i, msg)
+            d= get_distance_node_pose(i, pose)
             a={}
             a['node'] = i
             a['dist'] = d
             distances.append(a)
     
         distances = sorted(distances, key=lambda k: k['dist'])
+        
         return distances
 
-    """
-     PoseCallback
 
-     This function receives the Robot Pose and localises 
-     the robot in topological space
-    """
     def PoseCallback(self, msg):
+        """
+        This function receives the Robot Pose and localises 
+        the robot in topological space
+        """
         self.current_pose = msg
         if(self.throttle%self.throttle_val==0):
-            #rospy.loginfo("NO GO NODES: %s" %self.nogos)
             self.distances =[]
             self.distances = self.get_distances_to_pose(msg)
             closeststr='none'
@@ -169,7 +94,6 @@ class TopologicalNavLoc(object):
 
             not_loc=True
             if self.loc_by_topic:
-                #print self.loc_by_topic
                 for i in self.loc_by_topic:
                     if not_loc:
                         if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
@@ -205,7 +129,6 @@ class TopologicalNavLoc(object):
                         closeststr=str(self.distances[ind]['node'].name)
                         not_loc=False
                     ind+=1
-                #currentstr=str(self.distances[0]['node'])
 
             self.publishTopics(closeststr, currentstr)
             self.throttle=1
@@ -226,13 +149,10 @@ class TopologicalNavLoc(object):
         self.cnstr=cnstr
 
 
-
-    """
-     MapCallback
-
-     This function receives the Topological Map
-    """
-    def MapCallback(self, msg) :
+    def MapCallback(self, msg):
+        """
+        This function receives the Topological Map
+        """
         self.names_by_topic=[]
         self.nodes_by_topic=[]
         self.nogos=[]
@@ -240,15 +160,11 @@ class TopologicalNavLoc(object):
         self.tmap = msg
         self.rec_map=True
         self.update_loc_by_topic()
-        #print "NO GO NODES"
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         if self.with_tags:
             self.nogos = self.get_no_go_nodes()
         else:
             self.nogos=[]
-        
-              
-        #print self.nogos
 
         rospy.loginfo("Subscribing to localise topics")
 
@@ -265,12 +181,11 @@ class TopologicalNavLoc(object):
             # Calling instance of class to start subsribing thread.
             self.subscribers[-1]()
 
-    """
-    update_loc_by_topic
 
-     This function updates the localisation by topic variables
-    """
-    def update_loc_by_topic(self) :
+    def update_loc_by_topic(self):
+        """
+        This function updates the localisation by topic variables
+        """
         for i in self.tmap.nodes:
             if i.localise_by_topic:
                 a= json.loads(i.localise_by_topic)
@@ -284,7 +199,6 @@ class TopologicalNavLoc(object):
         print self.nodes_by_topic
 
 
-
     def Callback(self, msg, item):
         #needed for not checking the localise by topic when the robot hasn't moved and making sure it does when the new
         #position is close (<10) to the last one it was detected
@@ -294,36 +208,30 @@ class TopologicalNavLoc(object):
             dist = get_distance(self.current_pose, self.previous_pose)
 
         if dist>0.10:
-            #print self.persist
             val = getattr(msg, item['field'])
-            if val == item['val'] :
+            
+            if val == item['val']:
                 if self.persist.has_key(item['name']):
                     if self.persist[item['name']] < item['persistency']:
                         self.persist[item['name']]+=1
                 else:
                     self.persist[item['name']]=0
-
-                #if item['name'] not in self.loc_by_topic:
+                    
                 if item['name'] not in [x['name'] for x in self.loc_by_topic] and self.persist[item['name']] < item['persistency']:
-                    #if item['persistency'] 
                     self.loc_by_topic.append(item)
                     self.previous_pose = self.current_pose
-                    #self.force_check=False
-#                else:
-#                    self.force_check=True
+                    
             else:
                 if item['name'] in self.persist:
                     self.persist.pop(item['name'])
-                #if item['name'] in self.loc_by_topic:
+                    
                 if item['name'] in [x['name'] for x in self.loc_by_topic]:
-                    #self.loc_by_topic.remove(item['name'])
                     self.loc_by_topic.remove(item)
                     self.previous_pose = self.current_pose
-#                    self.force_check=True
-
-
+                    
 
     def get_nodes_wtag_cb(self,req):
+        
         tlist = []
         rlist=[]
 
@@ -340,20 +248,19 @@ class TopologicalNavLoc(object):
             if i in tagnodes:
                 tlist.append(i)
         rlist.append(tlist)
+        
         return rlist
 
-    """
-     localise_pose_cb
 
-     This function gets the node and closest node for a pose
-    """
     def localise_pose_cb(self, req):
+        """
+        This function gets the node and closest node for a pose
+        """
         not_loc=True
         distances=[]
         distances=self.get_distances_to_pose(req.pose)
         closeststr='none'
         currentstr='none'
-
 
         ind = 0
         while not_loc and ind<len(distances) and ind<3 :
@@ -373,26 +280,22 @@ class TopologicalNavLoc(object):
         return currentstr, closeststr
 
 
-        
-
-    """
-     Get No_Go_Nodes
-
-     This function gets the list of No go nodes
-    """
     def get_no_go_nodes(self):
+        """
+        This function gets the list of No go nodes
+        """
         try:
             rospy.wait_for_service('/topological_map_manager/get_tagged_nodes', timeout=3)
             get_prediction = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
             resp1 = get_prediction('no_go')
-            #print resp1
             return resp1.nodes
+        
         except rospy.ServiceException, e:
             rospy.logerr("Service call failed: %s"%e)
 
 
-
     def point_in_poly(self,node,pose):
+        
         x=pose.position.x-node.pose.position.x
         y=pose.position.y-node.pose.position.y
 
@@ -412,9 +315,88 @@ class TopologicalNavLoc(object):
                         if p1x == p2x or x <= xints:
                             inside = not inside
             p1x,p1y = p2x,p2y
+            
         return inside
+###################################################################################################################        
 
 
+###################################################################################################################    
+class LocaliseByTopicSubscriber(object):
+    """
+    Helper class for localise by topic subcription. Callable to start subsriber
+    thread.
+    """
+    def __init__(self, topic, callback, callback_args):
+        
+        self.topic = rospy.get_namespace() + topic
+        self.callback = callback
+        self.callback_args = callback_args
+        self.sub = None
+        self.t = None
+
+
+    def get_topic_type(self, topic, blocking=False):
+        """
+        Get the topic type.
+        !!! Overriden from rostopic !!!
+
+        :param topic: topic name, ``str``
+        :param blocking: (default False) block until topic becomes available, ``bool``
+
+        :returns: topic type, real topic name and fn to evaluate the message instance
+          if the topic points to a field within a topic, e.g. /rosout/msg. fn is None otherwise. ``(str, str, fn)``
+        :raises: :exc:`ROSTopicException` If master cannot be contacted
+        """
+        topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
+        if topic_type:
+            return topic_type, real_topic, msg_eval
+        elif blocking:
+            sys.stderr.write("WARNING: topic [%s] does not appear to be published yet\n"%topic)
+            while not rospy.is_shutdown():
+                topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
+                if topic_type:
+                    return topic_type, real_topic, msg_eval
+                else:
+                    rostopic._sleep(10.) # Change! Waiting for 10 seconds instead of 0.1 to reduce load
+                    
+        return None, None, None
+
+
+    def __call__(self):
+        """
+        When called start a new thread that waits for the topic type and then
+        subscribes. This is therefore non blocking and waits in the background.
+        """
+        self.t = Thread(target=self.subscribe)
+        self.t.start()
+
+
+    def subscribe(self):
+        """
+        Get the topic type and subscribe to topic. Subscriber is kept alive as
+        long as the instance of the class is alive.
+        """
+        rostopic.get_topic_type = self.get_topic_type # Monkey patch
+        topic_type = rostopic.get_topic_class(self.topic, True)[0]
+        rospy.loginfo("Subscribing to %s" % self.topic)
+        self.sub = rospy.Subscriber(
+            name=self.topic,
+            data_class=topic_type,
+            callback=self.callback,
+            callback_args=self.callback_args
+        )
+
+
+    def close(self):
+        self.sub.unregister()
+        
+
+    def __del__(self):
+        self.close()    
+###################################################################################################################
+
+
+###################################################################################################################
 if __name__ == '__main__':
     rospy.init_node('topological_localisation')
     wtags=True
@@ -423,4 +405,4 @@ if __name__ == '__main__':
         if '-notags' in sys.argv:
             wtags = False
     server = TopologicalNavLoc(rospy.get_name(), wtags)
-    
+###################################################################################################################    

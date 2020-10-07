@@ -62,8 +62,8 @@ class map_manager_2(object):
         
     def broadcast_transform(self):
         
-        trans = message_converter.convert_dictionary_to_ros_message('geometry_msgs/Vector3', self.transformation["translation"])
-        rot = message_converter.convert_dictionary_to_ros_message('geometry_msgs/Quaternion', self.transformation["rotation"])
+        trans = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Vector3", self.transformation["translation"])
+        rot = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Quaternion", self.transformation["rotation"])
         
         msg = TransformStamped()
         msg.header.stamp = rospy.Time.now()
@@ -71,6 +71,7 @@ class map_manager_2(object):
         msg.child_frame_id = self.transformation["child"]
         msg.transform.translation = trans
         msg.transform.rotation = rot
+        
         self.broadcaster.sendTransform(msg)
         
         

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###################################################################################################################
-import sys, rospy, json, rostopic
+import sys, rospy, json, rostopic, tf
 import strands_navigation_msgs.srv
 
 from actionlib_msgs.msg import *
@@ -53,13 +53,14 @@ class TopologicalNavLoc(object):
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
         
-        rospy.loginfo("Subscribing to robot pose")
-        rospy.Subscriber("robot_pose", Pose, self.PoseCallback)
-
         rospy.loginfo("NODES BY TOPIC: %s" %self.names_by_topic)
         rospy.loginfo("NO GO NODES: %s" %self.nogos)
-
-        rospy.loginfo("All Done ...")
+        
+        rospy.loginfo("Subscribing to topo_map to base_link tf transform")
+        self.listener = tf.TransformListener()
+        self.rate = rospy.Rate(10.0)
+        self.PoseCallback()
+        
         rospy.spin()
 
 
@@ -80,60 +81,82 @@ class TopologicalNavLoc(object):
         return distances
 
 
-    def PoseCallback(self, msg):
+    def PoseCallback(self):
         """
-        This function receives the Robot Pose and localises 
+        This function receives the topo_map to base_link tf transform and localises 
         the robot in topological space
         """
-        self.current_pose = msg
-        if(self.throttle%self.throttle_val==0):
-            self.distances =[]
-            self.distances = self.get_distances_to_pose(msg)
-            closeststr='none'
-            currentstr='none'
-
-            not_loc=True
-            if self.loc_by_topic:
-                for i in self.loc_by_topic:
-                    if not_loc:
-                        if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
-                            test_node=get_node(self.tmap, i['name'])
-                            if self.point_in_poly(test_node, msg):
+        while not rospy.is_shutdown():
+            
+            try:
+                now = rospy.Time(0)
+                self.listener.waitForTransform("topo_map", "base_link", now, rospy.Duration(2.0))
+                (trans,rot) = self.listener.lookupTransform("topo_map", "base_link", now)
+            except Exception as e:
+                rospy.logerr(e)
+                self.rate.sleep()
+                continue
+        
+            msg = Pose()
+            msg.position.x = trans[0]
+            msg.position.y = trans[1]
+            msg.position.z = trans[2]
+            msg.orientation.x = rot[0]
+            msg.orientation.y = rot[1]
+            msg.orientation.z = rot[2]
+            msg.orientation.w = rot[3]
+            
+            self.current_pose = msg            
+            if(self.throttle%self.throttle_val==0):
+                self.distances =[]
+                self.distances = self.get_distances_to_pose(msg)
+                closeststr='none'
+                currentstr='none'
+    
+                not_loc=True
+                if self.loc_by_topic:
+                    for i in self.loc_by_topic:
+                        if not_loc:
+                            if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
+                                test_node=get_node(self.tmap, i['name'])
+                                if self.point_in_poly(test_node, msg):
+                                    not_loc=False
+                                    closeststr=str(i['name'])
+                                    currentstr=str(i['name'])
+                                    self.force_check = False
+                            else:                               # If not, it is localised!!!
                                 not_loc=False
                                 closeststr=str(i['name'])
                                 currentstr=str(i['name'])
                                 self.force_check = False
-                        else:                               # If not, it is localised!!!
+                else:
+                    self.force_check = True
+    
+                if not_loc:
+                    ind = 0
+                    while not_loc and ind<len(self.distances) and ind<3 :
+                        if self.distances[ind]['node'].name not in self.names_by_topic:
+                            if self.point_in_poly(self.distances[ind]['node'], msg) :
+                                currentstr=str(self.distances[ind]['node'].name)
+                                closeststr=currentstr
+                                not_loc=False
+                        ind+=1
+                              
+                    ind = 0
+                    not_loc=True
+                    # No go nodes and Nodes localisable by topic are ONLY closest node when the robot is within them
+                    while not_loc and ind<len(self.distances) and closeststr=='none' :
+                        if self.distances[ind]['node'].name not in self.nogos and self.distances[ind]['node'].name not in self.names_by_topic :
+                            closeststr=str(self.distances[ind]['node'].name)
                             not_loc=False
-                            closeststr=str(i['name'])
-                            currentstr=str(i['name'])
-                            self.force_check = False
+                        ind+=1
+    
+                self.publishTopics(closeststr, currentstr)
+                self.throttle=1
             else:
-                self.force_check = True
-
-            if not_loc:
-                ind = 0
-                while not_loc and ind<len(self.distances) and ind<3 :
-                    if self.distances[ind]['node'].name not in self.names_by_topic:
-                        if self.point_in_poly(self.distances[ind]['node'], msg) :
-                            currentstr=str(self.distances[ind]['node'].name)
-                            closeststr=currentstr
-                            not_loc=False
-                    ind+=1
-                          
-                ind = 0
-                not_loc=True
-                # No go nodes and Nodes localisable by topic are ONLY closest node when the robot is within them
-                while not_loc and ind<len(self.distances) and closeststr=='none' :
-                    if self.distances[ind]['node'].name not in self.nogos and self.distances[ind]['node'].name not in self.names_by_topic :
-                        closeststr=str(self.distances[ind]['node'].name)
-                        not_loc=False
-                    ind+=1
-
-            self.publishTopics(closeststr, currentstr)
-            self.throttle=1
-        else:
-            self.throttle +=1
+                self.throttle +=1
+                
+            self.rate.sleep()
 
 
     def publishTopics(self, wpstr, cnstr) :

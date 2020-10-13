@@ -978,7 +978,11 @@ class map_manager(object):
             properties["xy_goal_tolerance"] = node.xy_goal_tolerance
             properties["yaw_goal_tolerance"] = node.yaw_goal_tolerance
             
-            manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties)
+            req = strands_navigation_msgs.srv.GetNodeTags()
+            req.node_name = node.name
+            tags = self.get_node_tags_cb(req)[1]
+            
+            manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties, tags)
             
             for edge in node.edges:
                 

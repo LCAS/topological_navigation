@@ -6,6 +6,8 @@ Created on Tue Sep 29 16:06:36 2020
 """
 #########################################################################################################
 import rospy, tf2_ros
+import strands_navigation_msgs.srv
+
 from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
 from rospy_message_converter import message_converter
 
@@ -59,6 +61,8 @@ class map_manager_2(object):
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
         
+        self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
+        
         
     def broadcast_transform(self):
         
@@ -75,7 +79,7 @@ class map_manager_2(object):
         self.broadcaster.sendTransform(msg)
         
         
-    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", restrictions=None):
+    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], restrictions=None):
         
         if "orientation" not in pose:
             pose["orientation"] = {}
@@ -89,6 +93,8 @@ class map_manager_2(object):
         node["meta"]["map"] = self.metric_map
         node["meta"]["node"] = name
         node["meta"]["pointset"] = self.pointset
+        if tags:
+            node["meta"]["tag"] = tags
         
         node["node"] = {}
         node["node"]["edges"] = []
@@ -165,4 +171,14 @@ class map_manager_2(object):
         action_type = package + "/" + goal_type
             
         return action_type
+    
+    
+    def get_tagged_cb(self, msg):
+        
+        tags=[]
+        for node in self.tmap2["nodes"]:
+            if "tag" in node["meta"]:
+                if msg.tag in node["meta"]["tag"]:
+                    tags.append(node["node"]["name"])
+        return [tags]
 #########################################################################################################

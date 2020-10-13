@@ -18,7 +18,7 @@ from threading import Thread
 class TopologicalNavLoc(object):
 
 
-    def __init__(self, name, wtags):
+    def __init__(self, name, wtags, use_tmap2):
         
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
@@ -29,6 +29,7 @@ class TopologicalNavLoc(object):
         
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         self.with_tags=wtags
+        self.use_tmap2 = use_tmap2
 
         self.subscribers=[]
         self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)
@@ -56,7 +57,7 @@ class TopologicalNavLoc(object):
         rospy.loginfo("NODES BY TOPIC: %s" %self.names_by_topic)
         rospy.loginfo("NO GO NODES: %s" %self.nogos)
         
-        rospy.loginfo("Subscribing to topo_map to base_link tf transform")
+        rospy.loginfo("Listening to topo_map to base_link tf transform")
         self.listener = tf.TransformListener()
         self.rate = rospy.Rate(10.0)
         self.PoseCallback()
@@ -259,8 +260,13 @@ class TopologicalNavLoc(object):
         rlist=[]
 
         try:
-            rospy.wait_for_service('/topological_map_manager/get_tagged_nodes', timeout=3)
-            cont = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            if not self.use_tmap2:
+                rospy.wait_for_service('/topological_map_manager/get_tagged_nodes', timeout=3)
+                cont = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            else:
+                rospy.wait_for_service('/topological_map_manager2/get_tagged_nodes', timeout=3)
+                cont = rospy.ServiceProxy('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+                
             resp1 = cont(req.tag)
             tagnodes = resp1.nodes
         except rospy.ServiceException, e:
@@ -423,9 +429,12 @@ class LocaliseByTopicSubscriber(object):
 if __name__ == '__main__':
     rospy.init_node('topological_localisation')
     wtags=True
+    use_tmap2 = False
     argc = len(sys.argv)
     if argc > 1:
         if '-notags' in sys.argv:
             wtags = False
-    server = TopologicalNavLoc(rospy.get_name(), wtags)
+        if '-use_tmap2' in sys.argv:
+            use_tmap2 = True
+    server = TopologicalNavLoc(rospy.get_name(), wtags, use_tmap2)
 ###################################################################################################################    

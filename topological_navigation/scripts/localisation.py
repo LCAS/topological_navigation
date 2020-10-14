@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 ###################################################################################################################
-import sys, rospy, json, rostopic, tf
+import sys, json
+import rospy, rostopic, tf
 import strands_navigation_msgs.srv
 
 from actionlib_msgs.msg import *
@@ -104,8 +105,10 @@ class TopologicalNavLoc(object):
         self.cnstr="Unknown"
         
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
-        self.with_tags=wtags
+        self.with_tags = wtags
         self.use_tmap2 = use_tmap2
+        if self.use_tmap2:
+            rospy.loginfo("TOPOLOGICAL LOCALISATION IS USING THE NEW MAP TYPE")
 
         self.subscribers=[]
         self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)
@@ -124,9 +127,12 @@ class TopologicalNavLoc(object):
         self.get_tagged_srv=rospy.Service('topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
         self.loc_pos_srv=rospy.Service('topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
 
-        rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        if not self.use_tmap2:
+            rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
+        else:
+            rospy.Subscriber('/topological_map_2', String, self.MapCallback)
+            
         rospy.loginfo("Waiting for Topological map ...")
-
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
         
@@ -145,9 +151,30 @@ class TopologicalNavLoc(object):
         """
         This function returns the distance from each waypoint to a pose in an organised way
         """
+        distances = self.get_distances_to_pose_from_tmap2(pose) if self.use_tmap2 else self.get_distances_to_pose_from_tmap1(pose)
+        return distances
+    
+    
+    def get_distances_to_pose_from_tmap1(self, pose):
+        
         distances=[]
         for i in self.tmap.nodes:
             d= get_distance_node_pose(i, pose)
+            a={}
+            a['node'] = i
+            a['dist'] = d
+            distances.append(a)
+    
+        distances = sorted(distances, key=lambda k: k['dist'])
+        
+        return distances
+    
+    
+    def get_distances_to_pose_from_tmap2(self, pose):
+        
+        distances=[]
+        for i in self.tmap["nodes"]:
+            d= get_distance_node_pose_from_tmap2(i, pose)
             a={}
             a['node'] = i
             a['dist'] = d
@@ -195,7 +222,7 @@ class TopologicalNavLoc(object):
                     for i in self.loc_by_topic:
                         if not_loc:
                             if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
-                                test_node=get_node(self.tmap, i['name'])
+                                test_node=get_node(self.tmap, i['name']) if self.use_tmap2 else get_node_from_tmap2(self.tmap, i['name'])
                                 if self.point_in_poly(test_node, msg):
                                     not_loc=False
                                     closeststr=str(i['name'])
@@ -211,10 +238,11 @@ class TopologicalNavLoc(object):
     
                 if not_loc:
                     ind = 0
-                    while not_loc and ind<len(self.distances) and ind<3 :
-                        if self.distances[ind]['node'].name not in self.names_by_topic:
+                    while not_loc and ind<len(self.distances) and ind<3:
+                        name = self.distances[ind]['node'].name if not self.use_tmap2 else self.distances[ind]['node']['node']['name']
+                        if name not in self.names_by_topic:
                             if self.point_in_poly(self.distances[ind]['node'], msg) :
-                                currentstr=str(self.distances[ind]['node'].name)
+                                currentstr=str(name)
                                 closeststr=currentstr
                                 not_loc=False
                         ind+=1
@@ -223,8 +251,9 @@ class TopologicalNavLoc(object):
                     not_loc=True
                     # No go nodes and Nodes localisable by topic are ONLY closest node when the robot is within them
                     while not_loc and ind<len(self.distances) and closeststr=='none' :
-                        if self.distances[ind]['node'].name not in self.nogos and self.distances[ind]['node'].name not in self.names_by_topic :
-                            closeststr=str(self.distances[ind]['node'].name)
+                        name = self.distances[ind]['node'].name if not self.use_tmap2 else self.distances[ind]['node']['node']['name']
+                        if name not in self.nogos and name not in self.names_by_topic :
+                            closeststr=str(name)
                             not_loc=False
                         ind+=1
     
@@ -256,8 +285,13 @@ class TopologicalNavLoc(object):
         self.names_by_topic=[]
         self.nodes_by_topic=[]
         self.nogos=[]
+        #print eval(msg.data)
 
-        self.tmap = msg
+        if not self.use_tmap2:
+            self.tmap = msg
+        else:
+            self.tmap = json.loads(msg.data) 
+        
         self.rec_map=True
         self.update_loc_by_topic()
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
@@ -286,6 +320,12 @@ class TopologicalNavLoc(object):
         """
         This function updates the localisation by topic variables
         """
+        self.update_loc_by_topic_from_tmap2 if self.use_tmap2 else self.update_loc_by_topic_from_tmap1
+        print self.nodes_by_topic
+        
+        
+    def update_loc_by_topic_from_tmap1(self):
+        
         for i in self.tmap.nodes:
             if i.localise_by_topic:
                 a= json.loads(i.localise_by_topic)
@@ -296,7 +336,20 @@ class TopologicalNavLoc(object):
                     a['persistency']=10
                 self.nodes_by_topic.append(a)
                 self.names_by_topic.append(a['name'])
-        print self.nodes_by_topic
+        
+        
+    def update_loc_by_topic_from_tmap2(self):
+        
+        for i in self.tmap['nodes']:
+            if i['node']['localise_by_topic']:
+                a= json.loads(i['node']['localise_by_topic'])
+                a['name'] = i['node']['name']
+                if not a.has_key('localise_anywhere'):
+                    a['localise_anywhere']=True
+                if not a.has_key('persistency'):
+                    a['persistency']=10
+                self.nodes_by_topic.append(a)
+                self.names_by_topic.append(a['name'])
 
 
     def Callback(self, msg, item):
@@ -370,15 +423,17 @@ class TopologicalNavLoc(object):
         ind = 0
         while not_loc and ind<len(distances) and ind<3 :
             if self.point_in_poly(distances[ind]['node'], req.pose) :
-                currentstr=str(distances[ind]['node'].name)
+                name = distances[ind]['node'].name if not self.use_tmap2 else distances[ind]['node']['node']['name']
+                currentstr=str(name)
                 closeststr=currentstr
                 not_loc=False
             ind+=1
 
         ind = 0
         while not_loc and ind<len(distances) :
-            if distances[ind]['node'].name not in self.nogos :
-                closeststr=str(distances[ind]['node'].name)
+            name = distances[ind]['node'].name if not self.use_tmap2 else distances[ind]['node']['node']['name']
+            if name not in self.nogos :
+                closeststr=str(name)
                 not_loc=False
             ind+=1
             
@@ -390,8 +445,13 @@ class TopologicalNavLoc(object):
         This function gets the list of No go nodes
         """
         try:
-            rospy.wait_for_service('/topological_map_manager/get_tagged_nodes', timeout=3)
-            get_prediction = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            if not self.use_tmap2:
+                rospy.wait_for_service('/topological_map_manager/get_tagged_nodes', timeout=3)
+                get_prediction = rospy.ServiceProxy('/topological_map_manager/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            else:
+                rospy.wait_for_service('/topological_map_manager2/get_tagged_nodes', timeout=3)
+                get_prediction = rospy.ServiceProxy('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+                
             resp1 = get_prediction('no_go')
             return resp1.nodes
         
@@ -400,6 +460,11 @@ class TopologicalNavLoc(object):
 
 
     def point_in_poly(self,node,pose):
+        inside = self.point_in_poly_from_tmap2(node,pose) if self.use_tmap2 else self.point_in_poly_from_tmap1(node,pose)
+        return inside
+    
+    
+    def point_in_poly_from_tmap1(self,node,pose):
         
         x=pose.position.x-node.pose.position.x
         y=pose.position.y-node.pose.position.y
@@ -412,6 +477,31 @@ class TopologicalNavLoc(object):
         for i in range(n+1):
             p2x = node.verts[i % n].x
             p2y = node.verts[i % n].y
+            if y > min(p1y,p2y):
+                if y <= max(p1y,p2y):
+                    if x <= max(p1x,p2x):
+                        if p1y != p2y:
+                            xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                        if p1x == p2x or x <= xints:
+                            inside = not inside
+            p1x,p1y = p2x,p2y
+            
+        return inside
+    
+    
+    def point_in_poly_from_tmap2(self,node,pose):
+        
+        x=pose.position.x-node["node"]["pose"]["position"]["x"]
+        y=pose.position.y-node["node"]["pose"]["position"]["y"]
+
+        n = len(node["node"]["verts"])
+        inside = False
+
+        p1x = node["node"]["verts"][0]["x"]
+        p1y = node["node"]["verts"][0]["y"]
+        for i in range(n+1):
+            p2x = node["node"]["verts"][i % n]["x"]
+            p2y = node["node"]["verts"][i % n]["y"]
             if y > min(p1y,p2y):
                 if y <= max(p1y,p2y):
                     if x <= max(p1x,p2x):

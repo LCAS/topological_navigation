@@ -7,7 +7,6 @@ import json
 import yaml
 import re
 import uuid
-
 import std_msgs.msg
 
 from strands_navigation_msgs.msg import *
@@ -15,7 +14,6 @@ from strands_navigation_msgs.srv import *
 from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.manager2 import map_manager_2
 from rospy_message_converter import message_converter
-
 
 
 def node_dist(node1,node2):
@@ -53,7 +51,9 @@ class map_manager(object):
         
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
-        self.map2_pub.publish(std_msgs.msg.String(repr(self.tmap2))) # publish new map type as a string
+        strmap = std_msgs.msg.String()
+        strmap.data = json.dumps(self.tmap2)
+        self.map2_pub.publish(strmap) # publish new map type as a string
 
         rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
         #This service returns any given map
@@ -95,7 +95,9 @@ class map_manager(object):
         self.tmap2 = self.tmap_to_tmap2()
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
-        self.map2_pub.publish(std_msgs.msg.String(repr(self.tmap2))) # publish new map type as a string
+        strmap = std_msgs.msg.String()
+        strmap.data = json.dumps(self.tmap2)
+        self.map2_pub.publish(strmap) # publish new map type as a string
         self.names = self.create_list_of_nodes()
 
 

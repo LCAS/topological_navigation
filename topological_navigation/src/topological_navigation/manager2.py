@@ -5,7 +5,7 @@ Created on Tue Sep 29 16:06:36 2020
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #########################################################################################################
-import rospy, tf2_ros
+import rospy, tf2_ros, datetime
 import strands_navigation_msgs.srv
 
 from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
@@ -49,7 +49,7 @@ class map_manager_2(object):
             self.tmap2["pointset"] = self.pointset
             self.tmap2["transformation"] = self.transformation
             self.tmap2["meta"] = {}
-            self.tmap2["meta"]["last_updated"] = rospy.Time.now()
+            self.tmap2["meta"]["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             self.tmap2["nodes"] = []
         else:
             self.name = tmap2["name"]

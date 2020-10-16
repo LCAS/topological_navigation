@@ -151,7 +151,8 @@ class TopologicalNavLoc(object):
         """
         This function returns the distance from each waypoint to a pose in an organised way
         """
-        distances = self.get_distances_to_pose_from_tmap2(pose) if self.use_tmap2 else self.get_distances_to_pose_from_tmap1(pose)
+        distances = self.get_distances_to_pose_from_tmap1(pose) if not self.use_tmap2 else self.get_distances_to_pose_from_tmap2(pose)
+        distances = sorted(distances, key=lambda k: k['dist'])
         return distances
     
     
@@ -164,8 +165,6 @@ class TopologicalNavLoc(object):
             a['node'] = i
             a['dist'] = d
             distances.append(a)
-    
-        distances = sorted(distances, key=lambda k: k['dist'])
         
         return distances
     
@@ -179,8 +178,6 @@ class TopologicalNavLoc(object):
             a['node'] = i
             a['dist'] = d
             distances.append(a)
-    
-        distances = sorted(distances, key=lambda k: k['dist'])
         
         return distances
 
@@ -222,7 +219,7 @@ class TopologicalNavLoc(object):
                     for i in self.loc_by_topic:
                         if not_loc:
                             if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
-                                test_node=get_node(self.tmap, i['name']) if self.use_tmap2 else get_node_from_tmap2(self.tmap, i['name'])
+                                test_node=get_node(self.tmap, i['name']) if not self.use_tmap2 else get_node_from_tmap2(self.tmap, i['name'])
                                 if self.point_in_poly(test_node, msg):
                                     not_loc=False
                                     closeststr=str(i['name'])
@@ -320,7 +317,7 @@ class TopologicalNavLoc(object):
         """
         This function updates the localisation by topic variables
         """
-        self.update_loc_by_topic_from_tmap2 if self.use_tmap2 else self.update_loc_by_topic_from_tmap1
+        self.update_loc_by_topic_from_tmap1 if not self.use_tmap2 else self.update_loc_by_topic_from_tmap2
         print self.nodes_by_topic
         
         
@@ -398,6 +395,7 @@ class TopologicalNavLoc(object):
                 
             resp1 = cont(req.tag)
             tagnodes = resp1.nodes
+            
         except rospy.ServiceException, e:
             rospy.logerr("Service call failed: %s"%e)
 
@@ -460,7 +458,7 @@ class TopologicalNavLoc(object):
 
 
     def point_in_poly(self,node,pose):
-        inside = self.point_in_poly_from_tmap2(node,pose) if self.use_tmap2 else self.point_in_poly_from_tmap1(node,pose)
+        inside = self.point_in_poly_from_tmap1(node,pose) if not self.use_tmap2 else self.point_in_poly_from_tmap2(node,pose)
         return inside
     
     

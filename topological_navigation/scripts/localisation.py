@@ -317,7 +317,7 @@ class TopologicalNavLoc(object):
         """
         This function updates the localisation by topic variables
         """
-        self.update_loc_by_topic_from_tmap1 if not self.use_tmap2 else self.update_loc_by_topic_from_tmap2
+        self.update_loc_by_topic_from_tmap1() if not self.use_tmap2 else self.update_loc_by_topic_from_tmap2()
         print self.nodes_by_topic
         
         

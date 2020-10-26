@@ -35,7 +35,7 @@ class map_manager(object):
             else:
                 self.nodes, self.tmap = self.load_map_from_file(name)
             self.names = self.create_list_of_nodes()
-            self.tmap2 = self.tmap_to_tmap2() # convert map to new format
+            self.tmap_to_tmap2() # convert map to new format
 
             rospy.set_param('topological_map_name', self.nodes.pointset)
         else:
@@ -47,13 +47,8 @@ class map_manager(object):
 
 
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
-        self.map2_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)
-        
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
-        strmap = std_msgs.msg.String()
-        strmap.data = json.dumps(self.tmap2)
-        self.map2_pub.publish(strmap) # publish new map type as a string
 
         rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
         #This service returns any given map
@@ -95,9 +90,6 @@ class map_manager(object):
         self.tmap2 = self.tmap_to_tmap2()
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
-        strmap = std_msgs.msg.String()
-        strmap.data = json.dumps(self.tmap2)
-        self.map2_pub.publish(strmap) # publish new map type as a string
         self.names = self.create_list_of_nodes()
 
 
@@ -995,5 +987,5 @@ class map_manager(object):
                 
                 manager2.add_edge_to_node(node.name, edge.node, edge.action, config)
                 
-        return manager2.tmap2
+        manager2.update()
 ###################################################################################################################

@@ -5,8 +5,11 @@ Created on Tue Sep 29 16:06:36 2020
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #########################################################################################################
-import rospy, tf2_ros, datetime
+import rospy, tf2_ros
+import yaml, datetime, json
+
 import strands_navigation_msgs.srv
+import std_msgs.msg
 
 from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
 from rospy_message_converter import message_converter
@@ -20,7 +23,7 @@ default_verts = [{'x': 0.689,  'y': 0.287},  {'x': 0.287,  'y': 0.689},   {'x': 
 class map_manager_2(object):
     
     
-    def __init__(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", tmap2=None):
+    def __init__(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", tmap2_path=""):
         
         self.name = name
         self.metric_map = metric_map
@@ -42,7 +45,7 @@ class map_manager_2(object):
         else:
             self.transformation = transformation
             
-        if tmap2 is None:
+        if not tmap2_path:
             self.tmap2 = {}
             self.tmap2["name"] = self.name
             self.tmap2["metric_map"] = self.metric_map
@@ -52,16 +55,35 @@ class map_manager_2(object):
             self.tmap2["meta"]["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             self.tmap2["nodes"] = []
         else:
-            self.name = tmap2["name"]
-            self.metric_map = tmap2["metric_map"]
-            self.pointset = tmap2["pointset"]
-            self.transformation = tmap2["transformation"]
-            self.tmap2 = tmap2
+            self.tmap2 = self.load_map(tmap2_path)
+            self.name = self.tmap2["name"]
+            self.metric_map = self.tmap2["metric_map"]
+            self.pointset = self.tmap2["pointset"]
+            self.transformation = self.tmap2["transformation"]
             
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
         
+        self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)
+        self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
+        
         self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
+        
+        
+    def update(self):
+        self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
+        
+        
+    def load_map(self, filename):
+        
+        with open(filename, "r") as f:
+            try:
+                tmap2 = yaml.safe_load(f)
+            except Exception as e:
+                rospy.logerr(e)
+                exit()
+        
+        return tmap2
         
         
     def broadcast_transform(self):
@@ -79,7 +101,8 @@ class map_manager_2(object):
         self.broadcaster.sendTransform(msg)
         
         
-    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], restrictions=None):
+    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], 
+                 restrictions=None, update=False):
         
         if "orientation" not in pose:
             pose["orientation"] = {}
@@ -122,10 +145,12 @@ class map_manager_2(object):
             
         self.tmap2["nodes"].append(node)
         
+        if update:
+            self.update()
         
-    def add_edge_to_node(self, origin, destination, action="move_base", config="default", 
-                         action_type="default", goal="default", 
-                         fail_policy="fail", restrictions=None):
+        
+    def add_edge_to_node(self, origin, destination, action="move_base", config="default", action_type="default", 
+                         goal="default", fail_policy="fail", restrictions=None, update=False):
         
         edge = {}
         edge["action"] = action
@@ -161,6 +186,9 @@ class map_manager_2(object):
         for node in self.tmap2["nodes"]:
             if node["meta"]["node"] == origin and node["node"]["name"] == origin:
                 node["node"]["edges"].append(edge)
+                
+        if update:
+            self.update()
                 
                 
     def set_action_type(self, action):

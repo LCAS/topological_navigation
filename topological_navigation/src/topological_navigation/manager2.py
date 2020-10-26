@@ -5,7 +5,12 @@ Created on Tue Sep 29 16:06:36 2020
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #########################################################################################################
-import rospy
+import rospy, tf2_ros, datetime
+import strands_navigation_msgs.srv
+
+from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
+from rospy_message_converter import message_converter
+
 
 default_verts = [{'x': 0.689,  'y': 0.287},  {'x': 0.287,  'y': 0.689},   {'x': -0.287, 'y': 0.689},
                  {'x': -0.689, 'y': 0.287},  {'x': -0.689, 'y': -0.287},  {'x': -0.287, 'y': -0.689},
@@ -32,8 +37,8 @@ class map_manager_2(object):
             self.transformation["translation"]["x"] = 0.0
             self.transformation["translation"]["y"] = 0.0
             self.transformation["translation"]["z"] = 0.0
-            self.transformation["child"] = self.name
-            self.transformation["parent"] = self.metric_map
+            self.transformation["child"] = "topo_map"
+            self.transformation["parent"] = "map"
         else:
             self.transformation = transformation
             
@@ -44,7 +49,7 @@ class map_manager_2(object):
             self.tmap2["pointset"] = self.pointset
             self.tmap2["transformation"] = self.transformation
             self.tmap2["meta"] = {}
-            self.tmap2["meta"]["last_updated"] = rospy.Time.now()
+            self.tmap2["meta"]["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             self.tmap2["nodes"] = []
         else:
             self.name = tmap2["name"]
@@ -52,9 +57,29 @@ class map_manager_2(object):
             self.pointset = tmap2["pointset"]
             self.transformation = tmap2["transformation"]
             self.tmap2 = tmap2
+            
+        self.broadcaster = tf2_ros.StaticTransformBroadcaster()
+        self.broadcast_transform()
+        
+        self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
         
         
-    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", restrictions=None):
+    def broadcast_transform(self):
+        
+        trans = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Vector3", self.transformation["translation"])
+        rot = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Quaternion", self.transformation["rotation"])
+        
+        msg = TransformStamped()
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = self.transformation["parent"]
+        msg.child_frame_id = self.transformation["child"]
+        msg.transform.translation = trans
+        msg.transform.rotation = rot
+        
+        self.broadcaster.sendTransform(msg)
+        
+        
+    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], restrictions=None):
         
         if "orientation" not in pose:
             pose["orientation"] = {}
@@ -68,6 +93,8 @@ class map_manager_2(object):
         node["meta"]["map"] = self.metric_map
         node["meta"]["node"] = name
         node["meta"]["pointset"] = self.pointset
+        if tags:
+            node["meta"]["tag"] = tags
         
         node["node"] = {}
         node["node"]["edges"] = []
@@ -144,4 +171,14 @@ class map_manager_2(object):
         action_type = package + "/" + goal_type
             
         return action_type
+    
+    
+    def get_tagged_cb(self, msg):
+        
+        tags=[]
+        for node in self.tmap2["nodes"]:
+            if "tag" in node["meta"]:
+                if msg.tag in node["meta"]["tag"]:
+                    tags.append(node["node"]["name"])
+        return [tags]
 #########################################################################################################

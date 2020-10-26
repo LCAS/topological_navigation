@@ -14,6 +14,14 @@ def get_node(top_map, node_name):
             return i
     return None
 
+
+def get_node_from_tmap2(top_map, node_name):
+    for i in top_map["nodes"]:
+        if i["node"]["name"] == node_name:
+            return i
+    return None
+
+
 """
     get_distance
     
@@ -35,7 +43,11 @@ def get_distance_node_pose(node, pose):
     dist=math.hypot((pose.position.x-node.pose.position.x),(pose.position.y-node.pose.position.y))
     return dist
 
- 
+
+def get_distance_node_pose_from_tmap2(node, pose):
+    dist=math.hypot((pose.position.x-node["node"]["pose"]["position"]["x"]),(pose.position.y-node["node"]["pose"]["position"]["y"]))
+    return dist
+
 """
     get_distance_to_node
     

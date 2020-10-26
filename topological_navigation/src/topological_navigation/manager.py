@@ -87,7 +87,7 @@ class map_manager(object):
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
         self.nodes = self.loadMap(self.name)
-        self.tmap2 = self.tmap_to_tmap2()
+        self.tmap_to_tmap2()
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
         self.names = self.create_list_of_nodes()

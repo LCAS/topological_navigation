@@ -205,7 +205,7 @@ class map_manager_2(object):
         return action_type
     
     
-    def get_topological_map_cb(self, msg):
+    def get_topological_map_cb(self, req):
         """
         Returns the topological map
         """

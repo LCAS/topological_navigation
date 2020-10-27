@@ -11,7 +11,9 @@ import yaml, datetime, json
 import strands_navigation_msgs.srv
 import std_msgs.msg
 
+from std_srvs.srv import Trigger, TriggerResponse
 from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
+
 from rospy_message_converter import message_converter
 
 
@@ -55,11 +57,7 @@ class map_manager_2(object):
             self.tmap2["meta"]["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             self.tmap2["nodes"] = []
         else:
-            self.tmap2 = self.load_map(tmap2_path)
-            self.name = self.tmap2["name"]
-            self.metric_map = self.tmap2["metric_map"]
-            self.pointset = self.tmap2["pointset"]
-            self.transformation = self.tmap2["transformation"]
+            self.load_map(tmap2_path)
             
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
@@ -67,8 +65,11 @@ class map_manager_2(object):
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
         
+        self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
         self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
-        
+        self.get_tag_srv=rospy.Service('/topological_map_manager2/get_tags', strands_navigation_msgs.srv.GetTags, self.get_tags_cb)
+        self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', strands_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
+
         
     def update(self):
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -78,12 +79,15 @@ class map_manager_2(object):
         
         with open(filename, "r") as f:
             try:
-                tmap2 = yaml.safe_load(f)
+                self.tmap2 = yaml.safe_load(f)
             except Exception as e:
                 rospy.logerr(e)
                 exit()
-        
-        return tmap2
+                
+        self.name = self.tmap2["name"]
+        self.metric_map = self.tmap2["metric_map"]
+        self.pointset = self.tmap2["pointset"]
+        self.transformation = self.tmap2["transformation"]
         
         
     def broadcast_transform(self):
@@ -201,12 +205,57 @@ class map_manager_2(object):
         return action_type
     
     
-    def get_tagged_cb(self, msg):
+    def get_topological_map_cb(self, msg):
+        """
+        Returns the topological map
+        """
+        ans = TriggerResponse()
+        ans.success = True
+        ans.message = json.dumps(self.tmap2)
         
-        tags=[]
+        return ans
+    
+    
+    def get_tagged_cb(self, req):
+        """
+        Returns a list of nodes that have a given tag
+        """
+        names=[]
         for node in self.tmap2["nodes"]:
             if "tag" in node["meta"]:
-                if msg.tag in node["meta"]["tag"]:
-                    tags.append(node["node"]["name"])
-        return [tags]
+                if req.tag in node["meta"]["tag"]:
+                    names.append(node["node"]["name"])
+                    
+        return [names]
+    
+    
+    def get_tags_cb(self, req):
+        """
+        Returns a list of available tags in the map
+        """
+        tt = [tag for node in self.tmap2["nodes"] if "tag" in node["meta"] for tag in node["meta"]["tag"]]
+        return [set(tt)]
+    
+    
+    def get_node_tags_cb(self, req):
+        """
+        Returns a list of a node's tags
+        """
+        num_available = 0
+        for node in self.tmap2["nodes"]:
+            if node["meta"]["node"] == req.node_name and node["node"]["name"] == req.node_name:
+                if "tag" in node["meta"]:
+                    tags = node["meta"]["tag"]
+                else:
+                    tags = []
+                    
+                num_available+=1
+                
+        if num_available == 1:
+            succeded = True
+        else:
+            succeded = False
+            tags = []
+            
+        return succeded, tags
 #########################################################################################################

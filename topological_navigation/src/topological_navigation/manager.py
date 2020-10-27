@@ -184,7 +184,7 @@ class map_manager(object):
         """
         get tagged nodes callback
         This function is the callback for the get tagged nodes service
-        It returns a list of the nodes that have the tag tag
+        Returns a list of node names that have a specific tag
         """
         mm = self.get_tagged_nodes_from_file(tag) if self.load_from_file else self.get_tagged_nodes_from_mongo(tag)
         return mm

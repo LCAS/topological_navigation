@@ -985,7 +985,7 @@ class map_manager(object):
                 config["top_vel"] = edge.top_vel
                 config["recovery_behaviours_config"] = edge.recovery_behaviours_config
                 
-                manager2.add_edge_to_node(node.name, edge.node, edge.action, config)
+                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, config)
                 
         manager2.update()
 ###################################################################################################################

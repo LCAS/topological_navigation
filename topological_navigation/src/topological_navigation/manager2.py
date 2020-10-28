@@ -153,11 +153,17 @@ class map_manager_2(object):
             self.update()
         
         
-    def add_edge_to_node(self, origin, destination, action="move_base", config="default", action_type="default", 
-                         goal="default", fail_policy="fail", restrictions=None, update=False):
+    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config="default", 
+                         action_type="default", goal="default", fail_policy="fail", restrictions=None, update=False):
         
         edge = {}
         edge["action"] = action
+        
+        if edge_id == "default":
+            edge["edge_id"] = origin + "_" + destination
+        else:
+            edge["edge_id"] = edge_id
+        
         edge["node"] = destination
         
         if config == "default":

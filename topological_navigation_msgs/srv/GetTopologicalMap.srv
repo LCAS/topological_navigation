@@ -1,0 +1,4 @@
+string filename   # map file name
+---
+bool success
+string map

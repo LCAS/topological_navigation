@@ -9,6 +9,7 @@ import rospy, tf2_ros
 import yaml, datetime, json
 
 import strands_navigation_msgs.srv
+import topological_navigation_msgs.srv
 import std_msgs.msg
 
 from std_srvs.srv import Trigger, TriggerResponse
@@ -65,10 +66,13 @@ class map_manager_2(object):
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
         
+        # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
+        self.switch_map_srv=rospy.Service('/topological_map_manager2/switch_topological_map', topological_navigation_msgs.srv.GetTopologicalMap, self.switch_topological_map_cb)
         self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
         self.get_tag_srv=rospy.Service('/topological_map_manager2/get_tags', strands_navigation_msgs.srv.GetTags, self.get_tags_cb)
         self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', strands_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
+        self.get_node_edges_srv=rospy.Service('/topological_map_manager2/get_edges_between_nodes', strands_navigation_msgs.srv.GetEdgesBetweenNodes, self.get_edges_between_cb)
 
         
     def update(self):
@@ -82,7 +86,15 @@ class map_manager_2(object):
                 self.tmap2 = yaml.safe_load(f)
             except Exception as e:
                 rospy.logerr(e)
-                exit()
+                self.tmap2 = {}
+                return
+            
+        if type(self.tmap2) is list:
+            errstr = "It looks as though you are attemting to load an old-format map using topological_navigation/manager2.py" \
+                     " Please use topological_navigation/manager.py instead. Returning an empty map."
+            rospy.logerr(errstr)
+            self.tmap2 = {}
+            return
                 
         self.name = self.tmap2["name"]
         self.metric_map = self.tmap2["metric_map"]
@@ -222,6 +234,19 @@ class map_manager_2(object):
         return ans
     
     
+    def switch_topological_map_cb(self, req):
+        
+        self.load_map(req.filename)        
+        self.broadcast_transform()
+        self.update()
+        
+        success = True
+        if not self.tmap2:
+            success = False
+            
+        return success, json.dumps(self.tmap2)
+        
+    
     def get_tagged_cb(self, req):
         """
         Returns a list of nodes that have a given tag
@@ -239,8 +264,8 @@ class map_manager_2(object):
         """
         Returns a list of available tags in the map
         """
-        tt = [tag for node in self.tmap2["nodes"] if "tag" in node["meta"] for tag in node["meta"]["tag"]]
-        return [set(tt)]
+        tags = [tag for node in self.tmap2["nodes"] if "tag" in node["meta"] for tag in node["meta"]["tag"]]
+        return [set(tags)]
     
     
     def get_node_tags_cb(self, req):
@@ -264,4 +289,28 @@ class map_manager_2(object):
             tags = []
             
         return succeded, tags
+    
+    
+    def get_edges_between(self, nodea, nodeb):
+        
+         ab=[]
+         ba=[]
+         for node in self.tmap2["nodes"]:
+             if nodea == node["node"]["name"]:
+                 for edge in node["node"]["edges"]:
+                     if edge["node"] == nodeb:
+                         ab.append(edge["edge_id"])
+             if nodeb == node["node"]["name"]:
+                 for edge in node["node"]["edges"]:
+                     if edge["node"] == nodea:
+                         ba.append(edge["edge_id"])
+                         
+         return ab, ba
+     
+
+    def get_edges_between_cb(self, req):
+        """
+        Returns a list of the ids of edges from nodea to nodeb and vice-versa
+        """
+        return self.get_edges_between(req.nodea, req.nodeb)
 #########################################################################################################

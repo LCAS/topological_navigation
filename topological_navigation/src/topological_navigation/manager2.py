@@ -90,9 +90,9 @@ class map_manager_2(object):
                 return
             
         if type(self.tmap2) is list:
-            errstr = "It looks as though you are attemting to load an old-format map using topological_navigation/manager2.py" \
-                     " Please use topological_navigation/manager.py instead. Returning an empty map."
-            rospy.logerr(errstr)
+            e = "Loaded map is {}. You may be attemting to load an old-format map using topological_navigation/manager2.py" \
+                " Please use topological_navigation/manager.py instead. Returning an empty map.".format(type(self.tmap2))
+            rospy.logerr(e)
             self.tmap2 = {}
             return
                 
@@ -206,7 +206,7 @@ class map_manager_2(object):
             edge["restrictions"] = restrictions
         
         for node in self.tmap2["nodes"]:
-            if node["meta"]["node"] == origin and node["node"]["name"] == origin:
+            if node["node"]["name"] == origin:
                 node["node"]["edges"].append(edge)
                 
         if update:
@@ -274,7 +274,7 @@ class map_manager_2(object):
         """
         num_available = 0
         for node in self.tmap2["nodes"]:
-            if node["meta"]["node"] == req.node_name and node["node"]["name"] == req.node_name:
+            if node["node"]["name"] == req.node_name:
                 if "tag" in node["meta"]:
                     tags = node["meta"]["tag"]
                 else:
@@ -282,9 +282,8 @@ class map_manager_2(object):
                     
                 num_available+=1
                 
-        if num_available == 1:
-            succeded = True
-        else:
+        succeded = True        
+        if num_available != 1:
             succeded = False
             tags = []
             
@@ -293,8 +292,7 @@ class map_manager_2(object):
     
     def get_edges_between(self, nodea, nodeb):
         
-         ab=[]
-         ba=[]
+         ab=[]; ba=[]
          for node in self.tmap2["nodes"]:
              if nodea == node["node"]["name"]:
                  for edge in node["node"]["edges"]:

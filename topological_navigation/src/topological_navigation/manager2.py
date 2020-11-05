@@ -7,6 +7,7 @@ Created on Tue Sep 29 16:06:36 2020
 #########################################################################################################
 import rospy, tf2_ros
 import yaml, datetime, json
+import re, uuid, copy
 
 import strands_navigation_msgs.srv
 import topological_navigation_msgs.srv
@@ -26,7 +27,7 @@ default_verts = [{'x': 0.689,  'y': 0.287},  {'x': 0.287,  'y': 0.689},   {'x': 
 class map_manager_2(object):
     
     
-    def __init__(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", tmap2_path=""):
+    def __init__(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
         
         self.name = name
         self.metric_map = metric_map
@@ -48,7 +49,12 @@ class map_manager_2(object):
         else:
             self.transformation = transformation
             
-        if not tmap2_path:
+        self.filename = filename
+        self.load = load
+            
+        if self.filename and self.load:
+            self.load_map(self.filename)
+        else:
             self.tmap2 = {}
             self.tmap2["name"] = self.name
             self.tmap2["metric_map"] = self.metric_map
@@ -57,8 +63,6 @@ class map_manager_2(object):
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             self.tmap2["nodes"] = []
-        else:
-            self.load_map(tmap2_path)
             
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
@@ -74,6 +78,9 @@ class map_manager_2(object):
         self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', strands_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
         self.get_node_edges_srv=rospy.Service('/topological_map_manager2/get_edges_between_nodes', strands_navigation_msgs.srv.GetEdgesBetweenNodes, self.get_edges_between_cb)
 
+        # Services that modify the map
+        self.write_map_srv=rospy.Service('/topological_map_manager2/write_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.write_topological_map_cb)
+
         
     def update(self):
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -88,10 +95,11 @@ class map_manager_2(object):
                 rospy.logerr(e)
                 self.tmap2 = {}
                 return
-            
-        if type(self.tmap2) is list:
+        
+        map_type = type(self.tmap2)
+        if map_type is list:
             e = "Loaded map is {}. You may be attemting to load an old-format map using topological_navigation/manager2.py" \
-                " Please use topological_navigation/manager.py instead. Returning an empty map.".format(type(self.tmap2))
+                " Please use topological_navigation/manager.py instead.".format(map_type)
             rospy.logerr(e)
             self.tmap2 = {}
             return
@@ -100,6 +108,20 @@ class map_manager_2(object):
         self.metric_map = self.tmap2["metric_map"]
         self.pointset = self.tmap2["pointset"]
         self.transformation = self.tmap2["transformation"]
+        
+        self.map_check()
+        
+    
+    def write_map(self, filename):
+        
+        nodes = copy.deepcopy(self.tmap2["nodes"])
+        nodes.sort(key=lambda node: node["node"]["name"])
+        self.tmap2["nodes"] = nodes
+        
+        yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
+        fh = open(filename, "w")
+        fh.write(str(yml))
+        fh.close
         
         
     def broadcast_transform(self):
@@ -118,7 +140,7 @@ class map_manager_2(object):
         
         
     def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], 
-                 restrictions=None, update=False):
+                 restrictions=None, update=False, check=False):
         
         if "orientation" not in pose:
             pose["orientation"] = {}
@@ -163,10 +185,13 @@ class map_manager_2(object):
         
         if update:
             self.update()
+            
+        if check:
+            self.map_check()
         
         
     def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config="default", 
-                         action_type="default", goal="default", fail_policy="fail", restrictions=None, update=False):
+                         action_type="default", goal="default", fail_policy="fail", restrictions=None, update=False, check=False):
         
         edge = {}
         edge["action"] = action
@@ -211,6 +236,9 @@ class map_manager_2(object):
                 
         if update:
             self.update()
+            
+        if check:
+            self.map_check()
                 
                 
     def set_action_type(self, action):
@@ -311,4 +339,68 @@ class map_manager_2(object):
         Returns a list of the ids of edges from nodea to nodeb and vice-versa
         """
         return self.get_edges_between(req.nodea, req.nodeb)
+    
+    
+    def write_topological_map_cb(self, req):
+        
+        filename = req.filename
+        if not filename:
+            filename = self.filename
+        
+        try:
+            message = "Writing map to {}".format(filename)
+            self.write_map(filename)
+            success = True
+        except Exception as message:
+            success = False
+        
+        return success, str(message)
+        
+    
+    def map_check(self):
+        
+        self.map_ok = True
+        
+        # check that all nodes have the same pointset
+        pointsets = [node["meta"]["pointset"] for node in self.tmap2["nodes"]]
+        if len(set(pointsets)) > 1:
+            rospy.logwarn("multiple poinsets found in meta info: {}".format(set(pointsets)))
+            self.map_ok = False
+        
+        # check for duplicate node names
+        print "\n"
+        names = [node["node"]["name"] for node in self.tmap2["nodes"]]
+        names.sort()
+        for name in set(names):
+            n = names.count(name)
+            if n > 1:
+                rospy.logwarn("{} instances of node with name '{}' found".format(n, name))
+                self.map_ok = False
+        
+        sep = "_" + str(uuid.uuid4()) + "_"
+        edge_ids = [node["node"]["name"] + sep + edge["node"] for node in self.tmap2["nodes"] for edge in node["node"]["edges"]]
+        edge_ids.sort()
+
+        # check for duplicate edges
+        print "\n"
+        for edge in set(edge_ids):
+            edge_nodes = re.match("(.*)" + sep + "(.*)", edge).groups()
+            origin = edge_nodes[0]
+            destination = edge_nodes[1]
+ 
+            n = edge_ids.count(edge)
+            if n > 1:
+                rospy.logwarn("{} instances of edge with origin '{}' and destination '{}' found".format(n, origin, destination))
+                self.map_ok = False
+        
+        # check that an edge's destination node exists
+        print "\n"         
+        for edge in set(edge_ids):
+            edge_nodes = re.match("(.*)" + sep + "(.*)", edge).groups()
+            origin = edge_nodes[0]
+            destination = edge_nodes[1]
+ 
+            if destination not in names:
+                rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
+                self.map_ok = False
 #########################################################################################################

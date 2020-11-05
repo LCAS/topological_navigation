@@ -8,6 +8,7 @@ import yaml
 import re
 import uuid
 import std_msgs.msg
+import os
 
 from strands_navigation_msgs.msg import *
 from strands_navigation_msgs.srv import *
@@ -961,7 +962,11 @@ class map_manager(object):
     
     def tmap_to_tmap2(self):
         
-        manager2 = map_manager_2(self.nodes.name, self.nodes.map, self.nodes.pointset)
+        filename = ""
+        if self.load_from_file:
+            filename = os.path.splitext(self.name)[0] + ".yaml"
+            
+        manager2 = map_manager_2(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
         
         for node in self.nodes.nodes:
             

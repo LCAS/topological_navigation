@@ -5,7 +5,8 @@ Created on Tue Sep 29 16:06:36 2020
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #########################################################################################################
-import rospy, tf2_ros
+from __future__ import division
+import rospy, tf2_ros, math
 import yaml, datetime, json
 import re, uuid, copy
 
@@ -19,9 +20,9 @@ from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
 from rospy_message_converter import message_converter
 
 
-default_verts = [{'x': 0.689,  'y': 0.287},  {'x': 0.287,  'y': 0.689},   {'x': -0.287, 'y': 0.689},
-                 {'x': -0.689, 'y': 0.287},  {'x': -0.689, 'y': -0.287},  {'x': -0.287, 'y': -0.689},
-                 {'x': 0.287,  'y': -0.689}, {'x': 0.689,  'y': -0.287}]
+def pose_dist(pose1, pose2):
+    dist = math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
+    return dist
 
 
 class map_manager_2(object):
@@ -63,12 +64,10 @@ class map_manager_2(object):
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             self.tmap2["nodes"] = []
-            
+
+        self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)            
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
-        self.broadcast_transform()
-        
-        self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)
-        self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
+        self.update()
         
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
@@ -80,12 +79,12 @@ class map_manager_2(object):
 
         # Services that modify the map
         self.write_map_srv=rospy.Service('/topological_map_manager2/write_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.write_topological_map_cb)
+        self.add_node_srv=rospy.Service('/topological_map_manager2/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
+        self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
+        self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
 
-        
-    def update(self):
-        self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
-        
-        
+
+
     def load_map(self, filename):
         
         with open(filename, "r") as f:
@@ -111,17 +110,12 @@ class map_manager_2(object):
         
         self.map_check()
         
-    
-    def write_map(self, filename):
         
-        nodes = copy.deepcopy(self.tmap2["nodes"])
-        nodes.sort(key=lambda node: node["node"]["name"])
-        self.tmap2["nodes"] = nodes
+    def update(self):
         
-        yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
-        fh = open(filename, "w")
-        fh.write(str(yml))
-        fh.close
+        self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
+        self.broadcast_transform()
+        self.names = self.create_list_of_nodes()
         
         
     def broadcast_transform(self):
@@ -139,118 +133,17 @@ class map_manager_2(object):
         self.broadcaster.sendTransform(msg)
         
         
-    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], 
-                 restrictions=None, update=False, check=False):
+    def create_list_of_nodes(self):
         
-        if "orientation" not in pose:
-            pose["orientation"] = {}
-            pose["orientation"]["w"] = 1.0
-            pose["orientation"]["x"] = 0.0
-            pose["orientation"]["y"] = 0.0
-            pose["orientation"]["z"] = 0.0
-        
-        node = {}
-        node["meta"] = {}
-        node["meta"]["map"] = self.metric_map
-        node["meta"]["node"] = name
-        node["meta"]["pointset"] = self.pointset
-        if tags:
-            node["meta"]["tag"] = tags
-        
-        node["node"] = {}
-        node["node"]["edges"] = []
-        node["node"]["localise_by_topic"] = localise_by_topic
-        node["node"]["name"] = name        
-        node["node"]["pose"] = pose
-        
-        if verts == "default":
-            node["node"]["verts"] = default_verts
+        if "nodes" in self.tmap2:
+            names = [node["node"]["name"] for node in self.tmap2["nodes"]]
+            names.sort()
         else:
-            node["node"]["verts"] = verts
+            names = []
             
-        if properties == "default":
-            node["node"]["properties"] = {}
-            node["node"]["properties"]["xy_goal_tolerance"] = 0.3
-            node["node"]["properties"]["yaw_goal_tolerance"] = 0.1
-        else:
-            node["node"]["properties"] = properties
-            
-        if restrictions is None:
-            node["node"]["restrictions"] = {}
-            node["node"]["restrictions"]["robot_type"] = ""
-        else:
-            node["node"]["restrictions"] = restrictions
-            
-        self.tmap2["nodes"].append(node)
-        
-        if update:
-            self.update()
-            
-        if check:
-            self.map_check()
+        return names
         
         
-    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config="default", 
-                         action_type="default", goal="default", fail_policy="fail", restrictions=None, update=False, check=False):
-        
-        edge = {}
-        edge["action"] = action
-        
-        if edge_id == "default":
-            edge["edge_id"] = origin + "_" + destination
-        else:
-            edge["edge_id"] = edge_id
-        
-        edge["node"] = destination
-        
-        if config == "default":
-            edge["config"] = {}
-            edge["config"]["inflation_radius"] = 0.0
-            edge["config"]["top_vel"] = 0.55
-            edge["config"]["recovery_behaviours_config"] = ""
-        else:
-            edge["config"] = config
-        
-        if action_type == "default":
-            edge["action_type"] = self.set_action_type(action)
-        else:
-            edge["action_type"] = action_type
-            
-        if goal == "default":
-            edge["goal"] = {}
-            edge["goal"]["target_pose"] = "$node.pose"
-        else:
-            edge["goal"] = goal
-            
-        edge["fail_policy"] = fail_policy
-        
-        if restrictions is None:
-            edge["restrictions"] = {}
-            edge["restrictions"]["robot_type"] = ""
-        else:
-            edge["restrictions"] = restrictions
-        
-        for node in self.tmap2["nodes"]:
-            if node["node"]["name"] == origin:
-                node["node"]["edges"].append(edge)
-                
-        if update:
-            self.update()
-            
-        if check:
-            self.map_check()
-                
-                
-    def set_action_type(self, action):
-        
-        package = action + "_msgs"
-        items = [item[0].upper() + item[1:] for item in action.split("_")]
-        goal_type = "".join(items) + "Goal"
-        action_type = package + "/" + goal_type
-            
-        return action_type
-    
-    
     def get_topological_map_cb(self, req):
         """
         Returns the topological map
@@ -263,9 +156,10 @@ class map_manager_2(object):
     
     
     def switch_topological_map_cb(self, req):
-        
+        """
+        Changes the topological map
+        """
         self.load_map(req.filename)        
-        self.broadcast_transform()
         self.update()
         
         success = True
@@ -273,7 +167,7 @@ class map_manager_2(object):
             success = False
             
         return success, json.dumps(self.tmap2)
-        
+    
     
     def get_tagged_cb(self, req):
         """
@@ -342,19 +236,253 @@ class map_manager_2(object):
     
     
     def write_topological_map_cb(self, req):
-        
+        """
+        Saves the topological map to a yaml file
+        """
         filename = req.filename
         if not filename:
             filename = self.filename
         
         try:
             message = "Writing map to {}".format(filename)
-            self.write_map(filename)
+            self.write_topological_map(filename)
             success = True
         except Exception as message:
             success = False
         
         return success, str(message)
+        
+    
+    def write_topological_map(self, filename):
+        
+        nodes = copy.deepcopy(self.tmap2["nodes"])
+        nodes.sort(key=lambda node: node["node"]["name"])
+        self.tmap2["nodes"] = nodes
+        
+        yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
+        fh = open(filename, "w")
+        fh.write(str(yml))
+        fh.close
+        
+        
+    def add_topological_node_cb(self, req):
+        """
+        Adds a node to the topological map
+        """
+        return self.add_topological_node(req.name, req.pose, req.add_close_nodes)
+        
+        
+    def add_topological_node(self, node_name, node_pose, add_close_nodes, dist=8.0):
+        
+        if node_name:
+            name = node_name
+        else:
+            name = self.get_new_name()
+
+        rospy.loginfo("Creating Node: ".format(name))
+
+        if name in self.names:
+            rospy.logerr("Node already exists, try another name")
+            return False
+        
+        pose = message_converter.convert_ros_message_to_dictionary(node_pose)
+        close_nodes = []
+        if add_close_nodes:
+            for node in self.tmap2["nodes"]:
+                ndist = pose_dist(pose, node["node"]["pose"])
+                if ndist < dist :
+                    if node["node"]["name"] != "ChargingPoint":
+                        close_nodes.append(node["node"]["name"])
+                        
+        self.add_node(name, pose)
+        
+        for name_close in close_nodes:
+            self.add_edge(name, name_close, "move_base", "")
+            self.add_edge(name_close, name, "move_base", "")
+
+        self.update()
+        self.write_topological_map(self.filename)
+
+        return True
+    
+    
+    def get_new_name(self):
+        
+        namesnum=[]
+        for i in self.names :
+            if i.startswith('WayPoint') :
+                nam = i.strip('WayPoint')
+                namesnum.append(int(nam))
+        namesnum.sort()
+        if namesnum:
+            nodname = 'WayPoint%d'%(int(namesnum[-1])+1)
+        else :
+            nodname = 'WayPoint1'
+            
+        return nodname
+        
+        
+    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], restrictions=None):
+        
+        if "orientation" not in pose:
+            pose["orientation"] = {}
+            pose["orientation"]["w"] = 1.0
+            pose["orientation"]["x"] = 0.0
+            pose["orientation"]["y"] = 0.0
+            pose["orientation"]["z"] = 0.0
+        
+        node = {}
+        node["meta"] = {}
+        node["meta"]["map"] = self.metric_map
+        node["meta"]["node"] = name
+        node["meta"]["pointset"] = self.pointset
+        if tags:
+            node["meta"]["tag"] = tags
+        
+        node["node"] = {}
+        node["node"]["edges"] = []
+        node["node"]["localise_by_topic"] = localise_by_topic
+        node["node"]["name"] = name        
+        node["node"]["pose"] = pose
+        
+        if verts == "default":
+            node["node"]["verts"] = self.generate_circle_vertices()
+        else:
+            node["node"]["verts"] = verts
+            
+        if properties == "default":
+            node["node"]["properties"] = {}
+            node["node"]["properties"]["xy_goal_tolerance"] = 0.3
+            node["node"]["properties"]["yaw_goal_tolerance"] = 0.1
+        else:
+            node["node"]["properties"] = properties
+            
+        if restrictions is None:
+            node["node"]["restrictions"] = {}
+            node["node"]["restrictions"]["robot_type"] = ""
+        else:
+            node["node"]["restrictions"] = restrictions
+            
+        self.tmap2["nodes"].append(node)
+        
+        
+    def generate_circle_vertices(self, radius=0.75, number=8):
+        
+        separation_angle = 2 * math.pi / number
+        start_angle = separation_angle / 2
+        current_angle = start_angle
+        points = []
+        for i in range(0, number):
+            points.append((math.cos(current_angle) * radius, math.sin(current_angle) * radius))
+            current_angle += separation_angle
+
+        return points
+    
+    
+    def add_edge_cb(self, req):
+        """
+        Adds an edge to a topological node
+        """
+        return self.add_edge(req.origin, req.destination, req.action, req.edge_id)
+    
+    
+    def add_edge(self, origin, destination, action, edge_id):
+        
+        rospy.loginfo("Adding Edge from {} to {} using {}".format(origin, destination, action))
+        
+        num_available =  0
+        for i, node in enumerate(self.tmap2["nodes"]):
+            if node["node"]["name"] == origin:
+                num_available+=1
+                index = i
+                        
+        if num_available == 1 :
+            eids = []
+            for edge in self.tmap2["nodes"][index]["node"]["edges"]:
+                eids.append(edge["edge_id"])
+
+            if not edge_id or edge_id in eids:
+                test=0
+                eid = '%s_%s' %(origin, destination)
+                while eid in eids:
+                    eid = '%s_%s_%03d' %(origin, destination, test)
+                    test += 1
+            else:
+                eid=edge_id
+                
+            self.add_edge_to_node(origin, destination, action, edge_id)
+            self.update()
+            self.write_topological_map()
+            return True
+        else:
+            rospy.logerr("Error adding edge to node {}. {} instances of node with name {}".format(origin, num_available, origin))
+            return False
+        
+        
+    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config="default", 
+                         action_type="default", goal="default", fail_policy="fail", restrictions=None):
+        
+        edge = {}
+        edge["action"] = action
+        
+        if edge_id == "default":
+            edge["edge_id"] = origin + "_" + destination
+        else:
+            edge["edge_id"] = edge_id
+        
+        edge["node"] = destination
+        
+        if config == "default":
+            edge["config"] = {}
+            edge["config"]["inflation_radius"] = 0.0
+            edge["config"]["top_vel"] = 0.55
+            edge["config"]["recovery_behaviours_config"] = ""
+        else:
+            edge["config"] = config
+        
+        if action_type == "default":
+            edge["action_type"] = self.set_action_type(action)
+        else:
+            edge["action_type"] = action_type
+            
+        if goal == "default":
+            edge["goal"] = {}
+            edge["goal"]["target_pose"] = "$node.pose"
+        else:
+            edge["goal"] = goal
+            
+        edge["fail_policy"] = fail_policy
+        
+        if restrictions is None:
+            edge["restrictions"] = {}
+            edge["restrictions"]["robot_type"] = ""
+        else:
+            edge["restrictions"] = restrictions
+        
+        for node in self.tmap2["nodes"]:
+            if node["node"]["name"] == origin:
+                node["node"]["edges"].append(edge)
+                
+                
+    def remove_node(self, name):
+        
+        rospy.loginfo("Removing Node: ".format(name))
+        
+        num_available = 0
+        for node in self.tmap2["nodes"]:
+            if name == node["node"]["name"]:
+                num_available+=1
+                #self.tmap2["nodes"].remove(node)
+        
+        
+    def set_action_type(self, action):
+        
+        package = action + "_msgs"
+        items = [item[0].upper() + item[1:] for item in action.split("_")]
+        goal_type = "".join(items) + "Goal"
+        action_type = package + "/" + goal_type
+            
+        return action_type
         
     
     def map_check(self):
@@ -369,10 +497,8 @@ class map_manager_2(object):
         
         # check for duplicate node names
         print "\n"
-        names = [node["node"]["name"] for node in self.tmap2["nodes"]]
-        names.sort()
-        for name in set(names):
-            n = names.count(name)
+        for name in set(self.names):
+            n = self.names.count(name)
             if n > 1:
                 rospy.logwarn("{} instances of node with name '{}' found".format(n, name))
                 self.map_ok = False
@@ -400,7 +526,7 @@ class map_manager_2(object):
             origin = edge_nodes[0]
             destination = edge_nodes[1]
  
-            if destination not in names:
+            if destination not in self.names:
                 rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
                 self.map_ok = False
 #########################################################################################################

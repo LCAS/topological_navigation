@@ -1,10 +1,13 @@
+#!/usr/bin/env python
 import rospy
 import threading
+import numpy as np
 from topological_localization.particle_filter import TopologicalParticleFilter
 from topological_localization.prediction_model import PredictionModel
-from topological_localization.srv import LocalizeAgent, LocalizeAgentResponse, StopLocalize, StopLocalizeResponse
+from topological_localization.srv import LocalizeAgent, LocalizeAgentRequest, LocalizeAgentResponse, StopLocalize, StopLocalizeRequest, StopLocalizeResponse
 from topological_localization.msg import ProbabilityDistributionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from visualization_msgs.msg import Marker, MarkerArray
 from strands_navigation_msgs.msg import TopologicalMap
 from std_msgs.msg import String
 
@@ -53,7 +56,7 @@ class TopologicalLocalization():
             return LocalizeAgentResponse(False)
 
         # Initialize the prediction model
-        if request.prediction_model == LocalizeAgent.PRED_CTMT:
+        if request.prediction_model == LocalizeAgentRequest.PRED_CTMC:
             pm = PredictionModel(
                 pred_type=PredictionModel.CTMC,
                 node_coords=self.node_coords,
@@ -61,7 +64,7 @@ class TopologicalLocalization():
                 node_distances=self.node_distances,
                 connected_nodes=self.connected_nodes
             )
-        elif request.prediction_model == LocalizeAgent.PRED_IDENTITY:
+        elif request.prediction_model == LocalizeAgentRequest.PRED_IDENTITY:
             pm = PredictionModel(
                 pred_type=PredictionModel.IDENTITY
             )
@@ -110,14 +113,14 @@ class TopologicalLocalization():
             ptcsarrmsg.markers.append(ptcmkrmsg)
 
         # get the how to spread the particles initially
-        if request.initial_spread_policy == LocalizeAgent.CLOSEST_NODE:
-            sigma = -1
-        elif request.initial_spread_policy == LocalizeAgent.SPREAD_RADIUS:
-            sigma = request.initial_spread_radius
-        elif request.initial_spread_policy == LocalizeAgent.SPREAD_UNIFORM:
-            sigma = np.inf
-        else:
-            sigma = -1
+        # if request.initial_spread_policy == LocalizeAgentRequest.CLOSEST_NODE:
+        #     sigma = -1
+        # elif request.initial_spread_policy == LocalizeAgentRequest.SPREAD_RADIUS:
+        #     sigma = request.initial_spread_radius
+        # elif request.initial_spread_policy == LocalizeAgentRequest.SPREAD_UNIFORM:
+        #     sigma = np.inf
+        # else:
+        #     sigma = -1
 
         # Initialize a new instance of particle_filter
         pf = TopologicalParticleFilter(
@@ -127,17 +130,18 @@ class TopologicalLocalization():
             node_coords=self.node_coords,
             node_distances=self.node_distances,
             connected_nodes=self.connected_nodes,
-            node_diffs2D=self.node_diffs2D
+            node_diffs2D=self.node_diffs2D,
+            node_names=self.node_names
         )
 
         # function to publish current node and particles distribution
         def __publish(node, particles):
             nodes, counts = np.unique(particles, return_counts=True)
 
-            node_names = [self.node_names[node] for node in nodes]
+            node_names = [self.node_names[_node] for _node in nodes]
             probs = counts / np.sum(counts)
             
-            strmsg.data = node
+            strmsg.data = self.node_names[node]
             pdmsg.header.stamp = rospy.get_rostime()
             pdmsg.nodes = node_names
             pdmsg.probabilities = probs
@@ -166,18 +170,20 @@ class TopologicalLocalization():
                 msg.pose.pose.position.y,
                 msg.pose.covariance[0], # variance of x
                 msg.pose.covariance[7], # variance of y
-                msg.header.stamp.to_sec()
+                (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
+                    msg.header.stamp.to_sec() > 0]
             )
             __publish(node, particles)
 
 
         # send probability dist observation to particle filter
         def __prob_dist_obs_cb(msg):
-            nodes = [self.node_names.index(nname) for nname in msg.nodes]
+            nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
             node, particles = pf.receive_prob_dist_obs(
                 nodes, 
                 msg.probabilities,
-                msg.header.stamp.to_sec()
+                (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
+                    msg.header.stamp.to_sec() > 0]
             )
             __publish(node, particles)
 
@@ -192,12 +198,13 @@ class TopologicalLocalization():
         if request.do_prediction:
             # threaded function that performs predictions at a constant rate
             def __prediction_loop():
-                rate = rospy.Rate(request.prediction_rate())
+                rate = rospy.Rate(request.prediction_rate)
                 while not rospy.is_shutdown():
                     node, particles = pf.predict(
                         timestamp_secs=rospy.get_rostime().to_sec()
                     )
-                    __publish(node, particles)
+                    if not (node is None or particles is None): 
+                        __publish(node, particles)
                     
                     rate.sleep()
             
@@ -229,14 +236,17 @@ class TopologicalLocalization():
         self.connected_nodes = []
         for i, _ in enumerate(self.node_names):
             self.node_diffs2D.append(self.node_coords - self.node_coords[i])
-            self.node_distances.append(
-                np.sqrt(np.sum(self.node_diffs2D[i] ** 2, axis=1)))
-            self.connected_nodes.append([np.where(self.node_names == edge.node)[
-                                        0][0] for edge in self.topo_map.nodes[i].edges])
+            self.connected_nodes.append(np.array([np.where(self.node_names == edge.node)[
+                                        0][0] for edge in self.topo_map.nodes[i].edges]))
 
         self.node_diffs2D = np.array(self.node_diffs2D)
-        self.node_distances = np.array(self.node_distances)
         self.connected_nodes = np.array(self.connected_nodes)
+        
+        self.node_distances = np.sqrt(np.sum(self.node_diffs2D ** 2, axis=2))
+        
+        # print("self.node_diffs2D", self.node_diffs2D.shape)
+        # print("self.node_distances", self.node_distances.shape)
+        # print("self.connected_nodes", self.connected_nodes.shape)
 
     def close(self):
         # TODO stop all the threads here

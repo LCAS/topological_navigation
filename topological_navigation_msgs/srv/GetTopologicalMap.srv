@@ -1,4 +1,0 @@
-string filename   # map filename
----
-bool success
-string map

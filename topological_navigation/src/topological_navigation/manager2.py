@@ -62,12 +62,15 @@ class map_manager_2(object):
             self.tmap2["pointset"] = self.pointset
             self.tmap2["transformation"] = self.transformation
             self.tmap2["meta"] = {}
-            self.tmap2["meta"]["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            self.tmap2["meta"]["last_updated"] = self.get_time()
             self.tmap2["nodes"] = []
 
-        self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)            
+        self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
+        self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
+        self.names = self.create_list_of_nodes()
+        
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
-        self.update()
+        self.broadcast_transform()
         
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
@@ -82,7 +85,10 @@ class map_manager_2(object):
         self.add_node_srv=rospy.Service('/topological_map_manager2/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
         self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
         self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
-
+        
+        
+    def get_time(self):
+        return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 
     def load_map(self, filename):
@@ -111,10 +117,12 @@ class map_manager_2(object):
         self.map_check()
         
         
-    def update(self):
+    def update(self, update_time=True):
+        
+        if update_time:
+            self.tmap2["meta"]["last_updated"] = self.get_time()
         
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
-        self.broadcast_transform()
         self.names = self.create_list_of_nodes()
         
         
@@ -135,11 +143,10 @@ class map_manager_2(object):
         
     def create_list_of_nodes(self):
         
+        names = []
         if "nodes" in self.tmap2:
             names = [node["node"]["name"] for node in self.tmap2["nodes"]]
             names.sort()
-        else:
-            names = []
             
         return names
         
@@ -160,7 +167,8 @@ class map_manager_2(object):
         Changes the topological map
         """
         self.load_map(req.filename)        
-        self.update()
+        self.update(False)
+        self.broadcast_transform()
         
         success = True
         if not self.tmap2:
@@ -296,9 +304,9 @@ class map_manager_2(object):
                         
         self.add_node(name, pose)
         
-        for name_close in close_nodes:
-            self.add_edge(name, name_close, "move_base", "")
-            self.add_edge(name_close, name, "move_base", "")
+        for close_node in close_nodes:
+            self.add_edge(name, close_node, "move_base", "")
+            self.add_edge(close_node, name, "move_base", "")
 
         self.update()
         self.write_topological_map(self.filename)
@@ -373,7 +381,7 @@ class map_manager_2(object):
         current_angle = start_angle
         points = []
         for i in range(0, number):
-            points.append((math.cos(current_angle) * radius, math.sin(current_angle) * radius))
+            points.append({"x": math.cos(current_angle) * radius, "y": math.sin(current_angle) * radius})
             current_angle += separation_angle
 
         return points
@@ -410,12 +418,12 @@ class map_manager_2(object):
             else:
                 eid=edge_id
                 
-            self.add_edge_to_node(origin, destination, action, edge_id)
+            self.add_edge_to_node(origin, destination, action, eid)
             self.update()
-            self.write_topological_map()
+            self.write_topological_map(self.filename)
             return True
         else:
-            rospy.logerr("Error adding edge to node {}. {} instances of node with name {}".format(origin, num_available, origin))
+            rospy.logerr("Error adding edge to node {}. {} instances of node with name {} found".format(origin, num_available, origin))
             return False
         
         
@@ -464,6 +472,11 @@ class map_manager_2(object):
                 node["node"]["edges"].append(edge)
                 
                 
+    def remove_node_cb(self, req):
+        response = self.remove_node(req.name)
+        return response
+                
+                
     def remove_node(self, name):
         
         rospy.loginfo("Removing Node: ".format(name))
@@ -497,8 +510,9 @@ class map_manager_2(object):
         
         # check for duplicate node names
         print "\n"
-        for name in set(self.names):
-            n = self.names.count(name)
+        names = self.create_list_of_nodes()
+        for name in set(names):
+            n = names.count(name)
             if n > 1:
                 rospy.logwarn("{} instances of node with name '{}' found".format(n, name))
                 self.map_ok = False
@@ -526,7 +540,7 @@ class map_manager_2(object):
             origin = edge_nodes[0]
             destination = edge_nodes[1]
  
-            if destination not in self.names:
+            if destination not in names:
                 rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
                 self.map_ok = False
 #########################################################################################################

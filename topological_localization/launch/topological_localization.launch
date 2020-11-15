@@ -1,0 +1,4 @@
+ <launch>
+        <node pkg="topological_localization" name="topological_localization" type="localization_node.py" output="screen">
+        </node>
+</launch>

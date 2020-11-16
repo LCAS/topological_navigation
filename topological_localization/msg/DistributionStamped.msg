@@ -1,3 +1,3 @@
 std_msgs/Header header
 string[] nodes
-float64[] probabilities
+float64[] values

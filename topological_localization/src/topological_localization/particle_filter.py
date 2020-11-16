@@ -97,7 +97,8 @@ class TopologicalParticleFilter():
         self.last_pose = np.array([obs_x, obs_y])
         self.last_ts = timestamp_secs
 
-    def _initialize_wt_prob_dist(self, nodes, probs, timestamp_secs):
+    def _initialize_wt_likelihood(self, nodes, likelihood, timestamp_secs):
+        probs = self._normalize(np.array(likelihood))
         self.particles = np.random.choice(nodes, self.n_of_ptcl, p=probs)
 
         self.prev_particles = np.copy(self.particles)
@@ -136,28 +137,26 @@ class TopologicalParticleFilter():
 
         prob_dist = self._normal_pdf(obs_x, obs_y, cov_x, cov_y, nodes)
 
-        D = np.zeros((self.n_of_ptcl))
+        self.W = np.zeros((self.n_of_ptcl))
         for _, (node, indices) in enumerate(zip(nodes, indices_groups)):
-            D[indices] = prob_dist[nodes.index(node)]
+            self.W[indices] = prob_dist[nodes.index(node)]
 
-        self.W = self._normalize(D)
         # print("Weights: {}".format(zip(self.node_names[nodes], prob_dist)))
         # TODO if W doesn't sum up to 1 then re-initialize the particles with this obs
         # it measn the particles are disjoint from this obs
 
-    # weighting wih a given prob distribution
-    def _weight_prob_dist(self, nodes_dist, prob_dist):
+    # weighting wih a given likelihood distribution
+    def _weight_likelihood(self, nodes_dist, likelihood):
         idx_sort = np.argsort(self.predicted_particles)
         nodes, indices_start, _ = np.unique(
             self.predicted_particles[idx_sort], return_index=True, return_counts=True)
         indices_groups = np.split(idx_sort, indices_start[1:])
 
-        D = np.zeros((self.n_of_ptcl))
+        self.W = np.zeros((self.n_of_ptcl))
         for _, (node, indices) in enumerate(zip(nodes, indices_groups)):
             if node in nodes_dist:
-                D[indices] = prob_dist[nodes_dist.index(node)]
+                self.W[indices] = likelihood[nodes_dist.index(node)]
 
-        self.W = self._normalize(D)
         # TODO if W doesn't sum up to 1 then re-initialize the particles with this obs
         # it measn the particles are disjoint from this obs
 
@@ -179,8 +178,9 @@ class TopologicalParticleFilter():
         # pass
         self.prev_particles = np.copy(self.particles)
         if use_weight:
+            prob = self._normalize(self.W)
             self.particles = np.random.choice(
-                self.predicted_particles, self.n_of_ptcl, p=self.W)
+                self.predicted_particles, self.n_of_ptcl, p=prob)
         else:
             self.particles = np.copy(self.predicted_particles)
 
@@ -240,12 +240,12 @@ class TopologicalParticleFilter():
 
         return node, particles
 
-    def receive_prob_dist_obs(self, nodes, probabilities, timestamp_secs):
-        """Performs a full bayesian optimization step of the particles by integrating the new probability distribution observation"""
+    def receive_likelihood_obs(self, nodes, likelihood, timestamp_secs):
+        """Performs a full bayesian optimization step of the particles by integrating the new likelihood distribution observation"""
         self.lock.acquire()
         
         if self.last_estimate is None:  # never received an observation before
-            self._initialize_wt_prob_dist(nodes, probabilities, timestamp_secs)
+            self._initialize_wt_likelihood(nodes, likelihood, timestamp_secs)
             
             use_weight = False
         else:
@@ -253,7 +253,7 @@ class TopologicalParticleFilter():
 
             self._predict(timestamp_secs)
 
-            self._weight_prob_dist(nodes, probabilities)
+            self._weight_likelihood(nodes, likelihood)
 
             use_weight = True
 

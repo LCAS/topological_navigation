@@ -5,7 +5,7 @@ import numpy as np
 from topological_localization.particle_filter import TopologicalParticleFilter
 from topological_localization.prediction_model import PredictionModel
 from topological_localization.srv import LocalizeAgent, LocalizeAgentRequest, LocalizeAgentResponse, StopLocalize, StopLocalizeRequest, StopLocalizeResponse
-from topological_localization.msg import ProbabilityDistributionStamped
+from topological_localization.msg import DistributionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from strands_navigation_msgs.msg import TopologicalMap
@@ -100,10 +100,10 @@ class TopologicalLocalization():
 
         # Initialize publishers and messages
         cn_pub = rospy.Publisher("{}/current_node".format(name), String, queue_size=10, latch=True)
-        pd_pub = rospy.Publisher("{}/current_prob_dist".format(name), ProbabilityDistributionStamped, queue_size=10, latch=True)
+        pd_pub = rospy.Publisher("{}/current_prob_dist".format(name), DistributionStamped, queue_size=10, latch=True)
         self.res_publishers.append((cn_pub, pd_pub))
         strmsg = String()
-        pdmsg = ProbabilityDistributionStamped()
+        pdmsg = DistributionStamped()
         cnviz_pub = rospy.Publisher("{}/current_node_viz".format(name), Marker, queue_size=10)
         parviz_pub = rospy.Publisher("{}/particles_viz".format(name), MarkerArray, queue_size=10)
         self.viz_publishers.append((cnviz_pub, parviz_pub))
@@ -169,7 +169,7 @@ class TopologicalLocalization():
             strmsg.data = self.node_names[node]
             pdmsg.header.stamp = rospy.get_rostime()
             pdmsg.nodes = node_names
-            pdmsg.probabilities = probs
+            pdmsg.values = probs
 
             cn_pub.publish(strmsg)
             pd_pub.publish(pdmsg)
@@ -201,12 +201,12 @@ class TopologicalLocalization():
             __publish(node, particles)
 
 
-        # send probability dist observation to particle filter
-        def __prob_dist_obs_cb(msg):
+        # send likelihood observation to particle filter
+        def __likelihood_obs_cb(msg):
             nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
-            node, particles = pf.receive_prob_dist_obs(
+            node, particles = pf.receive_likelihood_obs(
                 nodes, 
-                msg.probabilities,
+                msg.values,
                 (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
                     msg.header.stamp.to_sec() > 0]
             )
@@ -215,8 +215,8 @@ class TopologicalLocalization():
         # subscribe to topics receiving observation
         self.obs_subscribers.append((
             rospy.Subscriber("{}/pose_obs".format(name), PoseWithCovarianceStamped, __pose_obs_cb),
-            rospy.Subscriber("{}/prob_dist_obs".format(name),
-                             ProbabilityDistributionStamped, __prob_dist_obs_cb)
+            rospy.Subscriber("{}/likelihood_obs".format(name),
+                             DistributionStamped, __likelihood_obs_cb)
         ))
         
         thr = None

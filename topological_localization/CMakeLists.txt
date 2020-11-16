@@ -42,7 +42,7 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   ProbabilityDistributionStamped.msg
+   DistributionStamped.msg
 #   Message2.msg
  )
 

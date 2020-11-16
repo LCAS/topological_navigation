@@ -76,8 +76,8 @@ To be published to topic `/robot_1/pose_obs`. The message has to provide a pose 
    0  ,   0  ,  0, 0, 0, 0]
 ```
 
-### probability distribution
-To be published to topic `/robot_1/prob_dist_obs`. The message has to contain a list of nodes names with a list of probabilties, one for each node. The message does not need to contain all the nodes in the map, the one that have a probability non-zero are sufficient.
+### likelihood
+To be published to topic `/robot_1/likelihood_obs`. The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient.
 
 ## Getting localization result
 

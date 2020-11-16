@@ -87,6 +87,7 @@ class map_manager_2(object):
         self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
         self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
         self.add_content_to_node_srv=rospy.Service('/topological_map_manager2/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
+        self.update_node_name_srv = rospy.Service("/topological_map_manager2/update_node_name", strands_navigation_msgs.srv.UpdateNodeName, self.update_node_name_cb)
         
         
     def get_time(self):
@@ -589,8 +590,42 @@ class map_manager_2(object):
             self.write_topological_map(self.filename)
 
         return succeded, meta_out
-        
     
+    
+    def update_node_name_cb(self, req):
+        return self.update_node_name(req.node_name, req.new_name)
+      
+
+    def update_node_name(self, node_name, new_name):
+        if new_name in self.names:
+            return False, "node with name {0} already exists".format(new_name)
+
+        num_available = 0
+        for i, node in enumerate(self.tmap2["nodes"]):
+            if node["node"]["name"] == node_name:
+                num_available+=1
+                index = i
+                
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            the_node["meta"]["node"] = new_name
+            the_node["node"]["name"] = new_name
+            self.tmap2["nodes"][index] = the_node
+            
+            # update all the edges which involve the renamed node
+            for node in self.tmap2["nodes"]:
+                for edge in node["node"]["edges"]:
+                    if edge["node"] == node_name:
+                        edge["node"] = new_name
+                        edge["edge_id"] = edge["edge_id"].replace(node_name, new_name)
+             
+            self.update()
+            self.write_topological_map(self.filename)
+            return True, ""
+        else:
+            return False, "Multiple nodes with name {} found, or it does not exist".format(node_name)
+                        
+
     def map_check(self):
         
         self.map_ok = True

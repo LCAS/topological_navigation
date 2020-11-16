@@ -5,7 +5,7 @@ This package provides support for localizing agents in a topological map, based 
 
 It uses particle filter for performing state estimation. It uses continuous-time Hidden Markov Models as the prediction model.
 
-The code expoits the fact that generally a topological map nodes are sparsely connected - particles can only jump from a node to another if they are connected through an edge - to perform the computation efficiently.  
+The code exploits the fact that generally a topological map nodes are sparsely connected - particles can only jump from a node to another if they are connected through an edge - to perform the computation efficiently.  
 
 # How to use
 

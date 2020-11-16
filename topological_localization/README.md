@@ -5,7 +5,7 @@ This package provides support for localizing agents in a topological map, based 
 
 It uses particle filter for performing state estimation. It uses continuous-time Hidden Markov Models as the prediction model.
 
-The code expoits the fact that generally a topological map nodes are sparsely connected - particles can only jump from a node to another if they are connected through an edge - to perform the computation efficiently.  
+The code exploits the fact that generally a topological map nodes are sparsely connected - particles can only jump from a node to another if they are connected through an edge - to perform the computation efficiently.  
 
 # How to use
 
@@ -29,13 +29,13 @@ The srv is:
 
 ```
 # constants for selecting the policy on how to spread the particles when the localization starts 
-uint8 CLOSEST_NODE=0
-uint8 SPREAD_UNIFORM=1
-uint8 FOLLOW_OBS=2
+uint8 CLOSEST_NODE=0       # all particles to closest node 
+uint8 SPREAD_UNIFORM=1     # particles spread uniformly around all ndoes
+uint8 FOLLOW_OBS=2         # use the distribution of the first observation
 
 # constants for the prediction model to use
-uint8 PRED_CTMC=0       # continuous-time hidden markov model
-uint8 PRED_IDENTITY=1   # each particle remains in the same node it was previously
+uint8 PRED_CTMC=0          # continuous-time hidden markov model
+uint8 PRED_IDENTITY=1      # each particle remains in the same node it was previously
 
 string name                         # identifier of the agent to track
 uint64 n_particles                  # number of particle to use 

@@ -16,16 +16,12 @@ class TopologicalLocalization():
     def __init__(self):
         # agents currently tracking
         self.agents = []
-        # request info for each agent
-        self.requests = []
-        # particles filters for each agent
-        self.particle_filters = []
         # observation subscribers for each agent
         self.obs_subscribers = []
         # # publishers localization result for each agent
-        # self.res_publishers = []
+        self.res_publishers = []
         # # publishers viz result for each agent
-        # self.viz_publishers = []
+        self.viz_publishers = []
         # thread that loop predictions at fixed rate for each agent
         self.prediction_threads = []
 
@@ -36,6 +32,12 @@ class TopologicalLocalization():
         self.connected_nodes = []
         self.node_names = []
         self.node_coords = []
+
+        # contains a list of threading.Event for stopping the localization of each agent
+        self.stopping_events = []
+
+        # to avoid inconsistencies when registering/unregistering agents concurrently
+        self.internal_lock = threading.Lock()
 
         # declare services
         rospy.Service("~localize_agent", LocalizeAgent, self._localize_agent_handler)
@@ -50,9 +52,14 @@ class TopologicalLocalization():
         rospy.loginfo("DONE")
 
     def _localize_agent_handler(self, request):
+        # lock resources
         rospy.loginfo("Received request to localize new agent {}".format(request.name))
+        self.internal_lock.acquire()
+
         if request.name in self.agents:
             rospy.logwarn("Agent {} already being localized".format(request.name))
+            # release resources
+            self.internal_lock.release()
             return LocalizeAgentResponse(False)
 
         # Initialize the prediction model
@@ -71,17 +78,19 @@ class TopologicalLocalization():
         else:
             rospy.logerr(
                 "Prediction model {} unknown".format(request.prediction_model))
+            # release resources
+            self.internal_lock.release()
             return LocalizeAgentResponse(False)
 
         # Initialize publishers and messages
         cn_pub = rospy.Publisher("{}/current_node".format(request.name), String, queue_size=10, latch=True)
-        pd_pub = rospy.Publisher("{}/prob_dist_topoloc".format(request.name), ProbabilityDistributionStamped, queue_size=10, latch=True)
-        # self.res_publishers.append((cn_pub, pd_pub))
+        pd_pub = rospy.Publisher("{}/current_prob_dist".format(request.name), ProbabilityDistributionStamped, queue_size=10, latch=True)
+        self.res_publishers.append((cn_pub, pd_pub))
         strmsg = String()
         pdmsg = ProbabilityDistributionStamped()
         cnviz_pub = rospy.Publisher("{}/current_node_viz".format(request.name), Marker, queue_size=10)
         parviz_pub = rospy.Publisher("{}/particles_viz".format(request.name), MarkerArray, queue_size=10)
-        # self.viz_publishers.append((cnviz_pub, parviz_pub))
+        self.viz_publishers.append((cnviz_pub, parviz_pub))
         nodemkrmsg = Marker()
         nodemkrmsg.header.frame_id = "/map"
         nodemkrmsg.type = nodemkrmsg.SPHERE
@@ -195,11 +204,13 @@ class TopologicalLocalization():
         ))
         
         thr = None
+        stop_event = None
         if request.do_prediction:
             # threaded function that performs predictions at a constant rate
+            stop_event = threading.Event()
             def __prediction_loop():
                 rate = rospy.Rate(request.prediction_rate)
-                while not rospy.is_shutdown():
+                while not stop_event.is_set():
                     node, particles = pf.predict(
                         timestamp_secs=rospy.get_rostime().to_sec()
                     )
@@ -211,16 +222,50 @@ class TopologicalLocalization():
             thr = threading.Thread(target=__prediction_loop)
             thr.start()
 
+        self.stopping_events.append(stop_event)
         self.prediction_threads.append(thr)
         self.agents.append(request.name)
-        self.particle_filters.append(pf)
-        self.requests.append(request)
+
+        # release resources
+        self.internal_lock.release()
+        rospy.loginfo("DONE")
 
         return LocalizeAgentResponse(True)
 
     def _stop_localize_handler(self, request):
-        # TODO stop pfs
-        return StopLocalizeResponse(False)
+        rospy.loginfo("Unregistering agent {} for localization".format(request.name))
+        self.internal_lock.acquire()
+        if request.name in self.agents:
+            agent_idx = self.agents.index(request.name)
+            # stop prediction loop
+            if self.stopping_events[agent_idx] is not None:
+                self.stopping_events[agent_idx].set()
+            if self.prediction_threads[agent_idx] is not None:
+                self.prediction_threads[agent_idx].join()
+
+            # unregister topic pubs/subs
+            for sub in self.obs_subscribers[agent_idx]:
+                sub.unregister()
+            for pub in self.res_publishers[agent_idx]:
+                pub.unregister()
+            for pub in self.viz_publishers[agent_idx]:
+                pub.unregister()
+
+            # cleanup all the corresponding variables
+            del self.stopping_events[agent_idx]
+            del self.prediction_threads[agent_idx]
+            del self.obs_subscribers[agent_idx]
+            del self.res_publishers[agent_idx]
+            del self.viz_publishers[agent_idx]
+            del self.agents[agent_idx]
+
+            self.internal_lock.release()
+            rospy.loginfo("DONE")
+            return StopLocalizeResponse(True)
+        else:
+            rospy.logwarn("The agent {} is already not being localized.".format(request.name))
+            self.internal_lock.release()
+            return StopLocalizeResponse(False)
 
     def _topo_map_cb(self, msg):
         """This function receives the Topological Map"""
@@ -249,8 +294,9 @@ class TopologicalLocalization():
         # print("self.connected_nodes", self.connected_nodes.shape)
 
     def close(self):
-        # TODO stop all the threads here
-        for thr in self.prediction_threads:
+        # stop all the threads
+        for thr, stop_event in zip(self.prediction_threads, self.stopping_events):
+            stop_event.set()
             thr.join()
 
 

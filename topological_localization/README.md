@@ -81,7 +81,7 @@ To be published to topic `/robot_1/prob_dist_obs`. The message has to contain a 
 
 ## Getting localization result
 
-The node position for an agent - e.g. `robot_1` - that is being localized is published latch to topic `/robot_1/current_node`. The package also provides the probability distribution of the agent location published latch to topic `/robot_1/prob_dist_topoloc` as a list of nodes and with their corresponding probability.
+The node position for an agent - e.g. `robot_1` - that is being localized is published latch to topic `/robot_1/current_node`. The package also provides the probability distribution of the agent location published latch to topic `/robot_1/current_prob_dist` as a list of nodes and with their corresponding probability.
 
 ## Visualizations
 
@@ -93,5 +93,6 @@ In order to visualize the localization result - for agent `robot_1` for example 
 - [ ] implement use of `prediction_speed_decay`, now always constant speed
 - [ ] implement use of `initial_spread_policy`, now just uses the first observation
 - [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
-- [ ] correctly stop the threads on shutdown request
+- [x] correctly stop the threads on shutdown request
+- [ ] default particles number if not provided
 - [ ] allow to use different state estimation methods than just particle filters. A simple one is needed for localizing robots from the metric localization, i.e. replace this https://github.com/LCAS/topological_navigation/blob/master/topological_navigation/scripts/localisation.py .

@@ -85,6 +85,7 @@ class map_manager_2(object):
         self.add_node_srv=rospy.Service('/topological_map_manager2/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
         self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
         self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
+        self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
         
         
     def get_time(self):
@@ -262,6 +263,8 @@ class map_manager_2(object):
         
     
     def write_topological_map(self, filename):
+        
+        rospy.loginfo("Writing map to {}".format(filename))
         
         nodes = copy.deepcopy(self.tmap2["nodes"])
         nodes.sort(key=lambda node: node["node"]["name"])
@@ -477,17 +480,62 @@ class map_manager_2(object):
         return response
                 
                 
-    def remove_node(self, name):
+    def remove_node(self, node_name):
         
-        rospy.loginfo("Removing Node: ".format(name))
+        rospy.loginfo("Removing Node: ".format(node_name))
+        
+        num_available = 0
+        for i, node in enumerate(self.tmap2["nodes"]):
+            if node_name == node["node"]["name"]:
+                num_available+=1
+                rm_id = i
+                
+        if num_available == 1:
+            del self.tmap2["nodes"][rm_id]
+            
+            for node in self.tmap2["nodes"]:
+                for edge in node["node"]["edges"]:
+                    if edge["node"] == node_name:
+                        print "removing edge {}".format(edge["edge_id"])
+                        self.remove_edge(edge["edge_id"], False)
+            
+            self.update()
+            self.write_topological_map(self.filename)            
+            return True
+        else:
+            rospy.logerr("Error removing node {}. {} instances of node with name {} found".format(node_name, num_available, node_name))
+            return False
+        
+        
+    def remove_edge_cb(self, req):
+        return self.remove_edge(req.edge_id)
+      
+
+    def remove_edge(self, edge_name, update=True):
+        
+        rospy.loginfo("Removing Edge: ".format(edge_name))
         
         num_available = 0
         for node in self.tmap2["nodes"]:
-            if name == node["node"]["name"]:
-                num_available+=1
-                #self.tmap2["nodes"].remove(node)
+            for edge in node["node"]["edges"]:
+                if edge["edge_id"] == edge_name:
+                    num_available+=1
+
+        if num_available >= 1:
+            for node in self.tmap2["nodes"]:
+                edges = copy.deepcopy(node["node"]["edges"])
+                edges_new = list(filter(lambda edge: edge["edge_id"] != edge_name, edges))
+                node["node"]["edges"] = edges_new
+                
+            if update:
+                self.update()
+                self.write_topological_map(self.filename)
+            return True
+        else:
+            rospy.logerr("No edges with id {} found".format(edge_name))
+            return False
         
-        
+
     def set_action_type(self, action):
         
         package = action + "_msgs"

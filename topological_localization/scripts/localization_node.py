@@ -163,13 +163,13 @@ class TopologicalLocalization():
         def __publish(node, particles):
             nodes, counts = np.unique(particles, return_counts=True)
 
-            node_names = [self.node_names[_node] for _node in nodes]
-            probs = counts / np.sum(counts)
+            probs = np.zeros((self.node_names.shape[0]))
+            probs[nodes] = counts.astype(float) / np.sum(counts)
             
             strmsg.data = self.node_names[node]
             pdmsg.header.stamp = rospy.get_rostime()
-            pdmsg.nodes = node_names
-            pdmsg.values = probs
+            pdmsg.nodes = self.node_names.tolist()
+            pdmsg.values = np.copy(probs).tolist()
 
             cn_pub.publish(strmsg)
             pd_pub.publish(pdmsg)

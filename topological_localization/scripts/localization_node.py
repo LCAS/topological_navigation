@@ -56,14 +56,29 @@ class TopologicalLocalization():
         rospy.loginfo("Received request to localize new agent {}".format(request.name))
         self.internal_lock.acquire()
 
-        if request.name in self.agents:
-            rospy.logwarn("Agent {} already being localized".format(request.name))
+        ## set default values ##
+        # default name is unknown if requested is ''
+        name = (request.name, 'unknown')[request.name == '']
+        # default particles number is 300 if requested is 0
+        n_particles = (request.n_particles, 300)[request.n_particles <= 0]
+        initial_spread_policy = request.initial_spread_policy
+        prediction_model = request.prediction_model
+        do_prediction = request.do_prediction
+        # default prediction rate is 0.5 if requested is 0.
+        prediction_rate = (request.prediction_rate, 0.5)[
+            request.prediction_rate <= 0.]
+        # default speed decay is 1 if requested is 0
+        prediction_speed_decay = (request.prediction_speed_decay, 1.0)[
+            request.prediction_speed_decay <= 0]
+
+        if name in self.agents:
+            rospy.logwarn("Agent {} already being localized".format(name))
             # release resources
             self.internal_lock.release()
             return LocalizeAgentResponse(False)
 
         # Initialize the prediction model
-        if request.prediction_model == LocalizeAgentRequest.PRED_CTMC:
+        if prediction_model == LocalizeAgentRequest.PRED_CTMC:
             pm = PredictionModel(
                 pred_type=PredictionModel.CTMC,
                 node_coords=self.node_coords,
@@ -71,25 +86,26 @@ class TopologicalLocalization():
                 node_distances=self.node_distances,
                 connected_nodes=self.connected_nodes
             )
-        elif request.prediction_model == LocalizeAgentRequest.PRED_IDENTITY:
+        elif prediction_model == LocalizeAgentRequest.PRED_IDENTITY:
             pm = PredictionModel(
                 pred_type=PredictionModel.IDENTITY
             )
         else:
             rospy.logerr(
-                "Prediction model {} unknown".format(request.prediction_model))
+                "Prediction model {} unknown".format(prediction_model))
             # release resources
             self.internal_lock.release()
             return LocalizeAgentResponse(False)
 
+
         # Initialize publishers and messages
-        cn_pub = rospy.Publisher("{}/current_node".format(request.name), String, queue_size=10, latch=True)
-        pd_pub = rospy.Publisher("{}/current_prob_dist".format(request.name), ProbabilityDistributionStamped, queue_size=10, latch=True)
+        cn_pub = rospy.Publisher("{}/current_node".format(name), String, queue_size=10, latch=True)
+        pd_pub = rospy.Publisher("{}/current_prob_dist".format(name), ProbabilityDistributionStamped, queue_size=10, latch=True)
         self.res_publishers.append((cn_pub, pd_pub))
         strmsg = String()
         pdmsg = ProbabilityDistributionStamped()
-        cnviz_pub = rospy.Publisher("{}/current_node_viz".format(request.name), Marker, queue_size=10)
-        parviz_pub = rospy.Publisher("{}/particles_viz".format(request.name), MarkerArray, queue_size=10)
+        cnviz_pub = rospy.Publisher("{}/current_node_viz".format(name), Marker, queue_size=10)
+        parviz_pub = rospy.Publisher("{}/particles_viz".format(name), MarkerArray, queue_size=10)
         self.viz_publishers.append((cnviz_pub, parviz_pub))
         nodemkrmsg = Marker()
         nodemkrmsg.header.frame_id = "/map"
@@ -105,7 +121,7 @@ class TopologicalLocalization():
         nodemkrmsg.color.b = 1
         nodemkrmsg.id = 0
         ptcsarrmsg = MarkerArray()
-        for i in range(request.n_particles):
+        for i in range(n_particles):
             ptcmkrmsg = Marker()
             ptcmkrmsg.header.frame_id = "/map"
             ptcmkrmsg.type = ptcmkrmsg.SPHERE
@@ -133,9 +149,9 @@ class TopologicalLocalization():
 
         # Initialize a new instance of particle_filter
         pf = TopologicalParticleFilter(
-            num=request.n_particles,
+            num=n_particles,
             prediction_model=pm,
-            prediction_speed_decay=request.prediction_speed_decay,
+            prediction_speed_decay=prediction_speed_decay,
             node_coords=self.node_coords,
             node_distances=self.node_distances,
             connected_nodes=self.connected_nodes,
@@ -198,18 +214,18 @@ class TopologicalLocalization():
 
         # subscribe to topics receiving observation
         self.obs_subscribers.append((
-            rospy.Subscriber("{}/pose_obs".format(request.name), PoseWithCovarianceStamped, __pose_obs_cb),
-            rospy.Subscriber("{}/prob_dist_obs".format(request.name),
+            rospy.Subscriber("{}/pose_obs".format(name), PoseWithCovarianceStamped, __pose_obs_cb),
+            rospy.Subscriber("{}/prob_dist_obs".format(name),
                              ProbabilityDistributionStamped, __prob_dist_obs_cb)
         ))
         
         thr = None
         stop_event = None
-        if request.do_prediction:
+        if do_prediction:
             # threaded function that performs predictions at a constant rate
             stop_event = threading.Event()
             def __prediction_loop():
-                rate = rospy.Rate(request.prediction_rate)
+                rate = rospy.Rate(prediction_rate)
                 while not stop_event.is_set():
                     node, particles = pf.predict(
                         timestamp_secs=rospy.get_rostime().to_sec()
@@ -224,10 +240,16 @@ class TopologicalLocalization():
 
         self.stopping_events.append(stop_event)
         self.prediction_threads.append(thr)
-        self.agents.append(request.name)
+        self.agents.append(name)
+
+
+        rospy.loginfo("n_particles:{}, initial_spread_policy:{}, prediction_model:{}, do_prediction:{}, prediction_rate:{}. prediction_speed_decay:{}".format(
+            n_particles, initial_spread_policy, prediction_model, do_prediction, prediction_rate, prediction_speed_decay
+        ))
 
         # release resources
         self.internal_lock.release()
+
         rospy.loginfo("DONE")
 
         return LocalizeAgentResponse(True)
@@ -235,8 +257,10 @@ class TopologicalLocalization():
     def _stop_localize_handler(self, request):
         rospy.loginfo("Unregistering agent {} for localization".format(request.name))
         self.internal_lock.acquire()
-        if request.name in self.agents:
-            agent_idx = self.agents.index(request.name)
+        # default name is unknown if requested is ''
+        name = (request.name, 'unknown')[request.name == '']
+        if name in self.agents:
+            agent_idx = self.agents.index(name)
             # stop prediction loop
             if self.stopping_events[agent_idx] is not None:
                 self.stopping_events[agent_idx].set()
@@ -263,7 +287,7 @@ class TopologicalLocalization():
             rospy.loginfo("DONE")
             return StopLocalizeResponse(True)
         else:
-            rospy.logwarn("The agent {} is already not being localized.".format(request.name))
+            rospy.logwarn("The agent {} is already not being localized.".format(name))
             self.internal_lock.release()
             return StopLocalizeResponse(False)
 

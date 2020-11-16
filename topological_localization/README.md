@@ -94,5 +94,5 @@ In order to visualize the localization result - for agent `robot_1` for example 
 - [ ] implement use of `initial_spread_policy`, now just uses the first observation
 - [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
 - [x] correctly stop the threads on shutdown request
-- [ ] default particles number if not provided
+- [x] default particles number if not provided
 - [ ] allow to use different state estimation methods than just particle filters. A simple one is needed for localizing robots from the metric localization, i.e. replace this https://github.com/LCAS/topological_navigation/blob/master/topological_navigation/scripts/localisation.py .

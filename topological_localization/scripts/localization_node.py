@@ -275,7 +275,7 @@ class TopologicalLocalization():
             for pub in self.viz_publishers[agent_idx]:
                 pub.unregister()
 
-            # cleanup all the corresponding variables
+            # cleanup all the related variables
             del self.stopping_events[agent_idx]
             del self.prediction_threads[agent_idx]
             del self.obs_subscribers[agent_idx]

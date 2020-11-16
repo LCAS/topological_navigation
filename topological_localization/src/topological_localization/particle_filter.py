@@ -69,19 +69,21 @@ class TopologicalParticleFilter():
         probs = np.array(up / np.sqrt((2*np.pi)**2 * det_M))
         return probs.reshape((-1))
 
-    def _update_speed(self, obs_x, obs_y, timestamp_secs):
-        # compute speed w.r.t. last pose obs
-        distance = np.array([obs_x, obs_y]) - self.last_pose
-        time = timestamp_secs - self.last_ts
+    def _update_speed(self, obs_x=None, obs_y=None, timestamp_secs=None):
+        if not (obs_x is None or obs_y is None):
+            # compute speed w.r.t. last pose obs
+            distance = np.array([obs_x, obs_y]) - self.last_pose
+            time = timestamp_secs - self.last_ts
 
-        self.speed_samples.pop(0)
-        self.speed_samples.append(distance / time)
+            self.speed_samples.pop(0)
+            self.speed_samples.append(distance / time)
 
-        self.current_speed = np.average(self.speed_samples, axis=0)
+            self.current_speed = np.average(self.speed_samples, axis=0)
 
-        self.last_pose = np.array([obs_x, obs_y])
-        self.last_ts = timestamp_secs
-
+            self.last_pose = np.array([obs_x, obs_y])
+            self.last_ts = timestamp_secs
+        else:
+            self.current_speed *= self.prediction_speed_decay
 
     def _initialize_wt_pose(self, obs_x, obs_y, cov_x, cov_y, timestamp_secs):
         nodes_prob = self._normal_pdf(obs_x, obs_y, cov_x, cov_y, range(self.node_coords.shape[0]))
@@ -195,6 +197,8 @@ class TopologicalParticleFilter():
             particles = None
             node = None
         else:
+            self._update_speed()
+
             self._predict(timestamp_secs, only_connected=True)
 
             self._estimate_node(use_weight=False)
@@ -245,6 +249,8 @@ class TopologicalParticleFilter():
             
             use_weight = False
         else:
+            self._update_speed()
+
             self._predict(timestamp_secs)
 
             self._weight_prob_dist(nodes, probabilities)

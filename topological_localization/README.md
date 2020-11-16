@@ -90,7 +90,7 @@ In order to visualize the localization result - for agent `robot_1` for example 
 - a `MarkerArray` attached to topic `/robot_1/particles_viz` 
 
 ## TODO
-- [ ] implement use of `prediction_speed_decay`, now always constant speed
+- [x] implement use of `prediction_speed_decay`, now always constant speed
 - [ ] implement use of `initial_spread_policy`, now just uses the first observation
 - [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
 - [x] correctly stop the threads on shutdown request

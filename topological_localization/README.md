@@ -29,13 +29,13 @@ The srv is:
 
 ```
 # constants for selecting the policy on how to spread the particles when the localization starts 
-uint8 CLOSEST_NODE=0
-uint8 SPREAD_UNIFORM=1
-uint8 FOLLOW_OBS=2
+uint8 CLOSEST_NODE=0       # all particles to closest node 
+uint8 SPREAD_UNIFORM=1     # particles spread uniformly around all ndoes
+uint8 FOLLOW_OBS=2         # use the distribution of the first observation
 
 # constants for the prediction model to use
-uint8 PRED_CTMC=0       # continuous-time hidden markov model
-uint8 PRED_IDENTITY=1   # each particle remains in the same node it was previously
+uint8 PRED_CTMC=0          # continuous-time hidden markov model
+uint8 PRED_IDENTITY=1      # each particle remains in the same node it was previously
 
 string name                         # identifier of the agent to track
 uint64 n_particles                  # number of particle to use 

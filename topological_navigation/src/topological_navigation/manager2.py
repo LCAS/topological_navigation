@@ -86,6 +86,7 @@ class map_manager_2(object):
         self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
         self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
         self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
+        self.add_content_to_node_srv=rospy.Service('/topological_map_manager2/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
         
         
     def get_time(self):
@@ -475,6 +476,16 @@ class map_manager_2(object):
                 node["node"]["edges"].append(edge)
                 
                 
+    def set_action_type(self, action):
+        
+        package = action + "_msgs"
+        items = [item[0].upper() + item[1:] for item in action.split("_")]
+        goal_type = "".join(items) + "Goal"
+        action_type = package + "/" + goal_type
+            
+        return action_type
+                
+                
     def remove_node_cb(self, req):
         response = self.remove_node(req.name)
         return response
@@ -534,16 +545,50 @@ class map_manager_2(object):
         else:
             rospy.logerr("No edges with id {} found".format(edge_name))
             return False
+    
+    
+    def add_content_cb(self, req):
         
-
-    def set_action_type(self, action):
+        data = json.loads(req.content)
         
-        package = action + "_msgs"
-        items = [item[0].upper() + item[1:] for item in action.split("_")]
-        goal_type = "".join(items) + "Goal"
-        action_type = package + "/" + goal_type
+        num_available = 0
+        for i, node in enumerate(self.tmap2["nodes"]):
+            if node["meta"]["node"] == req.node and node["node"]["name"] == req.node:
+                num_available+=1
+                index = i
+        
+        if num_available != 1:
+             succeded = False
+             meta_out = None
+             print "there are no nodes or more than 1 with that name"
+        else:
+            succeded = True
+            node_meta = self.tmap2["nodes"][index]["meta"]
+            if "contains" in node_meta:
+                if type(data) is list:
+                    for j in data:
+                        if "category" in j and "name" in j:
+                            node_meta['contains'].append(j)
+                elif type(data) is dict:
+                    if "category" in data and "name" in data:
+                        node_meta["contains"].append(data)
+            else:
+                a=[]
+                if type(data) is list:
+                    for j in data:
+                        if "category" in j and "name" in j:
+                            a.append(j)
+                elif type(data) is dict:
+                    if "category" in data and "name" in data:
+                        a.append(data)
+                node_meta["contains"] = a
+            meta_out = str(node_meta)
             
-        return action_type
+            print "Updating %s--%s" %(self.tmap2["name"], req.node)
+            self.update()
+            self.write_topological_map(self.filename)
+
+        return succeded, meta_out
         
     
     def map_check(self):

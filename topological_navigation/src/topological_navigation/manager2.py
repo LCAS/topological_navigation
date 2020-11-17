@@ -781,6 +781,7 @@ class map_manager_2(object):
                 else:
                     config = {}
                     config["top_vel"] = top_vel
+                    edge["config"] = config
                     
             self.tmap2["nodes"][index] = the_node
             self.update()

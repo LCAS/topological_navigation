@@ -90,6 +90,8 @@ class map_manager_2(object):
         self.update_node_name_srv = rospy.Service("/topological_map_manager2/update_node_name", strands_navigation_msgs.srv.UpdateNodeName, self.update_node_name_cb)
         self.update_node_waypoint_srv = rospy.Service("/topological_map_manager2/update_node_pose", strands_navigation_msgs.srv.AddNode, self.update_node_waypoint_cb)
         self.update_node_tolerance_srv = rospy.Service("/topological_map_manager2/update_node_tolerance", strands_navigation_msgs.srv.UpdateNodeTolerance, self.update_node_tolerance_cb)
+        self.modify_tag_srv=rospy.Service('/topological_map_manager2/modify_node_tags', strands_navigation_msgs.srv.ModifyTag, self.modify_tag_cb)
+        self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         
         
     def get_time(self):
@@ -294,7 +296,7 @@ class map_manager_2(object):
         else:
             name = self.get_new_name()
 
-        rospy.loginfo("Creating Node: ".format(name))
+        rospy.loginfo("Creating Node {}: ".format(name))
 
         if name in self.names:
             rospy.logerr("Node already exists, try another name")
@@ -662,6 +664,60 @@ class map_manager_2(object):
         else:
             rospy.logerr("Error updating the tolerance of node {}. {} instances of node with name {} found".format(name, num_available, name))
             return False, ""
+        
+        
+    def modify_tag_cb(self, msg):
+        
+        succeded = True
+        meta_out = None
+        for node_name in msg.node:
+            available = [i for i, node in enumerate(self.tmap2["nodes"]) if node["node"]["name"] == node_name]
+            
+            for i in available:
+                meta = self.tmap2["nodes"][i]["meta"]
+                if "tag" in meta:
+                    if not msg.tag in meta["tag"]:
+                        continue
+                    else:
+                        tag_ind = meta["tag"].index(msg.tag)
+                        meta["tag"][tag_ind] = msg.new_tag
+                        
+                meta_out = str(meta)
+
+            if len(available) == 0:
+                 succeded = False
+                 
+        if succeded:
+            self.update()
+            self.write_topological_map(self.filename)
+
+        return succeded, meta_out
+    
+    
+    def add_tag_cb(self, msg):
+        """
+        Adds a tag to nodes in the map
+        """
+        succeded = False
+        meta_out = None
+        for j in msg.node:
+            for node in self.tmap2["nodes"]:
+                if j == node["node"]["name"]:
+                    succeded = True
+                    if "tag" in node["meta"]:
+                        if msg.tag not in node["meta"]["tag"]:
+                            node["meta"]["tag"].append(msg.tag)
+                    else:
+                        a = []
+                        a.append(msg.tag)
+                        node["meta"][ "tag"] = a
+                    meta_out = str(node["meta"])
+                    
+        if succeded:
+            self.update()
+            self.write_topological_map(self.filename)
+                    
+        return succeded, meta_out
         
         
     def get_instances_of_node(self, node_name):

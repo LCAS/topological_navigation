@@ -88,6 +88,8 @@ class map_manager_2(object):
         self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
         self.add_content_to_node_srv=rospy.Service('/topological_map_manager2/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
         self.update_node_name_srv = rospy.Service("/topological_map_manager2/update_node_name", strands_navigation_msgs.srv.UpdateNodeName, self.update_node_name_cb)
+        self.update_node_waypoint_srv = rospy.Service("/topological_map_manager2/update_node_pose", strands_navigation_msgs.srv.AddNode, self.update_node_waypoint_cb)
+        self.update_node_tolerance_srv = rospy.Service("/topological_map_manager2/update_node_tolerance", strands_navigation_msgs.srv.UpdateNodeTolerance, self.update_node_tolerance_cb)
         
         
     def get_time(self):
@@ -310,8 +312,8 @@ class map_manager_2(object):
         self.add_node(name, pose)
         
         for close_node in close_nodes:
-            self.add_edge(name, close_node, "move_base", "")
-            self.add_edge(close_node, name, "move_base", "")
+            self.add_edge(name, close_node, "move_base", "", False)
+            self.add_edge(close_node, name, "move_base", "", False)
 
         self.update()
         self.write_topological_map(self.filename)
@@ -399,16 +401,12 @@ class map_manager_2(object):
         return self.add_edge(req.origin, req.destination, req.action, req.edge_id)
     
     
-    def add_edge(self, origin, destination, action, edge_id):
+    def add_edge(self, origin, destination, action, edge_id, update=True):
         
         rospy.loginfo("Adding Edge from {} to {} using {}".format(origin, destination, action))
         
-        num_available =  0
-        for i, node in enumerate(self.tmap2["nodes"]):
-            if node["node"]["name"] == origin:
-                num_available+=1
-                index = i
-                        
+        num_available, index = self.get_instances_of_node(origin)
+        
         if num_available == 1 :
             eids = []
             for edge in self.tmap2["nodes"][index]["node"]["edges"]:
@@ -424,8 +422,10 @@ class map_manager_2(object):
                 eid=edge_id
                 
             self.add_edge_to_node(origin, destination, action, eid)
-            self.update()
-            self.write_topological_map(self.filename)
+            
+            if update:
+                self.update()
+                self.write_topological_map(self.filename)
             return True
         else:
             rospy.logerr("Error adding edge to node {}. {} instances of node with name {} found".format(origin, num_available, origin))
@@ -496,12 +496,8 @@ class map_manager_2(object):
         
         rospy.loginfo("Removing Node: ".format(node_name))
         
-        num_available = 0
-        for i, node in enumerate(self.tmap2["nodes"]):
-            if node_name == node["node"]["name"]:
-                num_available+=1
-                rm_id = i
-                
+        num_available, rm_id = self.get_instances_of_node(node_name)
+        
         if num_available == 1:
             del self.tmap2["nodes"][rm_id]
             
@@ -552,11 +548,7 @@ class map_manager_2(object):
         
         data = json.loads(req.content)
         
-        num_available = 0
-        for i, node in enumerate(self.tmap2["nodes"]):
-            if node["meta"]["node"] == req.node and node["node"]["name"] == req.node:
-                num_available+=1
-                index = i
+        num_available, index = self.get_instances_of_node(req.node)        
         
         if num_available != 1:
              succeded = False
@@ -600,11 +592,7 @@ class map_manager_2(object):
         if new_name in self.names:
             return False, "node with name {0} already exists".format(new_name)
 
-        num_available = 0
-        for i, node in enumerate(self.tmap2["nodes"]):
-            if node["node"]["name"] == node_name:
-                num_available+=1
-                index = i
+        num_available, index = self.get_instances_of_node(node_name)
                 
         if num_available == 1:
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
@@ -624,8 +612,70 @@ class map_manager_2(object):
             return True, ""
         else:
             return False, "Multiple nodes with name {} found, or it does not exist".format(node_name)
-                        
+        
+        
+    def update_node_waypoint_cb(self, req):
+        return self.update_node_waypoint(req.name, req.pose)
+      
 
+    def update_node_waypoint(self, name, pose_msg):
+        
+        num_available, index = self.get_instances_of_node(name)
+        
+        if num_available == 1:
+            pose = message_converter.convert_ros_message_to_dictionary(pose_msg)
+            self.tmap2["nodes"][index]["node"]["pose"] = pose
+        
+            self.update()
+            self.write_topological_map(self.filename)
+            return True
+        else:
+            rospy.logerr("Error updating the pose of node {}. {} instances of node with name {} found".format(name, num_available, name))
+            return False
+        
+        
+    def update_node_tolerance_cb(self, req):
+        return self.update_node_tolerance(req.node_name, req.xy_tolerance, req.yaw_tolerance)
+      
+
+    def update_node_tolerance(self, name, new_xy, new_yaw):
+        
+        num_available, index = self.get_instances_of_node(name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            
+            if "properties" in the_node["node"]:
+                the_node["node"]["properties"]["xy_goal_tolerance"] = new_xy
+                the_node["node"]["properties"]["yaw_goal_tolerance"] = new_yaw
+            else:
+                properties = {}
+                properties["xy_goal_tolerance"] = new_xy
+                properties["yaw_goal_tolerance"] = new_yaw
+                the_node["node"]["properties"] = properties
+                
+            self.tmap2["nodes"][index] = the_node  
+            
+            self.update()
+            self.write_topological_map(self.filename)
+            return True, ""
+        else:
+            rospy.logerr("Error updating the tolerance of node {}. {} instances of node with name {} found".format(name, num_available, name))
+            return False, ""
+        
+        
+    def get_instances_of_node(self, node_name):
+        
+        num_available = 0
+        index = None
+        for i, node in enumerate(self.tmap2["nodes"]):
+            if node["node"]["name"] == node_name:
+                num_available+=1
+                index = i
+                
+        return num_available, index
+                
+        
     def map_check(self):
         
         self.map_ok = True

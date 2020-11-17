@@ -151,6 +151,7 @@ class TopologicalLocalization():
         pf = TopologicalParticleFilter(
             num=n_particles,
             prediction_model=pm,
+            initial_spread_policy=initial_spread_policy,
             prediction_speed_decay=prediction_speed_decay,
             node_coords=self.node_coords,
             node_distances=self.node_distances,
@@ -190,27 +191,42 @@ class TopologicalLocalization():
 
         # send pose observation to particle filter
         def __pose_obs_cb(msg):
-            node, particles = pf.receive_pose_obs(
-                msg.pose.pose.position.x,
-                msg.pose.pose.position.y,
-                msg.pose.covariance[0], # variance of x
-                msg.pose.covariance[7], # variance of y
-                (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                    msg.header.stamp.to_sec() > 0]
-            )
-            __publish(node, particles)
-
+            if np.isfinite(msg.pose.pose.position.x) and \
+                    np.isfinite(msg.pose.pose.position.y) and \
+                    np.isfinite(msg.pose.covariance[0]) and \
+                    np.isfinite(msg.pose.covariance[7]):
+                node, particles = pf.receive_pose_obs(
+                    msg.pose.pose.position.x,
+                    msg.pose.pose.position.y,
+                    msg.pose.covariance[0], # variance of x
+                    msg.pose.covariance[7], # variance of y
+                    (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
+                        msg.header.stamp.to_sec() > 0]
+                )
+                __publish(node, particles)
+            else:
+                rospy.logwarn(
+                    "Received non-admissible pose observation <{}, {}, {}, {}>, discarded".format(msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.covariance[0], msg.pose.covariance[7]))
 
         # send likelihood observation to particle filter
         def __likelihood_obs_cb(msg):
-            nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
-            node, particles = pf.receive_likelihood_obs(
-                nodes, 
-                msg.values,
-                (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                    msg.header.stamp.to_sec() > 0]
-            )
-            __publish(node, particles)
+            if len(msg.nodes) == len(msg.values):
+                nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
+                values = np.array(msg.values)
+                if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
+                    node, particles = pf.receive_likelihood_obs(
+                        nodes, 
+                        msg.values,
+                        (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
+                            msg.header.stamp.to_sec() > 0]
+                    )
+                    __publish(node, particles)
+                else:
+                    rospy.logwarn(
+                        "Received non-admissible likelihood observation {}, discarded".format(msg.values))
+            else:
+                rospy.logwarn("Nodes array and values array sizes do not match {} != {}, discarding likelihood observation".format(
+                    len(msg.nodes), len(msg.values)))
 
         # subscribe to topics receiving observation
         self.obs_subscribers.append((

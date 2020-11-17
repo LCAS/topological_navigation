@@ -2,14 +2,14 @@ import numpy as np
 import threading
 
 class TopologicalParticleFilter():
-    CLOSEST_NODE = 0    # assigned to closest node
-    SPREAD_RADIUS = 1   # normally distributed round first observation
-    SPREAD_UNIFORM = 2  # equally distributed along all nodes
-    FOLLOW_OBS = 3      # use the distribution of the first observation
+    FOLLOW_OBS = 0      # use the distribution of the first observation
+    SPREAD_UNIFORM = 1  # equally distributed along all nodes
+    CLOSEST_NODE = 2    # assigned to closest node
 
-    def __init__(self, num, prediction_model, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names):
+    def __init__(self, num, prediction_model, initial_spread_policy, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names):
         self.n_of_ptcl = num
         self.prediction_model = prediction_model
+        self.initial_spread_policy = initial_spread_policy
         self.node_coords = node_coords
         self.node_distances = node_distances
         self.connected_nodes = connected_nodes

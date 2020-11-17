@@ -92,6 +92,8 @@ class map_manager_2(object):
         self.update_node_tolerance_srv = rospy.Service("/topological_map_manager2/update_node_tolerance", strands_navigation_msgs.srv.UpdateNodeTolerance, self.update_node_tolerance_cb)
         self.modify_tag_srv=rospy.Service('/topological_map_manager2/modify_node_tags', strands_navigation_msgs.srv.ModifyTag, self.modify_tag_cb)
         self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
+        self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
+        self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         
         
     def get_time(self):
@@ -718,6 +720,32 @@ class map_manager_2(object):
             self.write_topological_map(self.filename)
                     
         return succeded, meta_out
+    
+    
+    def rm_tag_cb(self, msg):
+
+        succeded = True
+        for node_name in msg.node:
+            available = [i for i, node in enumerate(self.tmap2["nodes"]) if node["node"]["name"] == node_name]
+            
+            succeded = False
+            meta_out = None
+            for i in available:
+                meta = self.tmap2["nodes"][i]["meta"]
+                if "tag" in meta:
+                    if msg.tag in meta["tag"]:
+                        print 'removing tag'
+                        meta["tag"].remove(msg.tag)
+                        print 'new list of tags'
+                        print meta["tag"]
+                        succeded = True
+                meta_out = str(meta)
+                
+        if succeded:
+            self.update()
+            self.write_topological_map(self.filename)
+
+        return succeded, meta_out
         
         
     def get_instances_of_node(self, node_name):
@@ -730,6 +758,37 @@ class map_manager_2(object):
                 index = i
                 
         return num_available, index
+    
+    
+    def update_edge_cb(self, req):
+        return self.update_edge(req.edge_id, req.action, req.top_vel)
+      
+
+    def update_edge(self, edge_id, action, top_vel):
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    edge["action"] = action or edge["action"]
+                    
+                if "config" in edge:
+                    edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
+                else:
+                    config = {}
+                    config["top_vel"] = top_vel
+                    
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+        
+            return True, ""
+        else:
+            rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False, "no edge found or multiple edges found"
                 
         
     def map_check(self):

@@ -193,7 +193,7 @@ class TopologicalNavServer(object):
         translation = DYNPARAM_MAPPING[key]
         for k, v in params.iteritems():
             if k in translation:
-                if rospy.has_param(self.move_base_planner + "/" + translation[k]):
+                if rospy.has_param(translation[k]):
                     translated_params[translation[k]] = v
                 else:
                     rospy.logwarn('%s has no parameter %s' % (self.move_base_planner, translation[k]))

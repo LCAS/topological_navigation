@@ -133,6 +133,7 @@ class map_manager_2(object):
         
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
         self.names = self.create_list_of_nodes()
+        self.map_check()
         
         
     def broadcast_transform(self):
@@ -802,7 +803,6 @@ class map_manager_2(object):
             self.map_ok = False
         
         # check for duplicate node names
-        print "\n"
         names = self.create_list_of_nodes()
         for name in set(names):
             n = names.count(name)
@@ -815,7 +815,6 @@ class map_manager_2(object):
         edge_ids.sort()
 
         # check for duplicate edges
-        print "\n"
         for edge in set(edge_ids):
             edge_nodes = re.match("(.*)" + sep + "(.*)", edge).groups()
             origin = edge_nodes[0]
@@ -827,7 +826,6 @@ class map_manager_2(object):
                 self.map_ok = False
         
         # check that an edge's destination node exists
-        print "\n"         
         for edge in set(edge_ids):
             edge_nodes = re.match("(.*)" + sep + "(.*)", edge).groups()
             origin = edge_nodes[0]

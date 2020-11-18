@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(topological_localization)
+project(bayesian_topological_localisation)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -49,8 +49,8 @@ catkin_python_setup()
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  LocalizeAgent.srv
-  StopLocalize.srv
+  LocaliseAgent.srv
+  StopLocalise.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -122,7 +122,7 @@ include_directories(
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
  install(PROGRAMS
-   scripts/localization_node.py
+   scripts/localisation_node.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

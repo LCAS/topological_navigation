@@ -76,8 +76,8 @@ To be published to topic `/robot_1/pose_obs`. The message has to provide a pose 
    0  ,   0  ,  0, 0, 0, 0]
 ```
 
-### likelihood
-To be published to topic `/robot_1/likelihood_obs`. The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient.
+### probability distribution
+To be published to topic `/robot_1/prob_dist_obs`. The message has to contain a list of nodes names with a list of probabilties, one for each node. The message does not need to contain all the nodes in the map, the one that have a probability non-zero are sufficient.
 
 ## Getting localization result
 
@@ -90,9 +90,14 @@ In order to visualize the localization result - for agent `robot_1` for example 
 - a `MarkerArray` attached to topic `/robot_1/particles_viz` 
 
 ## TODO
-- [x] implement use of `prediction_speed_decay`, now always constant speed
+- [ ] implement use of `prediction_speed_decay`, now always constant speed
 - [ ] implement use of `initial_spread_policy`, now just uses the first observation
 - [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
+<<<<<<< HEAD
 - [x] correctly stop the threads on shutdown request
-- [x] default particles number if not provided
+- [ ] default particles number if not provided
 - [ ] allow to use different state estimation methods than just particle filters. A simple one is needed for localizing robots from the metric localization, i.e. replace this https://github.com/LCAS/topological_navigation/blob/master/topological_navigation/scripts/localisation.py .
+=======
+- [ ] correctly stop the threads on shutdown request
+- [ ] allow to use different state estimation methods than just particle filters. A simple one is needed for localizing robots from the metric localization, i.e. replace this https://github.com/LCAS/topological_navigation/blob/master/topological_navigation/scripts/localisation.py .
+>>>>>>> 3a453afa07b0bf15e59ad85db330b486b89474f1

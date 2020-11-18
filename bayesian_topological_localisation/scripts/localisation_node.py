@@ -2,23 +2,23 @@
 import rospy
 import threading
 import numpy as np
-from topological_localization.particle_filter import TopologicalParticleFilter
-from topological_localization.prediction_model import PredictionModel
-from topological_localization.srv import LocalizeAgent, LocalizeAgentRequest, LocalizeAgentResponse, StopLocalize, StopLocalizeRequest, StopLocalizeResponse
-from topological_localization.msg import DistributionStamped
+from bayesian_topological_localisation.particle_filter import TopologicalParticleFilter
+from bayesian_topological_localisation.prediction_model import PredictionModel
+from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRequest, LocaliseAgentResponse, StopLocalise, StopLocaliseRequest, StopLocaliseResponse
+from bayesian_topological_localisation.msg import DistributionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from strands_navigation_msgs.msg import TopologicalMap
 from std_msgs.msg import String
 
-class TopologicalLocalization():
+class TopologicalLocalisation():
 
     def __init__(self):
         # agents currently tracking
         self.agents = []
         # observation subscribers for each agent
         self.obs_subscribers = []
-        # # publishers localization result for each agent
+        # # publishers localisation result for each agent
         self.res_publishers = []
         # # publishers viz result for each agent
         self.viz_publishers = []
@@ -33,15 +33,15 @@ class TopologicalLocalization():
         self.node_names = []
         self.node_coords = []
 
-        # contains a list of threading.Event for stopping the localization of each agent
+        # contains a list of threading.Event for stopping the localisation of each agent
         self.stopping_events = []
 
         # to avoid inconsistencies when registering/unregistering agents concurrently
         self.internal_lock = threading.Lock()
 
         # declare services
-        rospy.Service("~localize_agent", LocalizeAgent, self._localize_agent_handler)
-        rospy.Service("~stop_localize", StopLocalize, self._stop_localize_handler)
+        rospy.Service("~localise_agent", LocaliseAgent, self._localise_agent_handler)
+        rospy.Service("~stop_localise", StopLocalise, self._stop_localise_handler)
 
         rospy.Subscriber("topological_map", TopologicalMap, self._topo_map_cb)
 
@@ -51,9 +51,9 @@ class TopologicalLocalization():
 
         rospy.loginfo("DONE")
 
-    def _localize_agent_handler(self, request):
+    def _localise_agent_handler(self, request):
         # lock resources
-        rospy.loginfo("Received request to localize new agent {}".format(request.name))
+        rospy.loginfo("Received request to localise new agent {}".format(request.name))
         self.internal_lock.acquire()
 
         ## set default values ##
@@ -72,13 +72,13 @@ class TopologicalLocalization():
             request.prediction_speed_decay <= 0]
 
         if name in self.agents:
-            rospy.logwarn("Agent {} already being localized".format(name))
+            rospy.logwarn("Agent {} already being localised".format(name))
             # release resources
             self.internal_lock.release()
-            return LocalizeAgentResponse(False)
+            return LocaliseAgentResponse(False)
 
         # Initialize the prediction model
-        if prediction_model == LocalizeAgentRequest.PRED_CTMC:
+        if prediction_model == LocaliseAgentRequest.PRED_CTMC:
             pm = PredictionModel(
                 pred_type=PredictionModel.CTMC,
                 node_coords=self.node_coords,
@@ -86,7 +86,7 @@ class TopologicalLocalization():
                 node_distances=self.node_distances,
                 connected_nodes=self.connected_nodes
             )
-        elif prediction_model == LocalizeAgentRequest.PRED_IDENTITY:
+        elif prediction_model == LocaliseAgentRequest.PRED_IDENTITY:
             pm = PredictionModel(
                 pred_type=PredictionModel.IDENTITY
             )
@@ -95,7 +95,7 @@ class TopologicalLocalization():
                 "Prediction model {} unknown".format(prediction_model))
             # release resources
             self.internal_lock.release()
-            return LocalizeAgentResponse(False)
+            return LocaliseAgentResponse(False)
 
 
         # Initialize publishers and messages
@@ -138,11 +138,11 @@ class TopologicalLocalization():
             ptcsarrmsg.markers.append(ptcmkrmsg)
 
         # get the how to spread the particles initially
-        # if request.initial_spread_policy == LocalizeAgentRequest.CLOSEST_NODE:
+        # if request.initial_spread_policy == LocaliseAgentRequest.CLOSEST_NODE:
         #     sigma = -1
-        # elif request.initial_spread_policy == LocalizeAgentRequest.SPREAD_RADIUS:
+        # elif request.initial_spread_policy == LocaliseAgentRequest.SPREAD_RADIUS:
         #     sigma = request.initial_spread_radius
-        # elif request.initial_spread_policy == LocalizeAgentRequest.SPREAD_UNIFORM:
+        # elif request.initial_spread_policy == LocaliseAgentRequest.SPREAD_UNIFORM:
         #     sigma = np.inf
         # else:
         #     sigma = -1
@@ -211,19 +211,24 @@ class TopologicalLocalization():
         # send likelihood observation to particle filter
         def __likelihood_obs_cb(msg):
             if len(msg.nodes) == len(msg.values):
-                nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
-                values = np.array(msg.values)
-                if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
-                    node, particles = pf.receive_likelihood_obs(
-                        nodes, 
-                        msg.values,
-                        (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                            msg.header.stamp.to_sec() > 0]
-                    )
-                    __publish(node, particles)
-                else:
+                try:
+                    nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
+                except IndexError:
                     rospy.logwarn(
-                        "Received non-admissible likelihood observation {}, discarded".format(msg.values))
+                        "Received non-admissible node name {}, likelihood discarded".format(msg.nodes))
+                else:
+                    values = np.array(msg.values)
+                    if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
+                        node, particles = pf.receive_likelihood_obs(
+                            nodes, 
+                            msg.values,
+                            (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
+                                msg.header.stamp.to_sec() > 0]
+                        )
+                        __publish(node, particles)
+                    else:
+                        rospy.logwarn(
+                            "Received non-admissible likelihood observation {}, discarded".format(msg.values))
             else:
                 rospy.logwarn("Nodes array and values array sizes do not match {} != {}, discarding likelihood observation".format(
                     len(msg.nodes), len(msg.values)))
@@ -268,10 +273,10 @@ class TopologicalLocalization():
 
         rospy.loginfo("DONE")
 
-        return LocalizeAgentResponse(True)
+        return LocaliseAgentResponse(True)
 
-    def _stop_localize_handler(self, request):
-        rospy.loginfo("Unregistering agent {} for localization".format(request.name))
+    def _stop_localise_handler(self, request):
+        rospy.loginfo("Unregistering agent {} for localisation".format(request.name))
         self.internal_lock.acquire()
         # default name is unknown if requested is ''
         name = (request.name, 'unknown')[request.name == '']
@@ -301,11 +306,11 @@ class TopologicalLocalization():
 
             self.internal_lock.release()
             rospy.loginfo("DONE")
-            return StopLocalizeResponse(True)
+            return StopLocaliseResponse(True)
         else:
-            rospy.logwarn("The agent {} is already not being localized.".format(name))
+            rospy.logwarn("The agent {} is already not being localised.".format(name))
             self.internal_lock.release()
-            return StopLocalizeResponse(False)
+            return StopLocaliseResponse(False)
 
     def _topo_map_cb(self, msg):
         """This function receives the Topological Map"""
@@ -341,10 +346,10 @@ class TopologicalLocalization():
 
 
 if __name__ == "__main__":
-    rospy.init_node("topological_localization")
+    rospy.init_node("bayesian_topological_localisation")
 
-    localization_node = TopologicalLocalization()
+    localisation_node = TopologicalLocalisation()
 
     rospy.spin()
 
-    localization_node.close()
+    localisation_node.close()

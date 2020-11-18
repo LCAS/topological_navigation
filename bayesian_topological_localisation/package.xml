@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>topological_localization</name>
-  <version>2.1.0</version>
-  <description>The topological_localization package</description>
+  <name>bayesian_topological_localisation</name>
+  <version>3.0.0</version>
+  <description>The bayesian_topological_localisation package</description>
 
 
   <maintainer email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</maintainer>

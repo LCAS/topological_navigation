@@ -1,5 +1,6 @@
 import numpy as np
 import threading
+import rospy
 
 class TopologicalParticleFilter():
     FOLLOW_OBS = 0      # use the distribution of the first observation
@@ -46,16 +47,12 @@ class TopologicalParticleFilter():
         self.lock = threading.Lock()
 
     def _normalize(self, arr):
-        try:  # for nd array
-            row_sums = arr.sum(axis=1)
-            if row_sums == 0:
-                return arr
-            arr = arr / row_sums[:, np.newaxis]
-        except:
-            row_sums = arr.sum(axis=0)  # for 1d array
-            if row_sums == 0:
-                return arr
-            arr = arr / row_sums
+        row_sums = arr.sum()  # for 1d array
+        if row_sums == 0:
+            arr = np.ones(arr.shape)
+            row_sums = arr.sum()
+            rospy.logwarn("Array to normalise is zero, resorting to uniform")
+        arr = arr / row_sums
         return arr
 
     def _normal_pdf(self, mu_x, mu_y, cov_x, cov_y, nodes):

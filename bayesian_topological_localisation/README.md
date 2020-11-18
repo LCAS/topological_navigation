@@ -63,7 +63,8 @@ bool success        # true if the localisation is stopped
 
 ## Sending observations
 
-the localisation node needs observations in order to localise and agent - e.g. `robot_1` - on the map. There are two ways an observation can be provided:
+The localisation node needs observations in order to localise and agent - e.g. `robot_1` - on the map.  
+There are two ways an observation can be provided:
 
 ### pose with covariance 
 To be published to topic `/robot_1/pose_obs`. The message has to provide a pose (x, y) and a variance for the pose as a covariance matrix: 
@@ -77,7 +78,7 @@ To be published to topic `/robot_1/pose_obs`. The message has to provide a pose 
 ```
 
 ### likelihood
-To be published to topic `/robot_1/likelihood_obs`. The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient.
+To be published to topic `/robot_1/likelihood_obs`. The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient. Note that in order to predict the future agent position the model estimates the velocity vector of the agent from pose observations only, hence if you use only likelihood type observations please implement your own prediction model.
 
 ## Getting localisation result
 
@@ -90,9 +91,10 @@ In order to visualize the localisation result - for agent `robot_1` for example 
 - a `MarkerArray` attached to topic `/robot_1/particles_viz` 
 
 ## TODO
-- [x] implement use of `prediction_speed_decay`, now always constant speed
-- [ ] implement use of `initial_spread_policy`, now just uses the first observation
 - [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
+- [ ] implement prediction model to spread to close by nodes
+- [ ] ~~implement use of `initial_spread_policy`, now just uses the first observation~~
+- [x] implement use of `prediction_speed_decay`, now always constant speed
 - [x] correctly stop the threads on shutdown request
 - [x] default particles number if not provided
 - [ ] ~~allow to use different state estimation methods than just particle filters. A simple one is needed for localising robots from the metric localisation, i.e. replace this https://github.com/LCAS/topological_navigation/blob/master/topological_navigation/scripts/localisation.py .~~

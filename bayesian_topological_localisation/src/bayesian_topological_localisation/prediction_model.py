@@ -85,7 +85,7 @@ class PredictionModel:
         return prob, nodes
 
     # returns the prediction in form of a probability distribution over nodes given time and speed
-    def predict(self, node, time, speed):
+    def predict(self, node, time=None, speed=None):
         if self.pred_type == PredictionModel.CTMC:
             return self._ctmc(node=node, speed=speed, time=time)
         else:

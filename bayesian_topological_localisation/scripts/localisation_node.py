@@ -4,7 +4,10 @@ import threading
 import numpy as np
 from bayesian_topological_localisation.particle_filter import TopologicalParticleFilter
 from bayesian_topological_localisation.prediction_model import PredictionModel
-from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRequest, LocaliseAgentResponse, StopLocalise, StopLocaliseRequest, StopLocaliseResponse
+from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRequest, \
+    LocaliseAgentResponse, StopLocalise, StopLocaliseRequest, StopLocaliseResponse, \
+    UpdatePoseObservation, UpdatePoseObservationRequest, UpdatePoseObservationResponse, \
+    UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse
 from bayesian_topological_localisation.msg import DistributionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
@@ -22,6 +25,8 @@ class TopologicalLocalisation():
         self.res_publishers = []
         # # publishers viz result for each agent
         self.viz_publishers = []
+        # services for updating the state estimation
+        self.upd_services = []
         # thread that loop predictions at fixed rate for each agent
         self.prediction_threads = []
 
@@ -160,20 +165,27 @@ class TopologicalLocalisation():
             node_names=self.node_names
         )
 
-        # function to publish current node and particles distribution
-        def __publish(node, particles):
+        def __prepare_pd_msg(particles):
             nodes, counts = np.unique(particles, return_counts=True)
 
             probs = np.zeros((self.node_names.shape[0]))
             probs[nodes] = counts.astype(float) / np.sum(counts)
-            
-            strmsg.data = self.node_names[node]
+
             pdmsg.header.stamp = rospy.get_rostime()
             pdmsg.nodes = self.node_names.tolist()
             pdmsg.values = np.copy(probs).tolist()
 
-            cn_pub.publish(strmsg)
-            pd_pub.publish(pdmsg)
+            return pdmsg
+
+        def __prepare_cn_msg(node):
+            strmsg.data = self.node_names[node]
+            return strmsg
+
+        # function to publish current node and particles distribution
+        def __publish(node, particles):
+
+            cn_pub.publish(__prepare_cn_msg(node))
+            pd_pub.publish(__prepare_pd_msg(particles))
 
             # publish viz stuff
             for i, p in enumerate(particles):
@@ -188,7 +200,7 @@ class TopologicalLocalisation():
             cnviz_pub.publish(nodemkrmsg)
             parviz_pub.publish(ptcsarrmsg)
 
-
+        ## topic callbacks ##
         # send pose observation to particle filter
         def __pose_obs_cb(msg):
             if np.isfinite(msg.pose.pose.position.x) and \
@@ -239,6 +251,79 @@ class TopologicalLocalisation():
             rospy.Subscriber("{}/likelihood_obs".format(name),
                              DistributionStamped, __likelihood_obs_cb)
         ))
+
+        ## Services handlers ##
+        # Get the pose observation and returns the localisation result
+        def __update_pose_handler(request):
+            if np.isfinite(request.pose.pose.pose.position.x) and \
+                    np.isfinite(request.pose.pose.pose.position.y) and \
+                    np.isfinite(request.pose.pose.covariance[0]) and \
+                    np.isfinite(request.pose.pose.covariance[7]):
+                node, particles = pf.receive_pose_obs(
+                    request.pose.pose.pose.position.x,
+                    request.pose.pose.pose.position.y,
+                    request.pose.pose.covariance[0],  # variance of x
+                    request.pose.pose.covariance[7],  # variance of y
+                    (rospy.get_rostime().to_sec(), request.pose.header.stamp.to_sec())[
+                        request.pose.header.stamp.to_sec() > 0]
+                )
+                __publish(node, particles)
+                resp = UpdatePoseObservationResponse()
+                resp.success = True
+                resp.current_node = __prepare_cn_msg(node).data
+                resp.current_prob_dist = __prepare_pd_msg(particles)
+                return(resp)
+            else:
+                rospy.logwarn(
+                    "Received non-admissible pose observation <{}, {}, {}, {}>, discarded".format(request.pose.pose.pose.position.x, request.pose.pose.pose.position.y, request.pose.pose.covariance[0], request.pose.pose.covariance[7]))
+          
+            # fallback negative response
+            resp = UpdatePoseObservationResponse()
+            resp.success = False
+            return(resp)
+
+        # get a likelihood observation and return localisation result
+        def __update_likelihood_handler(request):
+            if len(request.likelihood.nodes) == len(request.likelihood.values):
+                try:
+                    nodes = [np.where(self.node_names == nname)[0][0]
+                             for nname in request.likelihood.nodes]
+                except IndexError:
+                    rospy.logwarn(
+                        "Received non-admissible node name {}, likelihood discarded".format(request.likelihood.nodes))
+                else:
+                    values = np.array(request.likelihood.values)
+                    if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
+                        node, particles = pf.receive_likelihood_obs(
+                            nodes,
+                            request.likelihood.values,
+                            (rospy.get_rostime().to_sec(), request.likelihood.header.stamp.to_sec())[
+                                request.likelihood.header.stamp.to_sec() > 0]
+                        )
+                        __publish(node, particles)
+                        resp = UpdateLikelihoodObservationResponse()
+                        resp.success = True
+                        resp.current_node = __prepare_cn_msg(node).data
+                        resp.current_prob_dist = __prepare_pd_msg(particles)
+                        return(resp)
+                    else:
+                        rospy.logwarn(
+                            "Received non-admissible likelihood observation {}, discarded".format(request.likelihood.values))
+
+            else:
+                rospy.logwarn("Nodes array and values array sizes do not match {} != {}, discarding likelihood observation".format(
+                    len(request.likelihood.nodes), len(request.likelihood.values)))
+
+            # fallback negative response
+            resp = UpdateLikelihoodObservationResponse()
+            resp.success = False
+            return(resp)
+
+        # subscribe to services for update
+        self.upd_services.append({
+            rospy.Service("{}/update_pose_obs".format(name), UpdatePoseObservation, __update_pose_handler),
+            rospy.Service("{}/update_likelihood_obs".format(name), UpdateLikelihoodObservation, __update_likelihood_handler)
+        })
         
         thr = None
         stop_event = None
@@ -295,6 +380,10 @@ class TopologicalLocalisation():
                 pub.unregister()
             for pub in self.viz_publishers[agent_idx]:
                 pub.unregister()
+            
+            # shutting down services
+            for srv in self.upd_services[agent_idx]:
+                srv.shutdown()
 
             # cleanup all the related variables
             del self.stopping_events[agent_idx]
@@ -302,6 +391,7 @@ class TopologicalLocalisation():
             del self.obs_subscribers[agent_idx]
             del self.res_publishers[agent_idx]
             del self.viz_publishers[agent_idx]
+            del self.upd_services[agent_idx]
             del self.agents[agent_idx]
 
             self.internal_lock.release()

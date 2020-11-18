@@ -4,7 +4,7 @@ project(bayesian_topological_localisation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs geometry_msgs message_generation)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -51,6 +51,8 @@ add_service_files(
   FILES
   LocaliseAgent.srv
   StopLocalise.srv
+  UpdatePoseObservation.srv
+  UpdateLikelihoodObservation.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -65,6 +67,7 @@ add_service_files(
 generate_messages(
    DEPENDENCIES
    std_msgs
+   geometry_msgs
 #   actionlib_msgs
 #   sensor_msgs
 #   strands_navigation_msgs

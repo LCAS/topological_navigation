@@ -1,0 +1,8 @@
+bayesian_topological_localisation/DistributionStamped likelihood
+
+---
+
+bool success
+string current_node
+bayesian_topological_localisation/DistributionStamped current_prob_dist
+

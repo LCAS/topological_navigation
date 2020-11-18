@@ -64,22 +64,25 @@ bool success        # true if the localisation is stopped
 ## Sending observations
 
 The localisation node needs observations in order to localise and agent - e.g. `robot_1` - on the map.  
-There are two ways an observation can be provided:
+There are two ways an observation can be provided listed below. Each type of observation can be provided through a topic or by calling a service. If calling the service you will get the localisation result straight away in your service response.
 
-### pose with covariance 
-To be published to topic `/robot_1/pose_obs`. The message has to provide a pose (x, y) and a variance for the pose as a covariance matrix: 
-```
-[var_x,   0  ,  0, 0, 0, 0,
-   0  , var_y,  0, 0, 0, 0,
-   0  ,   0  ,  0, 0, 0, 0, 
-   0  ,   0  ,  0, 0, 0, 0, 
-   0  ,   0  ,  0, 0, 0, 0, 
-   0  ,   0  ,  0, 0, 0, 0]
-```
+### 1. Pose with covariance 
+- **topic modality**: To be published to topic `/robot_1/pose_obs` (msg type `geometry_msgs/PoseWithCovarianceStamped`). The message has to provide a pose (x, y) and a variance for the pose as a covariance matrix: 
+   ```
+   [var_x,   0  ,  0, 0, 0, 0,
+      0  , var_y,  0, 0, 0, 0,
+      0  ,   0  ,  0, 0, 0, 0, 
+      0  ,   0  ,  0, 0, 0, 0, 
+      0  ,   0  ,  0, 0, 0, 0, 
+      0  ,   0  ,  0, 0, 0, 0]
+   ```
+- **service modality**: Call `/robot_1/update_pose_obs` (srv type `bayesian_topological_localisation/UpdatePoseObservation`), the request parameter `pose` is a `geometry_msgs/PoseWithCovarianceStamped` and has to be filled as for the topic modality.
 
-### likelihood
-To be published to topic `/robot_1/likelihood_obs`. The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient. Note that in order to predict the future agent position the model estimates the velocity vector of the agent from pose observations only, hence if you use only likelihood type observations please implement your own prediction model.
-
+### 2. Likelihood
+- **topic modality**: To be published to topic `/robot_1/likelihood_obs` (msg type `bayesian_topological_localisation/DistributionStamped`). The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient. Note that in order to predict the future agent position the model estimates the velocity vector of the agent from pose observations only, hence if you use only likelihood type observations please implement your own prediction model.
+  
+- **service modality**: Call `/robot_1/update_likelihood_obs` (srv type `bayesian_topological_localisation/UpdateLikelihoodObservation`), the request parameter `likelihood` is a `bayesian_topological_localisation/DistributionStamped` and has to be filled as for the topic modality.
+  
 ## Getting localisation result
 
 The node position for an agent - e.g. `robot_1` - that is being localised is published latch to topic `/robot_1/current_node`. The package also provides the probability distribution of the agent location published latch to topic `/robot_1/current_prob_dist` as a list of nodes and with their corresponding probability.
@@ -92,9 +95,10 @@ In order to visualize the localisation result - for agent `robot_1` for example 
 
 ## TODO
 - [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
-- [ ] implement prediction model to spread to close by nodes
-- [ ] ~~implement use of `initial_spread_policy`, now just uses the first observation~~
+- [ ] implement prediction model to spread to closeby nodes
+- [x] implement services for sending obs & getting results, for receiving predictions
 - [x] implement use of `prediction_speed_decay`, now always constant speed
 - [x] correctly stop the threads on shutdown request
 - [x] default particles number if not provided
+- [ ] ~~implement use of `initial_spread_policy`, now just uses the first observation~~
 - [ ] ~~allow to use different state estimation methods than just particle filters. A simple one is needed for localising robots from the metric localisation, i.e. replace this https://github.com/LCAS/topological_navigation/blob/master/topological_navigation/scripts/localisation.py .~~

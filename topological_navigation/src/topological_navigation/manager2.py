@@ -8,7 +8,7 @@ Created on Tue Sep 29 16:06:36 2020
 from __future__ import division
 import rospy, tf2_ros, math
 import yaml, datetime, json
-import re, uuid, copy
+import re, uuid, copy, os
 
 import strands_navigation_msgs.srv
 import topological_navigation_msgs.srv
@@ -29,6 +29,10 @@ class map_manager_2(object):
     
     
     def __init__(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
+        
+        self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
+        if not os.path.exists(self.cache_dir):
+            os.mkdir(self.cache_dir)
         
         self.name = name
         self.metric_map = metric_map
@@ -51,9 +55,11 @@ class map_manager_2(object):
             self.transformation = transformation
             
         self.filename = filename
-        self.load = load
+        if not self.filename:
+            self.filename = os.path.join(self.cache_dir, self.name + ".yaml")
             
-        if self.filename and self.load:
+        self.load = load            
+        if self.load:
             self.load_map(self.filename)
         else:
             self.tmap2 = {}
@@ -74,7 +80,7 @@ class map_manager_2(object):
         
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
-        self.switch_map_srv=rospy.Service('/topological_map_manager2/switch_topological_map', topological_navigation_msgs.srv.GetTopologicalMap, self.switch_topological_map_cb)
+        self.switch_map_srv=rospy.Service('/topological_map_manager2/switch_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.switch_topological_map_cb)
         self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
         self.get_tag_srv=rospy.Service('/topological_map_manager2/get_tags', strands_navigation_msgs.srv.GetTags, self.get_tags_cb)
         self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', strands_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
@@ -124,6 +130,23 @@ class map_manager_2(object):
         self.transformation = self.tmap2["transformation"]
         
         self.map_check()
+        
+        rospy.loginfo("Caching the map ...")
+        self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
+        
+        
+    def write_topological_map(self, filename):
+        
+        rospy.loginfo("Writing map to {}".format(filename))
+        
+        nodes = copy.deepcopy(self.tmap2["nodes"])
+        nodes.sort(key=lambda node: node["node"]["name"])
+        self.tmap2["nodes"] = nodes
+        
+        yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
+        fh = open(filename, "w")
+        fh.write(str(yml))
+        fh.close
         
         
     def update(self, update_time=True):
@@ -176,6 +199,7 @@ class map_manager_2(object):
         """
         Changes the topological map
         """
+        self.filename = req.filename
         self.load_map(req.filename)        
         self.update(False)
         self.broadcast_transform()
@@ -230,6 +254,13 @@ class map_manager_2(object):
         return succeded, tags
     
     
+    def get_edges_between_cb(self, req):
+        """
+        Returns a list of the ids of edges from nodea to nodeb and vice-versa
+        """
+        return self.get_edges_between(req.nodea, req.nodeb)
+    
+    
     def get_edges_between(self, nodea, nodeb):
         
          ab=[]; ba=[]
@@ -244,13 +275,6 @@ class map_manager_2(object):
                          ba.append(edge["edge_id"])
                          
          return ab, ba
-     
-
-    def get_edges_between_cb(self, req):
-        """
-        Returns a list of the ids of edges from nodea to nodeb and vice-versa
-        """
-        return self.get_edges_between(req.nodea, req.nodeb)
     
     
     def write_topological_map_cb(self, req):
@@ -270,20 +294,6 @@ class map_manager_2(object):
         
         return success, str(message)
         
-    
-    def write_topological_map(self, filename):
-        
-        rospy.loginfo("Writing map to {}".format(filename))
-        
-        nodes = copy.deepcopy(self.tmap2["nodes"])
-        nodes.sort(key=lambda node: node["node"]["name"])
-        self.tmap2["nodes"] = nodes
-        
-        yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
-        fh = open(filename, "w")
-        fh.write(str(yml))
-        fh.close
-        
         
     def add_topological_node_cb(self, req):
         """
@@ -299,7 +309,7 @@ class map_manager_2(object):
         else:
             name = self.get_new_name()
 
-        rospy.loginfo("Creating Node {}: ".format(name))
+        rospy.loginfo("Creating Node {}".format(name))
 
         if name in self.names:
             rospy.logerr("Node already exists, try another name")
@@ -474,6 +484,8 @@ class map_manager_2(object):
         if restrictions is None:
             edge["restrictions"] = {}
             edge["restrictions"]["robot_type"] = ""
+            edge["restrictions"]["task_name"] = ""
+            edge["restrictions"]["transition"] = ""
         else:
             edge["restrictions"] = restrictions
         
@@ -493,13 +505,15 @@ class map_manager_2(object):
                 
                 
     def remove_node_cb(self, req):
-        response = self.remove_node(req.name)
-        return response
+        """
+        Removes a node from the topological map
+        """
+        return self.remove_node(req.name)
                 
                 
     def remove_node(self, node_name):
         
-        rospy.loginfo("Removing Node: ".format(node_name))
+        rospy.loginfo("Removing Node {}".format(node_name))
         
         num_available, rm_id = self.get_instances_of_node(node_name)
         
@@ -509,7 +523,6 @@ class map_manager_2(object):
             for node in self.tmap2["nodes"]:
                 for edge in node["node"]["edges"]:
                     if edge["node"] == node_name:
-                        print "removing edge {}".format(edge["edge_id"])
                         self.remove_edge(edge["edge_id"], False)
             
             self.update()
@@ -521,12 +534,15 @@ class map_manager_2(object):
         
         
     def remove_edge_cb(self, req):
+        """
+        Removes an edge from a topological node
+        """
         return self.remove_edge(req.edge_id)
       
 
     def remove_edge(self, edge_name, update=True):
         
-        rospy.loginfo("Removing Edge: ".format(edge_name))
+        rospy.loginfo("Removing Edge: {}".format(edge_name))
         
         num_available = 0
         for node in self.tmap2["nodes"]:
@@ -550,7 +566,9 @@ class map_manager_2(object):
     
     
     def add_content_cb(self, req):
-        
+        """
+        Adds content to a node's meta information
+        """
         data = json.loads(req.content)
         
         num_available, index = self.get_instances_of_node(req.node)        
@@ -590,6 +608,9 @@ class map_manager_2(object):
     
     
     def update_node_name_cb(self, req):
+        """
+        Changes a node's name and updates edges which involve the renamed node
+        """
         return self.update_node_name(req.node_name, req.new_name)
       
 
@@ -620,6 +641,9 @@ class map_manager_2(object):
         
         
     def update_node_waypoint_cb(self, req):
+        """
+        Updates a node's pose
+        """
         return self.update_node_waypoint(req.name, req.pose)
       
 
@@ -640,6 +664,9 @@ class map_manager_2(object):
         
         
     def update_node_tolerance_cb(self, req):
+        """
+        Update node tolerances
+        """
         return self.update_node_tolerance(req.node_name, req.xy_tolerance, req.yaw_tolerance)
       
 
@@ -670,7 +697,9 @@ class map_manager_2(object):
         
         
     def modify_tag_cb(self, msg):
-        
+        """
+        Changes the tag belonging to a node or a list of nodes
+        """
         succeded = True
         meta_out = None
         for node_name in msg.node:
@@ -724,7 +753,9 @@ class map_manager_2(object):
     
     
     def rm_tag_cb(self, msg):
-
+        """
+        Remove a tag from nodes in the map
+        """
         succeded = True
         for node_name in msg.node:
             available = [i for i, node in enumerate(self.tmap2["nodes"]) if node["node"]["name"] == node_name]
@@ -747,26 +778,17 @@ class map_manager_2(object):
             self.write_topological_map(self.filename)
 
         return succeded, meta_out
-        
-        
-    def get_instances_of_node(self, node_name):
-        
-        num_available = 0
-        index = None
-        for i, node in enumerate(self.tmap2["nodes"]):
-            if node["node"]["name"] == node_name:
-                num_available+=1
-                index = i
-                
-        return num_available, index
     
     
     def update_edge_cb(self, req):
+        
         return self.update_edge(req.edge_id, req.action, req.top_vel)
       
 
     def update_edge(self, edge_id, action, top_vel):
-        
+        """
+        Update an edge's action and top_vel 
+        """
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
         
@@ -791,6 +813,18 @@ class map_manager_2(object):
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
             return False, "no edge found or multiple edges found"
+        
+        
+    def get_instances_of_node(self, node_name):
+        
+        num_available = 0
+        index = None
+        for i, node in enumerate(self.tmap2["nodes"]):
+            if node["node"]["name"] == node_name:
+                num_available+=1
+                index = i
+                
+        return num_available, index
                 
         
     def map_check(self):

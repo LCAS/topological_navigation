@@ -62,6 +62,10 @@ DYNPARAM_MAPPING = {
             'max_vel_x': 'max_vel_x',
             'max_trans_vel' : 'max_vel_x',
         },
+        'EBandPlannerROS': {
+            'yaw_goal_tolerance': 'yaw_goal_tolerance',
+            'xy_goal_tolerance': 'xy_goal_tolerance',
+        },
     }
 
 

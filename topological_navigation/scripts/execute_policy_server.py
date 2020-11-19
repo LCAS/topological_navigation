@@ -100,7 +100,7 @@ class PolicyExecutionServer(object):
         self.navigation_activated=False
         self._action_name = 'topological_navigation/execute_policy_mode'
         self.stats_pub = rospy.Publisher('topological_navigation/Statistics', NavStatistics, queue_size=1)
-
+        self.cur_edge_pub = rospy.Publisher('current_edge', String)
 
         self.lnodes = []
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
@@ -632,6 +632,8 @@ class PolicyExecutionServer(object):
                 else:
                     top_vel = 0.55
 
+            self.cur_edge_pub.publish("{}--{}".format(edge_id, self.topol_map) if edg else 'none')
+
             self.stat=nav_stats(self.current_node, node, self.topol_map, edge_id)
             #dt_text=self.stat.get_start_time_str()
 
@@ -666,6 +668,7 @@ class PolicyExecutionServer(object):
                 rospy.loginfo("navigation finished successfully")
                 self.stat.status= "success"
                 self.publish_feedback(GoalStatus.SUCCEEDED)
+                self.cur_edge_pub.publish('none')
             else :
                 if self.cancelled:
                     rospy.loginfo("Fatal fail")

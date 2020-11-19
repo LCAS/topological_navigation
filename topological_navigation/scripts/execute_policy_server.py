@@ -865,9 +865,14 @@ class PolicyExecutionServer(object):
     """
 
     def MapCallback(self, msg):
-        self.topol_map = msg.name
-        self.lnodes = msg.nodes
-        self.curr_tmap = msg
+        if not self.use_tmap2:
+            self.topol_map = msg.name
+            self.lnodes = msg.nodes
+            self.curr_tmap = msg
+        else:
+            self.lnodes = json.loads(msg.nodes)
+            self.topol_map = json.loads(msg.name)
+            self.curr_tmap = json.loads(msg.data)
         for i in self.lnodes:
             for j in i.edges:
                 if j.action not in self.needed_actions:

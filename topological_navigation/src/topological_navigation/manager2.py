@@ -781,14 +781,14 @@ class map_manager_2(object):
     
     
     def update_edge_cb(self, req):
-        
+        """
+        Update an edge's action and top_vel 
+        """
         return self.update_edge(req.edge_id, req.action, req.top_vel)
       
 
     def update_edge(self, edge_id, action, top_vel):
-        """
-        Update an edge's action and top_vel 
-        """
+        
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
         
@@ -798,12 +798,13 @@ class map_manager_2(object):
                 if edge["edge_id"] == edge_id:
                     edge["action"] = action or edge["action"]
                     
-                if "config" in edge:
+                if "config" in edge and "top_vel" in edge["config"]:
                     edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
+                elif "config" in edge and "top_vel" not in edge["config"]:
+                    edge["config"]["top_vel"] = top_vel
                 else:
-                    config = {}
-                    config["top_vel"] = top_vel
-                    edge["config"] = config
+                    edge["config"] = {}
+                    edge["config"]["top_vel"] = top_vel
                     
             self.tmap2["nodes"][index] = the_node
             self.update()

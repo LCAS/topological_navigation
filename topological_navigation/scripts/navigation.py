@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-from topological_navigation.src.topological_navigation.tmap_utils import (
-    get_edge_from_id_tmap2,
-    get_node_from_tmap2,
-)
 import rospy
 import actionlib
 import sys
@@ -254,7 +250,7 @@ class TopologicalNavServer(object):
             self.topol_map = msg.pointset
         else:
             self.lnodes = json.loads(msg.data)
-            self.topol_map = json.loads(msg.pointset)
+            self.topol_map = json.loads(msg.data["pointset"])
         self._map_received = True
 
     """
@@ -747,6 +743,7 @@ class TopologicalNavServer(object):
 
 if __name__ == "__main__":
     mode = "normal"
+    use_tmap2 = False
     rospy.init_node("topological_navigation")
-    server = TopologicalNavServer(rospy.get_name(), mode)
-    policy_server = PolicyExecutionServer()
+    server = TopologicalNavServer(rospy.get_name(), mode, use_tmap2)
+    policy_server = PolicyExecutionServer(use_tmap2)

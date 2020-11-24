@@ -104,12 +104,12 @@ class TopologicalLocalisation():
 
 
         # Initialize publishers and messages
-        cn_pub = rospy.Publisher("{}/current_node".format(name), String, queue_size=10, latch=True)
+        cn_pub = rospy.Publisher("{}/estimated_node".format(name), String, queue_size=10, latch=True)
         pd_pub = rospy.Publisher("{}/current_prob_dist".format(name), DistributionStamped, queue_size=10, latch=True)
         self.res_publishers.append((cn_pub, pd_pub))
         strmsg = String()
         pdmsg = DistributionStamped()
-        cnviz_pub = rospy.Publisher("{}/current_node_viz".format(name), Marker, queue_size=10)
+        cnviz_pub = rospy.Publisher("{}/estimated_node_viz".format(name), Marker, queue_size=10)
         parviz_pub = rospy.Publisher("{}/particles_viz".format(name), MarkerArray, queue_size=10)
         self.viz_publishers.append((cnviz_pub, parviz_pub))
         nodemkrmsg = Marker()
@@ -270,7 +270,7 @@ class TopologicalLocalisation():
                 __publish(node, particles)
                 resp = UpdatePoseObservationResponse()
                 resp.success = True
-                resp.current_node = __prepare_cn_msg(node).data
+                resp.estimated_node = __prepare_cn_msg(node).data
                 resp.current_prob_dist = __prepare_pd_msg(particles)
                 return(resp)
             else:
@@ -303,7 +303,7 @@ class TopologicalLocalisation():
                         __publish(node, particles)
                         resp = UpdateLikelihoodObservationResponse()
                         resp.success = True
-                        resp.current_node = __prepare_cn_msg(node).data
+                        resp.estimated_node = __prepare_cn_msg(node).data
                         resp.current_prob_dist = __prepare_pd_msg(particles)
                         return(resp)
                     else:

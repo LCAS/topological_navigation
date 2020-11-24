@@ -3,6 +3,6 @@ bayesian_topological_localisation/DistributionStamped likelihood
 ---
 
 bool success
-string current_node
+string estimated_node
 bayesian_topological_localisation/DistributionStamped current_prob_dist
 

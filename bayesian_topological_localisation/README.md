@@ -85,12 +85,12 @@ There are two ways an observation can be provided listed below. Each type of obs
   
 ## Getting localisation result
 
-The node position for an agent - e.g. `robot_1` - that is being localised is published latch to topic `/robot_1/current_node`. The package also provides the probability distribution of the agent location published latch to topic `/robot_1/current_prob_dist` as a list of nodes and with their corresponding probability.
+The node position for an agent - e.g. `robot_1` - that is being localised is published latch to topic `/robot_1/estimated_node`. The package also provides the probability distribution of the agent location published latch to topic `/robot_1/current_prob_dist` as a list of nodes and with their corresponding probability.
 
 ## Visualizations
 
 In order to visualize the localisation result - for agent `robot_1` for example - on rviz add:
-- a `Marker` attached to topic `/robot_1/current_node_viz`
+- a `Marker` attached to topic `/robot_1/estimated_node_viz`
 - a `MarkerArray` attached to topic `/robot_1/particles_viz` 
 
 ## TODO

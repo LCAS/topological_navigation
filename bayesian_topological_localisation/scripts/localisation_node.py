@@ -212,8 +212,9 @@ class TopologicalLocalisation():
                     msg.pose.pose.position.y,
                     msg.pose.covariance[0], # variance of x
                     msg.pose.covariance[7], # variance of y
-                    (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                        msg.header.stamp.to_sec() > 0]
+                    # (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
+                        # msg.header.stamp.to_sec() > 0]
+                    rospy.get_rostime().to_sec()
                 )
                 __publish(node, particles)
             else:
@@ -234,8 +235,9 @@ class TopologicalLocalisation():
                         node, particles = pf.receive_likelihood_obs(
                             nodes, 
                             msg.values,
-                            (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                                msg.header.stamp.to_sec() > 0]
+                            # (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
+                                # msg.header.stamp.to_sec() > 0]
+                            rospy.get_rostime().to_sec()
                         )
                         __publish(node, particles)
                     else:
@@ -264,8 +266,9 @@ class TopologicalLocalisation():
                     request.pose.pose.pose.position.y,
                     request.pose.pose.covariance[0],  # variance of x
                     request.pose.pose.covariance[7],  # variance of y
-                    (rospy.get_rostime().to_sec(), request.pose.header.stamp.to_sec())[
-                        request.pose.header.stamp.to_sec() > 0]
+                    # (rospy.get_rostime().to_sec(), request.pose.header.stamp.to_sec())[
+                    #     request.pose.header.stamp.to_sec() > 0]
+                    rospy.get_rostime().to_sec()
                 )
                 __publish(node, particles)
                 resp = UpdatePoseObservationResponse()
@@ -297,8 +300,9 @@ class TopologicalLocalisation():
                         node, particles = pf.receive_likelihood_obs(
                             nodes,
                             request.likelihood.values,
-                            (rospy.get_rostime().to_sec(), request.likelihood.header.stamp.to_sec())[
-                                request.likelihood.header.stamp.to_sec() > 0]
+                            # (rospy.get_rostime().to_sec(), request.likelihood.header.stamp.to_sec())[
+                                # request.likelihood.header.stamp.to_sec() > 0]
+                            rospy.get_rostime().to_sec()
                         )
                         __publish(node, particles)
                         resp = UpdateLikelihoodObservationResponse()

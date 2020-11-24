@@ -108,22 +108,28 @@ class map_manager_2(object):
 
     def load_map(self, filename):
         
-        with open(filename, "r") as f:
-            try:
+        try:
+            with open(filename, "r") as f:
                 self.tmap2 = yaml.safe_load(f)
-            except Exception as e:
-                rospy.logerr(e)
-                self.tmap2 = {}
-                return
-        
-        map_type = type(self.tmap2)
-        if map_type is list:
-            e = "Loaded map is {}. You may be attemting to load an old-format map using topological_navigation/manager2.py" \
-                " Please use topological_navigation/manager.py instead.".format(map_type)
+        except Exception as e:
             rospy.logerr(e)
             self.tmap2 = {}
             return
-                
+        
+        e1 = "Loaded map is {} and should be {}."
+        e2 = " You may be attemting to load an old-format map using topological_navigation/manager2.py" \
+                " Please use topological_navigation/manager.py instead."
+        
+        map_type = type(self.tmap2)
+        if map_type is list:
+            rospy.logerr((e1+e2).format(map_type, dict))
+            self.tmap2 = {}
+            return
+        elif map_type is not dict:
+            rospy.logerr(e1.format(map_type, dict))
+            self.tmap2 = {}
+            return
+            
         self.name = self.tmap2["name"]
         self.metric_map = self.tmap2["metric_map"]
         self.pointset = self.tmap2["pointset"]

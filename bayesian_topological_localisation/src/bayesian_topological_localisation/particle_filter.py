@@ -7,6 +7,8 @@ class TopologicalParticleFilter():
     SPREAD_UNIFORM = 1  # equally distributed along all nodes
     CLOSEST_NODE = 2    # assigned to closest node
 
+    REINIT_THRESHOLD = 1e-6     # if prob of current dist with observation is smaller than this constant, reinitialize particles
+
     def __init__(self, num, prediction_model, initial_spread_policy, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names):
         self.n_of_ptcl = num
         self.prediction_model = prediction_model
@@ -43,6 +45,8 @@ class TopologicalParticleFilter():
         self.last_ts = np.zeros((1))
         # speed decay when doing only prediction (it does eventually stop)
         self.prediction_speed_decay = prediction_speed_decay
+
+
 
         self.lock = threading.Lock()
 
@@ -118,7 +122,8 @@ class TopologicalParticleFilter():
             transition_p, t_nodes = self.prediction_model.predict(
                 node=p_node,
                 speed=self.current_speed,
-                time=self.life[particle_idx]
+                time=self.life[particle_idx],
+                only_connected=only_connected
             )
             # print(transition_p)
             self.predicted_particles[particle_idx] = np.random.choice(
@@ -138,9 +143,10 @@ class TopologicalParticleFilter():
         for _, (node, indices) in enumerate(zip(nodes, indices_groups)):
             self.W[indices] = prob_dist[nodes.index(node)]
 
-        # print("Weights: {}".format(zip(self.node_names[nodes], prob_dist)))
-        # TODO if W doesn't sum up to 1 then re-initialize the particles with this obs
         # it measn the particles are disjoint from this obs
+        if np.sum(prob_dist) < TopologicalParticleFilter.REINIT_THRESHOLD:
+            rospy.logwarn("Reinitializing particles, observation probability is less than {}".format(TopologicalParticleFilter.REINIT_THRESHOLD))
+            self._initialize_wt_pose(obs_x, obs_y, cov_x, cov_y, timestamp_secs=rospy.get_rostime().to_sec())
 
     # weighting wih a given likelihood distribution
     def _weight_likelihood(self, nodes_dist, likelihood):

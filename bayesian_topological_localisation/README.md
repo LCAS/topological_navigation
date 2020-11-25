@@ -95,7 +95,7 @@ In order to visualize the localisation result - for agent `robot_1` for example 
 
 ## TODO
 - [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
-- [ ] implement prediction model to spread to closeby nodes
+- [x] implement prediction model to spread to closeby nodes
 - [x] implement services for sending obs & getting results, for receiving predictions
 - [x] implement use of `prediction_speed_decay`, now always constant speed
 - [x] correctly stop the threads on shutdown request

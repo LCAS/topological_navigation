@@ -377,17 +377,21 @@ class TopologicalLocalisation():
             if self.prediction_threads[agent_idx] is not None:
                 self.prediction_threads[agent_idx].join()
 
-            # unregister topic pubs/subs
+            # unregister topic subs
             for sub in self.obs_subscribers[agent_idx]:
                 sub.unregister()
+            # shutting down services
+            for srv in self.upd_services[agent_idx]:
+                srv.shutdown()
+
+            rospy.sleep(1)
+
+            # unregister topic pubs
             for pub in self.res_publishers[agent_idx]:
                 pub.unregister()
             for pub in self.viz_publishers[agent_idx]:
                 pub.unregister()
             
-            # shutting down services
-            for srv in self.upd_services[agent_idx]:
-                srv.shutdown()
 
             # cleanup all the related variables
             del self.stopping_events[agent_idx]

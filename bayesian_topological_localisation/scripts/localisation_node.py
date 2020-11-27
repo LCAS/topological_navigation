@@ -62,7 +62,7 @@ class TopologicalLocalisation():
         self.internal_lock.acquire()
 
         # to stop executing in other threads/cbs
-        stop_event = None
+        stop_event = threading.Event()
 
         ## set default values ##
         # default name is unknown if requested is ''
@@ -187,7 +187,7 @@ class TopologicalLocalisation():
         # function to publish current node and particles distribution
         def __publish(node, particles):
 
-            if not stop_event.is_set()
+            if not stop_event.is_set():
                 cn_pub.publish(__prepare_cn_msg(node))
                 pd_pub.publish(__prepare_pd_msg(particles))
 
@@ -336,7 +336,6 @@ class TopologicalLocalisation():
         thr = None
         if do_prediction:
             # threaded function that performs predictions at a constant rate
-            stop_event = threading.Event()
             def __prediction_loop():
                 rate = rospy.Rate(prediction_rate)
                 while not stop_event.is_set():

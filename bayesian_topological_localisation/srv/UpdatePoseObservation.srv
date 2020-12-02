@@ -1,0 +1,7 @@
+geometry_msgs/PoseWithCovarianceStamped pose
+
+---
+
+bool success
+string estimated_node
+bayesian_topological_localisation/DistributionStamped current_prob_dist

@@ -61,6 +61,9 @@ class TopologicalLocalisation():
         rospy.loginfo("Received request to localise new agent {}".format(request.name))
         self.internal_lock.acquire()
 
+        # to stop executing in other threads/cbs
+        stop_event = threading.Event()
+
         ## set default values ##
         # default name is unknown if requested is ''
         name = (request.name, 'unknown')[request.name == '']
@@ -184,21 +187,22 @@ class TopologicalLocalisation():
         # function to publish current node and particles distribution
         def __publish(node, particles):
 
-            cn_pub.publish(__prepare_cn_msg(node))
-            pd_pub.publish(__prepare_pd_msg(particles))
+            if not stop_event.is_set():
+                cn_pub.publish(__prepare_cn_msg(node))
+                pd_pub.publish(__prepare_pd_msg(particles))
 
-            # publish viz stuff
-            for i, p in enumerate(particles):
-                ptcsarrmsg.markers[i].header.stamp = rospy.get_rostime()
-                ptcsarrmsg.markers[i].pose.position.x = self.node_coords[p][0] + \
-                    ptcsarrmsg.markers[i].scale.x * np.random.randn(1, 1)
-                ptcsarrmsg.markers[i].pose.position.y = self.node_coords[p][1] + \
-                    ptcsarrmsg.markers[i].scale.y * np.random.randn(1, 1)
-            nodemkrmsg.pose.position.x = self.node_coords[node][0]
-            nodemkrmsg.pose.position.y = self.node_coords[node][1]
+                # publish viz stuff
+                for i, p in enumerate(particles):
+                    ptcsarrmsg.markers[i].header.stamp = rospy.get_rostime()
+                    ptcsarrmsg.markers[i].pose.position.x = self.node_coords[p][0] + \
+                        ptcsarrmsg.markers[i].scale.x * np.random.randn(1, 1)
+                    ptcsarrmsg.markers[i].pose.position.y = self.node_coords[p][1] + \
+                        ptcsarrmsg.markers[i].scale.y * np.random.randn(1, 1)
+                nodemkrmsg.pose.position.x = self.node_coords[node][0]
+                nodemkrmsg.pose.position.y = self.node_coords[node][1]
 
-            cnviz_pub.publish(nodemkrmsg)
-            parviz_pub.publish(ptcsarrmsg)
+                cnviz_pub.publish(nodemkrmsg)
+                parviz_pub.publish(ptcsarrmsg)
 
         ## topic callbacks ##
         # send pose observation to particle filter
@@ -330,10 +334,8 @@ class TopologicalLocalisation():
         })
         
         thr = None
-        stop_event = None
         if do_prediction:
             # threaded function that performs predictions at a constant rate
-            stop_event = threading.Event()
             def __prediction_loop():
                 rate = rospy.Rate(prediction_rate)
                 while not stop_event.is_set():
@@ -377,17 +379,18 @@ class TopologicalLocalisation():
             if self.prediction_threads[agent_idx] is not None:
                 self.prediction_threads[agent_idx].join()
 
-            # unregister topic pubs/subs
+            # unregister topic subs
             for sub in self.obs_subscribers[agent_idx]:
                 sub.unregister()
+            # shutting down services
+            for srv in self.upd_services[agent_idx]:
+                srv.shutdown()
+            # unregister topic pubs
             for pub in self.res_publishers[agent_idx]:
                 pub.unregister()
             for pub in self.viz_publishers[agent_idx]:
                 pub.unregister()
             
-            # shutting down services
-            for srv in self.upd_services[agent_idx]:
-                srv.shutdown()
 
             # cleanup all the related variables
             del self.stopping_events[agent_idx]

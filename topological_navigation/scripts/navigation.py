@@ -250,7 +250,7 @@ class TopologicalNavServer(object):
             self.topol_map = msg.pointset
         else:
             self.lnodes = json.loads(msg.data)
-            self.topol_map = json.loads(msg.data["pointset"])
+            self.topol_map = self.lnodes["pointset"]
         self._map_received = True
 
     """
@@ -744,6 +744,10 @@ class TopologicalNavServer(object):
 if __name__ == "__main__":
     mode = "normal"
     use_tmap2 = False
+    argc = len(sys.argv)
+    if argc > 1:
+        if "-use_tmap2" in sys.argv:
+            use_tmap2 = True
     rospy.init_node("topological_navigation")
     server = TopologicalNavServer(rospy.get_name(), mode, use_tmap2)
     policy_server = PolicyExecutionServer(use_tmap2)

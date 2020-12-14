@@ -53,7 +53,7 @@ coverage.xml
 *.pot
 
 #vscode
-
+.vscode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

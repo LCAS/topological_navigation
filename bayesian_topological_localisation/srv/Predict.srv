@@ -1,0 +1,7 @@
+float64 secs_from_now
+
+---
+
+bool success
+string estimated_node
+bayesian_topological_localisation/DistributionStamped prob_dist

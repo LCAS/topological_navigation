@@ -53,6 +53,7 @@ add_service_files(
   StopLocalise.srv
   UpdatePoseObservation.srv
   UpdateLikelihoodObservation.srv
+  Predict.srv
 )
 
 ## Generate actions in the 'action' folder

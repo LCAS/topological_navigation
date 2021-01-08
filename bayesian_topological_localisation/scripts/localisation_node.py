@@ -7,7 +7,8 @@ from bayesian_topological_localisation.prediction_model import PredictionModel
 from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRequest, \
     LocaliseAgentResponse, StopLocalise, StopLocaliseRequest, StopLocaliseResponse, \
     UpdatePoseObservation, UpdatePoseObservationRequest, UpdatePoseObservationResponse, \
-    UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse
+    UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse, \
+    Predict, PredictRequest, PredictResponse
 from bayesian_topological_localisation.msg import DistributionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
@@ -114,7 +115,8 @@ class TopologicalLocalisation():
         pdmsg = DistributionStamped()
         cnviz_pub = rospy.Publisher("{}/estimated_node_viz".format(name), Marker, queue_size=10)
         parviz_pub = rospy.Publisher("{}/particles_viz".format(name), MarkerArray, queue_size=10)
-        self.viz_publishers.append((cnviz_pub, parviz_pub))
+        staparviz_pub = rospy.Publisher("{}/stateless_particles_viz".format(name), MarkerArray, queue_size=10)
+        self.viz_publishers.append((cnviz_pub, parviz_pub, staparviz_pub))
         nodemkrmsg = Marker()
         nodemkrmsg.header.frame_id = "/map"
         nodemkrmsg.type = nodemkrmsg.SPHERE
@@ -144,6 +146,22 @@ class TopologicalLocalisation():
             ptcmkrmsg.color.b = 0
             ptcmkrmsg.id = i
             ptcsarrmsg.markers.append(ptcmkrmsg)
+        staptcsarrmsg = MarkerArray()
+        for i in range(n_particles):
+            staptcmkrmsg = Marker()
+            staptcmkrmsg.header.frame_id = "/map"
+            staptcmkrmsg.type = staptcmkrmsg.SPHERE
+            staptcmkrmsg.pose.position.z = 0
+            staptcmkrmsg.pose.orientation.w = 1
+            staptcmkrmsg.scale.x = 0.1
+            staptcmkrmsg.scale.y = 0.1
+            staptcmkrmsg.scale.z = 0.1
+            staptcmkrmsg.color.a = 0.6
+            staptcmkrmsg.color.r = 1
+            staptcmkrmsg.color.g = 1
+            staptcmkrmsg.color.b = 0
+            staptcmkrmsg.id = i
+            staptcsarrmsg.markers.append(staptcmkrmsg)
 
         # get the how to spread the particles initially
         # if request.initial_spread_policy == LocaliseAgentRequest.CLOSEST_NODE:
@@ -186,7 +204,6 @@ class TopologicalLocalisation():
 
         # function to publish current node and particles distribution
         def __publish(node, particles):
-
             if not stop_event.is_set():
                 cn_pub.publish(__prepare_cn_msg(node))
                 pd_pub.publish(__prepare_pd_msg(particles))
@@ -203,6 +220,19 @@ class TopologicalLocalisation():
 
                 cnviz_pub.publish(nodemkrmsg)
                 parviz_pub.publish(ptcsarrmsg)
+
+        # function to publish stateless particles distribution viz
+        def __publish_stateless_viz(particles):
+            if not stop_event.is_set():
+                # publish viz stuff
+                for i, p in enumerate(particles):
+                    staptcsarrmsg.markers[i].header.stamp = rospy.get_rostime()
+                    staptcsarrmsg.markers[i].pose.position.x = self.node_coords[p][0] + \
+                        staptcsarrmsg.markers[i].scale.x * np.random.randn(1, 1)
+                    staptcsarrmsg.markers[i].pose.position.y = self.node_coords[p][1] + \
+                        staptcsarrmsg.markers[i].scale.y * np.random.randn(1, 1)
+
+                staparviz_pub.publish(staptcsarrmsg)
 
         ## topic callbacks ##
         # send pose observation to particle filter
@@ -327,10 +357,35 @@ class TopologicalLocalisation():
             resp.success = False
             return(resp)
 
+        def __do_stateless_prediction(request):
+            # get a copy of the particle filter to work with
+            _pf = pf.copy()
+            pred_step_secs = 1. / prediction_rate
+            secs_left = max(0.0, request.secs_from_now)
+            time = rospy.get_rostime().to_sec()
+            while secs_left > 0:
+                time += pred_step_secs
+                node, particles = _pf.predict(
+                    timestamp_secs=time
+                )
+                secs_left -= pred_step_secs
+            resp = PredictResponse()
+            if not (node is None or particles is None):
+                __publish_stateless_viz(particles)
+                resp.success = True
+                resp.estimated_node = __prepare_cn_msg(node).data
+                resp.prob_dist = __prepare_pd_msg(particles)
+            else:
+                resp.success = False
+                rospy.logwarn("Cannot perform prediction, no observation received so far.")
+
+            return resp
+
         # subscribe to services for update
         self.upd_services.append({
             rospy.Service("{}/update_pose_obs".format(name), UpdatePoseObservation, __update_pose_handler),
-            rospy.Service("{}/update_likelihood_obs".format(name), UpdateLikelihoodObservation, __update_likelihood_handler)
+            rospy.Service("{}/update_likelihood_obs".format(name), UpdateLikelihoodObservation, __update_likelihood_handler),
+            rospy.Service("{}/predict_stateless".format(name), Predict, __do_stateless_prediction)
         })
         
         thr = None

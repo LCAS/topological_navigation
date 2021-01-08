@@ -13,6 +13,8 @@ class TopologicalParticleFilter():
         self.n_of_ptcl = num
         self.prediction_model = prediction_model
         self.initial_spread_policy = initial_spread_policy
+        # speed decay when doing only prediction (it does eventually stop)
+        self.prediction_speed_decay = prediction_speed_decay
         self.node_coords = node_coords
         self.node_distances = node_distances
         self.connected_nodes = connected_nodes
@@ -43,10 +45,7 @@ class TopologicalParticleFilter():
         self.last_pose = np.zeros((2))
         # timestamp of poses
         self.last_ts = np.zeros((1))
-        # speed decay when doing only prediction (it does eventually stop)
-        self.prediction_speed_decay = prediction_speed_decay
-
-
+        
 
         self.lock = threading.Lock()
 
@@ -270,3 +269,34 @@ class TopologicalParticleFilter():
         self.lock.release()
 
         return node, particles
+
+    
+    def copy(self):
+        """Factory function that produces a copy of the current object"""
+        # create a new PF object
+        copy_obj = TopologicalParticleFilter(num=self.n_of_ptcl,
+                                             prediction_model=self.prediction_model,
+                                             initial_spread_policy=self.initial_spread_policy,
+                                             prediction_speed_decay=self.prediction_speed_decay,
+                                             node_coords=self.node_coords,
+                                             node_distances=self.node_distances,
+                                             connected_nodes=self.connected_nodes,
+                                             node_diffs2D=self.node_diffs2D,
+                                             node_names=self.node_names)
+
+        # get all the class variables
+        variables = [attr for attr in dir(copy_obj) if not callable(
+            getattr(copy_obj, attr)) and not attr.startswith("__")]
+        
+        # copy all the variable values, excluding some
+        exclude_variables = ["lock"]
+        for var in variables:
+            if var in exclude_variables:
+                continue
+
+            if isinstance(getattr(self, var), np.ndarray):
+                setattr(copy_obj, var, np.copy(getattr(self, var)))
+            else:
+                setattr(copy_obj, var, getattr(self, var))
+
+        return copy_obj

@@ -28,7 +28,7 @@ def get_node(top_map, node_name):
 def get_node_from_tmap2(top_map, node_name):
     for i in top_map["nodes"]:
         if i["node"]["name"] == node_name:
-            return i
+            return i["node"]
     return None
 
 
@@ -126,8 +126,8 @@ def get_edges_between(top_map, nodea, nodeb):
 def get_edges_between_tmap2(top_map, nodea, nodeb):
     ab = []
     noda = get_node_from_tmap2(top_map, nodea)
-    for j in noda.edges:
-        if j.node == nodeb:
+    for j in noda["edges"]:
+        if j["node"] == nodeb:
             ab.append(j)
     return ab
 
@@ -156,7 +156,7 @@ def get_edge_from_id(top_map, node_name, edge_id):
 
 def get_edge_from_id_tmap2(top_map, node_name, edge_id):
     node = get_node_from_tmap2(top_map, node_name)
-    for i in node.edges:
-        if i.edge_id == edge_id:
+    for i in node["edges"]:
+        if i["edge_id"] == edge_id:
             return i
     return None

@@ -8,6 +8,7 @@ import yaml
 import re
 import uuid
 import std_msgs.msg
+import os
 
 from strands_navigation_msgs.msg import *
 from strands_navigation_msgs.srv import *
@@ -35,7 +36,7 @@ class map_manager(object):
             else:
                 self.nodes, self.tmap = self.load_map_from_file(name)
             self.names = self.create_list_of_nodes()
-            self.tmap2 = self.tmap_to_tmap2() # convert map to new format
+            self.tmap_to_tmap2() # convert map to new format
 
             rospy.set_param('topological_map_name', self.nodes.pointset)
         else:
@@ -47,13 +48,8 @@ class map_manager(object):
 
 
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
-        self.map2_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1)
-        
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
-        strmap = std_msgs.msg.String()
-        strmap.data = json.dumps(self.tmap2)
-        self.map2_pub.publish(strmap) # publish new map type as a string
 
         rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
         #This service returns any given map
@@ -92,12 +88,9 @@ class map_manager(object):
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
         self.nodes = self.loadMap(self.name)
-        self.tmap2 = self.tmap_to_tmap2()
+        self.tmap_to_tmap2()
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
-        strmap = std_msgs.msg.String()
-        strmap.data = json.dumps(self.tmap2)
-        self.map2_pub.publish(strmap) # publish new map type as a string
         self.names = self.create_list_of_nodes()
 
 
@@ -192,7 +185,7 @@ class map_manager(object):
         """
         get tagged nodes callback
         This function is the callback for the get tagged nodes service
-        It returns a list of the nodes that have the tag tag
+        Returns a list of node names that have a specific tag
         """
         mm = self.get_tagged_nodes_from_file(tag) if self.load_from_file else self.get_tagged_nodes_from_mongo(tag)
         return mm
@@ -969,7 +962,11 @@ class map_manager(object):
     
     def tmap_to_tmap2(self):
         
-        manager2 = map_manager_2(self.nodes.name, self.nodes.map, self.nodes.pointset)
+        filename = ""
+        if self.load_from_file:
+            filename = os.path.splitext(self.name)[0] + ".yaml"
+            
+        manager2 = map_manager_2(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
         
         for node in self.nodes.nodes:
             
@@ -993,7 +990,7 @@ class map_manager(object):
                 config["top_vel"] = edge.top_vel
                 config["recovery_behaviours_config"] = edge.recovery_behaviours_config
                 
-                manager2.add_edge_to_node(node.name, edge.node, edge.action, config)
+                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, config)
                 
-        return manager2.tmap2
+        manager2.update()
 ###################################################################################################################

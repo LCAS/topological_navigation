@@ -111,8 +111,6 @@ class TopologicalLocalisation():
         cn_pub = rospy.Publisher("{}/estimated_node".format(name), String, queue_size=10, latch=True)
         pd_pub = rospy.Publisher("{}/current_prob_dist".format(name), DistributionStamped, queue_size=10, latch=True)
         self.res_publishers.append((cn_pub, pd_pub))
-        strmsg = String()
-        pdmsg = DistributionStamped()
         cnviz_pub = rospy.Publisher("{}/estimated_node_viz".format(name), Marker, queue_size=10)
         parviz_pub = rospy.Publisher("{}/particles_viz".format(name), MarkerArray, queue_size=10)
         staparviz_pub = rospy.Publisher("{}/stateless_particles_viz".format(name), MarkerArray, queue_size=10)
@@ -186,19 +184,23 @@ class TopologicalLocalisation():
             node_names=self.node_names
         )
 
-        def __prepare_pd_msg(particles):
+        def __prepare_pd_msg(particles, timestamp=None):
+            pdmsg = DistributionStamped()
             nodes, counts = np.unique(particles, return_counts=True)
 
             probs = np.zeros((self.node_names.shape[0]))
             probs[nodes] = counts.astype(float) / np.sum(counts)
 
-            pdmsg.header.stamp = rospy.get_rostime()
+            if timestamp is None:
+                timestamp = rospy.get_rostime()
+            pdmsg.header.stamp = timestamp
             pdmsg.nodes = self.node_names.tolist()
             pdmsg.values = np.copy(probs).tolist()
 
             return pdmsg
 
         def __prepare_cn_msg(node):
+            strmsg = String()
             strmsg.data = self.node_names[node]
             return strmsg
 
@@ -330,6 +332,7 @@ class TopologicalLocalisation():
                         "Received non-admissible node name {}, likelihood discarded".format(request.likelihood.nodes))
                 else:
                     values = np.array(request.likelihood.values)
+                    rospy.loginfo("Received likelihood: {}".format(zip(nodes, values)))
                     if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
                         node, particles = pf.receive_likelihood_obs(
                             nodes,
@@ -360,24 +363,52 @@ class TopologicalLocalisation():
         def __do_stateless_prediction(request):
             # get a copy of the particle filter to work with
             _pf = pf.copy()
-            pred_step_secs = 1. / prediction_rate
+            # if requested pred rate is lesseq than 0 use the global one
+            _prediction_rate = (request.prediction_rate, prediction_rate)[
+                request.prediction_rate <= 0.]
+            pred_step_secs = 1. / _prediction_rate
             secs_left = max(0.0, request.secs_from_now)
-            time = rospy.get_rostime().to_sec()
-            while secs_left > 0:
-                time += pred_step_secs
-                node, particles = _pf.predict(
-                    timestamp_secs=time
-                )
-                secs_left -= pred_step_secs
+            time = rospy.get_rostime()
             resp = PredictResponse()
-            if not (node is None or particles is None):
-                __publish_stateless_viz(particles)
-                resp.success = True
-                resp.estimated_node = __prepare_cn_msg(node).data
-                resp.prob_dist = __prepare_pd_msg(particles)
-            else:
-                resp.success = False
-                rospy.logwarn("Cannot perform prediction, no observation received so far.")
+            resp.success = True
+            # sub-function to append predictions to the result message
+            def ___append_prediction(node, particles, secs_passed, timestamp):
+                if not (node is None or particles is None):
+                    __publish_stateless_viz(particles)
+                    resp.secs_from_now.append(secs_passed)
+                    resp.estimated_node.append(__prepare_cn_msg(node).data)
+                    resp.prob_dist.append(__prepare_pd_msg(particles, timestamp=timestamp))
+                    return True
+                else:
+                    resp.success = False
+                    rospy.logwarn(
+                        "Cannot perform prediction, no observation received so far.")
+                    return False
+            # perform all the steps until reached limit time
+            while secs_left > 0:
+                node, particles = _pf.predict(
+                    timestamp_secs=time.to_sec()
+                )
+                if request.return_history:
+                    succ = ___append_prediction(
+                            node, 
+                            particles,
+                            secs_passed=request.secs_from_now - secs_left,
+                            timestamp=time)
+                    if not succ:
+                        break
+                    
+                time += rospy.Duration.from_sec(pred_step_secs)
+                secs_left -= pred_step_secs
+
+            # add last prediction at secs_left == 0
+            node, particles = _pf.predict(
+                timestamp_secs=time.to_sec()
+            )
+            _ = ___append_prediction(node, 
+                        particles,
+                        secs_passed=request.secs_from_now - secs_left,
+                        timestamp=time)
 
             return resp
 

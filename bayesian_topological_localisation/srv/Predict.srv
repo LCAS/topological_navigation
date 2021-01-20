@@ -1,7 +1,10 @@
 float64 secs_from_now
+float64 prediction_rate
+bool return_history
 
 ---
 
 bool success
-string estimated_node
-bayesian_topological_localisation/DistributionStamped prob_dist
+float64[] secs_from_now
+string[] estimated_node
+bayesian_topological_localisation/DistributionStamped[] prob_dist

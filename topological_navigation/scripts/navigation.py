@@ -26,6 +26,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.navigation_stats import *
 from topological_navigation.tmap_utils import *
 from topological_navigation.route_search import *
+from topological_navigation.route_search2 import *
 
 from execute_policy_server import PolicyExecutionServer
 
@@ -187,17 +188,30 @@ class TopologicalNavServer(object):
         #            ctopvel = 0.55
         #        else:
         #            ctopvel = cedg.top_vel
-        if cnode.xy_goal_tolerance <= 0.1:
-            cxygtol = 0.1
-        else:
-            cxygtol = cnode.xy_goal_tolerance
-        if not intermediate:
-            if cnode.yaw_goal_tolerance <= 0.087266:
-                cytol = 0.087266
+        if not self.use_tmap2:
+            if cnode.xy_goal_tolerance <= 0.1:
+                cxygtol = 0.1
             else:
-                cytol = cnode.yaw_goal_tolerance
+                cxygtol = cnode.xy_goal_tolerance
+            if not intermediate:
+                if cnode.yaw_goal_tolerance <= 0.087266:
+                    cytol = 0.087266
+                else:
+                    cytol = cnode.yaw_goal_tolerance
+            else:
+                cytol = 6.283
         else:
-            cytol = 6.283
+            if cnode["properties"]["xy_goal_tolerance"] <= 0.1:
+                cxygtol = 0.1
+            else:
+                cxygtol = cnode["properties"]["xy_goal_tolerance"]
+            if not intermediate:
+                if cnode["properties"]["yaw_goal_tolerance"] <= 0.087266:
+                    cytol = 0.087266
+                else:
+                    cytol = cnode["properties"]["yaw_goal_tolerance"]
+            else:
+                cytol = 6.283
         # No orientation restrictions, 'max_vel_x':ctopvel,
         params = {"yaw_goal_tolerance": cytol, "xy_goal_tolerance": cxygtol}
         print "reconfiguring %s with %s" % (self.move_base_name, params)
@@ -442,7 +456,7 @@ class TopologicalNavServer(object):
                 and (o_node is not None)
                 and (g_node["name"] != o_node["name"])
             ):
-                rsearch = TopologicalRouteSearch(self.lnodes)
+                rsearch = TopologicalRouteSearch2(self.lnodes)
                 route = rsearch.search_route(o_node["name"], target)
                 print route
                 if route:
@@ -800,13 +814,13 @@ class TopologicalNavServer(object):
                 self.lnodes, route.source[rindex], route.edge_id[rindex]
             )
 
-            a = cedg.action
+            a = cedg["action"]
             # next action
             if rindex < (route_len - 1):
                 nedge = get_edge_from_id_tmap2(
                     self.lnodes, route.source[rindex + 1], route.edge_id[rindex + 1]
                 )
-                a1 = nedge.action
+                a1 = nedge["action"]
             else:
                 a1 = "none"
 
@@ -814,25 +828,25 @@ class TopologicalNavServer(object):
             self.next_action = a1
 
             rospy.loginfo(
-                "From %s do (%s) to %s" % (route.source[rindex], a, cedg.node)
+                "From %s do (%s) to %s" % (route.source[rindex], a, cedg["node"])
             )
 
-            current_edge = "%s--%s" % (cedg.edge_id, self.topol_map)
+            current_edge = "%s--%s" % (cedg["edge_id"], self.topol_map)
             rospy.loginfo("Current edge: %s" % current_edge)
             self.cur_edge.publish(current_edge)
 
             # If we are using edge reconfigure
             if self.edge_reconfigure:
-                self.edgeReconfigureManager(cedg.edge_id)
+                self.edgeReconfigureManager(cedg["edge_id"])
 
             self._feedback.route = "%s to %s using %s" % (
                 route.source[rindex],
-                cedg.node,
+                cedg["node"],
                 a,
             )
             self._as.publish_feedback(self._feedback)
 
-            cnode = get_node_from_tmap2(self.lnodes, cedg.node)
+            cnode = get_node_from_tmap2(self.lnodes, cedg["node"])
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND
             # the current and following action are move_base or human_aware_navigation
@@ -848,13 +862,20 @@ class TopologicalNavServer(object):
                 else:
                     self.reconf_movebase(cedg, cnode, False)
 
-            self.current_target = cedg.node
+            self.current_target = cedg["node"]
 
             self.stat = nav_stats(
-                route.source[rindex], cedg.node, self.topol_map, cedg.edge_id
+                route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"]
             )
             dt_text = self.stat.get_start_time_str()
-            inf = cnode.pose
+            inf = MonitoredNavigationGoal()
+            inf.target_pose.pose.position.x = cnode["pose"]["position"]["x"]
+            inf.target_pose.pose.position.y = cnode["pose"]["position"]["y"]
+            inf.target_pose.pose.position.z = cnode["pose"]["position"]["z"]
+            inf.target_pose.pose.orientation.w = cnode["pose"]["orientation"]["w"]
+            inf.target_pose.pose.orientation.x = cnode["pose"]["orientation"]["x"]
+            inf.target_pose.pose.orientation.y = cnode["pose"]["orientation"]["y"]
+            inf.target_pose.pose.orientation.z = cnode["pose"]["orientation"]["z"]
             nav_ok, inc = self.monitored_navigation(inf, a)
             # 5 degrees tolerance   'max_vel_x':0.55,
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
@@ -949,7 +970,7 @@ class TopologicalNavServer(object):
         goal.action_server = command
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.get_rostime()
-        goal.target_pose.pose = gpose
+        goal.target_pose.pose = gpose.target_pose.pose
 
         self.goal_reached = False
         self.monNavClient.send_goal(goal)

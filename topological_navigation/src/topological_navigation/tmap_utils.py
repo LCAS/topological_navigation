@@ -87,6 +87,21 @@ def get_distance_to_node(nodea, nodeb):
 
 
 """
+    get_distance_to_node_tmap2
+    
+    Given two nodes it returns the straight line distance between them for tmap2
+"""
+
+
+def get_distance_to_node_tmap2(nodea, nodeb):
+    dist = math.hypot(
+        (nodeb["pose"]["position"]["x"] - nodea["pose"]["position"]["x"]),
+        (nodeb["pose"]["position"]["y"] - nodea["pose"]["position"]["y"]),
+    )
+    return dist
+
+
+"""
     get_conected_nodes
     
     Given a node it returns the nodes connected to it by one single edge
@@ -97,6 +112,20 @@ def get_conected_nodes(node):
     childs = []
     for i in node.edges:
         childs.append(i.node)
+    return childs
+
+
+"""
+    get_conected_nodes_tmap2
+    
+    Given a node it returns the nodes connected to it by one single edge
+"""
+
+
+def get_conected_nodes_tmap2(node):
+    childs = []
+    for i in node["edges"]:
+        childs.append(i["node"])
     return childs
 
 

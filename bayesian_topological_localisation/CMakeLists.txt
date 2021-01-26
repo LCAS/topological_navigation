@@ -53,6 +53,7 @@ add_service_files(
   StopLocalise.srv
   UpdatePoseObservation.srv
   UpdateLikelihoodObservation.srv
+  UpdatePriorLikelihoodObservation.srv
   Predict.srv
 )
 

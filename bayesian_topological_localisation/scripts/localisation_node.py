@@ -8,6 +8,7 @@ from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRe
     LocaliseAgentResponse, StopLocalise, StopLocaliseRequest, StopLocaliseResponse, \
     UpdatePoseObservation, UpdatePoseObservationRequest, UpdatePoseObservationResponse, \
     UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse, \
+    UpdatePriorLikelihoodObservation, UpdatePriorLikelihoodObservationRequest, UpdatePriorLikelihoodObservationResponse, \
     Predict, PredictRequest, PredictResponse
 from bayesian_topological_localisation.msg import DistributionStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
@@ -412,11 +413,70 @@ class TopologicalLocalisation():
 
             return resp
 
+        def __do_stateless_update(request):
+            # create a new PF and assign the prior distribution to start up with
+            __pf = TopologicalParticleFilter(
+                num=n_particles,
+                prediction_model=pm,
+                initial_spread_policy=initial_spread_policy,
+                prediction_speed_decay=prediction_speed_decay,
+                node_coords=self.node_coords,
+                node_distances=self.node_distances,
+                connected_nodes=self.connected_nodes,
+                node_diffs2D=self.node_diffs2D,
+                node_names=self.node_names
+            )
+            if len(request.likelihood.nodes) == len(request.likelihood.values) and \
+                    len(request.prior.nodes) == len(request.prior.values):
+                try:
+                    lkl_nodes = [np.where(self.node_names == nname)[0][0]
+                             for nname in request.likelihood.nodes]
+                    pr_nodes = [np.where(self.node_names == nname)[0][0]
+                             for nname in request.prior.nodes]
+                except IndexError:
+                    rospy.logwarn(
+                        "Received non-admissible node name {}/{}, prior/likelihood discarded".format(request.prior.nodes, request.likelihood.nodes))
+                else:
+                    pr_values = np.array(request.prior.values)
+                    rospy.loginfo(
+                        "Received prior: {}".format(zip(pr_nodes, pr_values)))
+                    lkl_values = np.array(request.likelihood.values)
+                    rospy.loginfo(
+                        "Received likelihood: {}".format(zip(lkl_nodes, lkl_values)))
+                    if np.isfinite(lkl_values).all() and (lkl_values >= 0.).all() and np.sum(lkl_values) > 0 and \
+                            np.isfinite(pr_values).all() and (pr_values >= 0.).all() and np.sum(pr_values) > 0:
+                        ts = rospy.get_rostime().to_sec()
+                        # send the prior (assignment bcs it's the first observation ever received)
+                        _, _ = __pf.receive_likelihood_obs(
+                            pr_nodes,
+                            request.prior.values,
+                            ts
+                        )
+                        # send the lkl (prediction is not performed here because the ts is the same as prior ts)
+                        node, particles = __pf.receive_likelihood_obs(
+                            lkl_nodes,
+                            request.likelihood.values,
+                            ts
+                        )
+                        resp = UpdatePriorLikelihoodObservationResponse()
+                        resp.success = True
+                        resp.estimated_node = __prepare_cn_msg(node).data
+                        resp.current_prob_dist = __prepare_pd_msg(particles)
+                        return(resp)
+                    else:
+                        rospy.logwarn(
+                            "Received non-admissible prior/likelihood observation {}, discarded".format(request.prior.values, request.likelihood.values))
+
+            else:
+                rospy.logwarn("Nodes array and values array sizes do not match {} != {}/{} != {}, discarding prior/likelihood observation".format(
+                    len(request.prior.nodes), len(request.prior.values), len(request.likelihood.nodes), len(request.likelihood.values)))
+
         # subscribe to services for update
         self.upd_services.append({
             rospy.Service("{}/update_pose_obs".format(name), UpdatePoseObservation, __update_pose_handler),
             rospy.Service("{}/update_likelihood_obs".format(name), UpdateLikelihoodObservation, __update_likelihood_handler),
-            rospy.Service("{}/predict_stateless".format(name), Predict, __do_stateless_prediction)
+            rospy.Service("{}/predict_stateless".format(name), Predict, __do_stateless_prediction),
+            rospy.Service("{}/update_stateless".format(name), UpdatePriorLikelihoodObservation, __do_stateless_update)
         })
         
         thr = None

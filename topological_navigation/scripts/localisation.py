@@ -517,12 +517,10 @@ class TopologicalNavLoc(object):
 if __name__ == '__main__':
     rospy.init_node('topological_localisation')
     wtags=True
-    use_tmap2 = False
+    use_tmap2 = rospy.get_param("~use_tmap2", False)  
     argc = len(sys.argv)
     if argc > 1:
         if '-notags' in sys.argv:
             wtags = False
-        if '-use_tmap2' in sys.argv:
-            use_tmap2 = True
     server = TopologicalNavLoc(rospy.get_name(), wtags, use_tmap2)
 ###################################################################################################################    

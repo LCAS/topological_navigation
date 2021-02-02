@@ -14,6 +14,8 @@ from strands_navigation_msgs.msg import MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
 
+from geometry_msgs.msg import Pose
+
 from strands_navigation_msgs.srv import ReconfAtEdges
 
 from actionlib_msgs.msg import *
@@ -92,7 +94,7 @@ class TopologicalNavServer(object):
 
         self.use_tmap2 = use_tmap2
         if self.use_tmap2:
-            rospy.loginfo("TOPOLOGICAL LOCALISATION IS USING THE NEW MAP TYPE")
+            rospy.logwarn("TOPOLOGICAL NAVIGATION IS USING THE NEW MAP TYPE")
 
         move_base_actions = [
             "move_base",
@@ -226,7 +228,7 @@ class TopologicalNavServer(object):
         translation = DYNPARAM_MAPPING[key]
         for k, v in params.iteritems():
             if k in translation:
-                if rospy.has_param(translation[k]):
+                if rospy.has_param(self.move_base_planner + "/" + translation[k]):
                     translated_params[translation[k]] = v
                 else:
                     rospy.logwarn(
@@ -868,14 +870,14 @@ class TopologicalNavServer(object):
                 route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"]
             )
             dt_text = self.stat.get_start_time_str()
-            inf = MonitoredNavigationGoal()
-            inf.target_pose.pose.position.x = cnode["pose"]["position"]["x"]
-            inf.target_pose.pose.position.y = cnode["pose"]["position"]["y"]
-            inf.target_pose.pose.position.z = cnode["pose"]["position"]["z"]
-            inf.target_pose.pose.orientation.w = cnode["pose"]["orientation"]["w"]
-            inf.target_pose.pose.orientation.x = cnode["pose"]["orientation"]["x"]
-            inf.target_pose.pose.orientation.y = cnode["pose"]["orientation"]["y"]
-            inf.target_pose.pose.orientation.z = cnode["pose"]["orientation"]["z"]
+            inf = Pose()
+            inf.position.x = cnode["pose"]["position"]["x"]
+            inf.position.y = cnode["pose"]["position"]["y"]
+            inf.position.z = cnode["pose"]["position"]["z"]
+            inf.orientation.w = cnode["pose"]["orientation"]["w"]
+            inf.orientation.x = cnode["pose"]["orientation"]["x"]
+            inf.orientation.y = cnode["pose"]["orientation"]["y"]
+            inf.orientation.z = cnode["pose"]["orientation"]["z"]
             nav_ok, inc = self.monitored_navigation(inf, a)
             # 5 degrees tolerance   'max_vel_x':0.55,
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
@@ -970,7 +972,7 @@ class TopologicalNavServer(object):
         goal.action_server = command
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.get_rostime()
-        goal.target_pose.pose = gpose.target_pose.pose
+        goal.target_pose.pose = gpose
 
         self.goal_reached = False
         self.monNavClient.send_goal(goal)

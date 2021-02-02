@@ -108,7 +108,7 @@ class TopologicalNavLoc(object):
         self.with_tags = wtags
         self.use_tmap2 = use_tmap2
         if self.use_tmap2:
-            rospy.loginfo("TOPOLOGICAL LOCALISATION IS USING THE NEW MAP TYPE")
+            rospy.logwarn("TOPOLOGICAL LOCALISATION IS USING THE NEW MAP TYPE")
 
         self.subscribers=[]
         self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)

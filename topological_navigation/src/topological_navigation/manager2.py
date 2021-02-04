@@ -108,6 +108,7 @@ class map_manager_2(object):
         self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
+        self.update_edge_reconf_srv=rospy.Service('/topological_map_manager2/update_edge_reconf', topological_navigation_msgs.srv.UpdateEdgeReconf, self.update_edge_reconf_cb)
         
         
     def get_time(self):
@@ -837,6 +838,41 @@ class map_manager_2(object):
             return False, "no edge found or multiple edges found"
         
         
+    def update_edge_reconf_cb(self, req):
+        """
+        Update edge reconfigure parameters.
+        """
+        return self.update_edge_reconf(req.edge_id, req.param_name, req.param_value, req.value_is_string)
+    
+    
+    def update_edge_reconf(self, edge_id, param_name, param_value, value_is_string):
+        
+        if not value_is_string:
+            param_value = eval(param_value)
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    if "config" in edge:
+                        edge["config"][param_name] = param_value
+                    else:
+                        edge["config"] = {}
+                        edge["config"][param_name] = param_value
+            
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+            
+            return True, "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
+        else:
+            rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False, "no edge found or multiple edges found"
+        
+        
     def get_instances_of_node(self, node_name):
         
         num_available = 0
@@ -946,7 +982,8 @@ class map_manager_2(object):
                 points.nodes.append(msg)
         
         except Exception as e:
-            rospy.logerr("cannot convert map to the old format: {}".format(e))
+            rospy.logerr("Cannot convert map to the old format. The conversion requires all fields of the old format map to be set.")
+            points = strands_navigation_msgs.msg.TopologicalMap()
         
         self.points = points
 #########################################################################################################

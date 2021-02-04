@@ -29,6 +29,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
 add_service_files(
   FILES
   WriteTopologicalMap.srv
+  UpdateEdgeReconf.srv
 )
 
 

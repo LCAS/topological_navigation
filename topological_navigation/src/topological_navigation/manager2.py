@@ -896,52 +896,56 @@ class map_manager_2(object):
         
         points = strands_navigation_msgs.msg.TopologicalMap()
         
-        point_set = self.tmap2["pointset"]
-        points.name = point_set
-        points.pointset = point_set
-        points.map = self.tmap2["metric_map"]
+        try:
+            point_set = self.pointset
+            points.name = point_set
+            points.pointset = point_set
+            points.map = self.metric_map
+            
+            for node in self.tmap2["nodes"]:
+                msg = strands_navigation_msgs.msg.TopologicalNode()
+                msg.name = node["node"]["name"]
+                msg.map = self.metric_map
+                msg.pointset = point_set
+                
+                msg.pose.position.x = node["node"]["pose"]["position"]["x"]
+                msg.pose.position.y = node["node"]["pose"]["position"]["y"]
+                msg.pose.position.z = node["node"]["pose"]["position"]["z"]
+                
+                msg.pose.orientation.x = node["node"]["pose"]["orientation"]["x"]
+                msg.pose.orientation.y = node["node"]["pose"]["orientation"]["y"]
+                msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
+                msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
+                
+                msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
+                msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]
+                
+                msgs_verts = []
+                for v in node["node"]["verts"]:
+                    msg_v = strands_navigation_msgs.msg.Vertex()
+                    msg_v.x = v["x"]
+                    msg_v.y = v["y"]
+                    msgs_verts.append(msg_v)
+                msg.verts = msgs_verts
+                
+                msgs_edges = []
+                for e in node["node"]["edges"]:
+                    msg_e = strands_navigation_msgs.msg.Edge()
+                    msg_e.edge_id = e["edge_id"]
+                    msg_e.node = e["node"]
+                    msg_e.action = e["action"]
+                    msg_e.top_vel = e["config"]["top_vel"]
+                    msg_e.map_2d = self.metric_map
+                    msg_e.inflation_radius = e["config"]["inflation_radius"]
+                    msg_e.recovery_behaviours_config = e["config"]["recovery_behaviours_config"]
+                    msgs_edges.append(msg_e)
+                msg.edges = msgs_edges
+                
+                msg.localise_by_topic = node["node"]["localise_by_topic"]
+                points.nodes.append(msg)
         
-        for node in self.tmap2["nodes"]:
-            msg = strands_navigation_msgs.msg.TopologicalNode()
-            msg.name = node["node"]["name"]
-            msg.map = self.tmap2["metric_map"]
-            msg.pointset = point_set
-            
-            msg.pose.position.x = node["node"]["pose"]["position"]["x"]
-            msg.pose.position.y = node["node"]["pose"]["position"]["y"]
-            msg.pose.position.z = node["node"]["pose"]["position"]["z"]
-            
-            msg.pose.orientation.x = node["node"]["pose"]["orientation"]["x"]
-            msg.pose.orientation.y = node["node"]["pose"]["orientation"]["y"]
-            msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
-            msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
-            
-            msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
-            msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]
-            
-            msgs_verts = []
-            for v in node["node"]["verts"]:
-                msg_v = strands_navigation_msgs.msg.Vertex()
-                msg_v.x = v["x"]
-                msg_v.y = v["y"]
-                msgs_verts.append(msg_v)
-            msg.verts = msgs_verts
-            
-            msgs_edges = []
-            for e in node["node"]["edges"]:
-                msg_e = strands_navigation_msgs.msg.Edge()
-                msg_e.edge_id = e["edge_id"]
-                msg_e.node = e["node"]
-                msg_e.action = e["action"]
-                msg_e.top_vel = e["config"]["top_vel"]
-                msg_e.map_2d = self.tmap2["metric_map"]
-                msg_e.inflation_radius = e["config"]["inflation_radius"]
-                msg_e.recovery_behaviours_config = e["config"]["recovery_behaviours_config"]
-                msgs_edges.append(msg_e)
-            msg.edges = msgs_edges
-            
-            msg.localise_by_topic = node["node"]["localise_by_topic"]
-            points.nodes.append(msg)
+        except Exception as e:
+            rospy.logerr("cannot convert map to the old format: {}".format(e))
         
         self.points = points
 #########################################################################################################

@@ -79,8 +79,9 @@ class map_manager_2(object):
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
         
+        self.convert_to_legacy = rospy.get_param("~convert_to_legacy", False)
         self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
-        if self.loaded:
+        if self.loaded and self.convert_to_legacy:
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
         
@@ -173,7 +174,7 @@ class map_manager_2(object):
         self.names = self.create_list_of_nodes()
         self.map_check()
         
-        if self.loaded:
+        if self.loaded and self.convert_to_legacy:
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
         

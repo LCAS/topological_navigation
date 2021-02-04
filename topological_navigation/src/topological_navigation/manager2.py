@@ -11,6 +11,7 @@ import yaml, datetime, json
 import re, uuid, copy, os
 
 import strands_navigation_msgs.srv
+from strands_navigation_msgs.msg import *
 import topological_navigation_msgs.srv
 import std_msgs.msg
 
@@ -57,7 +58,7 @@ class map_manager_2(object):
         self.filename = filename
         if not self.filename:
             self.filename = os.path.join(self.cache_dir, self.name + ".yaml")
-            
+        
         self.load = load            
         if self.load:
             self.load_map(self.filename)
@@ -77,6 +78,11 @@ class map_manager_2(object):
         
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
+        
+        self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
+        if self.loaded:
+            self.tmap2_to_tmap()
+            self.points_pub.publish(self.points)
         
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
@@ -107,6 +113,7 @@ class map_manager_2(object):
 
 
     def load_map(self, filename):
+        self.loaded = False
         
         try:
             with open(filename, "r") as f:
@@ -129,6 +136,8 @@ class map_manager_2(object):
             rospy.logerr(e1.format(map_type, dict))
             self.tmap2 = {}
             return
+        
+        self.loaded = True
             
         self.name = self.tmap2["name"]
         self.metric_map = self.tmap2["metric_map"]
@@ -163,6 +172,10 @@ class map_manager_2(object):
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
         self.names = self.create_list_of_nodes()
         self.map_check()
+        
+        if self.loaded:
+            self.tmap2_to_tmap()
+            self.points_pub.publish(self.points)
         
         
     def broadcast_transform(self):
@@ -876,4 +889,58 @@ class map_manager_2(object):
             if destination not in names:
                 rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
                 self.map_ok = False
+                
+                
+    def tmap2_to_tmap(self):
+        
+        points = strands_navigation_msgs.msg.TopologicalMap()
+        
+        point_set = self.tmap2["pointset"]
+        points.name = point_set
+        points.pointset = point_set
+        points.map = self.tmap2["metric_map"]
+        
+        for node in self.tmap2["nodes"]:
+            msg = strands_navigation_msgs.msg.TopologicalNode()
+            msg.name = node["node"]["name"]
+            msg.map = self.tmap2["metric_map"]
+            msg.pointset = point_set
+            
+            msg.pose.position.x = node["node"]["pose"]["position"]["x"]
+            msg.pose.position.y = node["node"]["pose"]["position"]["y"]
+            msg.pose.position.z = node["node"]["pose"]["position"]["z"]
+            
+            msg.pose.orientation.x = node["node"]["pose"]["orientation"]["x"]
+            msg.pose.orientation.y = node["node"]["pose"]["orientation"]["y"]
+            msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
+            msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
+            
+            msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
+            msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]
+            
+            msgs_verts = []
+            for v in node["node"]["verts"]:
+                msg_v = strands_navigation_msgs.msg.Vertex()
+                msg_v.x = v["x"]
+                msg_v.y = v["y"]
+                msgs_verts.append(msg_v)
+            msg.verts = msgs_verts
+            
+            msgs_edges = []
+            for e in node["node"]["edges"]:
+                msg_e = strands_navigation_msgs.msg.Edge()
+                msg_e.edge_id = e["edge_id"]
+                msg_e.node = e["node"]
+                msg_e.action = e["action"]
+                msg_e.top_vel = e["config"]["top_vel"]
+                msg_e.map_2d = self.tmap2["metric_map"]
+                msg_e.inflation_radius = e["config"]["inflation_radius"]
+                msg_e.recovery_behaviours_config = e["config"]["recovery_behaviours_config"]
+                msgs_edges.append(msg_e)
+            msg.edges = msgs_edges
+            
+            msg.localise_by_topic = node["node"]["localise_by_topic"]
+            points.nodes.append(msg)
+        
+        self.points = points
 #########################################################################################################

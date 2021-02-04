@@ -59,6 +59,7 @@ class map_manager_2(object):
         if not self.filename:
             self.filename = os.path.join(self.cache_dir, self.name + ".yaml")
         
+        self.loaded = False
         self.load = load            
         if self.load:
             self.load_map(self.filename)
@@ -79,7 +80,7 @@ class map_manager_2(object):
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
         
-        self.convert_to_legacy = rospy.get_param("~convert_to_legacy", False)
+        self.convert_to_legacy = rospy.get_param("~convert_to_legacy", True)
         self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
         if self.loaded and self.convert_to_legacy:
             self.tmap2_to_tmap()

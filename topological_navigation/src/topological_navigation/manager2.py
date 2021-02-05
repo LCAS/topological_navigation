@@ -108,7 +108,7 @@ class map_manager_2(object):
         self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
-        self.update_edge_reconf_srv=rospy.Service('/topological_map_manager2/update_edge_reconf', topological_navigation_msgs.srv.UpdateEdgeReconf, self.update_edge_reconf_cb)
+        self.update_edge_config_srv=rospy.Service('/topological_map_manager2/update_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.update_edge_config_cb)
         
         
     def get_time(self):
@@ -838,14 +838,14 @@ class map_manager_2(object):
             return False, "no edge found or multiple edges found"
         
         
-    def update_edge_reconf_cb(self, req):
+    def update_edge_config_cb(self, req):
         """
         Update edge reconfigure parameters.
         """
-        return self.update_edge_reconf(req.edge_id, req.param_name, req.param_value, req.value_is_string)
+        return self.update_edge_config(req.edge_id, req.param_name, req.param_value, req.value_is_string)
     
     
-    def update_edge_reconf(self, edge_id, param_name, param_value, value_is_string):
+    def update_edge_config(self, edge_id, param_name, param_value, value_is_string):
         
         if not value_is_string:
             param_value = eval(param_value)

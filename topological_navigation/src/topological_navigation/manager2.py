@@ -109,6 +109,7 @@ class map_manager_2(object):
         self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         self.update_edge_config_srv=rospy.Service('/topological_map_manager2/update_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.update_edge_config_cb)
+        self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         
         
     def get_time(self):
@@ -820,13 +821,13 @@ class map_manager_2(object):
                 if edge["edge_id"] == edge_id:
                     edge["action"] = action or edge["action"]
                     
-                if "config" in edge and "top_vel" in edge["config"]:
-                    edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
-                elif "config" in edge and "top_vel" not in edge["config"]:
-                    edge["config"]["top_vel"] = top_vel
-                else:
-                    edge["config"] = {}
-                    edge["config"]["top_vel"] = top_vel
+                    if "config" in edge and "top_vel" in edge["config"]:
+                        edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
+                    elif "config" in edge and "top_vel" not in edge["config"]:
+                        edge["config"]["top_vel"] = top_vel
+                    else:
+                        edge["config"] = {}
+                        edge["config"]["top_vel"] = top_vel
                     
             self.tmap2["nodes"][index] = the_node
             self.update()
@@ -868,6 +869,36 @@ class map_manager_2(object):
             self.write_topological_map(self.filename)
             
             return True, "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
+        else:
+            rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False, "no edge found or multiple edges found"
+        
+        
+    def rm_param_from_edge_config_cb(self, req):
+        """
+        Remove a param from an edge's config.
+        """
+        return self.rm_param_from_edge_config(req.edge_id, req.param_name)
+    
+    
+    def rm_param_from_edge_config(self, edge_id, param_name):
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    if "config" in edge and param_name in edge["config"]:
+                        del edge["config"][param_name]
+        
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+            
+            print_config = edge["config"] if "config" in edge else {}
+            return True, "edge action is {} and edge config is {}".format(edge["action"], print_config)
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
             return False, "no edge found or multiple edges found"

@@ -470,8 +470,9 @@ class map_manager_2(object):
             return False
         
         
-    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config="default", 
-                         action_type="default", goal="default", fail_policy="fail", restrictions=None):
+    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[], 
+                         recovery_behaviours_config="", action_type="default", goal="default", fail_policy="fail", 
+                         restrictions=None):
         
         edge = {}
         edge["action"] = action
@@ -482,14 +483,8 @@ class map_manager_2(object):
             edge["edge_id"] = edge_id
         
         edge["node"] = destination
-        
-        if config == "default":
-            edge["config"] = {}
-            edge["config"]["inflation_radius"] = 0.0
-            edge["config"]["top_vel"] = 0.55
-            edge["config"]["recovery_behaviours_config"] = ""
-        else:
-            edge["config"] = config
+        edge["config"] = config
+        edge["recovery_behaviours_config"] = recovery_behaviours_config
         
         if action_type == "default":
             edge["action_type"] = self.set_action_type(action)
@@ -1002,10 +997,10 @@ class map_manager_2(object):
                     msg_e.edge_id = e["edge_id"]
                     msg_e.node = e["node"]
                     msg_e.action = e["action"]
-                    msg_e.top_vel = e["config"]["top_vel"]
+                    msg_e.top_vel = 0.55
                     msg_e.map_2d = self.metric_map
-                    msg_e.inflation_radius = e["config"]["inflation_radius"]
-                    msg_e.recovery_behaviours_config = e["config"]["recovery_behaviours_config"]
+                    msg_e.inflation_radius = 0.0
+                    msg_e.recovery_behaviours_config = e["recovery_behaviours_config"]
                     msgs_edges.append(msg_e)
                 msg.edges = msgs_edges
                 

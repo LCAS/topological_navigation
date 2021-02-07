@@ -336,7 +336,7 @@ class TopologicalLocalisation():
                         "Received non-admissible node name {}, likelihood discarded".format(request.likelihood.nodes))
                 else:
                     values = np.array(request.likelihood.values)
-                    rospy.loginfo("Received likelihood: {}".format(zip(nodes, values)))
+                    # rospy.loginfo("Received likelihood: {}".format(zip(nodes, values)))
                     if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
                         node, particles = pf.receive_likelihood_obs(
                             nodes,
@@ -442,11 +442,11 @@ class TopologicalLocalisation():
                         "Received non-admissible node name {}/{}, prior/likelihood discarded".format(request.prior.nodes, request.likelihood.nodes))
                 else:
                     pr_values = np.array(request.prior.values)
-                    rospy.loginfo(
-                        "Received prior: {}".format(zip(pr_nodes, pr_values)))
+                    # rospy.loginfo(
+                    #     "Received prior: {}".format(zip(pr_nodes, pr_values)))
                     lkl_values = np.array(request.likelihood.values)
-                    rospy.loginfo(
-                        "Received likelihood: {}".format(zip(lkl_nodes, lkl_values)))
+                    # rospy.loginfo(
+                    #     "Received likelihood: {}".format(zip(lkl_nodes, lkl_values)))
                     if np.isfinite(lkl_values).all() and (lkl_values >= 0.).all() and np.sum(lkl_values) > 0 and \
                             np.isfinite(pr_values).all() and (pr_values >= 0.).all() and np.sum(pr_values) > 0:
                         ts = rospy.get_rostime().to_sec()
@@ -454,13 +454,15 @@ class TopologicalLocalisation():
                         _, _ = __pf.receive_likelihood_obs(
                             pr_nodes,
                             request.prior.values,
-                            ts
+                            ts,
+                            False
                         )
                         # send the lkl (prediction is not performed here because the ts is the same as prior ts)
                         node, particles = __pf.receive_likelihood_obs(
                             lkl_nodes,
                             request.likelihood.values,
-                            ts
+                            ts,
+                            False
                         )
                         resp = UpdatePriorLikelihoodObservationResponse()
                         resp.success = True

@@ -7,12 +7,14 @@ class TopologicalParticleFilter():
     SPREAD_UNIFORM = 1  # equally distributed along all nodes
     CLOSEST_NODE = 2    # assigned to closest node
 
-    REINIT_THRESHOLD = 1e-6     # if prob of current dist with observation is smaller than this constant, reinitialize particles
+    REINIT_THRESHOLD = 1e-5     # if prob of current dist with observation is smaller than this constant, reinitialize particles
 
     def __init__(self, num, prediction_model, initial_spread_policy, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names):
         self.n_of_ptcl = num
         self.prediction_model = prediction_model
         self.initial_spread_policy = initial_spread_policy
+        # speed decay when doing only prediction (it does eventually stop)
+        self.prediction_speed_decay = prediction_speed_decay
         self.node_coords = node_coords
         self.node_distances = node_distances
         self.connected_nodes = connected_nodes
@@ -43,10 +45,7 @@ class TopologicalParticleFilter():
         self.last_pose = np.zeros((2))
         # timestamp of poses
         self.last_ts = np.zeros((1))
-        # speed decay when doing only prediction (it does eventually stop)
-        self.prediction_speed_decay = prediction_speed_decay
-
-
+        
 
         self.lock = threading.Lock()
 
@@ -97,6 +96,7 @@ class TopologicalParticleFilter():
         self.life = np.zeros((self.n_of_ptcl))
         self.last_pose = np.array([obs_x, obs_y])
         self.last_ts = timestamp_secs
+        self.W = np.ones((self.n_of_ptcl))
 
     def _initialize_wt_likelihood(self, nodes, likelihood, timestamp_secs):
         probs = self._normalize(np.array(likelihood))
@@ -106,6 +106,15 @@ class TopologicalParticleFilter():
         self.predicted_particles = np.copy(self.particles)
         self.time = np.ones((self.n_of_ptcl)) * timestamp_secs
         self.life = np.zeros((self.n_of_ptcl))
+        self.W = np.ones((self.n_of_ptcl))
+        
+    def _initialize_uniform(self, timestamp_secs):
+        prob = 1.0 / self.n_of_ptcl
+        self._initialize_wt_likelihood(
+            np.arange(self.node_coords.shape[0]), 
+            np.ones((self.node_coords.shape[0])) * prob,
+            timestamp_secs
+        )
 
     def _predict(self, timestamp_secs, only_connected=False):
         # update life time only where the agent has actually been there
@@ -130,7 +139,7 @@ class TopologicalParticleFilter():
                 t_nodes, p=transition_p)
 
     # weighting with normal distribution with var around the observation
-    def _weight_pose(self, obs_x, obs_y, cov_x, cov_y):
+    def _weight_pose(self, obs_x, obs_y, cov_x, cov_y, timestamp_secs, identifying):
         idx_sort = np.argsort(self.predicted_particles)
         nodes, indices_start, _ = np.unique(
             self.predicted_particles[idx_sort], return_index=True, return_counts=True)
@@ -144,12 +153,12 @@ class TopologicalParticleFilter():
             self.W[indices] = prob_dist[nodes.index(node)]
 
         # it measn the particles are disjoint from this obs
-        if np.sum(prob_dist) < TopologicalParticleFilter.REINIT_THRESHOLD:
+        if identifying and np.sum(self.W) < TopologicalParticleFilter.REINIT_THRESHOLD:
             rospy.logwarn("Reinitializing particles, observation probability is less than {}".format(TopologicalParticleFilter.REINIT_THRESHOLD))
-            self._initialize_wt_pose(obs_x, obs_y, cov_x, cov_y, timestamp_secs=rospy.get_rostime().to_sec())
+            self._initialize_wt_pose(obs_x, obs_y, cov_x, cov_y, timestamp_secs)
 
     # weighting wih a given likelihood distribution
-    def _weight_likelihood(self, nodes_dist, likelihood):
+    def _weight_likelihood(self, nodes_dist, likelihood, timestamp_secs, identifying):
         idx_sort = np.argsort(self.predicted_particles)
         nodes, indices_start, _ = np.unique(
             self.predicted_particles[idx_sort], return_index=True, return_counts=True)
@@ -160,8 +169,10 @@ class TopologicalParticleFilter():
             if node in nodes_dist:
                 self.W[indices] = likelihood[nodes_dist.index(node)]
 
-        # TODO if W doesn't sum up to 1 then re-initialize the particles with this obs
         # it measn the particles are disjoint from this obs
+        if identifying and np.sum(self.W) < TopologicalParticleFilter.REINIT_THRESHOLD:
+            rospy.logwarn("Reinitializing particles, observation probability is less than {}".format(TopologicalParticleFilter.REINIT_THRESHOLD))
+            self._initialize_wt_likelihood(nodes_dist, likelihood, timestamp_secs)
 
     # produce the node estimate based on topological mass from particles and their weight
     def _estimate_node(self, use_weight=True):
@@ -215,20 +226,28 @@ class TopologicalParticleFilter():
 
         return node, particles
 
-    def receive_pose_obs(self, obsx, obsy, covx, covy, timestamp_secs):
+    def receive_pose_obs(self, obsx, obsy, covx, covy, timestamp_secs, identifying):
         """Performs a full bayesian optimization step of the particles by integrating the new pose observation"""
         self.lock.acquire()
 
         if self.last_estimate is None:  # never received an observation before
-            self._initialize_wt_pose(obsx, obsy, covx, covy, timestamp_secs)
+            # if the observation can be a false positive do not initialize the PF with it
+            if identifying:
+                self._initialize_wt_pose(obsx, obsy, covx, covy, timestamp_secs)
+            else:
+                self._initialize_uniform(timestamp_secs)
             
             use_weight = False
         else:
-            self._update_speed(obsx, obsy, timestamp_secs)
+            if identifying:
+                self._update_speed(obsx, obsy, timestamp_secs)
+            else:
+                self._update_speed()
 
             self._predict(timestamp_secs)
 
-            self._weight_pose(obsx, obsy, covx, covy)
+            self._weight_pose(obsx, obsy, covx, covy,
+                              timestamp_secs, identifying)
             
             use_weight = True
 
@@ -243,12 +262,17 @@ class TopologicalParticleFilter():
 
         return node, particles
 
-    def receive_likelihood_obs(self, nodes, likelihood, timestamp_secs):
+    def receive_likelihood_obs(self, nodes, likelihood, timestamp_secs, identifying):
         """Performs a full bayesian optimization step of the particles by integrating the new likelihood distribution observation"""
         self.lock.acquire()
         
         if self.last_estimate is None:  # never received an observation before
-            self._initialize_wt_likelihood(nodes, likelihood, timestamp_secs)
+            # if the observation can be a false positive do not initialize the PF with it
+            if identifying:
+                self._initialize_wt_likelihood(
+                    nodes, likelihood, timestamp_secs)
+            else:
+                self._initialize_uniform(timestamp_secs)
             
             use_weight = False
         else:
@@ -256,7 +280,8 @@ class TopologicalParticleFilter():
 
             self._predict(timestamp_secs)
 
-            self._weight_likelihood(nodes, likelihood)
+            self._weight_likelihood(
+                nodes, likelihood, timestamp_secs, identifying)
 
             use_weight = True
 
@@ -270,3 +295,34 @@ class TopologicalParticleFilter():
         self.lock.release()
 
         return node, particles
+
+    
+    def copy(self):
+        """Factory function that produces a copy of the current object"""
+        # create a new PF object
+        copy_obj = TopologicalParticleFilter(num=self.n_of_ptcl,
+                                             prediction_model=self.prediction_model,
+                                             initial_spread_policy=self.initial_spread_policy,
+                                             prediction_speed_decay=self.prediction_speed_decay,
+                                             node_coords=self.node_coords,
+                                             node_distances=self.node_distances,
+                                             connected_nodes=self.connected_nodes,
+                                             node_diffs2D=self.node_diffs2D,
+                                             node_names=self.node_names)
+
+        # get all the class variables
+        variables = [attr for attr in dir(copy_obj) if not callable(
+            getattr(copy_obj, attr)) and not attr.startswith("__")]
+        
+        # copy all the variable values, excluding some
+        exclude_variables = ["lock"]
+        for var in variables:
+            if var in exclude_variables:
+                continue
+
+            if isinstance(getattr(self, var), np.ndarray):
+                setattr(copy_obj, var, np.copy(getattr(self, var)))
+            else:
+                setattr(copy_obj, var, getattr(self, var))
+
+        return copy_obj

@@ -7,8 +7,10 @@ from bayesian_topological_localisation.prediction_model import PredictionModel
 from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRequest, \
     LocaliseAgentResponse, StopLocalise, StopLocaliseRequest, StopLocaliseResponse, \
     UpdatePoseObservation, UpdatePoseObservationRequest, UpdatePoseObservationResponse, \
-    UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse
-from bayesian_topological_localisation.msg import DistributionStamped
+    UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse, \
+    UpdatePriorLikelihoodObservation, UpdatePriorLikelihoodObservationRequest, UpdatePriorLikelihoodObservationResponse, \
+    Predict, PredictRequest, PredictResponse
+from bayesian_topological_localisation.msg import DistributionStamped, PoseObservation, LikelihoodObservation
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from strands_navigation_msgs.msg import TopologicalMap
@@ -110,11 +112,10 @@ class TopologicalLocalisation():
         cn_pub = rospy.Publisher("{}/estimated_node".format(name), String, queue_size=10, latch=True)
         pd_pub = rospy.Publisher("{}/current_prob_dist".format(name), DistributionStamped, queue_size=10, latch=True)
         self.res_publishers.append((cn_pub, pd_pub))
-        strmsg = String()
-        pdmsg = DistributionStamped()
         cnviz_pub = rospy.Publisher("{}/estimated_node_viz".format(name), Marker, queue_size=10)
         parviz_pub = rospy.Publisher("{}/particles_viz".format(name), MarkerArray, queue_size=10)
-        self.viz_publishers.append((cnviz_pub, parviz_pub))
+        staparviz_pub = rospy.Publisher("{}/stateless_particles_viz".format(name), MarkerArray, queue_size=10)
+        self.viz_publishers.append((cnviz_pub, parviz_pub, staparviz_pub))
         nodemkrmsg = Marker()
         nodemkrmsg.header.frame_id = "/map"
         nodemkrmsg.type = nodemkrmsg.SPHERE
@@ -144,6 +145,22 @@ class TopologicalLocalisation():
             ptcmkrmsg.color.b = 0
             ptcmkrmsg.id = i
             ptcsarrmsg.markers.append(ptcmkrmsg)
+        staptcsarrmsg = MarkerArray()
+        for i in range(n_particles):
+            staptcmkrmsg = Marker()
+            staptcmkrmsg.header.frame_id = "/map"
+            staptcmkrmsg.type = staptcmkrmsg.SPHERE
+            staptcmkrmsg.pose.position.z = 0
+            staptcmkrmsg.pose.orientation.w = 1
+            staptcmkrmsg.scale.x = 0.1
+            staptcmkrmsg.scale.y = 0.1
+            staptcmkrmsg.scale.z = 0.1
+            staptcmkrmsg.color.a = 0.6
+            staptcmkrmsg.color.r = 1
+            staptcmkrmsg.color.g = 1
+            staptcmkrmsg.color.b = 0
+            staptcmkrmsg.id = i
+            staptcsarrmsg.markers.append(staptcmkrmsg)
 
         # get the how to spread the particles initially
         # if request.initial_spread_policy == LocaliseAgentRequest.CLOSEST_NODE:
@@ -168,25 +185,28 @@ class TopologicalLocalisation():
             node_names=self.node_names
         )
 
-        def __prepare_pd_msg(particles):
+        def __prepare_pd_msg(particles, timestamp=None):
+            pdmsg = DistributionStamped()
             nodes, counts = np.unique(particles, return_counts=True)
 
             probs = np.zeros((self.node_names.shape[0]))
             probs[nodes] = counts.astype(float) / np.sum(counts)
 
-            pdmsg.header.stamp = rospy.get_rostime()
+            if timestamp is None:
+                timestamp = rospy.get_rostime()
+            pdmsg.header.stamp = timestamp
             pdmsg.nodes = self.node_names.tolist()
             pdmsg.values = np.copy(probs).tolist()
 
             return pdmsg
 
         def __prepare_cn_msg(node):
+            strmsg = String()
             strmsg.data = self.node_names[node]
             return strmsg
 
         # function to publish current node and particles distribution
         def __publish(node, particles):
-
             if not stop_event.is_set():
                 cn_pub.publish(__prepare_cn_msg(node))
                 pd_pub.publish(__prepare_pd_msg(particles))
@@ -204,58 +224,73 @@ class TopologicalLocalisation():
                 cnviz_pub.publish(nodemkrmsg)
                 parviz_pub.publish(ptcsarrmsg)
 
+        # function to publish stateless particles distribution viz
+        def __publish_stateless_viz(particles):
+            if not stop_event.is_set():
+                # publish viz stuff
+                for i, p in enumerate(particles):
+                    staptcsarrmsg.markers[i].header.stamp = rospy.get_rostime()
+                    staptcsarrmsg.markers[i].pose.position.x = self.node_coords[p][0] + \
+                        staptcsarrmsg.markers[i].scale.x * np.random.randn(1, 1)
+                    staptcsarrmsg.markers[i].pose.position.y = self.node_coords[p][1] + \
+                        staptcsarrmsg.markers[i].scale.y * np.random.randn(1, 1)
+
+                staparviz_pub.publish(staptcsarrmsg)
+
         ## topic callbacks ##
         # send pose observation to particle filter
         def __pose_obs_cb(msg):
-            if np.isfinite(msg.pose.pose.position.x) and \
-                    np.isfinite(msg.pose.pose.position.y) and \
-                    np.isfinite(msg.pose.covariance[0]) and \
-                    np.isfinite(msg.pose.covariance[7]):
+            if np.isfinite(msg.pose.pose.pose.position.x) and \
+                    np.isfinite(msg.pose.pose.pose.position.y) and \
+                    np.isfinite(msg.pose.pose.covariance[0]) and \
+                    np.isfinite(msg.pose.pose.covariance[7]):
                 node, particles = pf.receive_pose_obs(
-                    msg.pose.pose.position.x,
-                    msg.pose.pose.position.y,
-                    msg.pose.covariance[0], # variance of x
-                    msg.pose.covariance[7], # variance of y
-                    # (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                        # msg.header.stamp.to_sec() > 0]
-                    rospy.get_rostime().to_sec()
+                    msg.pose.pose.pose.position.x,
+                    msg.pose.pose.pose.position.y,
+                    msg.pose.pose.covariance[0], # variance of x
+                    msg.pose.pose.covariance[7], # variance of y
+                    # (rospy.get_rostime().to_sec(), msg.pose.header.stamp.to_sec())[
+                        # msg.pose.header.stamp.to_sec() > 0]
+                    rospy.get_rostime().to_sec(),
+                    identifying=msg.identifying
                 )
                 __publish(node, particles)
             else:
                 rospy.logwarn(
-                    "Received non-admissible pose observation <{}, {}, {}, {}>, discarded".format(msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.covariance[0], msg.pose.covariance[7]))
+                    "Received non-admissible pose observation <{}, {}, {}, {}>, discarded".format(msg.pose.pose.pose.position.x, msg.pose.pose.pose.position.y, msg.pose.pose.covariance[0], msg.pose.pose.covariance[7]))
 
         # send likelihood observation to particle filter
         def __likelihood_obs_cb(msg):
-            if len(msg.nodes) == len(msg.values):
+            if len(msg.likelihood.nodes) == len(msg.likelihood.values):
                 try:
-                    nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
+                    nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.likelihood.nodes]
                 except IndexError:
                     rospy.logwarn(
-                        "Received non-admissible node name {}, likelihood discarded".format(msg.nodes))
+                        "Received non-admissible node name {}, likelihood discarded".format(msg.likelihood.nodes))
                 else:
-                    values = np.array(msg.values)
+                    values = np.array(msg.likelihood.values)
                     if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
                         node, particles = pf.receive_likelihood_obs(
                             nodes, 
-                            msg.values,
-                            # (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                                # msg.header.stamp.to_sec() > 0]
-                            rospy.get_rostime().to_sec()
+                            msg.likelihood.values,
+                            # (rospy.get_rostime().to_sec(), msg.likelihood.header.stamp.to_sec())[
+                                # msg.likelihood.header.stamp.to_sec() > 0]
+                            rospy.get_rostime().to_sec(),
+                            identifying=msg.identifying
                         )
                         __publish(node, particles)
                     else:
                         rospy.logwarn(
-                            "Received non-admissible likelihood observation {}, discarded".format(msg.values))
+                            "Received non-admissible likelihood observation {}, discarded".format(msg.likelihood.values))
             else:
                 rospy.logwarn("Nodes array and values array sizes do not match {} != {}, discarding likelihood observation".format(
-                    len(msg.nodes), len(msg.values)))
+                    len(msg.likelihood.nodes), len(msg.likelihood.values)))
 
         # subscribe to topics receiving observation
         self.obs_subscribers.append((
-            rospy.Subscriber("{}/pose_obs".format(name), PoseWithCovarianceStamped, __pose_obs_cb),
+            rospy.Subscriber("{}/pose_obs".format(name), PoseObservation, __pose_obs_cb),
             rospy.Subscriber("{}/likelihood_obs".format(name),
-                             DistributionStamped, __likelihood_obs_cb)
+                             LikelihoodObservation, __likelihood_obs_cb)
         ))
 
         ## Services handlers ##
@@ -272,7 +307,8 @@ class TopologicalLocalisation():
                     request.pose.pose.covariance[7],  # variance of y
                     # (rospy.get_rostime().to_sec(), request.pose.header.stamp.to_sec())[
                     #     request.pose.header.stamp.to_sec() > 0]
-                    rospy.get_rostime().to_sec()
+                    rospy.get_rostime().to_sec(),
+                    identifying=request.identifying
                 )
                 __publish(node, particles)
                 resp = UpdatePoseObservationResponse()
@@ -300,13 +336,15 @@ class TopologicalLocalisation():
                         "Received non-admissible node name {}, likelihood discarded".format(request.likelihood.nodes))
                 else:
                     values = np.array(request.likelihood.values)
+                    rospy.loginfo("Received likelihood: {}".format(zip(nodes, values)))
                     if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
                         node, particles = pf.receive_likelihood_obs(
                             nodes,
                             request.likelihood.values,
                             # (rospy.get_rostime().to_sec(), request.likelihood.header.stamp.to_sec())[
                                 # request.likelihood.header.stamp.to_sec() > 0]
-                            rospy.get_rostime().to_sec()
+                            rospy.get_rostime().to_sec(),
+                            identifying=request.identifying
                         )
                         __publish(node, particles)
                         resp = UpdateLikelihoodObservationResponse()
@@ -327,10 +365,122 @@ class TopologicalLocalisation():
             resp.success = False
             return(resp)
 
+        def __do_stateless_prediction(request):
+            # get a copy of the particle filter to work with
+            _pf = pf.copy()
+            # if requested pred rate is lesseq than 0 use the global one
+            _prediction_rate = (request.prediction_rate, prediction_rate)[
+                request.prediction_rate <= 0.]
+            pred_step_secs = 1. / _prediction_rate
+            secs_left = max(0.0, request.secs_from_now)
+            time = rospy.get_rostime()
+            resp = PredictResponse()
+            resp.success = True
+            # sub-function to append predictions to the result message
+            def ___append_prediction(node, particles, secs_passed, timestamp):
+                if not (node is None or particles is None):
+                    __publish_stateless_viz(particles)
+                    resp.secs_from_now.append(secs_passed)
+                    resp.estimated_node.append(__prepare_cn_msg(node).data)
+                    resp.prob_dist.append(__prepare_pd_msg(particles, timestamp=timestamp))
+                    return True
+                else:
+                    resp.success = False
+                    rospy.logwarn(
+                        "Cannot perform prediction, no observation received so far.")
+                    return False
+            # perform all the steps until reached limit time
+            while secs_left > 0:
+                node, particles = _pf.predict(
+                    timestamp_secs=time.to_sec()
+                )
+                if request.return_history:
+                    succ = ___append_prediction(
+                            node, 
+                            particles,
+                            secs_passed=request.secs_from_now - secs_left,
+                            timestamp=time)
+                    if not succ:
+                        break
+                    
+                time += rospy.Duration.from_sec(pred_step_secs)
+                secs_left -= pred_step_secs
+
+            # add last prediction at secs_left == 0
+            node, particles = _pf.predict(
+                timestamp_secs=time.to_sec()
+            )
+            _ = ___append_prediction(node, 
+                        particles,
+                        secs_passed=request.secs_from_now - secs_left,
+                        timestamp=time)
+
+            return resp
+
+        def __do_stateless_update(request):
+            # create a new PF and assign the prior distribution to start up with
+            __pf = TopologicalParticleFilter(
+                num=n_particles,
+                prediction_model=pm,
+                initial_spread_policy=initial_spread_policy,
+                prediction_speed_decay=prediction_speed_decay,
+                node_coords=self.node_coords,
+                node_distances=self.node_distances,
+                connected_nodes=self.connected_nodes,
+                node_diffs2D=self.node_diffs2D,
+                node_names=self.node_names
+            )
+            if len(request.likelihood.nodes) == len(request.likelihood.values) and \
+                    len(request.prior.nodes) == len(request.prior.values):
+                try:
+                    lkl_nodes = [np.where(self.node_names == nname)[0][0]
+                             for nname in request.likelihood.nodes]
+                    pr_nodes = [np.where(self.node_names == nname)[0][0]
+                             for nname in request.prior.nodes]
+                except IndexError:
+                    rospy.logwarn(
+                        "Received non-admissible node name {}/{}, prior/likelihood discarded".format(request.prior.nodes, request.likelihood.nodes))
+                else:
+                    pr_values = np.array(request.prior.values)
+                    rospy.loginfo(
+                        "Received prior: {}".format(zip(pr_nodes, pr_values)))
+                    lkl_values = np.array(request.likelihood.values)
+                    rospy.loginfo(
+                        "Received likelihood: {}".format(zip(lkl_nodes, lkl_values)))
+                    if np.isfinite(lkl_values).all() and (lkl_values >= 0.).all() and np.sum(lkl_values) > 0 and \
+                            np.isfinite(pr_values).all() and (pr_values >= 0.).all() and np.sum(pr_values) > 0:
+                        ts = rospy.get_rostime().to_sec()
+                        # send the prior (assignment bcs it's the first observation ever received)
+                        _, _ = __pf.receive_likelihood_obs(
+                            pr_nodes,
+                            request.prior.values,
+                            ts
+                        )
+                        # send the lkl (prediction is not performed here because the ts is the same as prior ts)
+                        node, particles = __pf.receive_likelihood_obs(
+                            lkl_nodes,
+                            request.likelihood.values,
+                            ts
+                        )
+                        resp = UpdatePriorLikelihoodObservationResponse()
+                        resp.success = True
+                        resp.estimated_node = __prepare_cn_msg(node).data
+                        resp.current_prob_dist = __prepare_pd_msg(particles)
+                        return(resp)
+                    else:
+                        rospy.logwarn(
+                            "Received non-admissible prior/likelihood observation {}, discarded".format(request.prior.values, request.likelihood.values))
+
+            else:
+                rospy.logwarn("Nodes array and values array sizes do not match {} != {}/{} != {}, discarding prior/likelihood observation".format(
+                    len(request.prior.nodes), len(request.prior.values), len(request.likelihood.nodes), len(request.likelihood.values)))
+
         # subscribe to services for update
         self.upd_services.append({
             rospy.Service("{}/update_pose_obs".format(name), UpdatePoseObservation, __update_pose_handler),
-            rospy.Service("{}/update_likelihood_obs".format(name), UpdateLikelihoodObservation, __update_likelihood_handler)
+            rospy.Service("{}/update_likelihood_obs".format(name), UpdateLikelihoodObservation, __update_likelihood_handler),
+            rospy.Service("{}/predict_stateless".format(name), Predict, __do_stateless_prediction),
+            rospy.Service("{}/update_stateless".format(name), UpdatePriorLikelihoodObservation, __do_stateless_update)
         })
         
         thr = None

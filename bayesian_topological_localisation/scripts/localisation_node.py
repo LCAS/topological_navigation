@@ -10,7 +10,7 @@ from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRe
     UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse, \
     UpdatePriorLikelihoodObservation, UpdatePriorLikelihoodObservationRequest, UpdatePriorLikelihoodObservationResponse, \
     Predict, PredictRequest, PredictResponse
-from bayesian_topological_localisation.msg import DistributionStamped
+from bayesian_topological_localisation.msg import DistributionStamped, PoseObservation, LikelihoodObservation
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from strands_navigation_msgs.msg import TopologicalMap
@@ -240,55 +240,57 @@ class TopologicalLocalisation():
         ## topic callbacks ##
         # send pose observation to particle filter
         def __pose_obs_cb(msg):
-            if np.isfinite(msg.pose.pose.position.x) and \
-                    np.isfinite(msg.pose.pose.position.y) and \
-                    np.isfinite(msg.pose.covariance[0]) and \
-                    np.isfinite(msg.pose.covariance[7]):
+            if np.isfinite(msg.pose.pose.pose.position.x) and \
+                    np.isfinite(msg.pose.pose.pose.position.y) and \
+                    np.isfinite(msg.pose.pose.covariance[0]) and \
+                    np.isfinite(msg.pose.pose.covariance[7]):
                 node, particles = pf.receive_pose_obs(
-                    msg.pose.pose.position.x,
-                    msg.pose.pose.position.y,
-                    msg.pose.covariance[0], # variance of x
-                    msg.pose.covariance[7], # variance of y
-                    # (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                        # msg.header.stamp.to_sec() > 0]
-                    rospy.get_rostime().to_sec()
+                    msg.pose.pose.pose.position.x,
+                    msg.pose.pose.pose.position.y,
+                    msg.pose.pose.covariance[0], # variance of x
+                    msg.pose.pose.covariance[7], # variance of y
+                    # (rospy.get_rostime().to_sec(), msg.pose.header.stamp.to_sec())[
+                        # msg.pose.header.stamp.to_sec() > 0]
+                    rospy.get_rostime().to_sec(),
+                    identifying=msg.identifying
                 )
                 __publish(node, particles)
             else:
                 rospy.logwarn(
-                    "Received non-admissible pose observation <{}, {}, {}, {}>, discarded".format(msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.covariance[0], msg.pose.covariance[7]))
+                    "Received non-admissible pose observation <{}, {}, {}, {}>, discarded".format(msg.pose.pose.pose.position.x, msg.pose.pose.pose.position.y, msg.pose.pose.covariance[0], msg.pose.pose.covariance[7]))
 
         # send likelihood observation to particle filter
         def __likelihood_obs_cb(msg):
-            if len(msg.nodes) == len(msg.values):
+            if len(msg.likelihood.nodes) == len(msg.likelihood.values):
                 try:
-                    nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.nodes]
+                    nodes = [np.where(self.node_names == nname)[0][0] for nname in msg.likelihood.nodes]
                 except IndexError:
                     rospy.logwarn(
-                        "Received non-admissible node name {}, likelihood discarded".format(msg.nodes))
+                        "Received non-admissible node name {}, likelihood discarded".format(msg.likelihood.nodes))
                 else:
-                    values = np.array(msg.values)
+                    values = np.array(msg.likelihood.values)
                     if np.isfinite(values).all() and (values >= 0.).all() and np.sum(values) > 0:
                         node, particles = pf.receive_likelihood_obs(
                             nodes, 
-                            msg.values,
-                            # (rospy.get_rostime().to_sec(), msg.header.stamp.to_sec())[
-                                # msg.header.stamp.to_sec() > 0]
-                            rospy.get_rostime().to_sec()
+                            msg.likelihood.values,
+                            # (rospy.get_rostime().to_sec(), msg.likelihood.header.stamp.to_sec())[
+                                # msg.likelihood.header.stamp.to_sec() > 0]
+                            rospy.get_rostime().to_sec(),
+                            identifying=msg.identifying
                         )
                         __publish(node, particles)
                     else:
                         rospy.logwarn(
-                            "Received non-admissible likelihood observation {}, discarded".format(msg.values))
+                            "Received non-admissible likelihood observation {}, discarded".format(msg.likelihood.values))
             else:
                 rospy.logwarn("Nodes array and values array sizes do not match {} != {}, discarding likelihood observation".format(
-                    len(msg.nodes), len(msg.values)))
+                    len(msg.likelihood.nodes), len(msg.likelihood.values)))
 
         # subscribe to topics receiving observation
         self.obs_subscribers.append((
-            rospy.Subscriber("{}/pose_obs".format(name), PoseWithCovarianceStamped, __pose_obs_cb),
+            rospy.Subscriber("{}/pose_obs".format(name), PoseObservation, __pose_obs_cb),
             rospy.Subscriber("{}/likelihood_obs".format(name),
-                             DistributionStamped, __likelihood_obs_cb)
+                             LikelihoodObservation, __likelihood_obs_cb)
         ))
 
         ## Services handlers ##
@@ -305,7 +307,8 @@ class TopologicalLocalisation():
                     request.pose.pose.covariance[7],  # variance of y
                     # (rospy.get_rostime().to_sec(), request.pose.header.stamp.to_sec())[
                     #     request.pose.header.stamp.to_sec() > 0]
-                    rospy.get_rostime().to_sec()
+                    rospy.get_rostime().to_sec(),
+                    identifying=request.identifying
                 )
                 __publish(node, particles)
                 resp = UpdatePoseObservationResponse()
@@ -340,7 +343,8 @@ class TopologicalLocalisation():
                             request.likelihood.values,
                             # (rospy.get_rostime().to_sec(), request.likelihood.header.stamp.to_sec())[
                                 # request.likelihood.header.stamp.to_sec() > 0]
-                            rospy.get_rostime().to_sec()
+                            rospy.get_rostime().to_sec(),
+                            identifying=request.identifying
                         )
                         __publish(node, particles)
                         resp = UpdateLikelihoodObservationResponse()

@@ -3,6 +3,7 @@
 import rospy
 from topological_navigation.tmap_utils import *
 from strands_navigation_msgs.msg import NavRoute
+from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 
 
 class NodeToExpand(object):
@@ -24,6 +25,39 @@ class TopologicalRouteSearch(object):
     def __init__(self, top_map) :
 #        rospy.loginfo("Waiting for Topological map ...")
         self.top_map = top_map
+        self.taggedNodesSrv = None
+        self._contact_getTagged_srv()
+
+    def _contact_getTagged_srv(self):
+        try:
+            rospy.wait_for_service(
+                'topological_map_manager/get_tagged_nodes', timeout=2)
+        except ROSException as e:
+            rospy.logwarn(
+                "Service /topological_map_manager/get_tagged_nodes not available: %s" % e)
+        else:
+            self.taggedNodesSrv = rospy.ServiceProxy(
+                'topological_map_manager/get_tagged_nodes', GetTaggedNodes)
+            rospy.loginfo(
+                "Service /topological_map_manager/get_tagged_nodes contacted")
+
+    def remove_closed_nodes(self, nodes):
+        # try to see if now it's available
+        if self.taggedNodesSrv is None:
+            self._contact_getTagged_srv()
+
+        # was it available?
+        if self.taggedNodesSrv is None:
+            return nodes
+        else:
+            try:
+                request = GetTaggedNodesRequest()
+                request.tag = "blacklisted"
+                c_nodes = self.taggedNodesSrv(request).nodes
+                return [item for item in nodes if item not in c_nodes]
+            except rospy.ServiceException, e:
+                print "Service call failed: %s" % e
+                return nodes
 
     """
      search_route
@@ -31,6 +65,7 @@ class TopologicalRouteSearch(object):
      This function searches the route to reach the goal
     """
     def search_route(self, origin, target):
+        print "----- SEARCHING ROUTE ----- "
         if origin == "none" or target == "none" or origin == target:
             return None
 
@@ -51,7 +86,10 @@ class TopologicalRouteSearch(object):
         cen = orig      #currently expanded node
 
         children = get_conected_nodes(cen) #nodes current node is connected to
-        #print "children\n", children
+        print "children\n", children
+        children = self.remove_closed_nodes(children)
+        print "children without closed\n", children
+
         not_goal=True
         route_found=False
         while not_goal :
@@ -111,6 +149,7 @@ class TopologicalRouteSearch(object):
                     cen =  get_node(self.top_map, nte.name)
                     expanded.append(nte)
                     children = get_conected_nodes(cen)
+                    children = self.remove_closed_nodes(children)
                 else:
                     not_goal=False
                     route_found=False

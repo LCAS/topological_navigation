@@ -5,7 +5,6 @@ import actionlib
 import sys
 import json
 
-
 import calendar
 from datetime import datetime
 
@@ -60,6 +59,110 @@ DYNPARAM_MAPPING = {
         "max_trans_vel": "max_vel_x",
     },
 }
+
+
+class EdgeReconfigureManager(object):
+    
+    
+    def __init__(self, use_tmap2, tmap):
+        
+        rospy.loginfo("Using edge reconfigure ...")
+        
+        self.use_tmap2 = use_tmap2
+        self.tmap = tmap
+        
+        self.init_tmap1_edge_reconf() if not use_tmap2 else self.init_tmap2_edge_reconf()
+            
+            
+    def init_tmap1_edge_reconf(self):
+        
+        self.current_edge_group = "none"
+        self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
+        
+            
+    def init_tmap2_edge_reconf(self):
+        
+        namespaces = []
+        for node in self.tmap["nodes"]:
+            for edge in node["edges"]:
+                if "config" in edge:
+                    if edge["config"]:
+                        rospy.loginfo("Edge {} config: {}".format(edge["edge_id"], edge["config"]))
+                    for param in edge["config"]:
+                        namespaces.append(param["namespace"])
+
+        self.rcnf_dict = {}        
+        rospy.loginfo("Creating edge reconfigure clients ...")                
+        for namespace in set(namespaces):
+            rospy.loginfo("Creating client for {}".format(namespace))
+            
+            client = dynamic_reconfigure.client.Client(namespace, timeout=5.0)
+            try:
+                default_params = client.get_configuration()
+            except rospy.ServiceException as e:
+                rospy.warn("Cannot do edge reconfigure for {}: {}".format(namespace, e))
+                continue
+            
+            self.rcnf_dict[namespace] = {"client": client, "default_params": default_params}
+        
+            
+    def tmap1_edge_reconf(self, edge_id):
+        """
+        If using the old map edge reconfigure is done via a service.
+        """
+        edge_group = "none"
+        for group in self.edge_groups:
+            print "Check Edge: ", edge_id, "in ", group
+            if edge_id in self.edge_groups[group]["edges"]:
+                edge_group = group
+                break
+
+        print "current group: ", self.current_edge_group
+        print "edge group: ", edge_group
+
+        if edge_group is not self.current_edge_group:
+            print "RECONFIGURING EDGE: ", edge_id
+            print "TO ", edge_group
+            try:
+                rospy.wait_for_service("reconf_at_edges", timeout=3)
+                reconf_at_edges = rospy.ServiceProxy("reconf_at_edges", ReconfAtEdges)
+                resp1 = reconf_at_edges(edge_id)
+                print resp1.success
+                if resp1.success:  # set current_edge_group only if successful
+                    self.current_edge_group = edge_group
+            except rospy.ServiceException, e:
+                rospy.logerr("Service call failed: %s" % e)
+        print "-------"
+    
+    
+    def tmap2_edge_reconf(self, edge):
+        """
+        If using the new map then edge reconfigure is done using settings in the map
+        """
+        if "config" in edge:
+            for param in edge["config"]:
+                if param["namespace"] in self.rcnf_dict:
+                    # HANDLE EXCEPTIONS AND PRINT STUFF!
+                    client = self.rcnf_dict[param["namespace"]]["client"]
+                    client.update_configuration({param["name"]: param["value"]})
+                    
+                    
+    def reset_edge_reconf(self, edge):
+        
+        if "config" in edge:        
+            namespaces = [param["namespace"] for param in edge["config"]]
+            
+            for namespace in set(namespaces):
+                # HANDLE EXCEPTIONS AND PRINT STUFF!
+                if namespace in self.rcnf_dict:
+                    client = self.rcnf_dict[namespace]["client"]
+                    client.update_configuration(self.rcnf_dict[namespace]["default_params"])
+                
+            
+        
+            
+            
+                        
 
 
 """
@@ -169,8 +272,8 @@ class TopologicalNavServer(object):
         # Check if using edge recofigure server
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         if self.edge_reconfigure:
+            erm = EdgeReconfigureManager(self.use_tmap2, self.lnodes)
             self.current_edge_group = "none"
-            rospy.loginfo("Using edge reconfigure ...")
             self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
 
         rospy.loginfo("All Done ...")
@@ -533,38 +636,38 @@ class TopologicalNavServer(object):
                 self._result.success = False
                 self._as.set_preempted(self._result)
 
-    def edgeReconfigureManager(self, edge_id):
-        """
-        edgeReconfigureManager
-
-        Checks if an edge requires reconfiguration of the
-        """
-
-        #        print self.edge_groups
-
-        edge_group = "none"
-        for group in self.edge_groups:
-            print "Check Edge: ", edge_id, "in ", group
-            if edge_id in self.edge_groups[group]["edges"]:
-                edge_group = group
-                break
-
-        print "current group: ", self.current_edge_group
-        print "edge group: ", edge_group
-
-        if edge_group is not self.current_edge_group:  # and edge_group != 'none':
-            print "RECONFIGURING EDGE: ", edge_id
-            print "TO ", edge_group
-            try:
-                rospy.wait_for_service("reconf_at_edges", timeout=3)
-                reconf_at_edges = rospy.ServiceProxy("reconf_at_edges", ReconfAtEdges)
-                resp1 = reconf_at_edges(edge_id)
-                print resp1.success
-                if resp1.success:  # set current_edge_group only if successful
-                    self.current_edge_group = edge_group
-            except rospy.ServiceException, e:
-                rospy.logerr("Service call failed: %s" % e)
-        print "-------"
+#    def edgeReconfigureManager(self, edge_id):
+#        """
+#        edgeReconfigureManager
+#
+#        Checks if an edge requires reconfiguration of the
+#        """
+#
+#        #        print self.edge_groups
+#
+#        edge_group = "none"
+#        for group in self.edge_groups:
+#            print "Check Edge: ", edge_id, "in ", group
+#            if edge_id in self.edge_groups[group]["edges"]:
+#                edge_group = group
+#                break
+#
+#        print "current group: ", self.current_edge_group
+#        print "edge group: ", edge_group
+#
+#        if edge_group is not self.current_edge_group:  # and edge_group != 'none':
+#            print "RECONFIGURING EDGE: ", edge_id
+#            print "TO ", edge_group
+#            try:
+#                rospy.wait_for_service("reconf_at_edges", timeout=3)
+#                reconf_at_edges = rospy.ServiceProxy("reconf_at_edges", ReconfAtEdges)
+#                resp1 = reconf_at_edges(edge_id)
+#                print resp1.success
+#                if resp1.success:  # set current_edge_group only if successful
+#                    self.current_edge_group = edge_group
+#            except rospy.ServiceException, e:
+#                rospy.logerr("Service call failed: %s" % e)
+#        print "-------"
 
     """
      Follow Route

@@ -108,7 +108,7 @@ class map_manager_2(object):
         self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
-        self.update_edge_config_srv=rospy.Service('/topological_map_manager2/update_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.update_edge_config_cb)
+        self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         
         
@@ -834,17 +834,20 @@ class map_manager_2(object):
             return False, "no edge found or multiple edges found"
         
         
-    def update_edge_config_cb(self, req):
+    def add_param_to_edge_config_cb(self, req):
         """
         Update edge reconfigure parameters.
         """
-        return self.update_edge_config(req.edge_id, req.param_name, req.param_value, req.value_is_string)
+        return self.add_param_to_edge_config(req.edge_id, req.namespace, req.name, req.value, req.value_is_string)
     
     
-    def update_edge_config(self, edge_id, param_name, param_value, value_is_string):
+    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string):
+        
+        if not value:
+            return False, "no value provided"
         
         if not value_is_string:
-            param_value = eval(param_value)
+            value = eval(value)
         
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
@@ -853,11 +856,9 @@ class map_manager_2(object):
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
-                    if "config" in edge:
-                        edge["config"][param_name] = param_value
-                    else:
-                        edge["config"] = {}
-                        edge["config"][param_name] = param_value
+                    if "config" not in edge:
+                        edge["config"] = []
+                    edge["config"].append({"namespace":namespace, "name":name, "value":value})
             
             self.tmap2["nodes"][index] = the_node
             self.update()
@@ -873,10 +874,10 @@ class map_manager_2(object):
         """
         Remove a param from an edge's config.
         """
-        return self.rm_param_from_edge_config(req.edge_id, req.param_name)
+        return self.rm_param_from_edge_config(req.edge_id, req.namespace, req.name)
     
     
-    def rm_param_from_edge_config(self, edge_id, param_name):
+    def rm_param_from_edge_config(self, edge_id, namespace, name):
         
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
@@ -885,9 +886,14 @@ class map_manager_2(object):
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
-                    if "config" in edge and param_name in edge["config"]:
-                        del edge["config"][param_name]
-        
+                    if "config" in edge:
+                        params_new = []
+                        for param in copy.deepcopy(edge["config"]):
+                            if param["namespace"] == namespace and param["name"] == name:
+                                continue
+                            else:
+                                params_new.append(param)
+                        edge["config"] = params_new
             self.tmap2["nodes"][index] = the_node
             self.update()
             self.write_topological_map(self.filename)

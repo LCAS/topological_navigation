@@ -64,50 +64,87 @@ DYNPARAM_MAPPING = {
 class EdgeReconfigureManager(object):
     
     
-    def __init__(self, use_tmap2, tmap):
+    def __init__(self, use_tmap2):
         
         rospy.loginfo("Using edge reconfigure ...")
         
-        self.tmap = tmap
-        self.init_tmap1_edge_reconf() if not use_tmap2 else self.init_tmap2_edge_reconf()
+        if not use_tmap2:
+            self.current_edge_group = "none"
+            self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
         
-        self.reconf_str = "Reconfigured parameters for edge {}. Parameters: {}"
-        self.reconf_err_str = "Could not reconfigure parameters for edge {}. Parameters: {}. Caught service exception: {}"
-        self.reset_err_str = "Could not reset parameters with namespace {} for edge {}. Caught service exception: {}"
-            
-            
-    def init_tmap1_edge_reconf(self):
+        self.reconf_str = "Reconfigured edge {} parameters: {}"
+        self.reconf_err_str = "Could not reconfigure edge {} parameters: {}. Caught service exception: {}"
+        self.reset_err_str = "Could not reset edge {} parameters with namespace {}. Caught service exception: {}"
         
-        self.current_edge_group = "none"
-        self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
         
-            
-    def init_tmap2_edge_reconf(self):
+    def initialise(self, tmap):
         
         namespaces = []
-        for node in self.tmap["nodes"]:
-            for edge in node["edges"]:
-                if "config" in edge and edge["config"]:
-                    rospy.loginfo("Edge {} config: {}".format(edge["edge_id"], edge["config"]))
+        for node in tmap["nodes"]:
+            for edge in node["node"]["edges"]:
+                if "config" in edge:
                     for param in edge["config"]:
                         namespaces.append(param["namespace"])
 
-        self.rcnf_dict = {}        
-        rospy.loginfo("Creating edge reconfigure clients ...")                
+        self.rcnf_dict = {}                    
         for namespace in set(namespaces):
-            rospy.loginfo("Creating client for {}".format(namespace))
+            rospy.loginfo("Getting default parameters for {}".format(namespace))
             
-            client = dynamic_reconfigure.client.Client(namespace, timeout=5.0)
+            client = dynamic_reconfigure.client.Client(namespace, timeout=2.0)
             try:
                 default_params = client.get_configuration()
+                self.rcnf_dict[namespace] = default_params
+                
             except rospy.ServiceException as e:
                 rospy.warn("Cannot do edge reconfigure for {}. Caught service exception when initialising: {}".format(namespace, e))
-                continue
             
-            self.rcnf_dict[namespace] = {"client": client, "default_params": default_params}
+            
+    def register_edge(self, edge):
+        
+        self.edge = edge   
+        self.namespaces = self.get_namespaces()       
         
         
-    def tmap1_edge_reconf(self, edge_id):
+    def get_namespaces(self):
+        
+        namespaces = []
+        if "config" in self.edge:
+            namespaces = [param["namespace"] for param in self.edge["config"]]
+            
+        return list(set(namespaces))
+            
+            
+    def reconfigure(self):
+        """
+        If using the new map then edge reconfigure is done using settings in the map.
+        """
+        if "config" in self.edge:
+            for param in self.edge["config"]:
+                if param["namespace"] in self.rcnf_dict:
+                    
+                    client = dynamic_reconfigure.client.Client(param["namespace"], timeout=2.0)
+                    try:
+                        client.update_configuration({param["name"]: param["value"]})
+                        rospy.loginfo(self.reconf_str.format(self.edge["edge_id"], self.edge["config"]))
+                        
+                    except rospy.ServiceException as e:
+                        rospy.logwarn(self.reconf_err_str.format(self.edge["edge_id"], self.edge["config"], e))
+                    
+                    
+    def _reset(self):
+        """
+        Used to reset edge params to their default values when the action has completed (only if using the new map)
+        """
+        for namespace in self.rcnf_dict:
+            client = dynamic_reconfigure.client.Client(namespace, timeout=2.0)
+            try:
+                client.update_configuration(self.rcnf_dict[namespace])
+                
+            except rospy.ServiceException as e:
+                rospy.logwarn(self.reset_err_str.format(namespace, self.edge["edge_id"], e))
+                    
+                    
+    def srv_reconfigure(self, edge_id):
         """
         If using the old map then edge reconfigure is done via a service.
         """
@@ -134,43 +171,6 @@ class EdgeReconfigureManager(object):
             except rospy.ServiceException, e:
                 rospy.logerr("Service call failed: %s" % e)
         print "-------"
-        
-        
-    def register_edge(self, edge):
-        self.edge = edge
-    
-    
-    def tmap2_edge_reconf(self):
-        """
-        If using the new map then edge reconfigure is done using settings in the map.
-        """
-        if "config" in self.edge:
-            for param in self.edge["config"]:
-                if param["namespace"] in self.rcnf_dict:
-                    client = self.rcnf_dict[param["namespace"]]["client"]
-                    
-                    try:
-                        client.update_configuration({param["name"]: param["value"]})
-                        rospy.loginfo(self.reconf_str.format(self.edge["edge_id"], self.edge["config"]))
-                    except rospy.ServiceException as e:
-                        rospy.logwarn(self.reconf_err_str.format(self.edge["edge_id"], self.edge["config"], e))
-                    
-                    
-    def reset_edge_reconf(self):
-        """
-        Used to reset edge params to their default values when the action has completed (only if using the new map)
-        """
-        if "config" in self.edge:
-            namespaces = [param["namespace"] for param in self.edge["config"]]
-            for namespace in set(namespaces):
-    
-                if namespace in self.rcnf_dict:
-                    client = self.rcnf_dict[namespace]["client"]
-                    
-                    try:
-                        client.update_configuration(self.rcnf_dict[namespace]["default_params"])
-                    except rospy.ServiceException as e:
-                        rospy.logwarn(self.reset_err_str.format(namespace, self.edge["edge_id"], e))
 #############################################################################################################                
                 
                 
@@ -280,7 +280,7 @@ class TopologicalNavServer(object):
         # Check if using edge recofigure server
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         if self.edge_reconfigure:
-            self.edge_reconf_manager = EdgeReconfigureManager(self.use_tmap2, self.lnodes)
+            self.edgeReconfigureManager = EdgeReconfigureManager(self.use_tmap2)
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -736,7 +736,7 @@ class TopologicalNavServer(object):
 
             # If we are using edge reconfigure
             if self.edge_reconfigure:
-                self.edge_reconf_manager.tmap1_edge_reconf(cedg.edge_id)
+                self.edgeReconfigureManager.srv_reconfigure(cedg.edge_id)
 
             self._feedback.route = "%s to %s using %s" % (
                 route.source[rindex],
@@ -834,7 +834,8 @@ class TopologicalNavServer(object):
         Orig = route.source[0]
         Targ = target
         self._target = Targ
-
+        
+        self.edgeReconfigureManager.initialise(self.lnodes)
         self.init_reconfigure()
 
         rospy.loginfo("%d Nodes on route" % nnodes)
@@ -914,11 +915,6 @@ class TopologicalNavServer(object):
             rospy.loginfo("Current edge: %s" % current_edge)
             self.cur_edge.publish(current_edge)
 
-            # If we are using edge reconfigure
-            if self.edge_reconfigure:
-                self.edge_reconf_manager.register_edge(cedg)
-                self.edge_reconf_manager.tmap2_edge_reconf()
-
             self._feedback.route = "%s to %s using %s" % (
                 route.source[rindex],
                 cedg["node"],
@@ -956,8 +952,17 @@ class TopologicalNavServer(object):
             inf.orientation.x = cnode["pose"]["orientation"]["x"]
             inf.orientation.y = cnode["pose"]["orientation"]["y"]
             inf.orientation.z = cnode["pose"]["orientation"]["z"]
+            
+            # If we are using edge reconfigure
+            if self.edge_reconfigure:
+                self.edgeReconfigureManager.register_edge(cedg)
+                self.edgeReconfigureManager.reconfigure()
+            
             nav_ok, inc = self.monitored_navigation(inf, a)
-            # 5 degrees tolerance   'max_vel_x':0.55,
+            
+            if self.edge_reconfigure:
+                self.edgeReconfigureManager._reset()
+            
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
             self.reconfigure_movebase_params(params)
 
@@ -1001,8 +1006,6 @@ class TopologicalNavServer(object):
             self.current_action = "none"
             self.next_action = "none"
             rindex = rindex + 1
-            
-            self.edge_reconf_manager.reset_edge_reconf()
 
         self.reset_reconf()
 

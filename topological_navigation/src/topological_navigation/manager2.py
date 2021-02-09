@@ -854,17 +854,19 @@ class map_manager_2(object):
         
         if num_available == 1:
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            msg = ""
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
                     if "config" not in edge:
                         edge["config"] = []
                     edge["config"].append({"namespace":namespace, "name":name, "value":value})
+                    msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
             
             self.tmap2["nodes"][index] = the_node
             self.update()
             self.write_topological_map(self.filename)
             
-            return True, "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
+            return True, msg
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
             return False, "no edge found or multiple edges found"
@@ -884,6 +886,7 @@ class map_manager_2(object):
         
         if num_available == 1:
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            msg = ""
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
                     if "config" in edge:
@@ -894,12 +897,12 @@ class map_manager_2(object):
                             else:
                                 params_new.append(param)
                         edge["config"] = params_new
+                        msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
             self.tmap2["nodes"][index] = the_node
             self.update()
             self.write_topological_map(self.filename)
             
-            print_config = edge["config"] if "config" in edge else {}
-            return True, "edge action is {} and edge config is {}".format(edge["action"], print_config)
+            return True, msg
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
             return False, "no edge found or multiple edges found"

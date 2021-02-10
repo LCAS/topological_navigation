@@ -852,6 +852,7 @@ class map_manager_2(object):
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
         
+        new_param = {"namespace":namespace, "name":name, "value":value}
         if num_available == 1:
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
             msg = ""
@@ -859,7 +860,8 @@ class map_manager_2(object):
                 if edge["edge_id"] == edge_id:
                     if "config" not in edge:
                         edge["config"] = []
-                    edge["config"].append({"namespace":namespace, "name":name, "value":value})
+                    if new_param not in edge["config"]:
+                        edge["config"].append(new_param)
                     msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
             
             self.tmap2["nodes"][index] = the_node

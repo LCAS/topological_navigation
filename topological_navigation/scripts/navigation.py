@@ -166,7 +166,7 @@ class TopologicalNavServer(object):
         # Check if using edge recofigure server
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         if self.edge_reconfigure:
-            self.edgeReconfigureManager = EdgeReconfigureManager(self.use_tmap2)
+            self.edgeReconfigureManager = EdgeReconfigureManager()
 
         rospy.loginfo("All Done ...")
         rospy.spin()

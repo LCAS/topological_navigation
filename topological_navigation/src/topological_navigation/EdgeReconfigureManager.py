@@ -12,13 +12,16 @@ from strands_navigation_msgs.srv import ReconfAtEdges
 class EdgeReconfigureManager(object):
     
     
-    def __init__(self, use_tmap2):
+    def __init__(self):
         
         rospy.logwarn("Edge Reconfigure Manager: USING EDGE RECONFIGURE ...")
         
-        if not use_tmap2:
-            self.current_edge_group = "none"
-            self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
+        self.edge = {}
+        self.default_config = {}
+        self.namespaces = []
+        
+        self.current_edge_group = "none"
+        self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
         
         
     def register_edge(self, edge):

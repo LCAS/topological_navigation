@@ -12,7 +12,7 @@ class TopologicalParticleFilter():
     UNCONNECTED_JUMP_THRESHOLD = 0.2
     # if the Jensen-Shannon Distance btw prior and likelihood is greater than this threshold, 
     # reinitialize particles with the likelihood AND restart jumping to close unconnected nodes
-    REINIT_JSD_THRESHOLD = 0.97
+    REINIT_JSD_THRESHOLD = 0.975
 
 
     def __init__(self, num, prediction_model, initial_spread_policy, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names):

@@ -985,12 +985,11 @@ class map_manager(object):
             
             for edge in node.edges:
                 
-                config = {}
-                config["inflation_radius"] = edge.inflation_radius
-                config["top_vel"] = edge.top_vel
-                config["recovery_behaviours_config"] = edge.recovery_behaviours_config
+                config = []
+                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"inflation_radius", "value":edge.inflation_radius})
+                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"top_vel", "value":edge.top_vel})
                 
-                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, config)
+                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, config, edge.recovery_behaviours_config)
                 
         manager2.update()
 ###################################################################################################################

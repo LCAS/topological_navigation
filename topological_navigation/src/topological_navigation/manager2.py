@@ -11,6 +11,7 @@ import yaml, datetime, json
 import re, uuid, copy, os
 
 import strands_navigation_msgs.srv
+from strands_navigation_msgs.msg import *
 import topological_navigation_msgs.srv
 import std_msgs.msg
 
@@ -57,7 +58,8 @@ class map_manager_2(object):
         self.filename = filename
         if not self.filename:
             self.filename = os.path.join(self.cache_dir, self.name + ".yaml")
-            
+        
+        self.loaded = False
         self.load = load            
         if self.load:
             self.load_map(self.filename)
@@ -77,6 +79,12 @@ class map_manager_2(object):
         
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
         self.broadcast_transform()
+        
+        self.convert_to_legacy = rospy.get_param("~convert_to_legacy", True)
+        self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
+        if self.loaded and self.convert_to_legacy:
+            self.tmap2_to_tmap()
+            self.points_pub.publish(self.points)
         
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
@@ -100,6 +108,8 @@ class map_manager_2(object):
         self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
+        self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
+        self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         
         
     def get_time(self):
@@ -107,6 +117,7 @@ class map_manager_2(object):
 
 
     def load_map(self, filename):
+        self.loaded = False
         
         try:
             with open(filename, "r") as f:
@@ -129,6 +140,8 @@ class map_manager_2(object):
             rospy.logerr(e1.format(map_type, dict))
             self.tmap2 = {}
             return
+        
+        self.loaded = True
             
         self.name = self.tmap2["name"]
         self.metric_map = self.tmap2["metric_map"]
@@ -163,6 +176,10 @@ class map_manager_2(object):
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
         self.names = self.create_list_of_nodes()
         self.map_check()
+        
+        if self.loaded and self.convert_to_legacy:
+            self.tmap2_to_tmap()
+            self.points_pub.publish(self.points)
         
         
     def broadcast_transform(self):
@@ -453,8 +470,9 @@ class map_manager_2(object):
             return False
         
         
-    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config="default", 
-                         action_type="default", goal="default", fail_policy="fail", restrictions=None):
+    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[], 
+                         recovery_behaviours_config="", action_type="default", goal="default", fail_policy="fail", 
+                         restrictions=None):
         
         edge = {}
         edge["action"] = action
@@ -465,14 +483,8 @@ class map_manager_2(object):
             edge["edge_id"] = edge_id
         
         edge["node"] = destination
-        
-        if config == "default":
-            edge["config"] = {}
-            edge["config"]["inflation_radius"] = 0.0
-            edge["config"]["top_vel"] = 0.55
-            edge["config"]["recovery_behaviours_config"] = ""
-        else:
-            edge["config"] = config
+        edge["config"] = config
+        edge["recovery_behaviours_config"] = recovery_behaviours_config
         
         if action_type == "default":
             edge["action_type"] = self.set_action_type(action)
@@ -804,19 +816,95 @@ class map_manager_2(object):
                 if edge["edge_id"] == edge_id:
                     edge["action"] = action or edge["action"]
                     
-                if "config" in edge and "top_vel" in edge["config"]:
-                    edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
-                elif "config" in edge and "top_vel" not in edge["config"]:
-                    edge["config"]["top_vel"] = top_vel
-                else:
-                    edge["config"] = {}
-                    edge["config"]["top_vel"] = top_vel
+                    if "config" in edge and "top_vel" in edge["config"]:
+                        edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
+                    elif "config" in edge and "top_vel" not in edge["config"]:
+                        edge["config"]["top_vel"] = top_vel
+                    else:
+                        edge["config"] = {}
+                        edge["config"]["top_vel"] = top_vel
                     
             self.tmap2["nodes"][index] = the_node
             self.update()
             self.write_topological_map(self.filename)
         
             return True, ""
+        else:
+            rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False, "no edge found or multiple edges found"
+        
+        
+    def add_param_to_edge_config_cb(self, req):
+        """
+        Update edge reconfigure parameters.
+        """
+        return self.add_param_to_edge_config(req.edge_id, req.namespace, req.name, req.value, req.value_is_string)
+    
+    
+    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string):
+        
+        if not value:
+            return False, "no value provided"
+        
+        if not value_is_string:
+            value = eval(value)
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        new_param = {"namespace":namespace, "name":name, "value":value}
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            msg = ""
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    if "config" not in edge:
+                        edge["config"] = []
+                    if new_param not in edge["config"]:
+                        edge["config"].append(new_param)
+                    msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
+            
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+            
+            return True, msg
+        else:
+            rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False, "no edge found or multiple edges found"
+        
+        
+    def rm_param_from_edge_config_cb(self, req):
+        """
+        Remove a param from an edge's config.
+        """
+        return self.rm_param_from_edge_config(req.edge_id, req.namespace, req.name)
+    
+    
+    def rm_param_from_edge_config(self, edge_id, namespace, name):
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            msg = ""
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    if "config" in edge:
+                        params_new = []
+                        for param in copy.deepcopy(edge["config"]):
+                            if param["namespace"] == namespace and param["name"] == name:
+                                continue
+                            else:
+                                params_new.append(param)
+                        edge["config"] = params_new
+                        msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+            
+            return True, msg
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
             return False, "no edge found or multiple edges found"
@@ -876,4 +964,63 @@ class map_manager_2(object):
             if destination not in names:
                 rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
                 self.map_ok = False
+                
+                
+    def tmap2_to_tmap(self):
+        
+        points = strands_navigation_msgs.msg.TopologicalMap()
+        
+        try:
+            point_set = self.pointset
+            points.name = point_set
+            points.pointset = point_set
+            points.map = self.metric_map
+            
+            for node in self.tmap2["nodes"]:
+                msg = strands_navigation_msgs.msg.TopologicalNode()
+                msg.name = node["node"]["name"]
+                msg.map = self.metric_map
+                msg.pointset = point_set
+                
+                msg.pose.position.x = node["node"]["pose"]["position"]["x"]
+                msg.pose.position.y = node["node"]["pose"]["position"]["y"]
+                msg.pose.position.z = node["node"]["pose"]["position"]["z"]
+                
+                msg.pose.orientation.x = node["node"]["pose"]["orientation"]["x"]
+                msg.pose.orientation.y = node["node"]["pose"]["orientation"]["y"]
+                msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
+                msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
+                
+                msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
+                msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]
+                
+                msgs_verts = []
+                for v in node["node"]["verts"]:
+                    msg_v = strands_navigation_msgs.msg.Vertex()
+                    msg_v.x = v["x"]
+                    msg_v.y = v["y"]
+                    msgs_verts.append(msg_v)
+                msg.verts = msgs_verts
+                
+                msgs_edges = []
+                for e in node["node"]["edges"]:
+                    msg_e = strands_navigation_msgs.msg.Edge()
+                    msg_e.edge_id = e["edge_id"]
+                    msg_e.node = e["node"]
+                    msg_e.action = e["action"]
+                    msg_e.top_vel = 0.55
+                    msg_e.map_2d = self.metric_map
+                    msg_e.inflation_radius = 0.0
+                    msg_e.recovery_behaviours_config = e["recovery_behaviours_config"]
+                    msgs_edges.append(msg_e)
+                msg.edges = msgs_edges
+                
+                msg.localise_by_topic = node["node"]["localise_by_topic"]
+                points.nodes.append(msg)
+        
+        except Exception as e:
+            rospy.logerr("Cannot convert map to the old format. The conversion requires all fields of the old format map to be set.")
+            points = strands_navigation_msgs.msg.TopologicalMap()
+        
+        self.points = points
 #########################################################################################################

@@ -455,14 +455,14 @@ class TopologicalLocalisation():
                             pr_nodes,
                             request.prior.values,
                             ts,
-                            False
+                            True # this has to be true for initializing the distribution
                         )
                         # send the lkl (prediction is not performed here because the ts is the same as prior ts)
                         node, particles = __pf.receive_likelihood_obs(
                             lkl_nodes,
                             request.likelihood.values,
                             ts,
-                            False
+                            False  # this has to be false to avoid the risk it gets re-initialised uniformly by the JSD threshold
                         )
                         resp = UpdatePriorLikelihoodObservationResponse()
                         resp.success = True
@@ -472,7 +472,6 @@ class TopologicalLocalisation():
                     else:
                         rospy.logwarn(
                             "Received non-admissible prior/likelihood observation {}, discarded".format(request.prior.values, request.likelihood.values))
-
             else:
                 rospy.logwarn("Nodes array and values array sizes do not match {} != {}/{} != {}, discarding prior/likelihood observation".format(
                     len(request.prior.nodes), len(request.prior.values), len(request.likelihood.nodes), len(request.likelihood.values)))

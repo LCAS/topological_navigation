@@ -56,6 +56,7 @@ add_service_files(
   UpdateLikelihoodObservation.srv
   UpdatePriorLikelihoodObservation.srv
   Predict.srv
+  SetFloat64.srv
 )
 
 ## Generate actions in the 'action' folder

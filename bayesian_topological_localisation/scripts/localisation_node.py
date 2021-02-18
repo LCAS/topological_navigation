@@ -9,7 +9,7 @@ from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRe
     UpdatePoseObservation, UpdatePoseObservationRequest, UpdatePoseObservationResponse, \
     UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse, \
     UpdatePriorLikelihoodObservation, UpdatePriorLikelihoodObservationRequest, UpdatePriorLikelihoodObservationResponse, \
-    Predict, PredictRequest, PredictResponse
+    Predict, PredictRequest, PredictResponse, SetFloat64, SetFloat64Request, SetFloat64Response
 from bayesian_topological_localisation.msg import DistributionStamped, PoseObservation, LikelihoodObservation
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
@@ -31,6 +31,8 @@ class TopologicalLocalisation():
         self.upd_services = []
         # thread that loop predictions at fixed rate for each agent
         self.prediction_threads = []
+        # contains the particle filters for each agent
+        self.pfs = []
 
         # these will contain info about the topology
         self.topo_map = None
@@ -46,9 +48,15 @@ class TopologicalLocalisation():
         # to avoid inconsistencies when registering/unregistering agents concurrently
         self.internal_lock = threading.Lock()
 
+        # default values for pf
+        self.default_reinit_jsd_threshold = 0.98
+        self.default_unconnected_jump_threshold = 0.2
+
         # declare services
         rospy.Service("~localise_agent", LocaliseAgent, self._localise_agent_handler)
         rospy.Service("~stop_localise", StopLocalise, self._stop_localise_handler)
+        rospy.Service("~set_JSD_upper_bound", SetFloat64, self._set_JSD_upper_bound)
+        rospy.Service("~set_entropy_lower_bound", SetFloat64, self._set_entropy_lower_bound)
 
         rospy.Subscriber("topological_map", TopologicalMap, self._topo_map_cb)
 
@@ -57,6 +65,20 @@ class TopologicalLocalisation():
             rospy.sleep(0.5)
 
         rospy.loginfo("DONE")
+
+    def _set_JSD_upper_bound(self, request):
+        self.default_reinit_jsd_threshold = request.value
+        for pf in self.pfs:
+            pf.set_JSD_upper_bound(request.value)
+
+        return SetFloat64Response(True)
+
+    def _set_entropy_lower_bound(self, request):
+        self.default_unconnected_jump_threshold = request.value
+        for pf in self.pfs:
+            pf.set_entropy_lower_bound(request.value)
+
+        return SetFloat64Response(True)
 
     def _localise_agent_handler(self, request):
         # lock resources
@@ -182,7 +204,9 @@ class TopologicalLocalisation():
             node_distances=self.node_distances,
             connected_nodes=self.connected_nodes,
             node_diffs2D=self.node_diffs2D,
-            node_names=self.node_names
+            node_names=self.node_names,
+            reinit_jsd_threshold=self.default_reinit_jsd_threshold,
+            unconnected_jump_threshold=self.default_unconnected_jump_threshold
         )
 
         def __prepare_pd_msg(particles, timestamp=None):
@@ -504,6 +528,7 @@ class TopologicalLocalisation():
         self.stopping_events.append(stop_event)
         self.prediction_threads.append(thr)
         self.agents.append(name)
+        self.pfs.append(pf)
 
 
         rospy.loginfo("n_particles:{}, initial_spread_policy:{}, prediction_model:{}, do_prediction:{}, prediction_rate:{}. prediction_speed_decay:{}".format(

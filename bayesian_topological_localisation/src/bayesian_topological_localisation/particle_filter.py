@@ -9,13 +9,14 @@ class TopologicalParticleFilter():
 
     # if the entropy of the current distribution is smaller than this threshold,
     # stop jumping to close nodes that are unconnected
-    UNCONNECTED_JUMP_THRESHOLD = 0.2
+    DEFAULT_UNCONNECTED_JUMP_THRESHOLD = 0.2
     # if the Jensen-Shannon Distance btw prior and likelihood is greater than this threshold, 
     # reinitialize particles with the likelihood AND restart jumping to close unconnected nodes
-    REINIT_JSD_THRESHOLD = 0.975
+    DEFAULT_REINIT_JSD_THRESHOLD = 0.975
 
 
-    def __init__(self, num, prediction_model, initial_spread_policy, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names):
+    def __init__(self, num, prediction_model, initial_spread_policy, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names,
+                 reinit_jsd_threshold=None, unconnected_jump_threshold=None):
         self.n_of_ptcl = num
         self.prediction_model = prediction_model
         self.initial_spread_policy = initial_spread_policy
@@ -55,6 +56,9 @@ class TopologicalParticleFilter():
         self.only_connected = False        
 
         self.print_debug = True
+
+        self.reinit_jsd_threshold = reinit_jsd_threshold if reinit_jsd_threshold is not None else self.DEFAULT_REINIT_JSD_THRESHOLD
+        self.unconnected_jump_threshold = unconnected_jump_threshold if unconnected_jump_threshold is not None else self.DEFAULT_UNCONNECTED_JUMP_THRESHOLD
 
         self.lock = threading.Lock()
 
@@ -224,10 +228,10 @@ class TopologicalParticleFilter():
         ####
 
         # it measn the particles are "disjoint" from this obs
-        if identifying and js_distance > self.REINIT_JSD_THRESHOLD:
+        if identifying and js_distance > self.reinit_jsd_threshold:
             if self.print_debug:
                 rospy.logwarn("Reinitializing particles, JS distance between prior and likelihood {} is greater than {}".format(
-                    js_distance, self.REINIT_JSD_THRESHOLD))
+                    js_distance, self.reinit_jsd_threshold))
             self._initialize_wt_pose(obs_x, obs_y, cov_x, cov_y, timestamp_secs)
             self.only_connected = False # we are not really sure now anymore
 
@@ -257,10 +261,10 @@ class TopologicalParticleFilter():
             self._expand_distribution(self._normalize(counts), nodes), self._expand_distribution(self._normalize(likelihood), nodes_dist))
 
         # it measn the particles are "disjoint" from this obs
-        if identifying and js_distance > self.REINIT_JSD_THRESHOLD:
+        if identifying and js_distance > self.reinit_jsd_threshold:
             if self.print_debug:
                 rospy.logwarn("Reinitializing particles, JS distance between prior and likelihood {} is greater than {}".format(
-                    js_distance, self.REINIT_JSD_THRESHOLD))
+                    js_distance, self.reinit_jsd_threshold))
             self._initialize_wt_likelihood(nodes_dist, likelihood, timestamp_secs)
             self.only_connected = False # we are not really sure now anymore
 
@@ -298,10 +302,16 @@ class TopologicalParticleFilter():
             if self.particles[particle_idx] != self.prev_particles[particle_idx]:
                 self.life[particle_idx] = 0
 
-        if not self.only_connected and p_entropy < self.UNCONNECTED_JUMP_THRESHOLD:
+        if not self.only_connected and p_entropy < self.unconnected_jump_threshold:
             self.only_connected = True
             if self.print_debug:
-                rospy.logwarn("Stop jumping to unconnected nodes, entropy of current particles distribution {} smaller than {}.".format(p_entropy, self.UNCONNECTED_JUMP_THRESHOLD))
+                rospy.logwarn("Stop jumping to unconnected nodes, entropy of current particles distribution {} smaller than {}.".format(p_entropy, self.unconnected_jump_threshold))
+
+    def set_JSD_upper_bound(self, bound):
+        self.reinit_jsd_threshold = bound
+
+    def set_entropy_lower_bound(self, bound):
+        self.unconnected_jump_threshold = bound
 
     def predict(self, timestamp_secs):
         """Performs a prediction step, estimates the new node and resamples the particles based on the prediction model only."""

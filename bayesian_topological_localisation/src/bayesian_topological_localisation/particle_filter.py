@@ -10,10 +10,10 @@ class TopologicalParticleFilter():
 
     # if the entropy of the current distribution is smaller than this threshold,
     # stop jumping to close nodes that are unconnected
-    DEFAULT_UNCONNECTED_JUMP_THRESHOLD = 0.2
+    DEFAULT_UNCONNECTED_JUMP_THRESHOLD = 0.8
     # if the Jensen-Shannon Distance btw prior and likelihood is greater than this threshold, 
     # reinitialize particles with the likelihood AND restart jumping to close unconnected nodes
-    DEFAULT_REINIT_JSD_THRESHOLD = 0.975
+    DEFAULT_REINIT_JSD_THRESHOLD = 0.90
 
 
     def __init__(self, num, prediction_model, initial_spread_policy, prediction_speed_decay, node_coords, node_distances, connected_nodes, node_diffs2D, node_names,
@@ -248,12 +248,12 @@ class TopologicalParticleFilter():
         ##### DEBUG observation compute entropy
         # o_entropy = self._compute_entropy(self._normalize(likelihood))
         # rospy.loginfo("Entropy of likel observation: {}".format(o_entropy))
-        # rospy.loginfo("Jensen-Shannon distance: {}".format(js_distance))
         ####
 
         # compute distributions distance
         js_distance = self._compute_jensen_shannon_distance(
             self._expand_distribution(self._normalize(counts), nodes), self._expand_distribution(self._normalize(likelihood), nodes_dist))
+        # if self.print_debug: rospy.loginfo("Jensen-Shannon distance: {}".format(js_distance))
 
         # it measn the particles are "disjoint" from this obs
         if identifying and js_distance > self.reinit_jsd_threshold:
@@ -278,8 +278,8 @@ class TopologicalParticleFilter():
         #     print("Masses: {}".format(zip(self.node_names[nodes], masses, counts)))
         self.last_estimate = self.predicted_particles[indices_start[np.argmax(
             masses)]]
-        if self.print_debug:
-            print("Node estimate: {} {}".format(self.node_names[self.last_estimate.node], self.last_estimate))
+        # if self.print_debug:
+        #     print("Node estimate: {} {}".format(self.node_names[self.last_estimate.node], self.last_estimate))
 
     def _add_noise(self, particle):
         # noise to the node, bernoulli
@@ -291,7 +291,7 @@ class TopologicalParticleFilter():
             particle.node = np.random.choice(closeby_nodes)
         
         particle.vel += np.random.normal(0.0, 0.005)
-        particle.life += np.random.exponential(scale=1.0)
+        particle.life += np.random.exponential(scale=0.5)
 
     def _resample(self, use_weight=True):
         if use_weight:
@@ -314,8 +314,8 @@ class TopologicalParticleFilter():
         nodes, indices_start, counts = np.unique(
             [p.node for p in self.particles], return_index=True, return_counts=True)
         p_entropy = self._compute_entropy(self._normalize(counts))
-        if self.print_debug: 
-            rospy.loginfo("Final entropy : {} ({})".format(p_entropy, self.only_connected))
+        # if self.print_debug: 
+        #     rospy.loginfo("Final entropy : {} ({})".format(p_entropy, self.only_connected))
 
         if not self.only_connected and p_entropy < self.unconnected_jump_threshold:
             self.only_connected = True

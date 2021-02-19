@@ -7,7 +7,7 @@ class Particle():
         self.vel = np.array(vel)
         self.life = life
         self.last_time_secs = timestamp_secs
-        self.n_steps_vel = 20
+        self.n_steps_vel = n_steps_vel
 
     def __copy__(self):
         newone = Particle(self.node, np.copy(self.vel),

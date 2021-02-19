@@ -45,6 +45,7 @@ catkin_python_setup()
    DistributionStamped.msg
    PoseObservation.msg
    LikelihoodObservation.msg
+   ParticlesState.msg
  )
 
 ## Generate services in the 'srv' folder

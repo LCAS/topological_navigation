@@ -10,7 +10,7 @@ from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRe
     UpdateLikelihoodObservation, UpdateLikelihoodObservationRequest, UpdateLikelihoodObservationResponse, \
     UpdatePriorLikelihoodObservation, UpdatePriorLikelihoodObservationRequest, UpdatePriorLikelihoodObservationResponse, \
     Predict, PredictRequest, PredictResponse, SetFloat64, SetFloat64Request, SetFloat64Response
-from bayesian_topological_localisation.msg import DistributionStamped, PoseObservation, LikelihoodObservation
+from bayesian_topological_localisation.msg import DistributionStamped, PoseObservation, LikelihoodObservation, ParticlesState
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from strands_navigation_msgs.msg import TopologicalMap
@@ -133,7 +133,8 @@ class TopologicalLocalisation():
         # Initialize publishers and messages
         cn_pub = rospy.Publisher("{}/estimated_node".format(name), String, queue_size=10, latch=True)
         pd_pub = rospy.Publisher("{}/current_prob_dist".format(name), DistributionStamped, queue_size=10, latch=True)
-        self.res_publishers.append((cn_pub, pd_pub))
+        ptcs_pub = rospy.Publisher("{}/particles_states".format(name), ParticlesState, queue_size=10, latch=True)
+        self.res_publishers.append((cn_pub, pd_pub, ptcs_pub))
         cnviz_pub = rospy.Publisher("{}/estimated_node_viz".format(name), Marker, queue_size=10)
         parviz_pub = rospy.Publisher("{}/particles_viz".format(name), MarkerArray, queue_size=10)
         staparviz_pub = rospy.Publisher("{}/stateless_particles_viz".format(name), MarkerArray, queue_size=10)
@@ -230,11 +231,21 @@ class TopologicalLocalisation():
             strmsg.data = self.node_names[node]
             return strmsg
 
+        def __prepare_ptcs_msg(particles):
+            ptcsmsg = ParticlesState()
+            ptcsmsg.nodes = [self.node_names[p.node] for p in particles]
+            ptcsmsg.vels_x = [p.vel[0] for p in particles]
+            ptcsmsg.vels_y = [p.vel[1] for p in particles]
+            ptcsmsg.times = [p.life for p in particles]
+
+            return ptcsmsg
+
         # function to publish current node and particles distribution
         def __publish(node, particles):
             if not stop_event.is_set():
                 cn_pub.publish(__prepare_cn_msg(node))
                 pd_pub.publish(__prepare_pd_msg(particles))
+                ptcs_pub.publish(__prepare_ptcs_msg(particles))
 
                 # publish viz stuff
                 for i, p in enumerate(particles):

@@ -10,6 +10,9 @@
        the main pc. Setting this option to false you can run the database on the
        correct machine before starting -->
   <arg name="launch_db" default="true"/>
+  <!-- If using the standalone option, setting this will insert an empty map into the mongo database with the name of
+       the topmap -->
+  <arg name="new_map" default="false"/>
 
   <group if="$(arg standalone)">
     <group if="$(arg launch_db)">
@@ -33,6 +36,10 @@
 
     <group if="$(arg rviz)">
       <node name="rviz" pkg="rviz" type="rviz" args="-d $(find topological_rviz_tools)/conf/topological_rviz_tools.rviz" output="screen"/>
+    </group>
+
+    <group if="$(arg new_map)">
+      <node name="insert_map" pkg="topological_utils" type="insert_empty_map.py" args="$(arg topmap)"/>
     </group>
   </group>
 

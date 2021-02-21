@@ -10,15 +10,14 @@ from geometry_msgs.msg import Pose
 
 if __name__ == '__main__':
     rospy.init_node('insert_empty_map')
-    
-    if len(sys.argv) != 2:
+    if len(rospy.myargv()) != 2:
         rospy.logwarn("usage: insert_empty_map.py pointset_name")
         sys.exit(1)
 
-    pointset = sys.argv[1]
+    pointset = rospy.myargv()[1]
     map_loader = YamlMapLoader()
     if pointset in map_loader.get_maps():
-        rospy.logwarn("Map with name {0} already exists. Try another one.".format(sys.argv[1]))
+        rospy.logwarn("Map with name {0} already exists. Try another one.".format(pointset))
         sys.exit(1)
 
     msg_store = MessageStoreProxy(collection='topological_maps')

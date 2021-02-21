@@ -125,9 +125,9 @@ class TopologicalParticleFilter():
         probs = self._normalize(np.array(likelihood))
         _particles_nodes = np.random.choice(nodes, self.n_of_ptcl, p=probs)
         # sample velocity (x,y components) as gaussian sample with mean 0.0 and a covariance
-        _particles_vels = np.random.normal(0.0, 0.5, (self.n_of_ptcl, 2))
+        _particles_vels = np.random.normal(0.0, 0.05, (self.n_of_ptcl, 2))
         # sample time (seconds) as exponential sample
-        _particles_lifes = np.random.exponential(scale=3.0, size=self.n_of_ptcl)
+        _particles_lifes = np.random.uniform(high=1, size=self.n_of_ptcl)
 
         self.particles = [
             Particle(node, vel, life, timestamp_secs)
@@ -291,7 +291,7 @@ class TopologicalParticleFilter():
             particle.node = np.random.choice(closeby_nodes)
         
         particle.vel += np.random.normal(0.0, 0.005)
-        particle.life += np.random.exponential(scale=0.5)
+        particle.life += np.random.uniform(high=1)
 
     def _resample(self, use_weight=True):
         if use_weight:

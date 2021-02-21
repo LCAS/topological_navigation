@@ -100,7 +100,7 @@ class PredictionModel:
 
         ## set all the new values
         _new_particle = particle.__copy__()
-        if _new_node == _new_particle.node:
+        if _new_node == particle.node:
             _new_particle.life = _new_life
         else:
             _new_particle.life = 0.0

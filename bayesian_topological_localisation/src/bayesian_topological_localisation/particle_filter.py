@@ -1,6 +1,7 @@
 import numpy as np
 import threading
 import rospy
+import math
 from bayesian_topological_localisation.particle import Particle
 
 class TopologicalParticleFilter():
@@ -45,8 +46,8 @@ class TopologicalParticleFilter():
         # current estimate of speed
         self.current_speed = np.zeros((2))
         # num samples to use to estimate picker speed
-        self.n_speed_samples = 20
-        self.speed_samples = [np.array([0.]*2)] * self.n_speed_samples
+        self.n_speed_samples = 10
+        self.speed_samples = [] #[np.array([0.]*2)] * self.n_speed_samples
         # history of poses received
         self.last_pose = np.zeros((2))
         # timestamp of poses
@@ -99,12 +100,29 @@ class TopologicalParticleFilter():
         probs = np.array(up / np.sqrt((2*np.pi)**2 * det_M))
         return self._normalize(probs.reshape((-1)))
 
+    def _update_speed(self, obs_x=None, obs_y=None, timestamp_secs=None):
+        if not (obs_x is None or obs_y is None):
+            # compute speed w.r.t. last pose obs
+            distance = np.array([obs_x, obs_y]) - self.last_pose
+            time = timestamp_secs - self.last_ts
+
+            if len(self.speed_samples) == self.n_speed_samples:
+                self.speed_samples.pop(0)
+            self.speed_samples.append(distance / time)
+
+            self.current_speed = np.average(self.speed_samples, axis=0)
+
+            self.last_pose = np.array([obs_x, obs_y])
+            self.last_ts = timestamp_secs
+        else:
+            self.current_speed *= self.prediction_speed_decay
+
     def _initialize_wt_pose(self, obs_x, obs_y, cov_x, cov_y, timestamp_secs):
         nodes_prob = self._normal_pdf(obs_x, obs_y, cov_x, cov_y, range(self.node_coords.shape[0]))
         nodes_prob = self._normalize(nodes_prob)
         _particles_nodes = np.random.choice(range(self.node_coords.shape[0]), self.n_of_ptcl, p=nodes_prob)
         # sample velocity (x,y components) as gaussian sample with mean 0.0 and a covariance
-        _particles_vels = np.random.normal(0.0, 0.5, (self.n_of_ptcl, 2))
+        _particles_vels = np.random.normal(0.0, 0.05, (self.n_of_ptcl, 2))
         # sample time (seconds) as exponential sample 
         _particles_lifes = np.random.exponential(scale=1.0, size=self.n_of_ptcl)
 
@@ -192,6 +210,7 @@ class TopologicalParticleFilter():
     # weighting with normal distribution with var around the observation
     def _weight_pose(self, obs_x, obs_y, cov_x, cov_y, timestamp_secs, identifying):
         _nodes = np.array([p.node for p in self.predicted_particles])
+        _vels = np.array([p.vel for p in self.predicted_particles])
         idx_sort = np.argsort(_nodes)
         nodes, indices_start, counts = np.unique(
             _nodes[idx_sort], return_index=True, return_counts=True)
@@ -203,12 +222,43 @@ class TopologicalParticleFilter():
         # rospy.loginfo("Entropy of prior: {}".format(p_entropy))
         ####
 
+        # weight pose
         _all_nodes = np.arange(self.node_coords.shape[0])
         prob_dist = self._normal_pdf(obs_x, obs_y, cov_x, cov_y, _all_nodes)
 
         self.W = np.zeros((self.n_of_ptcl))
         for _, (node, indices) in enumerate(zip(nodes, indices_groups)):
             self.W[indices] = prob_dist[node]
+
+        # weight speed
+        if len(self.speed_samples) == self.n_speed_samples:
+            def __gaussian(x, mu, sig):
+                return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+            
+            norm_current_sped = np.linalg.norm(self.current_speed)
+            unit_current_speed = self.current_speed / \
+                norm_current_sped
+            for p_i, _vel in enumerate(_vels):
+                # weight angle
+                _norm_vel = np.linalg.norm(_vel)
+                _unit_vel = _vel / _norm_vel
+                dot_product = np.dot(unit_current_speed, _unit_vel)
+                angle = np.arccos(dot_product)
+                self.W[p_i] += (np.cos(angle) + 1) / 8.
+                # weght norm
+                _n_w = __gaussian(_norm_vel, norm_current_sped, norm_current_sped * 0.5)
+                self.W[p_i] += _n_w / 4.
+            # print("After")
+
+        # assign velocity of gps
+        # if len(self.speed_samples) == self.n_speed_samples:
+        #     for i in range(len(self.predicted_particles)):
+        #         self.predicted_particles[i].vel = self.current_speed
+
+        print("current_speed {}".format(self.current_speed))
+        print("avg ptcl speed {}, median {}, max {}, min {}".format(
+            np.average(_vels, axis=0), np.median(_vels, axis=0), np.max(_vels, axis=0), np.min(_vels, axis=0)))
+
 
         # compute distributions distance
         js_distance = self._compute_jensen_shannon_distance(
@@ -253,7 +303,7 @@ class TopologicalParticleFilter():
         # compute distributions distance
         js_distance = self._compute_jensen_shannon_distance(
             self._expand_distribution(self._normalize(counts), nodes), self._expand_distribution(self._normalize(likelihood), nodes_dist))
-        # if self.print_debug: rospy.loginfo("Jensen-Shannon distance: {}".format(js_distance))
+        if self.print_debug and identifying: rospy.loginfo("Jensen-Shannon distance: {}".format(js_distance))
 
         # it measn the particles are "disjoint" from this obs
         if identifying and js_distance > self.reinit_jsd_threshold:
@@ -283,15 +333,15 @@ class TopologicalParticleFilter():
 
     def _add_noise(self, particle):
         # noise to the node, bernoulli
-        if np.random.random() < 0.01:
+        if np.random.random() < 0.001:
             if self.only_connected:
                 closeby_nodes = self.connected_nodes[particle.node]
             else:
                 closeby_nodes = np.where((self.node_distances[particle.node]<=3))[0]
             particle.node = np.random.choice(closeby_nodes)
         
-        particle.vel += np.random.normal(0.0, 0.005)
-        particle.life += np.random.uniform(high=1)
+        particle.vel += np.random.normal(0.0, 0.0005)
+        particle.life = max(0, particle.life + np.random.uniform(low=-0.1, high=0.1))
 
     def _resample(self, use_weight=True):
         if use_weight:
@@ -336,6 +386,8 @@ class TopologicalParticleFilter():
             particles = None
             p_estimate = None
         else:
+            self._update_speed()
+
             self._predict(timestamp_secs)
 
             self._estimate_node(use_weight=False)
@@ -364,6 +416,10 @@ class TopologicalParticleFilter():
             
             use_weight = False
         else:
+            if identifying:
+                self._update_speed(obsx, obsy, timestamp_secs)
+            else:
+                self._update_speed()
 
             self._predict(timestamp_secs)
 
@@ -399,6 +455,7 @@ class TopologicalParticleFilter():
             
             use_weight = False
         else:
+            self._update_speed()
 
             self._predict(timestamp_secs)
 
@@ -439,7 +496,7 @@ class TopologicalParticleFilter():
             getattr(copy_obj, attr)) and not attr.startswith("__")]
         
         # copy all the variable values, excluding some
-        exclude_variables = ["lock"]
+        exclude_variables = ["lock", "particles", "predicted_particles"]
         for var in variables:
             if var in exclude_variables:
                 continue
@@ -451,5 +508,10 @@ class TopologicalParticleFilter():
 
         # we dont want to print stuff related to ac opy object
         copy_obj.print_debug = False
+
+        # copy the particles
+        for idx in range(len(self.particles)):
+            copy_obj.predicted_particles[idx] = self.predicted_particles[idx].__copy__()
+            copy_obj.particles[idx] = self.particles[idx].__copy__()
 
         return copy_obj

@@ -4,7 +4,7 @@ class Particle():
 
     def __init__(self, node, vel, life, timestamp_secs, n_steps_vel=40):
         self.node = node
-        self.vel = np.array(vel)
+        self.vel = np.clip(np.array(vel), -1, 1)
         self.life = life
         self.last_time_secs = timestamp_secs
         self.n_steps_vel = n_steps_vel

@@ -49,8 +49,8 @@ class TopologicalLocalisation():
         self.internal_lock = threading.Lock()
 
         # default values for pf
-        self.default_reinit_jsd_threshold = 0.98
-        self.default_unconnected_jump_threshold = 0.8
+        self.default_reinit_jsd_threshold = 0.975
+        self.default_unconnected_jump_threshold = 0.6
 
         # declare services
         rospy.Service("~localise_agent", LocaliseAgent, self._localise_agent_handler)

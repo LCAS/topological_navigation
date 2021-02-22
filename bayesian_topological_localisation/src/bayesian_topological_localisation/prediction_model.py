@@ -91,12 +91,18 @@ class PredictionModel:
         _prob.append(1.0 - sum(_prob))
         _nodes.append(particle.node)
 
-        _new_node = np.random.choice(_nodes, p=_prob)
+
+        _new_node_idx = np.random.choice(np.arange(len(_nodes)), p=_prob)
+        _new_node = _nodes[_new_node_idx]
 
         ## part three: update vel
-        _this_step_vel = (self.node_coords[_new_node] - self.node_coords[particle.node]) / max(0.01, timestamp_secs - particle.last_time_secs)
-        _new_vel = particle.vel + (_this_step_vel -
+        _this_step_vel = _prob[_new_node_idx] * (self.node_coords[_new_node] - self.node_coords[particle.node]) / max(
+            0.1, timestamp_secs - particle.last_time_secs)  # max(0.01, timestamp_secs - particle.last_time_secs)
+        _new_vel = particle.vel + (_this_step_vel -  # np.clip(_this_step_vel, -1, 1) -
                                  particle.vel) / particle.n_steps_vel
+
+        # print("From {} to {} with prob {} vel {}({}) time {}".format(particle.node, _new_node,
+                                                                #  _prob[_new_node_idx], _this_step_vel, _new_vel, timestamp_secs - particle.last_time_secs))
 
         ## set all the new values
         _new_particle = particle.__copy__()
@@ -107,6 +113,7 @@ class PredictionModel:
             _new_particle.node = _new_node
         _new_particle.vel = _new_vel
         _new_particle.last_time_secs = timestamp_secs
+
 
         return _new_particle
 

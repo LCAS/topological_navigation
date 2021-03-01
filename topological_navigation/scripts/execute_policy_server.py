@@ -167,6 +167,7 @@ class PolicyExecutionServer(object):
         if not mb_service_created:
             while not mb_service_created and not self.cancelled:
                 rospy.sleep(1)
+                rcnfsrvrname = rospy.get_namespace() + "move_base" + "/" + self.move_base_planner
                 rospy.logwarn(
                     "%s must be created! will keep trying until its there"
                     % rcnfsrvrname
@@ -218,7 +219,7 @@ class PolicyExecutionServer(object):
                 else:
                     rospy.logerr(
                         "I couldn't create reconfigure client %s. is %s running?"
-                        % (rcnfsrvrname, i)
+                        % (rcnfsrvrname, mb_action)
                     )
         return False
 
@@ -226,7 +227,7 @@ class PolicyExecutionServer(object):
         for mb_action, client in self.rcnfclient.iteritems():
             try:
                 self.init_dynparams[mb_action] = client.get_configuration()
-            except Exception as e:
+            except Exception as exc:
                 rospy.logwarn(
                     "I couldn't store initial move_base parameters. Caught exception: %s. will continue with previous params",
                     exc,
@@ -243,7 +244,7 @@ class PolicyExecutionServer(object):
         translation = DYNPARAM_MAPPING[self.move_base_planner]
         for k, v in params.iteritems():
             if k in translation:
-                if rospy.has_param(translation[k]):
+                if rospy.has_param(rospy.get_namespace() + mb_action + "/" + self.move_base_planner + "/" + translation[k]):
                     translated_params[translation[k]] = v
                 else:
                     rospy.logwarn(
@@ -770,14 +771,14 @@ class PolicyExecutionServer(object):
 
             if edge_id != "none" and self.edge_reconfigure and not self.use_tmap2:
                 self.edgeReconfigureManager.srv_reconfigure(edge_id)
-                
+
             if edge_id != "none" and self.edge_reconfigure and self.use_tmap2:
                 self.edgeReconfigureManager.register_edge(edg)
                 self.edgeReconfigureManager.initialise()
                 self.edgeReconfigureManager.reconfigure()
 
             (succeeded, status) = self.monitored_navigation(target_pose, action)
-            
+
             if edge_id != "none" and self.edge_reconfigure and self.use_tmap2:
                 self.edgeReconfigureManager._reset()
                 rospy.sleep(rospy.Duration.from_sec(0.3))

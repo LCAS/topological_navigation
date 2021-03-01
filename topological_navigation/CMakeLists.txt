@@ -134,6 +134,7 @@ include_directories(
    scripts/manual_edge_predictions.py
    scripts/speed_based_prediction.py
    scripts/reconf_at_edges_server.py
+   scripts/topological_transform_publisher.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

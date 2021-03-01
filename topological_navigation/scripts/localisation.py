@@ -4,13 +4,8 @@ import sys, json
 import rospy, rostopic, tf
 import strands_navigation_msgs.srv
 
-from actionlib_msgs.msg import *
-from move_base_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-
-from strands_navigation_msgs.msg import TopologicalNode
-from strands_navigation_msgs.msg import TopologicalMap
 
 from topological_navigation.tmap_utils import *
 from threading import Thread
@@ -133,7 +128,10 @@ class TopologicalNavLoc(object):
         rospy.loginfo("NODES BY TOPIC: %s" %self.names_by_topic)
         rospy.loginfo("NO GO NODES: %s" %self.nogos)
         
-        rospy.loginfo("Listening to topo_map to base_link tf transform")
+        self.base_frame = rospy.get_param("~base_frame", "base_link")
+        self.tmap_frame = self.tmap["transformation"]["child"]
+        
+        rospy.loginfo("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
         self.listener = tf.TransformListener()
         self.rate = rospy.Rate(10.0)
         self.PoseCallback()
@@ -166,8 +164,8 @@ class TopologicalNavLoc(object):
             
             try:
                 now = rospy.Time(0)
-                self.listener.waitForTransform("topo_map", "base_link", now, rospy.Duration(2.0))
-                (trans,rot) = self.listener.lookupTransform("topo_map", "base_link", now)
+                self.listener.waitForTransform(self.tmap_frame, self.base_frame, now, rospy.Duration(2.0))
+                (trans,rot) = self.listener.lookupTransform(self.tmap_frame, self.base_frame, now)
             except Exception as e:
                 rospy.logerr(e)
                 self.rate.sleep()

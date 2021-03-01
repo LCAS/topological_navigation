@@ -34,6 +34,7 @@ from strands_navigation_msgs.msg import TopologicalMap
 from topological_navigation.navigation_stats import *
 from topological_navigation.tmap_utils import *
 
+from topological_navigation.EdgeReconfigureManager import EdgeReconfigureManager
 
 import topological_navigation.msg
 import strands_navigation_msgs.msg
@@ -152,9 +153,7 @@ class PolicyExecutionServer(object):
         # Check if using edge recofigure server
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         if self.edge_reconfigure:
-            self.current_edge_group = "none"
-            rospy.loginfo("Using edge reconfigure ...")
-            self.edge_groups = rospy.get_param("/edge_nav_reconfig_groups", {})
+            self.edgeReconfigureManager = EdgeReconfigureManager()
 
         self.move_base_planner = rospy.get_param("~move_base_planner", "DWAPlannerROS")
 
@@ -396,39 +395,6 @@ class PolicyExecutionServer(object):
         # self._as.publish_feedback(self._feedback)
         # rospy.loginfo('%s: Navigating From %s to %s', self._action_name, self.closest_node, goal.target)
         # self.navigate(goal.target)
-
-    def edgeReconfigureManager(self, edge_id):
-        """
-        edgeReconfigureManager
-
-        Checks if an edge requires reconfiguration of the
-        """
-
-        #        print self.edge_groups
-
-        edge_group = "none"
-        for group in self.edge_groups:
-            print "Check Edge: ", edge_id, "in ", group
-            if edge_id in self.edge_groups[group]["edges"]:
-                edge_group = group
-                break
-
-        print "current group: ", self.current_edge_group
-        print "edge group: ", edge_group
-
-        if edge_group is not self.current_edge_group:  # and edge_group != 'none':
-            print "RECONFIGURING EDGE: ", edge_id
-            print "TO ", edge_group
-            try:
-                rospy.wait_for_service("reconf_at_edges", timeout=3)
-                reconf_at_edges = rospy.ServiceProxy("reconf_at_edges", ReconfAtEdges)
-                resp1 = reconf_at_edges(edge_id)
-                print resp1.success
-                if resp1.success:  # set current_edge_group only if successful
-                    self.current_edge_group = edge_group
-            except rospy.ServiceException, e:
-                rospy.logerr("Service call failed: %s" % e)
-        print "-------"
 
     """
      Follow Route
@@ -802,10 +768,19 @@ class PolicyExecutionServer(object):
             if action in self.move_base_actions:
                 self.reconfigure_movebase_params(action, params)
 
-            if edge_id != "none" and self.edge_reconfigure:
-                self.edgeReconfigureManager(edge_id)
+            if edge_id != "none" and self.edge_reconfigure and not self.use_tmap2:
+                self.edgeReconfigureManager.srv_reconfigure(edge_id)
+                
+            if edge_id != "none" and self.edge_reconfigure and self.use_tmap2:
+                self.edgeReconfigureManager.register_edge(edg)
+                self.edgeReconfigureManager.initialise()
+                self.edgeReconfigureManager.reconfigure()
 
             (succeeded, status) = self.monitored_navigation(target_pose, action)
+            
+            if edge_id != "none" and self.edge_reconfigure and self.use_tmap2:
+                self.edgeReconfigureManager._reset()
+                rospy.sleep(rospy.Duration.from_sec(0.3))
 
             if action in self.move_base_actions:
                 self.reset_reconfigure_params(action)

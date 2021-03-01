@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import math
+import json
 import rospy
 import actionlib
 
@@ -17,6 +18,7 @@ from datetime import datetime
 
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String
+from geometry_msgs.msg import Pose
 
 from strands_navigation_msgs.msg import MonitoredNavigationAction
 from strands_navigation_msgs.msg import MonitoredNavigationGoal
@@ -188,7 +190,6 @@ class PolicyExecutionServer(object):
             rospy.loginfo(" ...done")
 
             rospy.loginfo("EPM All Done ...")
-            rospy.spin()
 
     def create_reconfigure_client(self, mb_action):
         """
@@ -339,15 +340,26 @@ class PolicyExecutionServer(object):
     def get_edge(self, orig, dest, a):
         found = False
         edge = None
-        for i in self.curr_tmap.nodes:
-            if i.name == orig:
-                for j in i.edges:
-                    if j.node == dest and j.action == a:
-                        found = True
-                        edge = j
-                        break
-            if found:
-                break
+        if not self.use_tmap2:
+            for i in self.curr_tmap.nodes:
+                if i.name == orig:
+                    for j in i.edges:
+                        if j.node == dest and j.action == a:
+                            found = True
+                            edge = j
+                            break
+                if found:
+                    break
+        else:
+            for i in self.curr_tmap["nodes"]:
+                if i["node"]["name"] == orig:
+                    for j in i["node"]["edges"]:
+                        if j["node"] == dest and j["action"] == a:
+                            found = True
+                            edge = j
+                            break
+                if found:
+                    break
 
         return edge
 
@@ -599,7 +611,10 @@ class PolicyExecutionServer(object):
                         rospy.loginfo("case D.1")
                         # print "case B.2.2"
                         # Current node not in route so policy execution was successful
-                        cl_node = get_node(self.curr_tmap, self.closest_node)
+                        if not self.use_tmap2:
+                            cl_node = get_node(self.curr_tmap, self.closest_node)
+                        else:
+                            cl_node = get_node_from_tmap2(self.curr_tmap, self.closest_node)
                         if (
                             no_reset
                         ):  # if previous action was just navigate to waypoint before trying no move_base action do not reset fail counter
@@ -607,7 +622,12 @@ class PolicyExecutionServer(object):
                         else:
                             self.nfails = 0
 
-                        if not cl_node.localise_by_topic:
+                        if not self.use_tmap2:
+                            localise_by_topic = cl_node.localise_by_topic
+                        else:
+                            localise_by_topic = cl_node["localise_by_topic"]
+
+                        if not localise_by_topic:
                             if self.nfails < self.n_tries:
                                 rospy.loginfo("Do move_base to %s" % self.current_node)
                                 self.current_action = "move_base"
@@ -643,13 +663,23 @@ class PolicyExecutionServer(object):
         found = False
         action = "none"
         target = "none"
-        for i in self.lnodes:
-            if i.name == source:
-                for j in i.edges:
-                    if j.edge_id == edge_id:
-                        action = j.action
-                        target = j.node
-                found = True
+        if not self.use_tmap2:
+            for i in self.lnodes:
+                if i.name == source:
+                    for j in i.edges:
+                        if j.edge_id == edge_id:
+                            action = j.action
+                            target = j.node
+                    found = True
+        else:
+            for i in self.lnodes["nodes"]:
+                if i["node"]["name"] == source:
+                    for j in i["node"]["edges"]:
+                        if j["edge_id"] == edge_id:
+                            action = j["action"]
+                            target = j["node"]
+                    found = True
+
         if not found:
             self.publish_feedback(GoalStatus.ABORTED)
             rospy.logwarn("source node not found")
@@ -666,13 +696,30 @@ class PolicyExecutionServer(object):
         found = False
         tolerance = 0.0
         ytolerance = 0.0
-        for i in self.lnodes:
-            if i.name == node:
-                found = True
-                target_pose = i.pose  # [0]
-                tolerance = i.xy_goal_tolerance
-                ytolerance = i.yaw_goal_tolerance
-                break
+        if not self.use_tmap2:
+            for i in self.lnodes:
+                if i.name == node:
+                    found = True
+                    target_pose = i.pose  # [0]
+                    tolerance = i.xy_goal_tolerance
+                    ytolerance = i.yaw_goal_tolerance
+                    break
+        else:
+            for i in self.lnodes["nodes"]:
+                if i["node"]["name"] == node:
+                    found = True
+#                    target_pose = i["node"]["pose"]  # [0]
+                    target_pose = Pose()
+                    target_pose.position.x = i["node"]["pose"]["position"]["x"]
+                    target_pose.position.y = i["node"]["pose"]["position"]["y"]
+                    target_pose.position.z = i["node"]["pose"]["position"]["z"]
+                    target_pose.orientation.x = i["node"]["pose"]["orientation"]["x"]
+                    target_pose.orientation.y = i["node"]["pose"]["orientation"]["y"]
+                    target_pose.orientation.z = i["node"]["pose"]["orientation"]["z"]
+                    target_pose.orientation.w = i["node"]["pose"]["orientation"]["w"]
+                    tolerance = i["node"]["properties"]["xy_goal_tolerance"]
+                    ytolerance = i["node"]["properties"]["yaw_goal_tolerance"]
+                    break
 
         # temporary safety measures (Until all maps are updated)
         if tolerance == 0.0:
@@ -708,9 +755,16 @@ class PolicyExecutionServer(object):
                 edge_id = "none"
                 top_vel = 0.55
             else:
-                edge_id = edg.edge_id
-                if edg.top_vel >= 0:
-                    top_vel = edg.top_vel
+                if not self.use_tmap2:
+                    edge_id = edg.edge_id
+                else:
+                    edge_id = edg["edge_id"]
+
+                if not self.use_tmap2:
+                    if edg.top_vel >= 0:
+                        top_vel = edg.top_vel
+                    else:
+                        top_vel = 0.55
                 else:
                     top_vel = 0.55
 
@@ -865,18 +919,41 @@ class PolicyExecutionServer(object):
     """
 
     def MapCallback(self, msg):
+
         if not self.use_tmap2:
-            self.topol_map = msg.name
-            self.lnodes = msg.nodes
+            self.lnodes = msg
+            self.topol_map = msg.pointset
             self.curr_tmap = msg
+
+            for i in self.lnodes:
+                for j in i.edges:
+                    if j.action not in self.needed_actions:
+                        self.needed_actions.append(j.action)
+
         else:
-            self.lnodes = json.loads(msg.nodes)
-            self.topol_map = json.loads(msg.name)
+            self.lnodes = json.loads(msg.data)
+            self.topol_map = self.lnodes["pointset"]
             self.curr_tmap = json.loads(msg.data)
-        for i in self.lnodes:
-            for j in i.edges:
-                if j.action not in self.needed_actions:
-                    self.needed_actions.append(j.action)
+
+            for i in self.lnodes["nodes"]:
+                for j in i["node"]["edges"]:
+                    if j["action"] not in self.needed_actions:
+                        self.needed_actions.append(j["action"])
+
+        self._map_received = True
+
+#        if not self.use_tmap2:
+#            self.topol_map = msg.name
+#            self.lnodes = msg.nodes
+#            self.curr_tmap = msg
+#        else:
+#            self.lnodes = json.loads(msg.nodes)
+#            self.topol_map = json.loads(msg.name)
+#            self.curr_tmap = json.loads(msg.data)
+#        for i in self.lnodes:
+#            for j in i.edges:
+#                if j.action not in self.needed_actions:
+#                    self.needed_actions.append(j.action)
 
     """
      Node Shutdown CallBack

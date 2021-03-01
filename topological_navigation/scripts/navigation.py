@@ -169,7 +169,6 @@ class TopologicalNavServer(object):
             self.edgeReconfigureManager = EdgeReconfigureManager()
 
         rospy.loginfo("All Done ...")
-        rospy.spin()
 
     def init_reconfigure(self):
         self.move_base_planner = rospy.get_param(
@@ -720,7 +719,7 @@ class TopologicalNavServer(object):
         Orig = route.source[0]
         Targ = target
         self._target = Targ
-        
+
         self.init_reconfigure()
 
         rospy.loginfo("%d Nodes on route" % nnodes)
@@ -837,19 +836,19 @@ class TopologicalNavServer(object):
             inf.orientation.x = cnode["pose"]["orientation"]["x"]
             inf.orientation.y = cnode["pose"]["orientation"]["y"]
             inf.orientation.z = cnode["pose"]["orientation"]["z"]
-            
+
             # If we are using edge reconfigure
             if self.edge_reconfigure:
                 self.edgeReconfigureManager.register_edge(cedg)
                 self.edgeReconfigureManager.initialise()
-                self.edgeReconfigureManager.reconfigure() 
-            
+                self.edgeReconfigureManager.reconfigure()
+
             nav_ok, inc = self.monitored_navigation(inf, a)
-            
+
             if self.edge_reconfigure:
                 self.edgeReconfigureManager._reset()
                 rospy.sleep(rospy.Duration.from_sec(0.3))
-            
+
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
             self.reconfigure_movebase_params(params)
 
@@ -989,3 +988,4 @@ if __name__ == "__main__":
     use_tmap2 = rospy.get_param("~use_tmap2", False)
     server = TopologicalNavServer(rospy.get_name(), mode, use_tmap2)
     policy_server = PolicyExecutionServer(use_tmap2)
+    rospy.spin()

@@ -31,37 +31,6 @@ class PredictionModel:
         pos_connected_nodes = self.connected_nodes[particle.node][same_direction_mask]
         neg_connected_nodes = self.connected_nodes[particle.node][~same_direction_mask]
 
-        # trans probability goes mostly to connected nodes and 1/len(self.connected_nodes) goes to the unconnected neighboors
-        div_coef = len(pos_connected_nodes)
-
-        # probability of jumping to closeby nodes that are not connected
-        if (not only_connected):
-            #  and len(unconnected_neighboors_nodes):
-
-            unconnected_neighboors_nodes = np.where(
-                (self.node_distances[particle.node] <= self.unconnected_distance) & (self.node_distances[particle.node] > 0.0))[0]
-
-            if unconnected_neighboors_nodes.shape[0] > 0:
-                div_coef += 1
-
-                # probability of nodes that are not connected but close enough
-                diffs_norm = np.dot(
-                    self.node_diffs2D[particle.node, unconnected_neighboors_nodes], self.node_diffs2D[particle.node, unconnected_neighboors_nodes].transpose()).diagonal()
-                speed_proj = (np.dot(self.node_diffs2D[particle.node, unconnected_neighboors_nodes], particle.vel) /
-                            diffs_norm).reshape((-1, 1)) * self.node_diffs2D[particle.node, unconnected_neighboors_nodes]
-                speed_proj = np.sqrt(
-                    np.dot(speed_proj, speed_proj.transpose()).diagonal())
-
-                _lambda_p = - np.log(0.5) * speed_proj / \
-                    self.node_distances[particle.node][unconnected_neighboors_nodes]
-
-                _p_move = 1. - np.exp(- _new_life * _lambda_p)
-
-                # probability of non-connected nodes that are close enough
-                _prob += list(((_p_move / div_coef) /
-                                len(unconnected_neighboors_nodes)).tolist())
-                _nodes += list(unconnected_neighboors_nodes)
-
         # project speed vector on the edges toward successive nodes
         diffs_norm = np.dot(
             self.node_diffs2D[particle.node, pos_connected_nodes], self.node_diffs2D[particle.node, pos_connected_nodes].transpose()).diagonal()
@@ -74,29 +43,50 @@ class PredictionModel:
         # compute lambda considering speed and distance between nodes
         # lambda = (0.6931 * speed) / dist, so that p(transitioning) = 0.5 when the position is halfway between current and next particle.node
         # because exp(-lambda * tau) = 0.5 => ln(0.5) = -0.6931 = - lambda * tau, where tau is time in the particle.node
-        lambda_p = - np.log(0.5) * speed_proj / \
+        lambda_p = 2.0 * np.log(0.5) * speed_proj / \
             self.node_distances[particle.node][pos_connected_nodes]
 
-        p_move = 1. - np.exp(- _new_life * lambda_p)
+        w_p = speed_proj
+        sum_w_p = np.sum(w_p)
 
-        # probability of connected nodes in the direction of speed
-        _prob += list((p_move / div_coef).tolist())
-        _nodes += list(pos_connected_nodes)
+        # this is te bernoully probabily of jumping/not-jumping
+        bern_p_jump = np.sum(w_p * (1.0 - np.exp(_new_life * lambda_p)))/ sum_w_p
 
-        # probability of connected nodes in the opposite direction of speed
-        _prob += [0.] * len(neg_connected_nodes)
-        _nodes += list(neg_connected_nodes)
+        # now first we decide if we jump:
+        if np.random.random() < bern_p_jump:
+            # we jump...
 
-        # probability of remaining in current particle.node
-        _prob.append(1.0 - sum(_prob))
-        _nodes.append(particle.node)
+            nodes_p_jump = lambda_p / np.sum(lambda_p)
+
+            _new_node_idx = np.random.choice(
+                np.arange(len(pos_connected_nodes)), p=nodes_p_jump)
+            _new_node = pos_connected_nodes[_new_node_idx]
+            _jump_prob = nodes_p_jump[_new_node_idx]
+        else:
+            # we do not jump...
+
+            _new_node = particle.node
+            _jump_prob = 1.0 - bern_p_jump
 
 
-        _new_node_idx = np.random.choice(np.arange(len(_nodes)), p=_prob)
-        _new_node = _nodes[_new_node_idx]
+        # # probability of connected nodes in the direction of speed
+        # _prob += list((p_move / div_coef).tolist())
+        # _nodes += list(pos_connected_nodes)
+
+        # # probability of connected nodes in the opposite direction of speed
+        # _prob += [0.] * len(neg_connected_nodes)
+        # _nodes += list(neg_connected_nodes)
+
+        # # probability of remaining in current particle.node
+        # _prob.append(1.0 - sum(_prob))
+        # _nodes.append(particle.node)
+
+
+        # _new_node_idx = np.random.choice(np.arange(len(_nodes)), p=_prob)
+        # _new_node = _nodes[_new_node_idx]
 
         ## part three: update vel
-        _this_step_vel = _prob[_new_node_idx] * (self.node_coords[_new_node] - self.node_coords[particle.node]) / max(
+        _this_step_vel = _jump_prob * (self.node_coords[_new_node] - self.node_coords[particle.node]) / max(
             0.1, timestamp_secs - particle.last_time_secs)  # max(0.01, timestamp_secs - particle.last_time_secs)
         _new_vel = particle.vel + (_this_step_vel -  # np.clip(_this_step_vel, -1, 1) -
                                  particle.vel) / particle.n_steps_vel

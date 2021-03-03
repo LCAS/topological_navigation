@@ -3,7 +3,7 @@ Bayesian Topological Localisation
 
 This package provides support for localising agents in a topological map, based on `topological_navigation`. 
 
-It uses particle filter for performing state estimation. It uses continuous-time Hidden Markov Models as the prediction model.
+It uses particle filter for performing state estimation. This code is based on https://ras.papercept.net/proceedings/IROS20/0879.pdf. 
 
 The code exploits the fact that generally a topological map nodes are sparsely connected - particles can only jump from a node to another if they are connected through an edge - to perform the computation efficiently.  
 
@@ -28,22 +28,10 @@ The node provide the service `/bayesian_topological_localisation/localise_agent`
 The srv is:
 
 ```
-# constants for selecting the policy on how to spread the particles when the localisation starts 
-uint8 CLOSEST_NODE=0       # all particles to closest node 
-uint8 SPREAD_UNIFORM=1     # particles spread uniformly around all ndoes
-uint8 FOLLOW_OBS=2         # use the distribution of the first observation
-
-# constants for the prediction model to use
-uint8 PRED_CTMC=0          # continuous-time hidden markov model
-uint8 PRED_IDENTITY=1      # each particle remains in the same node it was previously
-
 string name                         # identifier of the agent to track
 uint64 n_particles                  # number of particle to use 
-uint8 initial_spread_policy         # policy value, one of the above constants
-uint8 prediction_model              # prediction model, one of above constants 
 bool do_prediction                  # if to perform prediction steps when observations are not available
 float64 prediction_rate             # rate at which predictions are performed
-float64 prediction_speed_decay      # the last estimated speed from observations will be multiplied by this factor at every estimation step until a new observation is received and the speed is estimated again. If 1.0, speed remains constant.
 
 ---
 
@@ -64,7 +52,7 @@ bool success        # true if the localisation is stopped
 ## Sending observations
 
 The localisation node needs observations in order to localise and agent - e.g. `robot_1` - on the map.  
-There are two ways an observation can be provided listed below. Each type of observation can be provided through a topic or by calling a service. If calling the service you will get the localisation result straight away in your service response.
+There are two ways an observation can be provided listed below. Each type of observation can be provided through a topic or by calling a service. If calling the service you will get the localisation result straight away in your service response. Each time you send an observation you have to set the parameter `identifying` (`False` by default) which indicates whether the observation uniquely identifies the target (e.g. GPS identifier) or not (e.g. LIDAR). 
 
 ### 1. Pose with covariance 
 - **topic modality**: To be published to topic `/robot_1/pose_obs` (msg type `geometry_msgs/PoseWithCovarianceStamped`). The message has to provide a pose (x, y) and a variance for the pose as a covariance matrix: 
@@ -79,7 +67,7 @@ There are two ways an observation can be provided listed below. Each type of obs
 - **service modality**: Call `/robot_1/update_pose_obs` (srv type `bayesian_topological_localisation/UpdatePoseObservation`), the request parameter `pose` is a `geometry_msgs/PoseWithCovarianceStamped` and has to be filled as for the topic modality.
 
 ### 2. Likelihood
-- **topic modality**: To be published to topic `/robot_1/likelihood_obs` (msg type `bayesian_topological_localisation/DistributionStamped`). The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient. Note that in order to predict the future agent position the model estimates the velocity vector of the agent from pose observations only, hence if you use only likelihood type observations please implement your own prediction model.
+- **topic modality**: To be published to topic `/robot_1/likelihood_obs` (msg type `bayesian_topological_localisation/DistributionStamped`). The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient.
   
 - **service modality**: Call `/robot_1/update_likelihood_obs` (srv type `bayesian_topological_localisation/UpdateLikelihoodObservation`), the request parameter `likelihood` is a `bayesian_topological_localisation/DistributionStamped` and has to be filled as for the topic modality.
   
@@ -93,12 +81,23 @@ In order to visualize the localisation result - for agent `robot_1` for example 
 - a `Marker` attached to topic `/robot_1/estimated_node_viz`
 - a `MarkerArray` attached to topic `/robot_1/particles_viz` 
 
-## TODO
-- [ ] change the $\lambda$ paramenter is computed in the ctmm prediction model, particles jumps too much if distance between nodes is unequal
-- [x] implement prediction model to spread to closeby nodes
-- [x] implement services for sending obs & getting results, for receiving predictions
-- [x] implement use of `prediction_speed_decay`, now always constant speed
-- [x] correctly stop the threads on shutdown request
-- [x] default particles number if not provided
-- [ ] ~~implement use of `initial_spread_policy`, now just uses the first observation~~
-- [ ] ~~allow to use different state estimation methods than just particle filters. A simple one is needed for localising robots from the metric localisation, i.e. replace this https://github.com/LCAS/topological_navigation/blob/master/topological_navigation/scripts/localisation.py .~~
+## Stateless utilities
+The node provides some services to perform inference into the future, the services work on a copy of the particle filter they therefore do not affect to current state of the localisation.
+
+### Prediction the future distribution
+Call `/robot_1/predict_stateless` (srv type `bayesian_topological_localisation/Predict`) specifying
+   - `secs_from_now`: how many seconds into the future you want to predict 
+   - `prediction_rate`: the rate of prediction, if `secs_from_now = 10` and `prediction_rate = 1` the node will perform 10 prediction steps to give the final prediction
+   - `return_history`: (default `False`) if `True` returns the prediction result at all prediction steps, rather than just the final prediction at `secs_from_now`.
+
+### Perform an update step from given prior and likelihood
+Call `/robot_1/update_stateless` (srv type `bayesian_topological_localisation/UpdatePriorLikelihoodObservation`) specifying
+   - `prior`: The prior distribution of nodes 
+   - `likelihood`: the likelihood ditribution.
+Returns the posterior distribution computed from prior and likelihood and the estimated node.
+
+## Monitoring Particles Distribution
+The PF implements two mechanisms for preventing the particles distribution to diverge.
+
+1. **monitoring entropy**: at each step, the entropy of the distribution over the topological map is computed, whenever this falls below a threshold the particles do not jump to node that are not connected anymore. The threshould (default value: 0.6) can be set with the service `/bayesian_topological_localisation/set_entropy_lower_bound`.
+2. **monitoring observation distance**: every time the PF receives a new observation we compute the [Jensen-Shannon Distance](https://scipy.github.io/devdocs/generated/scipy.spatial.distance.jensenshannon.html) between the current distribution and the normalised observation. If this is higher than a threshold and the observation is *identifying* (see "Sending observations" section above) then 1) we re-initialise the particles with the distribution of the observation; and 2) we restart jumping to non connected nodes (if the entropy monitor was triggered before). The threshould (default value: 0.975) can be set with the service `/bayesian_topological_localisation/set_JSD_upper_bound`.

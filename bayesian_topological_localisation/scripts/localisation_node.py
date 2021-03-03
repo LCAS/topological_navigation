@@ -93,15 +93,14 @@ class TopologicalLocalisation():
         name = (request.name, 'unknown')[request.name == '']
         # default particles number is 300 if requested is 0
         n_particles = (request.n_particles, 300)[request.n_particles <= 0]
-        initial_spread_policy = request.initial_spread_policy
-        prediction_model = request.prediction_model
+        initial_spread_policy = 0
+        prediction_model = 0
         do_prediction = request.do_prediction
         # default prediction rate is 0.5 if requested is 0.
         prediction_rate = (request.prediction_rate, 0.5)[
             request.prediction_rate <= 0.]
         # default speed decay is 1 if requested is 0
-        prediction_speed_decay = (request.prediction_speed_decay, 1.0)[
-            request.prediction_speed_decay <= 0]
+        prediction_speed_decay = 1.0
 
         if name in self.agents:
             rospy.logwarn("Agent {} already being localised".format(name))
@@ -110,24 +109,24 @@ class TopologicalLocalisation():
             return LocaliseAgentResponse(False)
 
         # Initialize the prediction model
-        if prediction_model == LocaliseAgentRequest.PRED_CTMC:
-            pm = PredictionModel(
-                pred_type=PredictionModel.CTMC,
-                node_coords=self.node_coords,
-                node_diffs2D=self.node_diffs2D,
-                node_distances=self.node_distances,
-                connected_nodes=self.connected_nodes
-            )
-        elif prediction_model == LocaliseAgentRequest.PRED_IDENTITY:
-            pm = PredictionModel(
-                pred_type=PredictionModel.IDENTITY
-            )
-        else:
-            rospy.logerr(
-                "Prediction model {} unknown".format(prediction_model))
-            # release resources
-            self.internal_lock.release()
-            return LocaliseAgentResponse(False)
+        # if prediction_model == LocaliseAgentRequest.PRED_CTMC:
+        pm = PredictionModel(
+            pred_type=PredictionModel.CTMC,
+            node_coords=self.node_coords,
+            node_diffs2D=self.node_diffs2D,
+            node_distances=self.node_distances,
+            connected_nodes=self.connected_nodes
+        )
+        # elif prediction_model == LocaliseAgentRequest.PRED_IDENTITY:
+        #     pm = PredictionModel(
+        #         pred_type=PredictionModel.IDENTITY
+        #     )
+        # else:
+        #     rospy.logerr(
+        #         "Prediction model {} unknown".format(prediction_model))
+        #     # release resources
+        #     self.internal_lock.release()
+        #     return LocaliseAgentResponse(False)
 
 
         # Initialize publishers and messages

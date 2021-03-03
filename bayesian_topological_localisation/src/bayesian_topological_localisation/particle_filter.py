@@ -255,9 +255,9 @@ class TopologicalParticleFilter():
         #     for i in range(len(self.predicted_particles)):
         #         self.predicted_particles[i].vel = self.current_speed
 
-        print("current_speed {}".format(self.current_speed))
-        print("avg ptcl speed {}, median {}, max {}, min {}".format(
-            np.average(_vels, axis=0), np.median(_vels, axis=0), np.max(_vels, axis=0), np.min(_vels, axis=0)))
+        # print("current_speed {}".format(self.current_speed))
+        # print("avg ptcl speed {}, median {}, max {}, min {}".format(
+        #     np.average(_vels, axis=0), np.median(_vels, axis=0), np.max(_vels, axis=0), np.min(_vels, axis=0)))
 
 
         # compute distributions distance
@@ -303,7 +303,7 @@ class TopologicalParticleFilter():
         # compute distributions distance
         js_distance = self._compute_jensen_shannon_distance(
             self._expand_distribution(self._normalize(counts), nodes), self._expand_distribution(self._normalize(likelihood), nodes_dist))
-        if self.print_debug and identifying: rospy.loginfo("Jensen-Shannon distance: {}".format(js_distance))
+        # if self.print_debug and identifying: rospy.loginfo("Jensen-Shannon distance: {}".format(js_distance))
 
         # it measn the particles are "disjoint" from this obs
         if identifying and js_distance > self.reinit_jsd_threshold:

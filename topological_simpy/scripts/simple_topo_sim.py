@@ -9,7 +9,7 @@ from random import randint, choice
 
 env = simpy.Environment()
 #tmap = TopoMap('/home/mhanheide/workspace/topological_navigation_ws/src/topological_navigation/topological_navigation/maps/test.tmap2', env)
-tmap = TopoMap('/home/mhanheide/workspace/topological_navigation_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2', env)
+tmap = TopoMap('/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2', env)
 
 #r1 = Robot('thorvald', tmap, 'A')
 #r1.goto('A')
@@ -50,4 +50,4 @@ while env.peek() < until:
         ))
     env.step()
 print(tmap._node_log)
-#env.run(until=60)
+#env.run(until=3600)

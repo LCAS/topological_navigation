@@ -19,7 +19,7 @@ FUEL_TANK_LEVEL = [5, 25]  # Min/max levels of fuel tanks (in liters)
 REFUELING_SPEED = 2        # liters / second
 TANK_TRUCK_TIME = 30      # Seconds it takes the tank truck to arrive
 T_INTER = [1, 30]        # Create a car every [min, max] seconds
-SIM_TIME = 20000            # Simulation time in seconds
+SIM_TIME = 100            # Simulation time in seconds
 
 
 
@@ -163,14 +163,14 @@ class Robot():
                     start_wait = self._env.now
                     yield self._tmap.request_node(n)
                     if self._env.now - start_wait > 0: 
-                        print "$$$$ % 5d:  %s has lock on %s after %d" % (self._env.now, self._name, n, self._env.now - start_wait)
+                        print('$$$$ % 5d:  %s has lock on %s after %d' % (self._env.now, self._name, n, self._env.now - start_wait))
                 except:
                     print('% 5d: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
                         self._tmap.env.now, self._name, 
                         self._current_node, n
                     ))
                     interrupted = True
-                    break;
+                    break
                 try:
                     time_to_travel = ceil(d / (2*self._speed_m_s))
                     yield self._tmap.env.timeout(time_to_travel)

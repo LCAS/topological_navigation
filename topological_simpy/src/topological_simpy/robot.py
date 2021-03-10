@@ -2,14 +2,12 @@
 
 import itertools
 import random
-
 import simpy
 from yaml import safe_load
-
 from topological_navigation.route_search2 import TopologicalRouteSearch2
 from topological_navigation.tmap_utils import *
-
 from math import hypot, ceil
+from functools import partial, wraps
 
 RANDOM_SEED = 42
 GAS_STATION_SIZE = 200     # liters
@@ -17,14 +15,10 @@ THRESHOLD = 20             # Threshold for calling the tank truck (in %)
 FUEL_TANK_SIZE = 40        # liters
 FUEL_TANK_LEVEL = [5, 25]  # Min/max levels of fuel tanks (in liters)
 REFUELING_SPEED = 2        # liters / second
-TANK_TRUCK_TIME = 30      # Seconds it takes the tank truck to arrive
-T_INTER = [1, 30]        # Create a car every [min, max] seconds
-SIM_TIME = 100            # Simulation time in seconds
+TANK_TRUCK_TIME = 30       # Seconds it takes the tank truck to arrive
+T_INTER = [1, 30]          # Create a car every [min, max] seconds
+SIM_TIME = 100             # Simulation time in seconds
 
-
-
-from functools import partial, wraps
-import simpy
 
 def patch_resource(resource, pre=None, post=None):
     """Patch *resource* so that it calls the callable *pre* before each
@@ -33,6 +27,7 @@ def patch_resource(resource, pre=None, post=None):
      instance.
 
     """
+
     def get_wrapper(func):
         # Generate a wrapper for put/get/request/release
         @wraps(func)
@@ -44,18 +39,20 @@ def patch_resource(resource, pre=None, post=None):
 
             # Perform actual operation
             ret = func(*args, **kwargs)
-            
+
             # Call "post" callback
             if post:
                 post(resource)
 
             return ret
+
         return wrapper
 
-     # Replace the original operations with our wrapper
+    # Replace the original operations with our wrapper
     for name in ['put', 'get', 'request', 'release']:
         if hasattr(resource, name):
             setattr(resource, name, get_wrapper(getattr(resource, name)))
+
 
 class TopoMap():
     def __init__(self, topo_map_file, env=None):
@@ -91,9 +88,9 @@ class TopoMap():
         a = self._nodes_dict[nodeA]
         b = self._nodes_dict[nodeB]
         return hypot(
-            a['pose']['position']['x']-b['pose']['position']['x'],
-            a['pose']['position']['y']-b['pose']['position']['y']
-            )
+            a['pose']['position']['x'] - b['pose']['position']['x'],
+            a['pose']['position']['y'] - b['pose']['position']['y']
+        )
 
     def request_node(self, node):
         if self.env:
@@ -119,6 +116,7 @@ class TopoMap():
                 occupied_nodes.append(n)
         print("*% 4d:   nodes %s are occupied" % (self.env.now, sorted(occupied_nodes)))
 
+
 class Robot():
     def __init__(self, name, tmap, initial_node='A'):
         self._current_node = initial_node
@@ -129,9 +127,9 @@ class Robot():
         self._active_process = None
         if self._tmap.env:
             self._tmap.request_node(initial_node)
-            #self._tmap._node_res[initial_node].count = 1
-            #print(self._current_node)
-            #self._tmap.env.process(self._goto(initial_node))
+            # self._tmap._node_res[initial_node].count = 1
+            # print(self._current_node)
+            # self._tmap.env.process(self._goto(initial_node))
 
     def _goto(self, target):
         route = self._tmap.get_route(self._current_node, target)
@@ -143,13 +141,13 @@ class Robot():
             r.append(target)
             if target == self._current_node:
                 print('% 5d: %s is already at target %s' % (
-                    self._tmap.env.now, self._name, 
+                    self._tmap.env.now, self._name,
                     target
                 ))
                 return
 
             print('% 5d: %s going from node %s to node %s via route %s' % (
-                self._tmap.env.now, self._name, 
+                self._tmap.env.now, self._name,
                 self._current_node, target, r))
             interrupted = False
             for n in r:
@@ -162,17 +160,18 @@ class Robot():
                 try:
                     start_wait = self._env.now
                     yield self._tmap.request_node(n)
-                    if self._env.now - start_wait > 0: 
-                        print('$$$$ % 5d:  %s has lock on %s after %d' % (self._env.now, self._name, n, self._env.now - start_wait))
+                    if self._env.now - start_wait > 0:
+                        print('$$$$ % 5d:  %s has lock on %s after %d' % (
+                        self._env.now, self._name, n, self._env.now - start_wait))
                 except:
                     print('% 5d: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
-                        self._tmap.env.now, self._name, 
+                        self._tmap.env.now, self._name,
                         self._current_node, n
                     ))
                     interrupted = True
                     break
                 try:
-                    time_to_travel = ceil(d / (2*self._speed_m_s))
+                    time_to_travel = ceil(d / (2 * self._speed_m_s))
                     yield self._tmap.env.timeout(time_to_travel)
                     yield self._tmap.release_node(self._current_node)
                     self._current_node = n
@@ -180,19 +179,19 @@ class Robot():
                     yield self._tmap.env.timeout(0)
                 except simpy.Interrupt:
                     print('% 5d: %s INTERRUPTED while travelling from node %s going to node %s' % (
-                        self._tmap.env.now, self._name, 
+                        self._tmap.env.now, self._name,
                         self._current_node, n
                     ))
                     print('% 5d: @@@ %s release previously acquired target node %s' % (self._env.now, self._name, n))
                     yield self._tmap.release_node(n)
                     interrupted = True
                     break
-                #if self._current_node != target:
+                # if self._current_node != target:
             if interrupted:
                 print('% 5d: %s ABORTED at %s' % (self._tmap.env.now, self._name, self._current_node))
             else:
                 print('% 5d: %s COMPLETED at %s' % (self._tmap.env.now, self._name, self._current_node))
-            
+
     def goto(self, target):
         if self._tmap.env:
             if self._active_process:
@@ -202,8 +201,6 @@ class Robot():
             self._active_process = self._tmap.env.process(self._goto(target))
         else:
             self._current_node = target
-
-            
 
 
 def car(name, env, gas_station, fuel_pump):
@@ -261,8 +258,6 @@ def car_generator(env, gas_station, fuel_pump):
     for i in itertools.count():
         yield env.timeout(random.randint(*T_INTER))
         env.process(car('Car %d' % i, env, gas_station, fuel_pump))
-
-
 
 
 if __name__ == '__main__':

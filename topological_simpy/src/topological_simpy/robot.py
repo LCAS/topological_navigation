@@ -93,10 +93,16 @@ class TopoMap():
         )
 
     def request_node(self, node):
+        """
+        Put one robot into the _node_res, i.e., the node resource is occupied by the robot. Note: the robot starts requesting the next route node when the robot reaches the current node
+        """
         if self.env:
             return self._node_res[node].put(1)
 
     def release_node(self, node):
+        """
+        Get the robot out of the _node_res, i.e., the node resource is released, the robot leaves this node
+        """
         if self.env:
             if self._node_res[node].level > 0:
                 return self._node_res[node].get(1)
@@ -110,6 +116,9 @@ class TopoMap():
         return self._node_res[n].count > 0
 
     def monitor(self, freq=2):
+        """
+        Get the topological map nodes that occupied by the robot currently
+        """
         occupied_nodes = []
         for n in self._node_res:
             if self._node_res[n].level > 0:
@@ -174,9 +183,13 @@ class Robot():
                     time_to_travel = ceil(d / (2 * self._speed_m_s))
                     yield self._tmap.env.timeout(time_to_travel)
                     yield self._tmap.release_node(self._current_node)
+                    # The robot is reaching at the half way between the current node and next node
+                    print('% 5d:  %s ---> %s reaching half way ---> %s' % (self._tmap.env.now, self._current_node, self._name, n))
                     self._current_node = n
+                    remain_time_to_travel = ceil(d / self._speed_m_s) - time_to_travel
+                    yield self._tmap.env.timeout(remain_time_to_travel)
                     print('% 5d:  %s reached node %s' % (self._tmap.env.now, self._name, n))
-                    yield self._tmap.env.timeout(0)
+                    yield self._tmap.env.timeout(0)  # Why yield here? TODO
                 except simpy.Interrupt:
                     print('% 5d: %s INTERRUPTED while travelling from node %s going to node %s' % (
                         self._tmap.env.now, self._name,

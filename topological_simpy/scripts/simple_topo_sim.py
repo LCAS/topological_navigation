@@ -31,10 +31,11 @@ print(nodes)
 def goal_generator(env, robots, nodes, max_interval=50):
     for i in itertools.count():
         delay_time = randint(env.now + 1, env.now + max_interval)
+        print('.% 4d:    Generating goal after %6d seconds at %6d s' % (env.now, delay_time, env.now + delay_time))
         yield env.timeout(delay_time)
         r = choice(robots)
         n = choice(nodes)
-        print('new goal for robot %s: %s' % (r._name, n))
+        print('+% 4d:    new goal for robot %10s: %s' % (env.now, r._name, n))
         r.goto(n)
 
 

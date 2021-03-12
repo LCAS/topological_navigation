@@ -123,7 +123,7 @@ class TopoMap():
         for n in self._node_res:
             if self._node_res[n].level > 0:
                 occupied_nodes.append(n)
-        print("*% 4d:   nodes %s are occupied" % (self.env.now, sorted(occupied_nodes)))
+        print("*% 4d:    nodes     %s      are occupied" % (self.env.now, sorted(occupied_nodes)))
 
 
 class Robot():

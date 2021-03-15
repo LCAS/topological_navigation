@@ -4,7 +4,9 @@ from topological_simpy.robot import Robot, TopoMap
 import simpy
 import itertools
 
-from random import randint, choice
+from random import randint, choice, seed
+
+seed(10)
 
 env = simpy.Environment()
 # tmap = TopoMap('/home/mhanheide/workspace/topological_navigation_ws/src/topological_navigation/topological_navigation/maps/test.tmap2', env)
@@ -28,9 +30,9 @@ nodes = tmap.get_nodes()
 print(nodes)
 
 
-def goal_generator(env, robots, nodes, max_interval=50):
+def goal_generator(env, robots, nodes, max_interval=10):
     for i in itertools.count():
-        delay_time = randint(env.now + 1, env.now + max_interval)
+        delay_time = randint(env.now + 1, env.now + max_interval) # TODO decrease delay_time
         print('.% 4d:    Generating goal after %6d seconds at %6d s' % (env.now, delay_time, env.now + delay_time))
         yield env.timeout(delay_time)
         r = choice(robots)
@@ -52,5 +54,5 @@ while env.peek() < until:
             'ACTIVE' if r._active_process and r._active_process.is_alive else 'IDLE'
         ))
     env.step()
-print(tmap._node_log)
+print(tmap._node_log)  # TODO write to file
 # env.run(until=3600)

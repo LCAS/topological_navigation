@@ -11,14 +11,14 @@ from functools import partial, wraps
 from copy import deepcopy
 
 RANDOM_SEED = 42
-GAS_STATION_SIZE = 200     # liters
-THRESHOLD = 20             # Threshold for calling the tank truck (in %)
-FUEL_TANK_SIZE = 40        # liters
+GAS_STATION_SIZE = 200  # liters
+THRESHOLD = 20  # Threshold for calling the tank truck (in %)
+FUEL_TANK_SIZE = 40  # liters
 FUEL_TANK_LEVEL = [5, 25]  # Min/max levels of fuel tanks (in liters)
-REFUELING_SPEED = 2        # liters / second
-TANK_TRUCK_TIME = 30       # Seconds it takes the tank truck to arrive
-T_INTER = [1, 30]          # Create a car every [min, max] seconds
-SIM_TIME = 100             # Simulation time in seconds
+REFUELING_SPEED = 2  # liters / second
+TANK_TRUCK_TIME = 30  # Seconds it takes the tank truck to arrive
+T_INTER = [1, 30]  # Create a car every [min, max] seconds
+SIM_TIME = 100  # Simulation time in seconds
 
 
 def patch_resource(resource, pre=None, post=None):
@@ -71,6 +71,7 @@ class TopoMap():
 
         self._node_log = {}
 
+        self.request_success = None
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max
@@ -106,12 +107,12 @@ class TopoMap():
         if self.env:
             return time_cost * speed_m_s
 
-    def get_avoiding_route(self, avoid_node, origin, target):
+    def get_avoiding_route(self, origin, target, avoid_node):
         """
         get the topological route from origin to target but avoiding avoid_node
-        :param avoid_node: topological node that should be avoided when planning the route
         :param origin: origin topological node
         :param target: target topological node
+        :param avoid_node: topological node that should be avoided when planning the route
         """
         self.t_map2 = self.delete_tmap_node(avoid_node)
         self.route_planner = TopologicalRouteSearch2(self.t_map2)
@@ -133,13 +134,28 @@ class TopoMap():
                 return self.env.timeout(0)
         return self.t_map2
 
-    def request_node(self, node):
+    def request_node(self, node, with_avoid=True):
         """
         Put one robot into the _node_res, i.e., the node resource is occupied by the robot.
         Note: the robot starts requesting the next route node when the robot reaches the current node
+        :param node: string, the node to be requested
+        :param with_avoid: bool, - False: request anyway no matter the node is occupied or not
+                                 - True: do not request the node if the node is occupied
         """
         if self.env:  # TODO check whether the node has been occupied before requesting/put?; self._node_log[node].[-1] ==0, i.e., the node is empty or released? If occupied, considering plan a new route without the occupied node?
-            return self._node_res[node].put(1)  # TODO make sure self._node_res[node].level == 0 & self._node_res[node].put_queue == [] before put
+            if with_avoid is False:
+                return self._node_res[node].put(1)
+            elif with_avoid is True:
+                if self._node_res[node].level == 0 and self._node_res[node].put_queue == []:
+                    self.request_success = True
+                    return self._node_res[node].put(1)  # TODO make sure self._node_res[node].level == 0 & self._node_res[node].put_queue == [] before put
+                else:
+                    self.request_success = False
+                    return self.env.timeout(0)
+
+    def change_route(self, node):
+
+        route_nodes = self.get_route_nodes(self._current_node, target)
 
     def release_node(self, node):
         """
@@ -176,6 +192,7 @@ class Robot():
         self._name = name
         self._speed_m_s = .3
         self._active_process = None
+        self.route_nodes = None
         if self._tmap.env:
             self._tmap.request_node(initial_node)
             # self._tmap._node_res[initial_node].count = 1
@@ -183,14 +200,91 @@ class Robot():
             # self._tmap.env.process(self._goto(initial_node))
 
     def _goto(self, target):
-        route = self._tmap.get_route(self._current_node, target)
+        self.route_nodes = self.get_route_nodes(self._current_node, target)
+        interrupted = False
+        for n in self.route_nodes:
+            #  getting the distance between current and target:
+            d = self._tmap.distance(self._current_node, n)
+            time_to_travel = int(ceil(d / self._speed_m_s))
+            print('% 5d:  %s traversing route from node %10s to node %10s (distance: %f, time: %d)' % (
+                self._tmap.env.now, self._name, self._current_node, n, d, time_to_travel))
+            request = None  # TODO not used
+            try:
+                start_wait = self._env.now  # The node to be requested may be occupied by other robots, mark the time when requesting
+                yield self._tmap.request_node(n)  # TODO request = True? request = request + 1?
+                if self._tmap.request_success is False:
+                    print('======== use a new route avoiding node %10d ========' % n)
+                    self.route_nodes = self.get_route_nodes(self._current_node, target, n, self._tmap.request_success)
+                if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting. TODO a requested node has been occupied by other robot
+                    # TODO wait_time_cost = {self.name: (self._env.now - start_wait)}
+                    print('$$$$ % 5d:  %s has lock on %s after %d' % (
+                        self._env.now, self._name, n,
+                        self._env.now - start_wait))  # TODO compare the wait time cost vs plan a new route without the occupied node?
+            except:  # TODO Trigger condition?  Not triggered when requesting an occupied node! Not triggered when the robot has a goal running and be assigned a new goal
+                print('% 5d: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
+                    self._tmap.env.now, self._name,
+                    self._current_node, n
+                ))
+                interrupted = True
+                break
+            try:
+                time_to_travel = ceil(d / (
+                            2 * self._speed_m_s))  # Travel from the current node to the middle between the current node and the next node
+                yield self._tmap.env.timeout(time_to_travel)
+                yield self._tmap.release_node(self._current_node)  # TODO request = False?
+                # The robot is reaching at the half way between the current node and next node
+                print('% 5d:  %s ---> %s reaching half way ---> %s' % (
+                self._tmap.env.now, self._current_node, self._name, n))
+                self._current_node = n
+                remain_time_to_travel = ceil(d / self._speed_m_s) - time_to_travel
+                yield self._tmap.env.timeout(remain_time_to_travel)
+                print('% 5d:  %s reached node %s' % (self._tmap.env.now, self._name, n))
+                yield self._tmap.env.timeout(0)  # Go back to the next env.step()
+            except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
+                print('% 5d: %s INTERRUPTED while travelling from node %s going to node %s' % (
+                    self._tmap.env.now, self._name,
+                    self._current_node, n
+                ))
+                print('% 5d: @@@ %s release previously acquired target node %s' % (self._env.now, self._name, n))
+                yield self._tmap.release_node(n)
+                interrupted = True
+                break
+            # if self._current_node != target:
+        if interrupted:  # When the robot has a goal running and be assigned a new goal node TODO Move to 'except simpy.Interrupt:', print the interrupted info before releasing the previous acquired target node and before planning the new goal route
+            print('% 5d: %s ABORTED at %s' % (self._tmap.env.now, self._name, self._current_node))
+        else:
+            print('% 5d: %s COMPLETED at %s' % (self._tmap.env.now, self._name, self._current_node))
+
+    def goto(self, target):  # TODO check whether the route is clear before goto? Estimate the time/distance cost?
+        if self._tmap.env:
+            if self._active_process:
+                if self._active_process.is_alive:  # The robot has an alive goal running
+                    self._active_process.interrupt()
+                    self._active_process = None  # Clear the old goal
+            self._active_process = self._tmap.env.process(self._goto(target))
+        else:
+            self._current_node = target
+
+    def get_route_nodes(self, cur_node, target, avoid_node=None, request_suc=True):
+        """
+        get the topological route nodes from current node to target node, if request_node failed,
+        then get the route nodes from current node to target node and avoid the failed node.
+        :param cur_node: string, the current node traversed
+        :param target: string, the target node that the robot will go to
+        :param avoid_node: string, the failed node when requesting
+        :param request_suc: bool, if requesting node failed, then request_suc = False
+        """
+        if request_suc:
+            route = self._tmap.get_route(cur_node, target)
+        elif request_suc is False:
+            route = self._tmap.get_avoiding_route(cur_node, target, avoid_node)
         if self._tmap.env:  # self._env ? TODO
             if route is not None:
                 r = route.source[1:]
             else:
                 r = []
             r.append(target)
-            if target == self._current_node:
+            if target == cur_node:
                 print('% 5d: %s is already at target %s' % (
                     self._tmap.env.now, self._name,
                     target
@@ -199,64 +293,8 @@ class Robot():
 
             print('% 5d: %s going from node %s to node %s via route %s' % (
                 self._tmap.env.now, self._name,
-                self._current_node, target, r))
-            interrupted = False
-            for n in r:
-                #  getting the distance between current and target:
-                d = self._tmap.distance(self._current_node, n)
-                time_to_travel = int(ceil(d / self._speed_m_s))
-                print('% 5d:  %s traversing route from node %10s to node %10s (distance: %f, time: %d)' % (
-                    self._tmap.env.now, self._name, self._current_node, n, d, time_to_travel))
-                request = None  # TODO not used
-                try:
-                    start_wait = self._env.now  # The node to be requested may be occupied by other robots, mark the time when requesting
-                    yield self._tmap.request_node(n)  # TODO request = True? request = request + 1?
-                    if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting. TODO a requested node has been occupied by other robot
-                        # TODO wait_time_cost = {self.name: (self._env.now - start_wait)}
-                        print('$$$$ % 5d:  %s has lock on %s after %d' % (
-                            self._env.now, self._name, n, self._env.now - start_wait))  # TODO compare the wait time cost vs plan a new route without the occupied node?
-                except:  # TODO Trigger condition?  Not triggered when requesting an occupied node! Not triggered when the robot has a goal running and be assigned a new goal
-                    print('% 5d: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
-                        self._tmap.env.now, self._name,
-                        self._current_node, n
-                    ))
-                    interrupted = True
-                    break
-                try:
-                    time_to_travel = ceil(d / (2 * self._speed_m_s))  # Travel from the current node to the middle between the current node and the next node
-                    yield self._tmap.env.timeout(time_to_travel)
-                    yield self._tmap.release_node(self._current_node) # TODO request = False?
-                    # The robot is reaching at the half way between the current node and next node
-                    print('% 5d:  %s ---> %s reaching half way ---> %s' % (self._tmap.env.now, self._current_node, self._name, n))
-                    self._current_node = n
-                    remain_time_to_travel = ceil(d / self._speed_m_s) - time_to_travel
-                    yield self._tmap.env.timeout(remain_time_to_travel)
-                    print('% 5d:  %s reached node %s' % (self._tmap.env.now, self._name, n))
-                    yield self._tmap.env.timeout(0)  # Go back to the next env.step()
-                except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
-                    print('% 5d: %s INTERRUPTED while travelling from node %s going to node %s' % (
-                        self._tmap.env.now, self._name,
-                        self._current_node, n
-                    ))
-                    print('% 5d: @@@ %s release previously acquired target node %s' % (self._env.now, self._name, n))
-                    yield self._tmap.release_node(n)
-                    interrupted = True
-                    break
-                # if self._current_node != target:
-            if interrupted:  # When the robot has a goal running and be assigned a new goal node TODO Move to 'except simpy.Interrupt:', print the interrupted info before releasing the previous acquired target node and before planning the new goal route
-                print('% 5d: %s ABORTED at %s' % (self._tmap.env.now, self._name, self._current_node))
-            else:
-                print('% 5d: %s COMPLETED at %s' % (self._tmap.env.now, self._name, self._current_node))
-
-    def goto(self, target):  # TODO check whether the route is clear before goto? Estimate the time/distance cost?
-        if self._tmap.env:
-            if self._active_process:
-                if self._active_process.is_alive:  # The robot has an alive goal running
-                    self._active_process.interrupt()
-                    self._active_process = None   # Clear the old goal
-            self._active_process = self._tmap.env.process(self._goto(target))
-        else:
-            self._current_node = target
+                cur_node, target, r))
+            return r
 
 
 def car(name, env, gas_station, fuel_pump):

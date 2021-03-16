@@ -1,0 +1,6 @@
+string state
+
+---
+
+bool success
+string restricted_tmap

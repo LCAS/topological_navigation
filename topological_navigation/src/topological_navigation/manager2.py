@@ -411,8 +411,8 @@ class map_manager_2(object):
             node["node"]["properties"] = properties
             
         if restrictions is None:
-            node["node"]["restrictions"] = {}
-            node["node"]["restrictions"]["robot_type"] = ""
+            node["node"]["restrictions"] = ""
+            # node["node"]["restrictions"]["robot_type"] = ""
         else:
             node["node"]["restrictions"] = restrictions
             
@@ -500,10 +500,10 @@ class map_manager_2(object):
         edge["fail_policy"] = fail_policy
         
         if restrictions is None:
-            edge["restrictions"] = {}
-            edge["restrictions"]["robot_type"] = ""
-            edge["restrictions"]["task_name"] = ""
-            edge["restrictions"]["transition"] = ""
+            edge["restrictions"] = ""
+            # edge["restrictions"]["robot_type"] = ""
+            # edge["restrictions"]["task_name"] = ""
+            # edge["restrictions"]["transition"] = ""
         else:
             edge["restrictions"] = restrictions
         

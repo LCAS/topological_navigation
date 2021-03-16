@@ -1,0 +1,5 @@
+string name
+string restrictions   # boolean sentence
+---
+bool success
+string message

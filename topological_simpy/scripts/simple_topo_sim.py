@@ -3,8 +3,10 @@
 from topological_simpy.robot import Robot, TopoMap
 import simpy
 import itertools
+import csv, codecs, cStringIO
 
 from random import randint, choice, seed
+from datetime import datetime
 
 seed(10)
 
@@ -32,7 +34,7 @@ print(nodes)
 
 def goal_generator(env, robots, nodes, max_interval=10):
     for i in itertools.count():
-        delay_time = randint(env.now + 1, env.now + max_interval) # TODO decrease delay_time
+        delay_time = randint(env.now + 1, env.now + max_interval)  # TODO decrease delay_time
         print('.% 4d:    Generating goal after %6d seconds at %6d s' % (env.now, delay_time, env.now + delay_time))
         yield env.timeout(delay_time)
         r = choice(robots)
@@ -54,5 +56,13 @@ while env.peek() < until:
             'ACTIVE' if r._active_process and r._active_process.is_alive else 'IDLE'
         ))
     env.step()
-print(tmap._node_log)  # TODO write to file
+print(tmap._node_log)
+
+# write the node_log to file
+now = datetime.now()
+node_log_file_name = 'node_log_' + now.isoformat() + '.csv'
+with open(node_log_file_name, 'w') as csv_file:
+    writer = csv.writer(csv_file)
+    for key, value in tmap._node_log.items():
+        writer.writerow([key, value])
 # env.run(until=3600)

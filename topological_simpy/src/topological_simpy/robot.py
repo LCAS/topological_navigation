@@ -8,6 +8,7 @@ from topological_navigation.route_search2 import TopologicalRouteSearch2
 from topological_navigation.tmap_utils import *
 from math import hypot, ceil
 from functools import partial, wraps
+from copy import deepcopy
 
 RANDOM_SEED = 42
 GAS_STATION_SIZE = 200     # liters
@@ -59,6 +60,9 @@ class TopoMap():
         with open(topo_map_file, "r") as f:
             self.tmap2 = safe_load(f)
         self._route_planner = TopologicalRouteSearch2(self.tmap2)
+        self.t_map = deepcopy(self.tmap2)  # used as dynamic topo map
+        self.t_map2 = deepcopy(self.tmap2)  # used as dynamic topo map
+        self.route_planner = TopologicalRouteSearch2(self.t_map2)  #
         self.env = env
 
         self._nodes = sorted([n['node']['name'] for n in self.tmap2['nodes']])
@@ -92,9 +96,47 @@ class TopoMap():
             a['pose']['position']['y'] - b['pose']['position']['y']
         )
 
+    def time_cost_to_dist(self, time_cost, speed_m_s):
+        """
+        Convert waiting-time cost to distance cost for searching a new route
+        :param time_cost: int/float, the waiting time that the robot will be spending when waiting
+                          for the requested node to be released
+        :param speed_m_s: float, robot forward speed m/s
+        """
+        if self.env:
+            return time_cost * speed_m_s
+
+    def get_avoiding_route(self, avoid_node, origin, target):
+        """
+        get the topological route from origin to target but avoiding avoid_node
+        :param avoid_node: topological node that should be avoided when planning the route
+        :param origin: origin topological node
+        :param target: target topological node
+        """
+        self.t_map2 = self.delete_tmap_node(avoid_node)
+        self.route_planner = TopologicalRouteSearch2(self.t_map2)
+        return self.route_planner.search_route(origin, target)
+
+    def delete_tmap_node(self, node):
+        """
+        delete the node from the topological map, including the node and the edges pointed to the node(TODO)
+        :param node: string, node name
+        """
+        for idx, _node in enumerate(self.t_map['nodes']):
+            if _node['node']['name'] == node:
+                pop_node = self.t_map['nodes'].pop(idx)
+                self.t_map2 = deepcopy(self.t_map)
+                self.t_map['nodes'].append(pop_node)
+                break
+            elif idx == len(self.t_map['nodes']):
+                print('node %s not found' % node)
+                return self.env.timeout(0)
+        return self.t_map2
+
     def request_node(self, node):
         """
-        Put one robot into the _node_res, i.e., the node resource is occupied by the robot. Note: the robot starts requesting the next route node when the robot reaches the current node
+        Put one robot into the _node_res, i.e., the node resource is occupied by the robot.
+        Note: the robot starts requesting the next route node when the robot reaches the current node
         """
         if self.env:  # TODO check whether the node has been occupied before requesting/put?; self._node_log[node].[-1] ==0, i.e., the node is empty or released? If occupied, considering plan a new route without the occupied node?
             return self._node_res[node].put(1)  # TODO make sure self._node_res[node].level == 0 & self._node_res[node].put_queue == [] before put
@@ -170,6 +212,7 @@ class Robot():
                     start_wait = self._env.now  # The node to be requested may be occupied by other robots, mark the time when requesting
                     yield self._tmap.request_node(n)  # TODO request = True? request = request + 1?
                     if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting. TODO a requested node has been occupied by other robot
+                        # TODO wait_time_cost = {self.name: (self._env.now - start_wait)}
                         print('$$$$ % 5d:  %s has lock on %s after %d' % (
                             self._env.now, self._name, n, self._env.now - start_wait))  # TODO compare the wait time cost vs plan a new route without the occupied node?
                 except:  # TODO Trigger condition?  Not triggered when requesting an occupied node! Not triggered when the robot has a goal running and be assigned a new goal

@@ -12,6 +12,7 @@
 	<arg name="machine" default="localhost" />
 	<arg name="user" default="" />
 	<arg name="move_base_reconf_service" default="DWAPlannerROS" />
+  	<arg name="move_base_planner" default="move_base/DWAPlannerROS" />
 
 	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
@@ -33,10 +34,12 @@
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
 		<param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
 		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
+		<param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
 	</node>
 	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen" respawn="true">
 		<param name="retries" type="int" value="$(arg execute_policy_retries)"/>
 		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
+		<param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
 	</node>
 
 	<node pkg="topological_navigation" type="navstats_loger.py" name="topological_navstats_logger" respawn="true" unless="$(arg load_map_from_file)"/>

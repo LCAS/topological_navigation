@@ -61,6 +61,7 @@ class RobotType(AbstractRestriction):
 
     def get_value(self, node, value, **robot_state):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
+        print(robot_state)
         return value == robot_state["robot"]
 
 
@@ -72,6 +73,8 @@ class RestrictionsManager():
 
         # get the topological map
         self.topo_map = None
+        # for each node contains the indexes of the nodes which have an edge ending in it
+        self.back_edges_idx = {}
 
         rospy.Subscriber("topological_map_2",
                          String, self._topomap_cb)
@@ -89,6 +92,30 @@ class RestrictionsManager():
         })
         rospy.loginfo("New condition `{}` registered".format(condition_obj.name))
 
+    def _evaluate_restrictions(self, restrictions, node_name, robot_state):
+        # get the sympy boolean predicate removing the atoms that cannot be grounded
+        restriction_predicate = self._predicate_from_string(restrictions)
+
+        # evaluate each restriction of the predicate until it simplifies to a boolean
+        while not isinstance(restriction_predicate, bool) and \
+                not restriction_predicate.is_Boolean:
+            restriction = restriction_predicate.atoms().pop()
+            restr_elements = restriction.name.split("_")
+            condition = self.conditions[restr_elements[0]]
+            evaluation = condition.get_value(
+                node = node_name,
+                value = restr_elements[1] if len(
+                    restr_elements) > 1 else None,
+                **robot_state
+            )
+            # ground the restriction and simplify the predicate
+            restriction_predicate = restriction_predicate.subs({
+                restriction.name: evaluation
+            }).simplify()
+
+        # here we negate because if the restriction matches (True) it means the robot is allowed to pass (not restricted)
+        return not restriction_predicate
+
     def restrict_map_handle(self, request):
         response = RestrictMapResponse()
         try:
@@ -101,55 +128,71 @@ class RestrictionsManager():
 
             # for each node, check restrictions
             for i, node in enumerate(self.topo_map["nodes"]):
-                node_restrictions = node["node"]["restrictions"]
-                # get the sympy boolean predicate removing the atoms that cannot be grounded
-                restriction_predicate = self._predicate_from_string(node_restrictions)
+                node_restrictions = str(node["node"]["restrictions"])
+                
+                is_restricted = self._evaluate_restrictions(node_restrictions, node["meta"]["node"], robot_state)
 
-                # evaluate each restriction of the predicate
-                while len(restriction_predicate.atoms()) > 0:
-                    restriction = restriction_predicate.atoms[0]
-                    restr_elements = restriction.split("_")
-                    condition = self.conditions[restr_elements[0]]
-                    evaluation = condition.get_value(
-                        node = node["meta"]["node"],
-                        value = restr_elements[1] if len(restr_elements) > 1 else None,
-                        robot_state = robot_state
-                    )
-                    # ground the restriction and simplify the predicate
-                    restriction_predicate = restriction_predicate.subs({
-                        restriction: evaluation
-                    }).simplify()
-
-                if restriction_predicate:
+                # remove the node if the restriction evaluates as False
+                if is_restricted:
                     del new_topo_map[i]
+                    # remove all the back edges
+                    for (ni, ei) in self.back_edges_idx[node["meta"]["node"]].items():
+                        del new_topo_map["nodes"][ni]["node"]["edges"][ei]
+                else:
+                    # here now check the restrictions for the node's edges
+                    for ei, edge in enumerate(node["node"]["edges"]):
+                        edge_restrictions = str(edge["restrictions"])
+
+                        is_restricted = self._evaluate_restrictions(edge_restrictions, edge["edge_id"], robot_state)
+
+                        if is_restricted:
+                            del new_topo_map["nodes"][i]["node"]["edges"][ei]
 
             response.success = True
-            response.restricted_tmap = new_topo_map
+            response.restricted_tmap = yaml.dump(new_topo_map)
         
         return response
 
     # Create a predicate from the restrictions string and returns the conditions to be checked
-    def _predicate_from_string(self, restriction_str, entity_name):
+    def _predicate_from_string(self, restriction_str):
         try:
             predicate = parse_expr(restriction_str)
         except Exception as e:
-            rospy.logerr("The restriction expression for {} is malformed, error: {}".format(entity_name, e))
+            rospy.logerr("The restriction expression is malformed, error: {}".format(e))
             rospy.logerr("The expression can contain the following conditions: {}\n and the following boolean symbols: &, |, ~, (, ).".format(self.conditions))
         else:
-            conds = predicate.atoms()
-            for cond in conds:
-                cond_els = cond.split("_")
-                if cond_els[0] not in self.condition.keys():
-                    rospy.logwarn("The restriction {} has not been implemented yet, setting `{}==False`.".format(cond_els[0], cond))
-                    # setting the restriction to false
-                    predicate = predicate.subs({
-                        cond: False
-                    })
-        return predicate.simplify()
+            if isinstance(predicate, dict):
+                rospy.logerr("The restriction expression is malformed: {}".format(predicate))
+                return True
+
+            if not isinstance(predicate, bool):
+                conds = predicate.atoms()
+                for cond in conds:
+                    cond_els = cond.name.split("_")
+                    if cond_els[0] not in self.conditions.keys():
+                        rospy.logwarn("The restriction {} has not been implemented yet, setting `{}==False`.".format(cond_els[0], cond.name))
+                        # setting the restriction to false
+                        predicate = predicate.subs({
+                            cond.name: False
+                        })
+                predicate = predicate.simplify()
+        return predicate
 
     def _topomap_cb(self, msg):
         self.topo_map = yaml.safe_load(msg.data)
         print("got topomap", self.topo_map["nodes"][0])
+
+        for ni, node in enumerate(self.topo_map["nodes"]):
+            for ei, edge in enumerate(node["node"]["edges"]):
+                if edge["node"] in self.back_edges_idx:
+                    self.back_edges_idx[edge["node"]].update({
+                        ni: ei
+                    })
+                else:
+                    self.back_edges_idx.update({
+                        edge["node"]: {ni: ei}
+                    })
+        # print(self.back_edges_idx)
 
 
 if __name__ == '__main__':
@@ -159,6 +202,6 @@ if __name__ == '__main__':
 
     # TODO make this automatically find and register all the classes of AbstractRestriction type
     for restriction in [RobotType]:
-        manager.register_restriction(restriction)
+        manager.register_restriction(restriction())
 
     rospy.spin()

@@ -110,7 +110,9 @@ class map_manager_2(object):
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
-        
+        self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
+        self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
+
         
     def get_time(self):
         return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -375,7 +377,7 @@ class map_manager_2(object):
         return nodname
         
         
-    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], restrictions=None):
+    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], restrictions="True"):
         
         if "orientation" not in pose:
             pose["orientation"] = {}
@@ -410,11 +412,7 @@ class map_manager_2(object):
         else:
             node["node"]["properties"] = properties
             
-        if restrictions is None:
-            node["node"]["restrictions"] = ""
-            # node["node"]["restrictions"]["robot_type"] = ""
-        else:
-            node["node"]["restrictions"] = restrictions
+        node["node"]["restrictions"] = restrictions
             
         self.tmap2["nodes"].append(node)
         
@@ -472,7 +470,7 @@ class map_manager_2(object):
         
     def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[], 
                          recovery_behaviours_config="", action_type="default", goal="default", fail_policy="fail", 
-                         restrictions=None):
+                         restrictions="True"):
         
         edge = {}
         edge["action"] = action
@@ -498,14 +496,7 @@ class map_manager_2(object):
             edge["goal"] = goal
             
         edge["fail_policy"] = fail_policy
-        
-        if restrictions is None:
-            edge["restrictions"] = ""
-            # edge["restrictions"]["robot_type"] = ""
-            # edge["restrictions"]["task_name"] = ""
-            # edge["restrictions"]["transition"] = ""
-        else:
-            edge["restrictions"] = restrictions
+        edge["restrictions"] = restrictions
         
         for node in self.tmap2["nodes"]:
             if node["node"]["name"] == origin:
@@ -908,6 +899,61 @@ class map_manager_2(object):
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
             return False, "no edge found or multiple edges found"
+        
+        
+    def update_node_restrictions_cb(self, req):
+        """
+        Update a node's restrictions
+        """
+        return self.update_node_restrictions(req.name, req.restrictions)
+    
+    
+    def update_node_restrictions(self, node_name, restrictions):
+        
+        if not restrictions:
+            return False, "No restrictions provided"
+        
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            self.tmap2["nodes"][index]["node"]["restrictions"] = restrictions
+
+            self.update()
+            self.write_topological_map(self.filename)
+            return True, ""
+        else:
+            rospy.logerr("Error updating the restrictions of node {}. {} instances of node with name {} found".format(node_name, num_available, node_name))
+            return False, ""
+        
+        
+    def update_edge_restrictions_cb(self, req):
+        """
+        Update an edge's restrictions
+        """
+        return self.update_edge_restrictions(req.name, req.restrictions)
+    
+    
+    def update_edge_restrictions(self, edge_id, restrictions):
+        
+        if not restrictions:
+            return False, "No restrictions provided"
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    edge["restrictions"] = restrictions
+
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+            return True, ""
+        else:
+            rospy.logerr("Error updating the restrictions of edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False, ""
         
         
     def get_instances_of_node(self, node_name):

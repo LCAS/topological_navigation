@@ -213,7 +213,7 @@ class Robot():
                 start_wait = self._env.now  # The node to be requested may be occupied by other robots, mark the time when requesting
                 yield self._tmap.request_node(n)  # TODO request = True? request = request + 1?
                 if self._tmap.request_success is False:
-                    print('======== use a new route avoiding node %10d ========' % n)
+                    print('======== use a new route avoiding node %10s ========' % n)
                     self.route_nodes = self.get_route_nodes(self._current_node, target, n, self._tmap.request_success)
                 if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting. TODO a requested node has been occupied by other robot
                     # TODO wait_time_cost = {self.name: (self._env.now - start_wait)}

@@ -908,10 +908,10 @@ class map_manager_2(object):
         """
         Update a node's restrictions
         """
-        return self.update_node_restrictions(req.name, req.restrictions_planning, req.restrictions_runtime)
+        return self.update_node_restrictions(req.name, req.restrictions_planning, req.restrictions_runtime, req.update_edges)
     
     
-    def update_node_restrictions(self, node_name, restrictions_planning, restrictions_runtime):
+    def update_node_restrictions(self, node_name, restrictions_planning, restrictions_runtime, update_edges):
         
         num_available, index = self.get_instances_of_node(node_name)
         
@@ -920,6 +920,17 @@ class map_manager_2(object):
                 self.tmap2["nodes"][index]["node"]["restrictions_planning"] = restrictions_planning
             if restrictions_runtime:
                 self.tmap2["nodes"][index]["node"]["restrictions_runtime"] = restrictions_runtime
+                
+            edge_ids = []
+            for node in self.tmap2["nodes"]:
+                for edge in node["node"]["edges"]:
+                    if node["node"]["name"] == node_name or edge["node"] == node_name:
+                        edge_ids.append(edge["edge_id"])
+            
+            if restrictions_planning and update_edges:            
+                for edge_id in set(edge_ids):
+                    self.update_edge_restrictions(edge_id, restrictions_planning, "", False)
+                
             self.update()
             self.write_topological_map(self.filename)
             return True, ""
@@ -935,7 +946,7 @@ class map_manager_2(object):
         return self.update_edge_restrictions(req.name, req.restrictions_planning, req.restrictions_runtime)
     
     
-    def update_edge_restrictions(self, edge_id, restrictions_planning, restrictions_runtime):
+    def update_edge_restrictions(self, edge_id, restrictions_planning, restrictions_runtime, update=True):
         
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
@@ -950,8 +961,10 @@ class map_manager_2(object):
                         edge["restrictions_runtime"] = restrictions_runtime
 
             self.tmap2["nodes"][index] = the_node
-            self.update()
-            self.write_topological_map(self.filename)
+            
+            if update:
+                self.update()
+                self.write_topological_map(self.filename)
             return True, ""
         else:
             rospy.logerr("Error updating the restrictions of edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))

@@ -33,6 +33,22 @@ def get_node_from_tmap2(top_map, node_name):
 
 
 """
+    get_node_and_idx_from_tmap2
+    
+    Given a topological map 2 and a node name it returns the node object
+    and the node's index in the map
+"""
+
+
+def get_node_and_idx_from_tmap2(top_map, node_name):
+    for idx, i in enumerate(top_map["nodes"]):
+        if i["node"]["name"] == node_name:
+            node_idx = {"idx": idx, "node": i["node"]}
+            return node_idx
+    return None
+
+
+"""
     get_distance
     
     Returns the straight line distance between two poses

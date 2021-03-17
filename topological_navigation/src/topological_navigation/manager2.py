@@ -377,7 +377,8 @@ class map_manager_2(object):
         return nodname
         
         
-    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], restrictions="True"):
+    def add_node(self, name, pose, localise_by_topic="", verts="default", properties="default", tags=[], 
+                 restrictions_planning="True", restrictions_runtime="True"):
         
         if "orientation" not in pose:
             pose["orientation"] = {}
@@ -412,7 +413,8 @@ class map_manager_2(object):
         else:
             node["node"]["properties"] = properties
             
-        node["node"]["restrictions"] = restrictions
+        node["node"]["restrictions_planning"] = restrictions_planning
+        node["node"]["restrictions_runtime"] = restrictions_runtime
             
         self.tmap2["nodes"].append(node)
         
@@ -470,7 +472,7 @@ class map_manager_2(object):
         
     def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[], 
                          recovery_behaviours_config="", action_type="default", goal="default", fail_policy="fail", 
-                         restrictions="True"):
+                         restrictions_planning="True", restrictions_runtime="True"):
         
         edge = {}
         edge["action"] = action
@@ -496,7 +498,8 @@ class map_manager_2(object):
             edge["goal"] = goal
             
         edge["fail_policy"] = fail_policy
-        edge["restrictions"] = restrictions
+        edge["restrictions_planning"] = restrictions_planning
+        edge["restrictions_runtime"] = restrictions_runtime
         
         for node in self.tmap2["nodes"]:
             if node["node"]["name"] == origin:
@@ -905,19 +908,18 @@ class map_manager_2(object):
         """
         Update a node's restrictions
         """
-        return self.update_node_restrictions(req.name, req.restrictions)
+        return self.update_node_restrictions(req.name, req.restrictions_planning, req.restrictions_runtime)
     
     
-    def update_node_restrictions(self, node_name, restrictions):
-        
-        if not restrictions:
-            return False, "No restrictions provided"
+    def update_node_restrictions(self, node_name, restrictions_planning, restrictions_runtime):
         
         num_available, index = self.get_instances_of_node(node_name)
         
         if num_available == 1:
-            self.tmap2["nodes"][index]["node"]["restrictions"] = restrictions
-
+            if restrictions_planning:
+                self.tmap2["nodes"][index]["node"]["restrictions_planning"] = restrictions_planning
+            if restrictions_runtime:
+                self.tmap2["nodes"][index]["node"]["restrictions_runtime"] = restrictions_runtime
             self.update()
             self.write_topological_map(self.filename)
             return True, ""
@@ -930,13 +932,10 @@ class map_manager_2(object):
         """
         Update an edge's restrictions
         """
-        return self.update_edge_restrictions(req.name, req.restrictions)
+        return self.update_edge_restrictions(req.name, req.restrictions_planning, req.restrictions_runtime)
     
     
-    def update_edge_restrictions(self, edge_id, restrictions):
-        
-        if not restrictions:
-            return False, "No restrictions provided"
+    def update_edge_restrictions(self, edge_id, restrictions_planning, restrictions_runtime):
         
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
@@ -945,7 +944,10 @@ class map_manager_2(object):
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
-                    edge["restrictions"] = restrictions
+                    if restrictions_planning:
+                        edge["restrictions_planning"] = restrictions_planning
+                    if restrictions_runtime:
+                        edge["restrictions_runtime"] = restrictions_runtime
 
             self.tmap2["nodes"][index] = the_node
             self.update()

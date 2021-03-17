@@ -1,5 +1,6 @@
-string name
-string restrictions   # boolean sentence
+string name                    # node name or edge id
+string restrictions_planning   # boolean sentence
+string restrictions_runtime    # boolean sentence
 ---
 bool success
 string message

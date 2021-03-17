@@ -110,24 +110,33 @@ class TopoMap():
     def get_avoiding_route(self, origin, target, avoid_node):
         """
         get the topological route from origin to target but avoiding avoid_node
-        :param origin: origin topological node
-        :param target: target topological node
-        :param avoid_node: topological node that should be avoided when planning the route
+        :param origin: string, origin topological node
+        :param target: string, target topological node
+        :param avoid_node: string, topological node that should be avoided when planning the route
         """
         self.t_map2 = self.delete_tmap_node(avoid_node)
         self.route_planner = TopologicalRouteSearch2(self.t_map2)
         return self.route_planner.search_route(origin, target)
 
-    def delete_tmap_node(self, node):
+    def delete_tmap_node(self, node_name):
         """
-        delete the node from the topological map, including the node and the edges pointed to the node(TODO)
-        :param node: string, node name
+        delete the node from the topological map, including the node and the edges pointed to the node
+        :param node_name: string, node name
         """
-        for idx, _node in enumerate(self.t_map['nodes']):
-            if _node['node']['name'] == node:
+        for idx, n in enumerate(self.t_map['nodes']):
+            if n['node']['name'] == node_name:
+                children = get_conected_nodes_tmap2(n['node'])  # get all children names, type: string list
+                for child in children:
+                    node_idx = get_node_and_idx_from_tmap2(self.t_map, child)
+                    # edge_node = get_node_from_tmap2(self.t_map, child)
+                    for e_idx, n_edge in enumerate(node_idx['node']['edges']):
+                        if n_edge['node'] == node_name:
+                            self.t_map['nodes'][node_idx['idx']]['node']['edges'].pop(e_idx)
+                            # edge_node['edges'].pop(e_idx)
                 pop_node = self.t_map['nodes'].pop(idx)
                 self.t_map2 = deepcopy(self.t_map)
-                self.t_map['nodes'].append(pop_node)
+                #self.t_map['nodes'].append(pop_node)
+                self.t_map = deepcopy(self.tmap2)  #  restore self.t_map after pop operations
                 break
             elif idx == len(self.t_map['nodes']):
                 print('node %s not found' % node)
@@ -281,7 +290,7 @@ class Robot():
         if self._tmap.env:  # self._env ? TODO
             if route is not None:
                 r = route.source[1:]
-            else:
+            else:  # route is None: 1, arrived at the target; 2,(TODO) the requested node has been occupied, the robot cannot find an alternative route
                 r = []
             r.append(target)
             if target == cur_node:

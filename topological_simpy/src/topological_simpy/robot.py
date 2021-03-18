@@ -128,11 +128,9 @@ class TopoMap():
                 children = get_conected_nodes_tmap2(n['node'])  # get all children names, type: string list
                 for child in children:
                     node_idx = get_node_and_idx_from_tmap2(self.t_map, child)
-                    # edge_node = get_node_from_tmap2(self.t_map, child)
                     for e_idx, n_edge in enumerate(node_idx['node']['edges']):
                         if n_edge['node'] == node_name:
                             self.t_map['nodes'][node_idx['idx']]['node']['edges'].pop(e_idx)
-                            # edge_node['edges'].pop(e_idx)
                 pop_node = self.t_map['nodes'].pop(idx)
                 self.t_map2 = deepcopy(self.t_map)
                 #self.t_map['nodes'].append(pop_node)
@@ -143,24 +141,24 @@ class TopoMap():
                 return self.env.timeout(0)
         return self.t_map2
 
-    def request_node(self, node, with_avoid=True):
+    def request_node(self, node, without_queue=True):
         """
         Put one robot into the _node_res, i.e., the node resource is occupied by the robot.
         Note: the robot starts requesting the next route node when the robot reaches the current node
         :param node: string, the node to be requested
-        :param with_avoid: bool, - False: request anyway no matter the node is occupied or not
+        :param without_queue: bool, - False: request anyway no matter the node is occupied or not
                                  - True: do not request the node if the node is occupied
         """
-        if self.env:  # TODO check whether the node has been occupied before requesting/put?; self._node_log[node].[-1] ==0, i.e., the node is empty or released? If occupied, considering plan a new route without the occupied node?
-            if with_avoid is False:
+        if self.env:
+            if without_queue is False:
                 return self._node_res[node].put(1)
-            elif with_avoid is True:
+            elif without_queue is True:
                 if self._node_res[node].level == 0 and self._node_res[node].put_queue == []:
                     self.request_success = True
-                    return self._node_res[node].put(1)  # TODO make sure self._node_res[node].level == 0 & self._node_res[node].put_queue == [] before put
+                    return self._node_res[node].put(1)
                 else:
                     self.request_success = False
-                    return self.env.timeout(0)
+                    return self.env.timeout(0)  # return the len(self._node_res[node].put_queue)? TODO
 
     def change_route(self, node):
 
@@ -222,8 +220,13 @@ class Robot():
                 start_wait = self._env.now  # The node to be requested may be occupied by other robots, mark the time when requesting
                 yield self._tmap.request_node(n)  # TODO request = True? request = request + 1?
                 if self._tmap.request_success is False:
-                    print('======== use a new route avoiding node %10s ========' % n)
+                    print('++++++++ %8s use a new route avoiding node %10s ++++++++' % (self._name, n))
                     self.route_nodes = self.get_route_nodes(self._current_node, target, n, self._tmap.request_success)
+                    if self.route_nodes[0] == self._current_node:  # cannot find an alternative route to avoid the occupied node n
+                        print('======== %8s no new route found, queueing for requesting node %10s ========' % (self._name, n))
+                        yield self._tmap.request_node(n, False)  # join the requesting queue
+                    else:
+                        print('######## new route found %8s %s ########' % (self._name, self.route_nodes))
                 if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting. TODO a requested node has been occupied by other robot
                     # TODO wait_time_cost = {self.name: (self._env.now - start_wait)}
                     print('$$$$ % 5d:  %s has lock on %s after %d' % (
@@ -243,7 +246,7 @@ class Robot():
                 yield self._tmap.release_node(self._current_node)  # TODO request = False?
                 # The robot is reaching at the half way between the current node and next node
                 print('% 5d:  %s ---> %s reaching half way ---> %s' % (
-                self._tmap.env.now, self._current_node, self._name, n))
+                    self._tmap.env.now, self._current_node, self._name, n))
                 self._current_node = n
                 remain_time_to_travel = ceil(d / self._speed_m_s) - time_to_travel
                 yield self._tmap.env.timeout(remain_time_to_travel)
@@ -287,18 +290,22 @@ class Robot():
             route = self._tmap.get_route(cur_node, target)
         elif request_suc is False:
             route = self._tmap.get_avoiding_route(cur_node, target, avoid_node)
-        if self._tmap.env:  # self._env ? TODO
+        if self._tmap.env:
             if route is not None:
                 r = route.source[1:]
-            else:  # route is None: 1, arrived at the target; 2,(TODO) the requested node has been occupied, the robot cannot find an alternative route
-                r = []
+            else:  # route is None: 1, arrived at the target; 2,the requested node has been occupied, the robot cannot find an alternative route
+                if cur_node != target:  # the requested node has been occupied, the robot cannot find an alternative route
+                    r = [cur_node]  # stay at the current position, waiting for the occupied node to be released
+                    return r  # return the current node
+                else:
+                    r = []
             r.append(target)
-            if target == cur_node:
+            if target == cur_node:  # TODO optimise this case
                 print('% 5d: %s is already at target %s' % (
                     self._tmap.env.now, self._name,
                     target
                 ))
-                return
+                return r
 
             print('% 5d: %s going from node %s to node %s via route %s' % (
                 self._tmap.env.now, self._name,

@@ -33,6 +33,20 @@ def get_node_from_tmap2(top_map, node_name):
 
 
 """
+    get_node_from_nodes
+    
+    Given a topological map nodes and a node name, it returns the node object
+"""
+
+
+def get_node_from_nodes(nodes, node_name):
+    for i in nodes:
+        if i["node"]["name"] == node_name:
+            return i["node"]
+    return None
+
+
+"""
     get_node_and_idx_from_tmap2
     
     Given a topological map 2 and a node name it returns the node object

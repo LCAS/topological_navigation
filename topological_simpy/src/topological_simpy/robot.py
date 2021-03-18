@@ -285,32 +285,26 @@ class Robot():
         :param target: string, the target node that the robot will go to
         :param avoid_node: string, the failed node when requesting
         :param request_suc: bool, if requesting node failed, then request_suc = False
+        return: string list, route node names, from current node to target node
         """
-        if request_suc:
-            route = self._tmap.get_route(cur_node, target)
-        elif request_suc is False:
-            route = self._tmap.get_avoiding_route(cur_node, target, avoid_node)
         if self._tmap.env:
-            if route is not None:
-                r = route.source[1:]
-            else:  # route is None: 1, arrived at the target; 2,the requested node has been occupied, the robot cannot find an alternative route
-                if cur_node != target:  # the requested node has been occupied, the robot cannot find an alternative route
-                    r = [cur_node]  # stay at the current position, waiting for the occupied node to be released
-                    return r  # return the current node
+            if target == cur_node:
+                print('% 5d: %s is already at target %s' % (self._tmap.env.now, self._name, target))
+                return [target]
+            else:
+                if request_suc:
+                    route = self._tmap.get_route(cur_node, target)
                 else:
-                    r = []
-            r.append(target)
-            if target == cur_node:  # TODO optimise this case
-                print('% 5d: %s is already at target %s' % (
-                    self._tmap.env.now, self._name,
-                    target
-                ))
-                return r
+                    route = self._tmap.get_avoiding_route(cur_node, target, avoid_node)
 
-            print('% 5d: %s going from node %s to node %s via route %s' % (
-                self._tmap.env.now, self._name,
-                cur_node, target, r))
-            return r
+                if route is None:
+                    return [cur_node]
+                else:
+                    r = route.source[1:]
+                    r.append(target)
+                    print('% 5d: %s going from node %s to node %s via route %s' % (
+                        self._tmap.env.now, self._name, cur_node, target, r))
+                    return r
 
 
 def car(name, env, gas_station, fuel_pump):

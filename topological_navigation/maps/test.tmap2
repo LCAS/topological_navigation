@@ -1,0 +1,298 @@
+meta:
+  last_updated: 2021-02-13_15-37-01
+metric_map: map_2d
+name: new_map
+nodes:
+- meta:
+    map: map_2d
+    node: A
+    pointset: new_map
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: A_B
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: B
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    localise_by_topic: ''
+    name: A
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: 1.0
+        y: 0.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions:
+      robot_type: ''
+    verts:
+    - x: 0.692909649383465
+      y: 0.2870125742738173
+    - x: 0.2870125742738174
+      y: 0.692909649383465
+    - x: -0.2870125742738173
+      y: 0.692909649383465
+    - x: -0.692909649383465
+      y: 0.28701257427381743
+    - x: -0.6929096493834651
+      y: -0.28701257427381727
+    - x: -0.28701257427381777
+      y: -0.6929096493834649
+    - x: 0.2870125742738169
+      y: -0.6929096493834652
+    - x: 0.6929096493834649
+      y: -0.28701257427381777
+- meta:
+    map: map_2d
+    node: B
+    pointset: new_map
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: B_A
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: A
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: B_C
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: C
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: B_D
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: D
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    localise_by_topic: ''
+    name: B
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: 2.0
+        y: 0.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions:
+      robot_type: ''
+    verts:
+    - x: 0.692909649383465
+      y: 0.2870125742738173
+    - x: 0.2870125742738174
+      y: 0.692909649383465
+    - x: -0.2870125742738173
+      y: 0.692909649383465
+    - x: -0.692909649383465
+      y: 0.28701257427381743
+    - x: -0.6929096493834651
+      y: -0.28701257427381727
+    - x: -0.28701257427381777
+      y: -0.6929096493834649
+    - x: 0.2870125742738169
+      y: -0.6929096493834652
+    - x: 0.6929096493834649
+      y: -0.28701257427381777
+- meta:
+    map: map_2d
+    node: C
+    pointset: new_map
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: C_B
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: B
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: C_D
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: D
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    localise_by_topic: ''
+    name: C
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: 3.0
+        y: 0.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions:
+      robot_type: ''
+    verts:
+    - x: 0.692909649383465
+      y: 0.2870125742738173
+    - x: 0.2870125742738174
+      y: 0.692909649383465
+    - x: -0.2870125742738173
+      y: 0.692909649383465
+    - x: -0.692909649383465
+      y: 0.28701257427381743
+    - x: -0.6929096493834651
+      y: -0.28701257427381727
+    - x: -0.28701257427381777
+      y: -0.6929096493834649
+    - x: 0.2870125742738169
+      y: -0.6929096493834652
+    - x: 0.6929096493834649
+      y: -0.28701257427381777
+- meta:
+    map: map_2d
+    node: D
+    pointset: new_map
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: D_B
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: B
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config:
+        inflation_radius: 0.0
+        recovery_behaviours_config: ''
+        top_vel: 0.55
+      edge_id: D_C
+      fail_policy: fail
+      goal:
+        target_pose: $node.pose
+      node: C
+      restrictions:
+        robot_type: ''
+        task_name: ''
+        transition: ''
+    localise_by_topic: ''
+    name: D
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: 3.0
+        y: 1.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions:
+      robot_type: ''
+    verts:
+    - x: 0.692909649383465
+      y: 0.2870125742738173
+    - x: 0.2870125742738174
+      y: 0.692909649383465
+    - x: -0.2870125742738173
+      y: 0.692909649383465
+    - x: -0.692909649383465
+      y: 0.28701257427381743
+    - x: -0.6929096493834651
+      y: -0.28701257427381727
+    - x: -0.28701257427381777
+      y: -0.6929096493834649
+    - x: 0.2870125742738169
+      y: -0.6929096493834652
+    - x: 0.6929096493834649
+      y: -0.28701257427381777
+pointset: new_map
+transformation:
+  child: topo_map
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0

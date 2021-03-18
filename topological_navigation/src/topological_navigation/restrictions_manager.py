@@ -27,7 +27,7 @@ class AbstractRestriction():
 
     @abstractproperty
     def name(self):
-        """ The name must correspond to the restriction name in the map definition """
+        """ The name must correspond to the restriction variable name in the map definition """
         raise NotImplementedError()
 
 class RobotType(AbstractRestriction):
@@ -70,8 +70,8 @@ class RestrictionsManager():
             rospy.sleep(0.5)
         rospy.loginfo("DONE")
 
-        rospy.Service("/restrictions_manager/restrict_planning_map", RestrictMap, self.restrict_planning_map_handle)
-        rospy.Service("/restrictions_manager/restrict_runtime_map", RestrictMap, self.restrict_runtime_map_handle)
+        rospy.Service("/topological_restrictions_manager/restrict_planning_map", RestrictMap, self.restrict_planning_map_handle)
+        rospy.Service("/topological_restrictions_manager/restrict_runtime_map", RestrictMap, self.restrict_runtime_map_handle)
     
     def register_restriction(self, condition_obj):
         """ This method receive a condition implementing AbstractRestriction class that can be evaluated"""
@@ -226,7 +226,7 @@ class RestrictionsManager():
 
 
 if __name__ == '__main__':
-    rospy.init_node("restrictions_manager")
+    rospy.init_node("topological_restrictions_manager")
 
     manager = RestrictionsManager()
 

@@ -9,7 +9,7 @@ rospy.init_node("test")
 rospy.sleep(1)
 
 ##
-srvpr = rospy.ServiceProxy("/restrictions_manager/restrict_planning_map", RestrictMap)
+srvpr = rospy.ServiceProxy("/topological_restrictions_manager/restrict_planning_map", RestrictMap)
 
 req = RestrictMapRequest()
 req.state = '{"robot": "short", "task": "uv"}'
@@ -19,7 +19,7 @@ print("planning restrictions", res.success, len(yaml.safe_load(res.restricted_tm
 rospy.sleep(1)
 
 ##
-srvpr = rospy.ServiceProxy("/restrictions_manager/restrict_runtime_map", RestrictMap)
+srvpr = rospy.ServiceProxy("/topological_restrictions_manager/restrict_runtime_map", RestrictMap)
 
 req = RestrictMapRequest()
 req.state = '{"robot": "tall", "task": "uv"}'

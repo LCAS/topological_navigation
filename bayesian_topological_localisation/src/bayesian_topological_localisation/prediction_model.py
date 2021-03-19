@@ -43,11 +43,11 @@ class PredictionModel:
         # compute lambda considering speed and distance between nodes
         # lambda = (0.6931 * speed) / dist, so that p(transitioning) = 0.5 when the position is halfway between current and next particle.node
         # because exp(-lambda * tau) = 0.5 => ln(0.5) = -0.6931 = - lambda * tau, where tau is time in the particle.node
-        lambda_p = 2.0 * np.log(0.5) * speed_proj / \
+        lambda_p = np.log(0.5) * speed_proj / \
             self.node_distances[particle.node][pos_connected_nodes]
 
         w_p = speed_proj
-        sum_w_p = np.sum(w_p)
+        sum_w_p = max(0.01, np.sum(w_p))
 
         # this is te bernoully probabily of jumping/not-jumping
         bern_p_jump = np.sum(w_p * (1.0 - np.exp(_new_life * lambda_p)))/ sum_w_p

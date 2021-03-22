@@ -295,11 +295,11 @@ class TopologicalNavServer(object):
     """
 
     def preemptCallback(self):
-        self.monNavClient.cancel_all_goals()
+        # self.monNavClient.cancel_all_goals()
         self.cancelled = True
-        self.preempted = True
-        self._result.success = False
-        self.navigation_activated = False
+        # self.preempted = True
+        # self._result.success = False
+        # self.navigation_activated = False
         # self._as.set_preempted(self._result)
 
     """
@@ -309,13 +309,13 @@ class TopologicalNavServer(object):
 
     def preemptCallbackexecpolicy(self):
         self.cancelled = True
-        self.preempted = True
-        self._result_exec_policy.success = False
-        self.navigation_activated = False
-        self.monNavClient.cancel_all_goals()
+        # self.preempted = True
+        # self._result_exec_policy.success = False
+        # self.navigation_activated = False
+        # self.monNavClient.cancel_all_goals()
         # self._as.set_preempted(self._result)
-        for mb_action in self.move_base_actions:
-            self.reset_reconf()
+        # for mb_action in self.move_base_actions:
+        #     self.reset_reconf()
 
     """
      Closest Node CallBack

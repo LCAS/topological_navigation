@@ -260,6 +260,7 @@ class TopologicalNavServer(object):
 
      This Function updates the Topological Map everytime it is called
     """
+
     def MapCallback(self, msg):
         self.lnodes = json.loads(msg.data)
         self.topol_map = self.lnodes["pointset"]
@@ -276,6 +277,7 @@ class TopologicalNavServer(object):
 
      This Functions is called when the Action Server is called
     """
+
     def executeCallback(self, goal):
         # first cancel the current action, if any
         self.cancel_current_action(timeout_secs=10)
@@ -297,6 +299,7 @@ class TopologicalNavServer(object):
 
      This Functions is called when the execute policy Action Server is called
     """
+
     def executeCallbackexecpolicy(self, goal):
         # first cancel the current action, if any
         self.cancel_current_action(timeout_secs=10)
@@ -331,6 +334,7 @@ class TopologicalNavServer(object):
     """
      Preempt CallBack
     """
+
     def preemptCallback(self):
         self.cancel_current_action()
 
@@ -338,6 +342,7 @@ class TopologicalNavServer(object):
      Preempt CallBack execute policy
 
     """
+
     def preemptCallbackexecpolicy(self):
         self.cancel_current_action()
 
@@ -345,6 +350,7 @@ class TopologicalNavServer(object):
      Closest Node CallBack
 
     """
+
     def closestNodeCallback(self, msg):
         self.closest_node = msg.data
         if not self.monit_nav_cli:
@@ -354,6 +360,7 @@ class TopologicalNavServer(object):
      Current Node CallBack
 
     """
+
     def currentNodeCallback(self, msg):
         if self.current_node != msg.data:  # is there any change on this topic?
             self.current_node = msg.data  # we are at this new node
@@ -377,6 +384,7 @@ class TopologicalNavServer(object):
      Execute Policy
 
     """
+
     def execute_policy(self, route):
         target = route.source[-1]
         self._target = target
@@ -417,6 +425,7 @@ class TopologicalNavServer(object):
      This function takes the target node and plans the actions that are required
      to reach it for topomap 2
     """
+
     def navigate_tmap2(self, target):
         tries = 0
         result = False
@@ -519,6 +528,7 @@ class TopologicalNavServer(object):
 
      This function follows the chosen route to reach the goal using topomap2
     """
+
     def followRoute_tmap2(self, route, target, exec_policy):
         nnodes = len(route.source)
 
@@ -679,7 +689,8 @@ class TopologicalNavServer(object):
                 not_fatal = False
                 nav_ok = False
 
-            self.stat.set_ended(self.current_node)
+            if self.stat is not None:
+                self.stat.set_ended(self.current_node)
             dt_text = self.stat.get_finish_time_str()
             operation_time = self.stat.operation_time
             time_to_wp = self.stat.time_to_wp
@@ -719,23 +730,28 @@ class TopologicalNavServer(object):
 
         result = nav_ok
         return result, inc
-    
+
     """
     Cancels the action is currently in execution. Returns True if the current goal is correctly ended.
     """
+
     def cancel_current_action(self, timeout_secs=-1):
-        rospy.loginfo("Cancelling current navigation goal, timeout_secs={}...".format(timeout_secs))
+        rospy.loginfo(
+            "Cancelling current navigation goal, timeout_secs={}...".format(
+                timeout_secs
+            )
+        )
         self.monNavClient.cancel_all_goals()
         self.cancelled = True
 
-        if timeout_secs>0:
+        if timeout_secs > 0:
             stime = rospy.get_rostime()
             timeout = rospy.Duration().from_sec(timeout_secs)
             while self.navigation_activated:
                 if (rospy.get_rostime() - stime) < timeout:
                     rospy.loginfo("\t[timeout called]")
                 rospy.sleep(0.2)
-            
+
         rospy.loginfo("DONE")
         return not self.navigation_activated
 

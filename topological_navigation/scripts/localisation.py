@@ -150,15 +150,15 @@ class TopologicalNavLoc(object):
         """
         This function returns the distance from each waypoint to a pose in an organised way
         """
-        distances=[]
-        for i in self.tmap["nodes"]:
-            d= get_distance_node_pose_from_tmap2(i, pose)
-            a={}
-            a['node'] = i
-            a['dist'] = d
+        distances = []
+        for node in self.tmap["nodes"]:
+            dist = get_distance_node_pose_from_tmap2(node, pose)
+            a = {}
+            a["node"] = node
+            a["dist"] = dist
             distances.append(a)
         
-        distances = sorted(distances, key=lambda k: k['dist'])
+        distances = sorted(distances, key=lambda k: k["dist"])
         return distances
     
     
@@ -177,13 +177,12 @@ class TopologicalNavLoc(object):
                 end = (dest["pose"]["position"]["x"], dest["pose"]["position"]["y"], 0)
                 dist,_ = pnt2line(pnt, start, end)
                 
-                a={}
-                a['edge_id'] = edge["edge_id"]
-                a['dist'] = dist
+                a = {}
+                a["edge_id"] = edge["edge_id"]
+                a["dist"] = dist
                 distances.append(a)
-            
-        
-        distances = sorted(distances, key=lambda k: k['dist'])
+                 
+        distances = sorted(distances, key=lambda k: k["dist"])
         return distances
 
 

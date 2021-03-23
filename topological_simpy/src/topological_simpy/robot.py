@@ -71,6 +71,7 @@ class TopoMap():
 
         self._node_log = {}
         self._hold_time_log = {}
+        self.queue_time = 10
 
         self.request_success = None
         if self.env:
@@ -113,8 +114,9 @@ class TopoMap():
             self._hold_time_log[node_name]['start_time'].append(
                 self._hold_time_log[node_name]['start_time'][-1])
 
-        wait_time = turning_time + hold_time - (self._hold_time_log[node_name]['now'][-1]
-                                                - self._hold_time_log[node_name]['start_time'][-1])
+        queue_time = len(self._node_res[node_name].put_queue) * self.queue_time
+        wait_time = queue_time + turning_time + hold_time - (self._hold_time_log[node_name]['now'][-1]
+                                                             - self._hold_time_log[node_name]['start_time'][-1])
         self._hold_time_log[node_name]['wait_time'].append(wait_time)
         self._hold_time_log[node_name]['release_time'].append(
             self._hold_time_log[node_name]['start_time'][-1] + self._hold_time_log[node_name]['hold_time'][-1])
@@ -134,8 +136,8 @@ class TopoMap():
 
     def route_dist_cost(self, route_nodes):
         cost = 0.0
-        if len(route_nodes) < 2:
-            print('Route must has more than two nodes.')
+        if len(route_nodes) < 2:  # todo: forgot cost from current node to the first node of the route?
+            print('One node left before arriving at goal.')
             return cost
         else:
             for idx, n in enumerate(route_nodes[:-1]):
@@ -218,8 +220,8 @@ class TopoMap():
     def get_route(self, origin, target):
         return self._route_planner.search_route(origin, target)
 
-    def node_occupied(self, node):
-        return self._node_res[n].count > 0
+    # def node_occupied(self, node):
+    #     return self._node_res[n].count > 0
 
     def monitor(self, freq=2):
         """
@@ -257,7 +259,9 @@ class Robot():
     def _goto(self, target):
         self.route_nodes = self.get_route_nodes(self._current_node, target)
         interrupted = False
-        for idx, n in enumerate(self.route_nodes):
+        idx = 0
+        while idx < len(self.route_nodes):
+            n = self.route_nodes[idx]
             route_dist_cost = self._tmap.route_dist_cost(self.route_nodes) # original route distance cost
             #  getting the distance between current and target:
             d_cur = self._tmap.distance(self._current_node, n)
@@ -311,6 +315,7 @@ class Robot():
                         else:
                             # continue waiting for the old route
                             print('### Use current route, waiting for %4d sec before node %8s released' % (wait_time, n))
+                            yield self._tmap.request_node(n, False)
                 else:
                     self._tmap.log_hold_time(self._name, n, hold_time, self._tmap.request_success)
                     self.update_cost(time_cost, self.route_nodes[idx:], n)
@@ -328,8 +333,7 @@ class Robot():
                 interrupted = True
                 break
             try:
-                time_to_travel = ceil(d_cur / (
-                            2 * self._speed_m_s))  # Travel from the current node to the middle between the current node and the next node
+                time_to_travel = ceil(d_cur / (2 * self._speed_m_s))
                 yield self._tmap.env.timeout(time_to_travel)
                 yield self._tmap.release_node(self._current_node)  # TODO request = False?
                 # The robot is reaching at the half way between the current node and next node
@@ -349,6 +353,8 @@ class Robot():
                 yield self._tmap.release_node(n)
                 interrupted = True
                 break
+            idx = idx + 1  # go to next while loop
+
             # if self._current_node != target:
         if interrupted:  # When the robot has a goal running and be assigned a new goal node TODO Move to 'except simpy.Interrupt:', print the interrupted info before releasing the previous acquired target node and before planning the new goal route
             print('% 5d: %s ABORTED at %s' % (self._tmap.env.now, self._name, self._current_node))

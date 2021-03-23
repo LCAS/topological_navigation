@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-
-
-
-
+#!/usr/bin/env python
+###################################################################################################################
 import math
+
 
 def pnt2line(pnt, start, end):
     line_vec = vector(start, end)
@@ -22,39 +20,42 @@ def pnt2line(pnt, start, end):
     return (dist, nearest)
 
 
-
-
 def dot(v,w):
     x,y,z = v
     X,Y,Z = w
     return x*X + y*Y + z*Z
 
+
 def length(v):
     x,y,z = v
     return math.sqrt(x*x + y*y + z*z)
+
 
 def vector(b,e):
     x,y,z = b
     X,Y,Z = e
     return (X-x, Y-y, Z-z)
 
+
 def unit(v):
     x,y,z = v
     mag = length(v)
     if mag == 0:
         return (0, 0, 0)
-        
     return (x/mag, y/mag, z/mag)
+
 
 def distance(p0,p1):
     return length(vector(p0,p1))
+
 
 def scale(v,sc):
     x,y,z = v
     return (x * sc, y * sc, z * sc)
 
+
 def add(v,w):
     x,y,z = v
     X,Y,Z = w
-    return (x+X, y+Y, z+Z)
-    
+    return (x+X, y+Y, z+Z)    
+###################################################################################################################

@@ -70,12 +70,19 @@ class TopoMap():
         self._node_res = {}
 
         self._node_log = {}
+        self._hold_time_log = {}
 
         self.request_success = None
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max
                 self._node_log[n] = []
+                self._hold_time_log[n] = {'now': [],
+                                          'robot_name': [],
+                                          'hold_time': [],
+                                          'start_time': [],
+                                          'wait_time': [],
+                                          'release_time': []}  # the estimated time robot will be hold by a node
                 patch_resource(self._node_res[n], post=partial(self.log_resource, n))
 
     def log_resource(self, node, resource):
@@ -85,6 +92,34 @@ class TopoMap():
             resource.level
         )
         self._node_log[node].append(item)
+
+    def log_hold_time(self, robot_name, node_name, hold_time, request_suc, turning_time=0):
+        """
+        Log the waiting time for estimating the time cost when plan a new route
+        :param turning_time: the time robot spent on turning around the node
+        start_time: the moment that the node started holding a robot
+        # TODO: what if the queue is not None, how to consider the waiting time?
+        """
+        self._hold_time_log[node_name]['now'].append(self.env.now)
+        self._hold_time_log[node_name]['robot_name'].append(robot_name)
+        if request_suc:
+            self._hold_time_log[node_name]['hold_time'].append(hold_time)
+            if self._node_log[node_name][-1][1]:  # the node is occupied
+                start_time = self._node_log[node_name][-1][0]  # the start time when the node was occupied
+                self._hold_time_log[node_name]['start_time'].append(start_time)
+        else:  # request failed, keep same
+            hold_time = self._hold_time_log[node_name]['hold_time'][-1]
+            self._hold_time_log[node_name]['hold_time'].append(hold_time)
+            self._hold_time_log[node_name]['start_time'].append(
+                self._hold_time_log[node_name]['start_time'][-1])
+
+        wait_time = turning_time + hold_time - (self._hold_time_log[node_name]['now'][-1]
+                                                - self._hold_time_log[node_name]['start_time'][-1])
+        self._hold_time_log[node_name]['wait_time'].append(wait_time)
+        self._hold_time_log[node_name]['release_time'].append(
+            self._hold_time_log[node_name]['start_time'][-1] + self._hold_time_log[node_name]['hold_time'][-1])
+
+        return self._hold_time_log
 
     def get_nodes(self):
         return self._nodes
@@ -96,6 +131,16 @@ class TopoMap():
             a['pose']['position']['x'] - b['pose']['position']['x'],
             a['pose']['position']['y'] - b['pose']['position']['y']
         )
+
+    def route_dist_cost(self, route_nodes):
+        cost = 0.0
+        if len(route_nodes) < 2:
+            print('Route must has more than two nodes.')
+            return cost
+        else:
+            for idx, n in enumerate(route_nodes[:-1]):
+                cost = cost + self.distance(n, route_nodes[idx+1])
+            return cost
 
     def time_cost_to_dist(self, time_cost, speed_m_s):
         """
@@ -160,10 +205,6 @@ class TopoMap():
                     self.request_success = False
                     return self.env.timeout(0)  # return the len(self._node_res[node].put_queue)? TODO
 
-    def change_route(self, node):
-
-        route_nodes = self.get_route_nodes(self._current_node, target)
-
     def release_node(self, node):
         """
         Get the robot out of the _node_res, i.e., the node resource is released, the robot leaves this node
@@ -200,6 +241,13 @@ class Robot():
         self._speed_m_s = .3
         self._active_process = None
         self.route_nodes = None
+        self._cost = {'robot_name': [],
+                      'time_now': [],
+                      'cost': [],
+                      'time_cost': [],
+                      'dist_cost': [],
+                      'route': []}
+
         if self._tmap.env:
             self._tmap.request_node(initial_node)
             # self._tmap._node_res[initial_node].count = 1
@@ -209,29 +257,69 @@ class Robot():
     def _goto(self, target):
         self.route_nodes = self.get_route_nodes(self._current_node, target)
         interrupted = False
-        for n in self.route_nodes:
+        for idx, n in enumerate(self.route_nodes):
+            route_dist_cost = self._tmap.route_dist_cost(self.route_nodes) # original route distance cost
             #  getting the distance between current and target:
-            d = self._tmap.distance(self._current_node, n)
-            time_to_travel = int(ceil(d / self._speed_m_s))
-            print('% 5d:  %s traversing route from node %10s to node %10s (distance: %f, time: %d)' % (
-                self._tmap.env.now, self._name, self._current_node, n, d, time_to_travel))
+            d_cur = self._tmap.distance(self._current_node, n)
+            time_to_travel = int(ceil(d_cur / self._speed_m_s))
+            if idx+1 < len(self.route_nodes):
+                d_next = self._tmap.distance(n, self.route_nodes[idx+1])
+                time_to_travel_next = ceil(d_next / (2 * self._speed_m_s))
+            else:
+                time_to_travel_next = 0
+            hold_time = time_to_travel + time_to_travel_next  # the time node will hold the robot
+
+            print('% 5d:  %s traversing route from node %10s to node %10s (distance: %f, travel time: %d, hold time: %d)'
+                  % (self._tmap.env.now, self._name, self._current_node, n, d_cur, time_to_travel, hold_time))
             request = None  # TODO not used
             try:
                 start_wait = self._env.now  # The node to be requested may be occupied by other robots, mark the time when requesting
                 yield self._tmap.request_node(n)  # TODO request = True? request = request + 1?
+
+                hold_times = self._tmap.log_hold_time(self._name, n, hold_time, self._tmap.request_success)
+                wait_time = hold_times[n]['wait_time'][-1]
+                time_cost = self.time_to_dist_cost(wait_time)
+                cost = route_dist_cost + time_cost
+
                 if self._tmap.request_success is False:
-                    print('++++++++ %8s use a new route avoiding node %10s ++++++++' % (self._name, n))
-                    self.route_nodes = self.get_route_nodes(self._current_node, target, n, self._tmap.request_success)
-                    if self.route_nodes[0] == self._current_node:  # cannot find an alternative route to avoid the occupied node n
-                        print('======== %8s no new route found, queueing for requesting node %10s ========' % (self._name, n))
+                    print('+++ %8s use a new route avoiding node %10s +++' % (self._name, n))
+                    new_route_nodes = self.get_route_nodes(self._current_node, target, n, self._tmap.request_success)
+                    new_route_dist_cost = self._tmap.route_dist_cost(new_route_nodes)
+
+                    # hold_times = self._tmap.log_hold_time(self._name, n, hold_time, self._tmap.request_success)
+                    # wait_time = hold_times[n]['wait_time'][-1]
+                    # time_cost = self.time_to_dist_cost(wait_time)
+                    # cost = route_dist_cost + time_cost
+
+                    if new_route_nodes[0] == self._current_node:  # cannot find an alternative route to avoid the occupied node n
+                        print('=== %8s no new route found, queueing for requesting node %10s ===' % (self._name, n))
                         yield self._tmap.request_node(n, False)  # join the requesting queue
                     else:
-                        print('######## new route found %8s %s ########' % (self._name, self.route_nodes))
+                        print('### %4s finds new route %s' % (self._name, new_route_nodes))
+                        # request failed, use the latest hold_time
+                        time_cost = 0  # no waiting time
+                        self.update_cost(time_cost, new_route_nodes, n)
+                        if new_route_dist_cost < cost:
+                            # go for new route
+                            print('### Use new route %s' % new_route_nodes)
+                            self.route_nodes = new_route_nodes
+                            idx = 0  # reset the loop index
+                            continue
+                            #n = self.route_nodes[0]  # change route
+                            #d_cur = self._tmap.distance(self._current_node, n)
+                            #go back to the for loop, Hugar needs to request node 141 before traveling towards it.
+                        else:
+                            # continue waiting for the old route
+                            print('### Use current route, waiting for %4d sec before node %8s released' % (wait_time, n))
+                else:
+                    self._tmap.log_hold_time(self._name, n, hold_time, self._tmap.request_success)
+                    self.update_cost(time_cost, self.route_nodes[idx:], n)
+
                 if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting. TODO a requested node has been occupied by other robot
                     # TODO wait_time_cost = {self.name: (self._env.now - start_wait)}
                     print('$$$$ % 5d:  %s has lock on %s after %d' % (
                         self._env.now, self._name, n,
-                        self._env.now - start_wait))  # TODO compare the wait time cost vs plan a new route without the occupied node?
+                        self._env.now - start_wait))
             except:  # TODO Trigger condition?  Not triggered when requesting an occupied node! Not triggered when the robot has a goal running and be assigned a new goal
                 print('% 5d: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
                     self._tmap.env.now, self._name,
@@ -240,7 +328,7 @@ class Robot():
                 interrupted = True
                 break
             try:
-                time_to_travel = ceil(d / (
+                time_to_travel = ceil(d_cur / (
                             2 * self._speed_m_s))  # Travel from the current node to the middle between the current node and the next node
                 yield self._tmap.env.timeout(time_to_travel)
                 yield self._tmap.release_node(self._current_node)  # TODO request = False?
@@ -248,7 +336,7 @@ class Robot():
                 print('% 5d:  %s ---> %s reaching half way ---> %s' % (
                     self._tmap.env.now, self._current_node, self._name, n))
                 self._current_node = n
-                remain_time_to_travel = ceil(d / self._speed_m_s) - time_to_travel
+                remain_time_to_travel = ceil(d_cur / self._speed_m_s) - time_to_travel
                 yield self._tmap.env.timeout(remain_time_to_travel)
                 print('% 5d:  %s reached node %s' % (self._tmap.env.now, self._name, n))
                 yield self._tmap.env.timeout(0)  # Go back to the next env.step()
@@ -305,6 +393,32 @@ class Robot():
                     print('% 5d: %s going from node %s to node %s via route %s' % (
                         self._tmap.env.now, self._name, cur_node, target, r))
                     return r
+
+    def time_to_dist_cost(self, waiting_time):
+        """
+        :param waiting_time: the time robot will be waiting
+        return: the distance cost
+        """
+        return self._speed_m_s*waiting_time
+
+    def update_cost(self, time_cost, route_nodes, node_name):
+        """
+        Update the time and distance cost
+        :param time_cost: float, waiting time cost
+        :param route_nodes: string list, the route robot will be traversing
+        :param node_name: string, the node traversed
+        return: dictionary
+        """
+        dist_cost = self._tmap.route_dist_cost(route_nodes)
+        cost = dist_cost + time_cost
+        self._cost['robot_name'].append(self._name)
+        self._cost['time_now'].append(self._env.now)
+        self._cost['time_cost'].append(time_cost)
+        self._cost['dist_cost'].append(dist_cost)
+        self._cost['cost'].append(cost)
+        self._cost['route'].append(node_name)
+
+        return self._cost
 
 
 def car(name, env, gas_station, fuel_pump):

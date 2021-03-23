@@ -220,11 +220,11 @@ class TopologicalNavLoc(object):
                 currentstr='none'
                 
                 edge_distances = self.get_edge_distances_to_pose(msg)
-                if edge_distances:
-                    if len(edge_distances) > 1:
-                        closest_edges = edge_distances[:2]
-                    else:
-                        closest_edges = edge_distances * 2
+                
+                if len(edge_distances) > 1:
+                    closest_edges = edge_distances[:2]
+                else:
+                    closest_edges = edge_distances * 2
                 
                 not_loc=True
                 if self.loc_by_topic:

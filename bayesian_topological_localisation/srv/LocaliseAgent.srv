@@ -1,0 +1,18 @@
+uint8 FOLLOW_OBS=0
+uint8 SPREAD_UNIFORM=1
+uint8 CLOSEST_NODE=2
+
+uint8 PRED_CTMC=0
+uint8 PRED_IDENTITY=1
+
+string name
+uint64 n_particles
+uint8 initial_spread_policy
+uint8 prediction_model
+bool do_prediction
+float64 prediction_rate
+float64 prediction_speed_decay
+
+---
+
+bool success

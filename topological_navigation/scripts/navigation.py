@@ -28,7 +28,7 @@ from topological_navigation.tmap_utils import *
 from topological_navigation.route_search import *
 from topological_navigation.route_search2 import *
 
-from topological_navigation.EdgeReconfigureManager import EdgeReconfigureManager
+from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
 
 import topological_navigation.msg
 import dynamic_reconfigure.client

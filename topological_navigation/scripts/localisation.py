@@ -6,9 +6,13 @@ import strands_navigation_msgs.srv
 
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
+from topological_navigation_msgs.msg import ClosestEdges
 
 from topological_navigation.tmap_utils import *
+from topological_navigation.point2line import pnt2line
+
 from threading import Thread
+from numpy import round
 
 
 class LocaliseByTopicSubscriber(object):
@@ -98,6 +102,8 @@ class TopologicalNavLoc(object):
         self.node="Unknown"
         self.wpstr="Unknown"
         self.cnstr="Unknown"
+        self.closest_edge_ids = []
+        self.closest_edge_dists = []
         
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         self.with_tags = wtags
@@ -105,6 +111,7 @@ class TopologicalNavLoc(object):
         self.subscribers=[]
         self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('current_node', String, latch=True, queue_size=1)
+        self.ce_pub = rospy.Publisher('closest_edges', ClosestEdges, latch=True, queue_size=1)
 
         self.force_check=True
         self.rec_map=False
@@ -153,6 +160,31 @@ class TopologicalNavLoc(object):
         
         distances = sorted(distances, key=lambda k: k['dist'])
         return distances
+    
+    
+    def get_edge_distances_to_pose(self, pose):
+        """
+        This function returns the distance from each edge to a pose in an organised way
+        """
+        pnt = (pose.position.x, pose.position.y, 0)
+        distances = []
+        
+        for node in self.tmap["nodes"]:
+            start = (node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0)
+            
+            for edge in node["node"]["edges"]:
+                dest = get_node_from_tmap2(self.tmap, edge["node"])
+                end = (dest["pose"]["position"]["x"], dest["pose"]["position"]["y"], 0)
+                dist,_ = pnt2line(pnt, start, end)
+                
+                a={}
+                a['edge_id'] = edge["edge_id"]
+                a['dist'] = dist
+                distances.append(a)
+            
+        
+        distances = sorted(distances, key=lambda k: k['dist'])
+        return distances
 
 
     def PoseCallback(self):
@@ -186,7 +218,14 @@ class TopologicalNavLoc(object):
                 self.distances = self.get_distances_to_pose(msg)
                 closeststr='none'
                 currentstr='none'
-    
+                
+                edge_distances = self.get_edge_distances_to_pose(msg)
+                if edge_distances:
+                    if len(edge_distances) > 1:
+                        closest_edges = edge_distances[:2]
+                    else:
+                        closest_edges = edge_distances * 2
+                
                 not_loc=True
                 if self.loc_by_topic:
                     for i in self.loc_by_topic:
@@ -227,7 +266,7 @@ class TopologicalNavLoc(object):
                             not_loc=False
                         ind+=1
     
-                self.publishTopics(closeststr, currentstr)
+                self.publishTopics(closeststr, currentstr, closest_edges)
                 self.throttle=1
             else:
                 self.throttle +=1
@@ -235,18 +274,36 @@ class TopologicalNavLoc(object):
             self.rate.sleep()
 
 
-    def publishTopics(self, wpstr, cnstr) :
+    def publishTopics(self, wpstr, cnstr, closest_edges) :
+        
+        def pub_closest_edges(closest_edge_ids, closest_edge_dists):
+            msg = ClosestEdges()
+            msg.edge_ids = closest_edge_ids
+            msg.distances = closest_edge_dists
+            self.ce_pub.publish(msg)
+            
+        closest_edge_ids = [edge["edge_id"] for edge in closest_edges]
+        closest_edge_dists = list(round([edge["dist"] for edge in closest_edges], 3))
+        if len(set(closest_edge_dists)) == 1:
+            closest_edge_ids.sort()
+        
         if self.only_latched :
             if self.wpstr != wpstr:
                 self.wp_pub.publish(wpstr)
             if self.cnstr != cnstr:
                 self.cn_pub.publish(cnstr)
+            if self.closest_edge_ids != closest_edge_ids \
+                or self.closest_edge_dists != closest_edge_dists:
+                pub_closest_edges(closest_edge_ids, closest_edge_dists)
         else:
             self.wp_pub.publish(wpstr)
             self.cn_pub.publish(cnstr)
+            pub_closest_edges(closest_edge_ids, closest_edge_dists)
+            
         self.wpstr=wpstr
         self.cnstr=cnstr
-
+        self.closest_edge_ids = closest_edge_ids
+        self.closest_edge_dists = closest_edge_dists
 
     def MapCallback(self, msg):
         """

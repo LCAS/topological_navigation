@@ -104,6 +104,7 @@ class TopologicalNavLoc(object):
         self.cnstr="Unknown"
         self.closest_edge_ids = []
         self.closest_edge_dists = []
+        self.node_poses = {}
         
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         self.with_tags = wtags
@@ -136,7 +137,6 @@ class TopologicalNavLoc(object):
         rospy.loginfo("NO GO NODES: %s" %self.nogos)
         
         self.base_frame = rospy.get_param("~base_frame", "base_link")
-        self.tmap_frame = self.tmap["transformation"]["child"]
         
         rospy.loginfo("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
         self.listener = tf.TransformListener()
@@ -173,8 +173,8 @@ class TopologicalNavLoc(object):
             start = (node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0)
             
             for edge in node["node"]["edges"]:
-                dest = get_node_from_tmap2(self.tmap, edge["node"])
-                end = (dest["pose"]["position"]["x"], dest["pose"]["position"]["y"], 0)
+                dest_pose = self.node_poses[edge["node"]]
+                end = (dest_pose["position"]["x"], dest_pose["position"]["y"], 0)
                 dist,_ = pnt2line(pnt, start, end)
                 
                 a = {}
@@ -314,8 +314,14 @@ class TopologicalNavLoc(object):
         self.nogos=[]
 
         self.tmap = json.loads(msg.data) 
-        
         self.rec_map=True
+        
+        self.tmap_frame = self.tmap["transformation"]["child"]
+        
+        self.node_poses = {}
+        for node in self.tmap["nodes"]:
+            self.node_poses[node["node"]["name"]] = node["node"]["pose"]
+            
         self.update_loc_by_topic()
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         if self.with_tags:

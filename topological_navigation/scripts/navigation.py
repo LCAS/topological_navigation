@@ -28,7 +28,7 @@ from topological_navigation.tmap_utils import *
 from topological_navigation.route_search import *
 from topological_navigation.route_search2 import *
 
-from topological_navigation.EdgeReconfigureManager import EdgeReconfigureManager
+from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
 
 import topological_navigation.msg
 import dynamic_reconfigure.client
@@ -187,6 +187,7 @@ class TopologicalNavServer(object):
             self.edgeReconfigureManager = EdgeReconfigureManager()
 
         rospy.loginfo("All Done ...")
+
         rospy.spin()
 
     def init_reconfigure(self):
@@ -278,6 +279,9 @@ class TopologicalNavServer(object):
     """
 
     def executeCallback(self, goal):
+        # first cancel the current action, if any
+        self.cancel_current_action(timeout_secs=10)
+
         if self.monit_nav_cli:
             self.cancelled = False
             self.preempted = False
@@ -291,16 +295,48 @@ class TopologicalNavServer(object):
             rospy.loginfo("Monitored Navigation client has not started!!!")
 
     """
+     Execute CallBack exec policy
+
+     This Functions is called when the execute policy Action Server is called
+    """
+
+    def executeCallbackexecpolicy(self, goal):
+        # first cancel the current action, if any
+        self.cancel_current_action(timeout_secs=10)
+
+        self.cancelled = False
+        self.preempted = False
+
+        self.init_reconfigure()
+
+        if len(goal.route.source) > 0 and goal.route.source[0] != "":
+            result = self.execute_policy(goal.route)
+        else:
+            result = False
+            rospy.logwarn("Empty route in exec policy goal!")
+
+        if not self.cancelled:
+            self._result_exec_policy.success = result
+            # self._feedback.route_status = self.current_node
+            # self._as.publish_feedback(self._feedback)
+            if result:
+                self._as_exec_policy.set_succeeded(self._result)
+            else:
+                self._as_exec_policy.set_aborted(self._result)
+        else:
+            if self.preempted:
+                self._result.success = False
+                self._as_exec_policy.set_preempted(self._result)
+            else:
+                self._result.success = False
+                self._as_exec_policy.set_aborted(self._result)
+
+    """
      Preempt CallBack
     """
 
     def preemptCallback(self):
-        self.monNavClient.cancel_all_goals()
-        self.cancelled = True
-        self.preempted = True
-        self._result.success = False
-        self.navigation_activated = False
-        # self._as.set_preempted(self._result)
+        self.cancel_current_action()
 
     """
      Preempt CallBack execute policy
@@ -308,14 +344,7 @@ class TopologicalNavServer(object):
     """
 
     def preemptCallbackexecpolicy(self):
-        self.cancelled = True
-        self.preempted = True
-        self._result_exec_policy.success = False
-        self.navigation_activated = False
-        self.monNavClient.cancel_all_goals()
-        # self._as.set_preempted(self._result)
-        for mb_action in self.move_base_actions:
-            self.reset_reconf()
+        self.cancel_current_action()
 
     """
      Closest Node CallBack
@@ -351,56 +380,6 @@ class TopologicalNavServer(object):
                         rospy.loginfo("intermediate node reached %s", self.current_node)
                         self.goal_reached = True
 
-    def get_edge(self, orig, dest, a):
-        found = False
-        edge = None
-        for i in self.curr_tmap["nodes"]:
-            for i in self.curr_tmap["nodes"]:
-                if i["node"]["name"] == orig:
-                    for j in i["node"]["edges"]:
-                        if j["node"] == dest and j["action"] == a:
-                            found = True
-                            edge = j
-                            break
-            if found:
-                break
-
-        return edge
-
-    """
-     Execute CallBack exec policy
-
-     This Functions is called when the execute policy Action Server is called
-    """
-
-    def executeCallbackexecpolicy(self, goal):
-        self.cancelled = False
-        self.preempted = False
-
-        self.init_reconfigure()
-
-        if goal.route.source[0] != "":
-            result = self.execute_policy(goal.route)
-        else:
-            result = False
-            rospy.logwarn("Empty route in exec policy goal!")
-
-        if not self.cancelled:
-            self._result_exec_policy.success = result
-            # self._feedback.route_status = self.current_node
-            # self._as.publish_feedback(self._feedback)
-            if result:
-                self._as_exec_policy.set_succeeded(self._result)
-            else:
-                self._as_exec_policy.set_aborted(self._result)
-        else:
-            if self.preempted:
-                self._result.success = False
-                self._as_exec_policy.set_preempted(self._result)
-            else:
-                self._result.success = False
-                self._as_exec_policy.set_aborted(self._result)
-
     """
      Execute Policy
 
@@ -427,29 +406,6 @@ class TopologicalNavServer(object):
                     self.publish_feedback_exec_policy(GoalStatus.ABORTED)
 
         return succeeded
-
-    """
-     Find Action
-
-    """
-    #    def find_action(self, source, target):
-    def find_action(self, source, edge_id):
-        # print 'Searching for action between: %s -> %s' %(source, target)
-        found = False
-        action = "none"
-        target = "none"
-        for i in self.lnodes:
-            for i in self.lnodes["nodes"]:
-                if i["node"]["name"] == source:
-                    for j in i["node"]["edges"]:
-                        if j["edge_id"] == edge_id:
-                            action = j["action"]
-                            target = j["node"]
-                    found = True
-        if not found:
-            self.publish_feedback_exec_policy(GoalStatus.ABORTED)
-            rospy.logwarn("source node not found")
-        return action, target
 
     def publish_feedback_exec_policy(self, nav_outcome):
         if self.current_node == "none":  # Happens due to lag in fetch system
@@ -733,7 +689,8 @@ class TopologicalNavServer(object):
                 not_fatal = False
                 nav_ok = False
 
-            self.stat.set_ended(self.current_node)
+            if self.stat is not None:
+                self.stat.set_ended(self.current_node)
             dt_text = self.stat.get_finish_time_str()
             operation_time = self.stat.operation_time
             time_to_wp = self.stat.time_to_wp
@@ -773,6 +730,30 @@ class TopologicalNavServer(object):
 
         result = nav_ok
         return result, inc
+
+    """
+    Cancels the action is currently in execution. Returns True if the current goal is correctly ended.
+    """
+
+    def cancel_current_action(self, timeout_secs=-1):
+        rospy.loginfo(
+            "Cancelling current navigation goal, timeout_secs={}...".format(
+                timeout_secs
+            )
+        )
+        self.monNavClient.cancel_all_goals()
+        self.cancelled = True
+
+        if timeout_secs > 0:
+            stime = rospy.get_rostime()
+            timeout = rospy.Duration().from_sec(timeout_secs)
+            while self.navigation_activated:
+                if (rospy.get_rostime() - stime) < timeout:
+                    rospy.loginfo("\t[timeout called]")
+                rospy.sleep(0.2)
+
+        rospy.loginfo("DONE")
+        return not self.navigation_activated
 
     def publish_route(self, route, target):
         stroute = strands_navigation_msgs.msg.TopologicalRoute()
@@ -872,4 +853,5 @@ if __name__ == "__main__":
     rospy.init_node("topological_navigation")
     mode = "normal"
     server = TopologicalNavServer(rospy.get_name(), mode)
-    rospy.spin()
+
+    rospy.loginfo("Exiting.")

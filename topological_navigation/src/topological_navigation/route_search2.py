@@ -31,8 +31,10 @@ class TopologicalRouteSearch2(object):
      This function searches the route to reach the goal
     """
     def search_route(self, origin, target):
+        route = NavRoute()
+
         if origin == "none" or target == "none" or origin == target:
-            return None
+            return route
 
         goal = get_node_from_tmap2(self.top_map, target)
         orig = get_node_from_tmap2(self.top_map, origin)
@@ -115,7 +117,7 @@ class TopologicalRouteSearch2(object):
                     not_goal=False
                     route_found=False
 
-        route = NavRoute()
+
 #        print "===== RESULT ====="
         if route_found:
             steps=[]
@@ -139,6 +141,6 @@ class TopologicalRouteSearch2(object):
                 #route.append(r)
 
             #print route
-            return route
-        else:
-            return None
+        
+        return route
+

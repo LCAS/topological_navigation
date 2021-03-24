@@ -303,6 +303,7 @@ class TopologicalNavLoc(object):
         self.cnstr=cnstr
         self.closest_edge_ids = closest_edge_ids
         self.closest_edge_dists = closest_edge_dists
+        
 
     def MapCallback(self, msg):
         """
@@ -311,7 +312,6 @@ class TopologicalNavLoc(object):
         self.names_by_topic=[]
         self.nodes_by_topic=[]
         self.nogos=[]
-        #print eval(msg.data)
 
         self.tmap = json.loads(msg.data) 
         

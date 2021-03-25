@@ -31,7 +31,7 @@ robots = [
 
 nodes = tmap.get_nodes()
 
-print(nodes)
+#print(nodes)
 
 
 def goal_generator(env, robots, nodes, max_interval=200):
@@ -61,13 +61,13 @@ env.process(goal_generator2(env, robots, target_nodes))
 until = 3600
 while env.peek() < until:
     tmap.monitor()
-    for r in robots:
-        print("R% 3d:     STATUS: % 10s: %s (%s)" % (
-            env.now,
-            r._name,
-            r._current_node,
-            'ACTIVE' if r._active_process and r._active_process.is_alive else 'IDLE'
-        ))
+    # for r in robots:
+    #     print("R% 3d:     STATUS: % 10s: %s (%s)" % (
+    #         env.now,
+    #         r._name,
+    #         r._current_node,
+    #         'ACTIVE' if r._active_process and r._active_process.is_alive else 'IDLE'
+    #     ))
     env.step()
 print(tmap._node_log)
 

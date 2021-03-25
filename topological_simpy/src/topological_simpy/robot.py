@@ -53,7 +53,72 @@ def patch_resource(resource, pre=None, post=None):
     for name in ['put', 'get', 'request', 'release']:
         if hasattr(resource, name):
             setattr(resource, name, get_wrapper(getattr(resource, name)))
-
+#
+# def patch_res_put(resource, pre=None, post=None):
+#     """Patch *resource* so that it calls the callable *pre* before each
+#      put/get/request/release operation and the callable *post* after each
+#      operation.  The only argument to these functions is the resource
+#      instance.
+#
+#     """
+#
+#     def get_wrapper(func):
+#         # Generate a wrapper for put/get/request/release
+#         @wraps(func)
+#         def wrapper(*args, **kwargs):
+#             # This is the actual wrapper
+#             # Call "pre" callback
+#             if pre:
+#                 pre(resource)
+#
+#             # Perform actual operation
+#             ret = func(*args, **kwargs)
+#
+#             # Call "post" callback
+#             if post:
+#                 post(resource)
+#
+#             return ret
+#
+#         return wrapper
+#
+#     # Replace the original operations with our wrapper
+#     for name in ['put']:
+#         if hasattr(resource, name):
+#             setattr(resource, name, get_wrapper(getattr(resource, name)))
+#
+# def patch_res_get(resource, pre=None, post=None):
+#     """Patch *resource* so that it calls the callable *pre* before each
+#      put/get/request/release operation and the callable *post* after each
+#      operation.  The only argument to these functions is the resource
+#      instance.
+#
+#     """
+#
+#     def get_wrapper(func):
+#         # Generate a wrapper for put/get/request/release
+#         @wraps(func)
+#         def wrapper(*args, **kwargs):
+#             # This is the actual wrapper
+#             # Call "pre" callback
+#             if pre:
+#                 pre(resource)
+#
+#             # Perform actual operation
+#             ret = func(*args, **kwargs)
+#
+#             # Call "post" callback
+#             if post:
+#                 post(resource)
+#
+#             return ret
+#
+#         return wrapper
+#
+#     # Replace the original operations with our wrapper
+#     for name in ['get']:
+#         if hasattr(resource, name):
+#             setattr(resource, name, get_wrapper(getattr(resource, name)))
 
 class TopoMap():
     def __init__(self, topo_map_file, env=None):
@@ -71,15 +136,16 @@ class TopoMap():
 
         self._node_log = {}
         self._hold_time_log = {}
-        self.queue_time = 10
+        #self.queue_time = 10
 
         self._req_suc = None  # bool, request node succeed
         self._has_queue_ = None
-        self.req_ret = None  # bool, request return: mode of the node requested
+        self.req_ret = {}  # bool, request return: mode of the node requested
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max
                 self._node_log[n] = []
+                self.req_ret[n] = 0
                 self._hold_time_log[n] = {'now': [],
                                           'robot_name': [],
                                           'hold_time': [],
@@ -89,6 +155,8 @@ class TopoMap():
                                           'wait_time': [],
                                           'release_moment': []}
                 patch_resource(self._node_res[n], post=partial(self.log_resource, n))
+                # patch_res_put(self._node_res[n], post=partial(self.put_monitor, n))
+                # patch_res_get(self._node_res[n], post=partial(self.get_monitor, n))
 
     def log_resource(self, node, resource):
         """This is our monitoring callback."""
@@ -97,6 +165,15 @@ class TopoMap():
             resource.level
         )
         self._node_log[node].append(item)
+
+    # def put_monitor(self, node, resource):
+    #     print('============================put_monitor==========================')
+    #     print('%d node %s %d' % (resource._env.now, node, resource.level))
+    #     #self.query_wait(robot_name, node, hold_time, self.req_ret[node])
+    #
+    # def get_monitor(self, node, resource):
+    #     print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$get_monitor$$$$$$$$$$$$$$$$$$$$$$$$$$')
+    #     print('%d node %s %d' % (resource._env.now, node, resource.level))
 
     def query_wait(self, robot_name, node_name, hold_time, req_ret):
         """
@@ -107,17 +184,22 @@ class TopoMap():
         :param req_ret: integer, [1,2,3,4], level and queue info of requested node
         return: time info about the node, especially wait_time - how long a robot should wait
                 before the node being released
-
-        # queue_time: the time that robot needs to wait before the current queue gone, robot cannot acquire the node now
+        Todo: check release time after node.release
+        queue_time: the time that robot needs to wait before the current queue gone, robot cannot acquire the node now
+        wait_time: the time that robot needs to wait before occupying the node
+        release_moment: the moment that the current occupied robot release the node
+        q_len: queue length, the number of robots in the queue, waiting for occupying the node
+        hold_time: the time that the robot will hold the node if the robot occupies the node
+        start_moment: the moment that the current occupied robot started occupying the node
         """
-        if req_ret is 1:
+        if req_ret is 1:  # the robot himself occupies the node
             now = self.env.now
             robot_name = robot_name
-            hold_time = hold_time
+            hold_t = hold_time
             start_moment = now
             queue_time = 0
             q_len = 0
-            wait_time = hold_time
+            wait_time = 0
             release_moment = start_moment + hold_time
 
         if req_ret is 2:
@@ -125,27 +207,48 @@ class TopoMap():
             robot_name = robot_name
             queue_time = 0
             q_len = 0
-            start_moment = self._node_log[node_name][-1][0]
-            hold_time = self._hold_time_log[node_name]['hold_time'][-1]
-            wait_time = hold_time - (now - start_moment)
-            release_moment = start_moment + hold_time
+            start_moment = self._hold_time_log[node_name]['start_moment'][-1]
+            hold_t = hold_time
+            wait_time = self._hold_time_log[node_name]['hold_time'][-1] - (now - start_moment)
+            release_moment = start_moment + self._hold_time_log[node_name]['hold_time'][-1]
+            if self._node_log[node_name][-1][1] == 0:  # release node, pop out the node hold info
+                for r in self._hold_time_log[node_name]:
+                    self._hold_time_log[node_name][r].pop(0)
+                self._hold_time_log[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
+                self._hold_time_log[node_name]['now'][0] = self.env.now
+                return self._hold_time_log
 
         if req_ret is 3:
             now = self.env.now
             robot_name = robot_name
             q_len = 1
-            queue_time = hold_time  # TODO double check
-            hold_time = self._hold_time_log[node_name]['hold_time'][-1]  # todo: double check
-            start_moment = self._node_log[node_name][-1][0]
-            wait_time = hold_time + queue_time - (now - start_moment)
-            release_moment = start_moment + hold_time + queue_time
+            queue_time = self._hold_time_log[node_name]['hold_time'][-1]  # the last robot's hold_time
+            hold_t = hold_time
+            start_moment = self._hold_time_log[node_name]['start_moment'][-1]
+            wait_time = self._hold_time_log[node_name]['hold_time'][-2] + queue_time - (now - start_moment)
+            release_moment = start_moment + self._hold_time_log[node_name]['hold_time'][-2] + queue_time
+            if self._node_log[node_name][-1][1] == 0:  # release node, pop out the node hold info
+                for r in self._hold_time_log[node_name]:
+                    self._hold_time_log[node_name][r].pop(0)
+                self._hold_time_log[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
+                self._hold_time_log[node_name]['now'][0] = self.env.now
+                return self._hold_time_log
 
-        if req_ret is 4:  # todo: never happen? same as 2?
-            pass
 
-        self._hold_time_log[node_name]['now'].append(self.env.now)
+        if req_ret is 4:  # 2 robots in the queue, todo: n robots in the queue?
+            now = self.env.now
+            robot_name = robot_name
+            q_len = 2
+            queue_time = self._hold_time_log[node_name]['hold_time'][-2] + self._hold_time_log[node_name]['hold_time'][-1]
+            hold_t = hold_time
+            start_moment = self._hold_time_log[node_name]['start_moment'][-1]
+            wait_time = self._hold_time_log[node_name]['hold_time'][-3] + queue_time - (now - start_moment)
+            release_moment = start_moment + self._hold_time_log[node_name]['hold_time'][-3] + queue_time
+
+
+        self._hold_time_log[node_name]['now'].append(now)
         self._hold_time_log[node_name]['robot_name'].append(robot_name)
-        self._hold_time_log[node_name]['hold_time'].append(hold_time)
+        self._hold_time_log[node_name]['hold_time'].append(hold_t)
         self._hold_time_log[node_name]['q_len'].append(q_len)
         self._hold_time_log[node_name]['queue_time'].append(queue_time)
         self._hold_time_log[node_name]['start_moment'].append(start_moment)
@@ -260,18 +363,18 @@ class TopoMap():
         :param force_req: bool, - True: request anyway no matter the node is occupied or not
                                  - False: do not request the node if the node is occupied
         """
-        self.req_ret = None   # request return
+        self.req_ret[node] = 0   # request return
         if self.env:
             if self._node_res[node].level == 0 and self._node_res[node].put_queue == []:
-                self.req_ret = 1
+                self.req_ret[node] = 1
                 return self._node_res[node].put(1)
             else:
                 if self._node_res[node].level == 1 and self._node_res[node].put_queue == []:
-                    self.req_ret = 2
+                    self.req_ret[node] = 2
                 elif self._node_res[node].level == 1 and self._node_res[node].put_queue != []:
-                    self.req_ret = 3
-                elif self._node_res[node].level == 0 and self._node_res[node].put_queue != []:
-                    self.req_ret = 4
+                    self.req_ret[node] = 2 + len(self._node_res[node].put_queue)
+                #elif self._node_res[node].level == 0 and self._node_res[node].put_queue != []:
+                    #self.req_ret[node] = 4
                 if force_req:
                     return self._node_res[node].put(1)
                 else:
@@ -339,7 +442,7 @@ class Robot():
 
         if self._tmap.env:
             self._tmap.request_node(initial_node)
-            self._tmap.query_wait(self._name, initial_node, self.init_hold_t, 1)
+            self._tmap.query_wait(self._name, initial_node, self.init_hold_t, self._tmap.req_ret[initial_node])
             # self._tmap._node_res[initial_node].count = 1
             # print(self._current_node)
             # self._tmap.env.process(self._goto(initial_node))
@@ -350,7 +453,7 @@ class Robot():
         idx = 0
         while idx < len(self.route_nodes):
             n = self.route_nodes[idx]
-            route_dist_cost = self._tmap.route_dist_cost([self._current_node] + self.route_nodes)
+            route_dist_cost = self._tmap.route_dist_cost([self._current_node] + self.route_nodes)   # TODO [idx:]
             #  get the distance between current and next node:
             d_cur = self._tmap.distance(self._current_node, n)
             time_to_travel = int(ceil(d_cur / self._speed_m_s))
@@ -370,14 +473,14 @@ class Robot():
                 start_wait = self._env.now  
                 yield self._tmap.request_node(n, force_req=False)
 
-                if self._tmap.req_ret is 1:
-                    self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret)  # TODO: rewrite query_wait
+                if self._tmap.req_ret[n] is 1:
+                    self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret[n])  # TODO: rewrite query_wait
                 else:  # the node is occupied, find a new route, then compare cost
                     new_route = self.get_route_nodes(self._current_node, target, n, False)  # avoid node n TODO: rewrite get_route_nodes
                     new_route_dc = self._tmap.route_dist_cost([self._current_node] + new_route)  # dc: distance cost
 
-                    if self._tmap.req_ret is 2:
-                        query_wait = self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret)
+                    if self._tmap.req_ret[n] is 2:
+                        query_wait = self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret[n])
                         wait_time = query_wait[n]['wait_time'][-1]
                         time_cost = self.time_to_dist_cost(wait_time)
                         old_route_cost = route_dist_cost + time_cost
@@ -388,9 +491,11 @@ class Robot():
                         else:
                             print('Use old route, wait node being released')
                             yield self._tmap.request_node(n, force_req=True)
+                            self._tmap.req_ret[n] = 3
+                            self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret[n])
 
-                    if self._tmap.req_ret is 3:
-                        query_wait = self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret)
+                    if self._tmap.req_ret[n] is 3:
+                        query_wait = self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret[n])
                         wait_time = query_wait[n]['wait_time'][-1]
                         time_cost = self.time_to_dist_cost(wait_time)
                         old_route_cost = route_dist_cost + time_cost
@@ -401,9 +506,11 @@ class Robot():
                         else:
                             print('Use old route, wait node being released')
                             yield self._tmap.request_node(n, force_req=True)
+                            self._tmap.req_ret[n] = 4
+                            self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret[n])
 
-                    if self._tmap.req_ret is 4:
-                        query_wait = self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret)
+                    if self._tmap.req_ret[n] is 4:
+                        query_wait = self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret[n])
                         wait_time = query_wait[n]['wait_time'][-1]
                         time_cost = self.time_to_dist_cost(wait_time)
                         old_route_cost = route_dist_cost + time_cost
@@ -414,7 +521,8 @@ class Robot():
                         else:
                             print('Use old route, wait node being released')
                             yield self._tmap.request_node(n, force_req=True)
-
+                            self._tmap.req_ret[n] = 5
+                            self._tmap.query_wait(self._name, n, hold_time, self._tmap.req_ret[n])
 
                 # hold_times = self._tmap.query_wait(self._name, n, hold_time, self._tmap._req_suc, not self._tmap._req_suc)
                 # wait_time = hold_times[n]['wait_time'][-1]

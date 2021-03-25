@@ -543,7 +543,7 @@ class TopologicalNavServer(object):
     """
     def enforce_navigable_route(self, route, target_node):
 
-        rospy.logwarn("Current route {} ".format(route))
+        rospy.loginfo("Current route {} ".format(route))
         # if self.current_node == "none":
         if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
             first_node = route.source[0] if len(route.source) > 0 else target_node
@@ -553,7 +553,7 @@ class TopologicalNavServer(object):
                     route.edge_id.insert(0, edge_id)
                     break
                 
-        rospy.logwarn("Modified route {}".format(route))
+        rospy.loginfo("Modified route {}".format(route))
         return route
 
     """

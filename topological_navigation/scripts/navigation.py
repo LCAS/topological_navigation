@@ -27,8 +27,9 @@ from topological_navigation.navigation_stats import *
 from topological_navigation.tmap_utils import *
 from topological_navigation.route_search import *
 from topological_navigation.route_search2 import *
+from topological_navigation_msgs.msg import ClosestEdges
 
-from topological_navigation.EdgeReconfigureManager import EdgeReconfigureManager
+from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
 
 import topological_navigation.msg
 import dynamic_reconfigure.client
@@ -91,6 +92,7 @@ class TopologicalNavServer(object):
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
+        self.closest_edges = ClosestEdges()
         self.nfails = 0
 
         rospy.logwarn("TOPOLOGICAL NAVIGATION IS USING THE NEW MAP TYPE")
@@ -178,6 +180,7 @@ class TopologicalNavServer(object):
         # Subscribing to Localisation Topics
         rospy.loginfo("Subscribing to Localisation Topics")
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
+        rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
 
@@ -315,28 +318,24 @@ class TopologicalNavServer(object):
             result = False
             rospy.logwarn("Empty route in exec policy goal!")
 
-        if not self.cancelled:
+        if (not self.cancelled) and (not self.preempted):
             self._result_exec_policy.success = result
-            # self._feedback.route_status = self.current_node
-            # self._as.publish_feedback(self._feedback)
-            if result:
-                self._as_exec_policy.set_succeeded(self._result)
-            else:
-                self._as_exec_policy.set_aborted(self._result)
+            self._as_exec_policy.set_succeeded(self._result_exec_policy)
         else:
-            if self.preempted:
-                self._result.success = False
-                self._as_exec_policy.set_preempted(self._result)
+            if not self.preempted:
+                self._result_exec_policy.success = result
+                self._as_exec_policy.set_aborted(self._result_exec_policy)
             else:
-                self._result.success = False
-                self._as_exec_policy.set_aborted(self._result)
+                self._result_exec_policy.success = False
+                self._as_exec_policy.set_preempted(self._result_exec_policy)
 
     """
      Preempt CallBack
     """
 
     def preemptCallback(self):
-        self.cancel_current_action()
+        rospy.logwarn("Preempting toponav")
+        self.cancel_current_action(timeout_secs=2)
 
     """
      Preempt CallBack execute policy
@@ -344,7 +343,8 @@ class TopologicalNavServer(object):
     """
 
     def preemptCallbackexecpolicy(self):
-        self.cancel_current_action()
+        rospy.logwarn("Preempting toponav exec_policy")
+        self.cancel_current_action(timeout_secs=2)
 
     """
      Closest Node CallBack
@@ -355,6 +355,14 @@ class TopologicalNavServer(object):
         self.closest_node = msg.data
         if not self.monit_nav_cli:
             rospy.loginfo("Monitored Navigation client has not started!!!")
+
+    """
+     Closest Edges CallBack
+
+    """
+
+    def closestEdgesCallback(self, msg):
+        self.closest_edges = msg
 
     """
      Current Node CallBack
@@ -387,6 +395,9 @@ class TopologicalNavServer(object):
 
     def execute_policy(self, route):
         target = route.source[-1]
+
+        route = self.enforce_navigable_route(route, target)
+        
         self._target = target
         success = False
 
@@ -436,14 +447,14 @@ class TopologicalNavServer(object):
 
             rospy.loginfo("Navigating Take : %d", tries)
             # Everything is Awesome!!!
-            # Target and Origin are Different and none of them is None
+            # Target and Origin are not None
             if (
                 (g_node is not None)
                 and (o_node is not None)
-                and (g_node["name"] != o_node["name"])
             ):
                 rsearch = TopologicalRouteSearch2(self.lnodes)
                 route = rsearch.search_route(o_node["name"], target)
+                route = self.enforce_navigable_route(route, target)
                 print route
                 if route:
                     rospy.loginfo("Navigating Case 1")
@@ -457,53 +468,53 @@ class TopologicalNavServer(object):
                     inc = 1
                     rospy.loginfo("Navigating Case 1b -> res: %d", inc)
             else:
-                # Target and Origin are the same
-                if g_node["name"] == o_node["name"]:
-                    rospy.loginfo("Target and Origin Nodes are the same")
-                    # Check if there is a move_base action in the edges of this node and choose the earliest one in the
-                    # list of move_base ations
-                    # if not is dangerous to move
-                    act_ind = 100
-                    action_server = None
-                    for i in g_node["edges"]:
-                        c_action_server = i["action"]
-                        if c_action_server in self.move_base_actions:
-                            c_ind = self.move_base_actions.index(c_action_server)
-                            if c_ind < act_ind:
-                                act_ind = c_ind
-                                action_server = c_action_server
+                # # Target and Origin are the same
+                # if g_node["name"] == o_node["name"]:
+                #     rospy.loginfo("Target and Origin Nodes are the same")
+                #     # Check if there is a move_base action in the edges of this node and choose the earliest one in the
+                #     # list of move_base ations
+                #     # if not is dangerous to move
+                #     act_ind = 100
+                #     action_server = None
+                #     for i in g_node["edges"]:
+                #         c_action_server = i["action"]
+                #         if c_action_server in self.move_base_actions:
+                #             c_ind = self.move_base_actions.index(c_action_server)
+                #             if c_ind < act_ind:
+                #                 act_ind = c_ind
+                #                 action_server = c_action_server
 
-                    if action_server is None:
-                        rospy.loginfo("Navigating Case 2")
-                        rospy.loginfo("Action not taken, outputing success")
-                        result = True
-                        inc = 0
-                        rospy.loginfo("Navigating Case 2 -> res: %d", inc)
-                    else:
-                        rospy.loginfo("Navigating Case 2a")
-                        rospy.loginfo("Getting to exact pose")
-                        self.current_target = o_node["name"]
-                        inf = Pose()
-                        inf.position.x = g_node["pose"]["position"]["x"]
-                        inf.position.y = g_node["pose"]["position"]["y"]
-                        inf.position.z = g_node["pose"]["position"]["z"]
-                        inf.orientation.w = g_node["pose"]["orientation"]["w"]
-                        inf.orientation.x = g_node["pose"]["orientation"]["x"]
-                        inf.orientation.y = g_node["pose"]["orientation"]["y"]
-                        inf.orientation.z = g_node["pose"]["orientation"]["z"]
-                        result, inc = self.monitored_navigation(inf, action_server)
-                        rospy.loginfo("going to waypoint in node resulted in")
-                        print result
-                        if not result:
-                            inc = 1
-                        rospy.loginfo("Navigating Case 2a -> res: %d", inc)
-                else:
-                    rospy.loginfo("Navigating Case 3")
-                    rospy.loginfo("Target or Origin Nodes were not found on Map")
-                    self.cancelled = True
-                    result = False
-                    inc = 1
-                    rospy.loginfo("Navigating Case 3a -> res: %d", inc)
+                #     if action_server is None:
+                #         rospy.loginfo("Navigating Case 2")
+                #         rospy.loginfo("Action not taken, outputing success")
+                #         result = True
+                #         inc = 0
+                #         rospy.loginfo("Navigating Case 2 -> res: %d", inc)
+                #     else:
+                #         rospy.loginfo("Navigating Case 2a")
+                #         rospy.loginfo("Getting to exact pose")
+                #         self.current_target = o_node["name"]
+                #         inf = Pose()
+                #         inf.position.x = g_node["pose"]["position"]["x"]
+                #         inf.position.y = g_node["pose"]["position"]["y"]
+                #         inf.position.z = g_node["pose"]["position"]["z"]
+                #         inf.orientation.w = g_node["pose"]["orientation"]["w"]
+                #         inf.orientation.x = g_node["pose"]["orientation"]["x"]
+                #         inf.orientation.y = g_node["pose"]["orientation"]["y"]
+                #         inf.orientation.z = g_node["pose"]["orientation"]["z"]
+                #         result, inc = self.monitored_navigation(inf, action_server)
+                #         rospy.loginfo("going to waypoint in node resulted in")
+                #         print result
+                #         if not result:
+                #             inc = 1
+                #         rospy.loginfo("Navigating Case 2a -> res: %d", inc)
+                # else:
+                rospy.loginfo("Navigating Case 2")
+                rospy.loginfo("Target or Origin Nodes were not found on Map")
+                self.cancelled = True
+                result = False
+                inc = 1
+                rospy.loginfo("Navigating Case 3a -> res: %d", inc)
             tries += inc
             rospy.loginfo("Navigating next try: %d", tries)
 
@@ -513,7 +524,7 @@ class TopologicalNavServer(object):
             self._as.publish_feedback(self._feedback)
             self._as.set_succeeded(self._result)
         else:
-            if self.preempted == False:
+            if not self.preempted:
                 self._result.success = result
                 self._feedback.route = self.current_node
                 self._as.publish_feedback(self._feedback)
@@ -522,6 +533,28 @@ class TopologicalNavServer(object):
             else:
                 self._result.success = False
                 self._as.set_preempted(self._result)
+
+
+    """
+    Enforce navigable route
+
+    Enforces the route to always contain the initial edge that leads the robot to the first node in the given route.
+    In other words, avoid that the route contains an initial edge that is too far from the robot pose. 
+    """
+    def enforce_navigable_route(self, route, target_node):
+
+        rospy.loginfo("Current route {} ".format(route))
+        # if self.current_node == "none":
+        if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
+            first_node = route.source[0] if len(route.source) > 0 else target_node
+            for edge_id in self.closest_edges.edge_ids:
+                if edge_id.endswith(first_node):
+                    route.source.insert(0, edge_id.split("_")[0])
+                    route.edge_id.insert(0, edge_id)
+                    break
+                
+        rospy.loginfo("Modified route {}".format(route))
+        return route
 
     """
      Follow Route tmap2
@@ -689,9 +722,8 @@ class TopologicalNavServer(object):
                 not_fatal = False
                 nav_ok = False
 
-            if self.stat is not None:
-                self.stat.set_ended(self.current_node)
-            dt_text = self.stat.get_finish_time_str()
+            self.stat.set_ended(self.current_node)
+            dt_text=self.stat.get_finish_time_str()
             operation_time = self.stat.operation_time
             time_to_wp = self.stat.time_to_wp
 
@@ -820,7 +852,7 @@ class TopologicalNavServer(object):
         ):
             status = self.monNavClient.get_state()
             rospy.sleep(rospy.Duration.from_sec(0.01))
-        # rospy.loginfo(str(status))
+            # rospy.loginfo(str(status))
         # print status
         res = self.monNavClient.get_result()
         #        print "--------------RESULT------------"

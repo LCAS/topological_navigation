@@ -6,9 +6,13 @@ import strands_navigation_msgs.srv
 
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
+from topological_navigation_msgs.msg import ClosestEdges
 
 from topological_navigation.tmap_utils import *
+from topological_navigation.point2line import pnt2line
+
 from threading import Thread
+from numpy import round
 
 
 class LocaliseByTopicSubscriber(object):
@@ -98,6 +102,9 @@ class TopologicalNavLoc(object):
         self.node="Unknown"
         self.wpstr="Unknown"
         self.cnstr="Unknown"
+        self.closest_edge_ids = []
+        self.closest_edge_dists = []
+        self.node_poses = {}
         
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         self.with_tags = wtags
@@ -105,6 +112,7 @@ class TopologicalNavLoc(object):
         self.subscribers=[]
         self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('current_node', String, latch=True, queue_size=1)
+        self.ce_pub = rospy.Publisher('closest_edges', ClosestEdges, latch=True, queue_size=1)
 
         self.force_check=True
         self.rec_map=False
@@ -129,7 +137,6 @@ class TopologicalNavLoc(object):
         rospy.loginfo("NO GO NODES: %s" %self.nogos)
         
         self.base_frame = rospy.get_param("~base_frame", "base_link")
-        self.tmap_frame = self.tmap["transformation"]["child"]
         
         rospy.loginfo("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
         self.listener = tf.TransformListener()
@@ -143,15 +150,39 @@ class TopologicalNavLoc(object):
         """
         This function returns the distance from each waypoint to a pose in an organised way
         """
-        distances=[]
-        for i in self.tmap["nodes"]:
-            d= get_distance_node_pose_from_tmap2(i, pose)
-            a={}
-            a['node'] = i
-            a['dist'] = d
+        distances = []
+        for node in self.tmap["nodes"]:
+            dist = get_distance_node_pose_from_tmap2(node, pose)
+            a = {}
+            a["node"] = node
+            a["dist"] = dist
             distances.append(a)
         
-        distances = sorted(distances, key=lambda k: k['dist'])
+        distances = sorted(distances, key=lambda k: k["dist"])
+        return distances
+    
+    
+    def get_edge_distances_to_pose(self, pose):
+        """
+        This function returns the distance from each edge to a pose in an organised way
+        """
+        pnt = (pose.position.x, pose.position.y, 0)
+        distances = []
+        
+        for node in self.tmap["nodes"]:
+            start = (node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0)
+            
+            for edge in node["node"]["edges"]:
+                dest_pose = self.node_poses[edge["node"]]
+                end = (dest_pose["position"]["x"], dest_pose["position"]["y"], 0)
+                dist,_ = pnt2line(pnt, start, end)
+                
+                a = {}
+                a["edge_id"] = edge["edge_id"]
+                a["dist"] = dist
+                distances.append(a)
+                 
+        distances = sorted(distances, key=lambda k: k["dist"])
         return distances
 
 
@@ -186,7 +217,14 @@ class TopologicalNavLoc(object):
                 self.distances = self.get_distances_to_pose(msg)
                 closeststr='none'
                 currentstr='none'
-    
+                
+                edge_distances = self.get_edge_distances_to_pose(msg)
+                
+                if len(edge_distances) > 1:
+                    closest_edges = edge_distances[:2]
+                else:
+                    closest_edges = edge_distances * 2
+                
                 not_loc=True
                 if self.loc_by_topic:
                     for i in self.loc_by_topic:
@@ -227,7 +265,7 @@ class TopologicalNavLoc(object):
                             not_loc=False
                         ind+=1
     
-                self.publishTopics(closeststr, currentstr)
+                self.publishTopics(closeststr, currentstr, closest_edges)
                 self.throttle=1
             else:
                 self.throttle +=1
@@ -235,18 +273,37 @@ class TopologicalNavLoc(object):
             self.rate.sleep()
 
 
-    def publishTopics(self, wpstr, cnstr) :
+    def publishTopics(self, wpstr, cnstr, closest_edges) :
+        
+        def pub_closest_edges(closest_edge_ids, closest_edge_dists):
+            msg = ClosestEdges()
+            msg.edge_ids = closest_edge_ids
+            msg.distances = closest_edge_dists
+            self.ce_pub.publish(msg)
+            
+        closest_edge_ids = [edge["edge_id"] for edge in closest_edges]
+        closest_edge_dists = list(round([edge["dist"] for edge in closest_edges], 3))
+        if len(set(closest_edge_dists)) == 1:
+            closest_edge_ids.sort()
+        
         if self.only_latched :
             if self.wpstr != wpstr:
                 self.wp_pub.publish(wpstr)
             if self.cnstr != cnstr:
                 self.cn_pub.publish(cnstr)
+            if self.closest_edge_ids != closest_edge_ids \
+                or self.closest_edge_dists != closest_edge_dists:
+                pub_closest_edges(closest_edge_ids, closest_edge_dists)
         else:
             self.wp_pub.publish(wpstr)
             self.cn_pub.publish(cnstr)
+            pub_closest_edges(closest_edge_ids, closest_edge_dists)
+            
         self.wpstr=wpstr
         self.cnstr=cnstr
-
+        self.closest_edge_ids = closest_edge_ids
+        self.closest_edge_dists = closest_edge_dists
+        
 
     def MapCallback(self, msg):
         """
@@ -255,11 +312,16 @@ class TopologicalNavLoc(object):
         self.names_by_topic=[]
         self.nodes_by_topic=[]
         self.nogos=[]
-        #print eval(msg.data)
 
         self.tmap = json.loads(msg.data) 
-        
         self.rec_map=True
+        
+        self.tmap_frame = self.tmap["transformation"]["child"]
+        
+        self.node_poses = {}
+        for node in self.tmap["nodes"]:
+            self.node_poses[node["node"]["name"]] = node["node"]["pose"]
+            
         self.update_loc_by_topic()
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         if self.with_tags:

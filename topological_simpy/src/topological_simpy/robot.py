@@ -138,6 +138,7 @@ class TopoMap():
 
         self._node_log = {}
         self._hold = {}
+        self.active_nodes = []   # keep all the occupied nodes for checking that any two robots requesting each other's nodes
 
         self._has_queue_ = None
         self.req_ret = {}  # bool, request return: mode of the node requested
@@ -181,12 +182,44 @@ class TopoMap():
         """
         self._hold[n]['hold_time'].append(hold_t)
 
+    def cancel_hold_time(self, n, hold_t):
+        """
+        Cancel the hold_time that just be set
+        """
+        if self._hold[n]['hold_time'][-1] is hold_t:
+            self._hold[n]['hold_time'].pop()
+
     def get_wait_time(self, n):
         """
         Get the time that the robot should wait before occupy the node
         """
-        if self._hold[n]['wait_time'][-1] is not None:
-            return self._hold[n]['wait_time'][-1]
+        if self._hold[n]['wait_time'][-1] is not None:   # if self.req_ret[n] is 1: wait_time = 0
+            if self.req_ret[n] is 2:
+                now = self.env.now
+                queue_time = 0
+                start_moment = self._hold[n]['start_moment'][-1]
+                wait_time = queue_time + self._hold[n]['hold_time'][-2] - (now - start_moment)  # to be fixed TODO
+                if wait_time < 0:
+                    print('!!! %s has been hold more than expected! two robots waiting for each other to release?'
+                          % n)
+                    wait_time = 10000
+            elif self.req_ret[n] is 3:
+                now = self.env.now
+                queue_time = self._hold[n]['hold_time'][-2]  # the last robot's hold_time
+                start_moment = self._hold[n]['start_moment'][-1]
+                wait_time = self._hold[n]['hold_time'][-3] + queue_time - (now - start_moment)
+            elif self.req_ret[n] is 4:  # 2 robots in the queue, todo: n robots in the queue?
+                now = self.env.now
+                queue_time = self._hold[n]['hold_time'][-3] + self._hold[n]['hold_time'][-2]
+                start_moment = self._hold[n]['start_moment'][-1]
+                wait_time = self._hold[n]['hold_time'][-4] + queue_time - (now - start_moment)
+
+            #self._hold[n]['now'].append(now)
+            #self._hold[n]['queue_time'].append(queue_time)
+            #self._hold[n]['start_moment'].append(start_moment)
+            #self._hold[n]['wait_time'].append(wait_time)
+        #    self._hold[n]['wait_time'][-1] = wait_time
+            return wait_time
 
     def adj_hold_info(self, node_name, hold_time, req_ret):
         """
@@ -195,23 +228,25 @@ class TopoMap():
         if req_ret is 1:
             for r in self._hold[node_name]:
                 self._hold[node_name][r].pop(0)
-        #    self.req_ret[node_name] = self.req_ret[node_name] - 1
+            self.req_ret[node_name] = self.req_ret[node_name] - 1  # TODO delete
             return self._hold    
                 
         elif req_ret is 2:
             for r in self._hold[node_name]:
                 self._hold[node_name][r].pop(0)
-            self._hold[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
-            self._hold[node_name]['now'][0] = self.env.now
-        #    self.req_ret[node_name] = self.req_ret[node_name] - 1
+            if len(self._hold[node_name]['start_moment']):
+                self._hold[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
+                self._hold[node_name]['now'][0] = self.env.now
+            self.req_ret[node_name] = self.req_ret[node_name] - 1
             return self._hold           
         
         elif req_ret is 3:
             for r in self._hold[node_name]:
                 self._hold[node_name][r].pop(0)
-            self._hold[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
-            self._hold[node_name]['now'][0] = self.env.now
-        #    self.req_ret[node_name] = self.req_ret[node_name] - 1
+            if len(self._hold[node_name]['start_moment']):
+                self._hold[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
+                self._hold[node_name]['now'][0] = self.env.now
+            self.req_ret[node_name] = self.req_ret[node_name] - 1
             return self._hold
 
     def put_hold_info(self, node_name, hold_time, req_ret):
@@ -377,6 +412,11 @@ class TopoMap():
         print("*% 4d:    nodes     %s      are occupied" % (self.env.now, sorted(occupied_nodes)))
         return occupied_nodes
 
+    def keep_active_node_info(self, robot_name, cur_node, req_node):
+        connected_nodes = {'robot_name': robot_name, 'cur_node': cur_node, 'req_node': req_node}
+        self.active_nodes.append(connected_nodes)
+        return connected_nodes
+
 
 class Robot():
     def __init__(self, name, tmap, initial_node='A'):
@@ -394,6 +434,10 @@ class Robot():
                       'time_cost': [],
                       'dist_cost': [],
                       'route': []}
+
+        # self.connected_nodes = {'robot_name': '',
+        #                         'cur_node': '',
+        #                         'req_node': ''}
 
         if self._tmap.env:
             self._tmap.req_ret[initial_node] = 1
@@ -433,22 +477,32 @@ class Robot():
                 if node_state is 1:
                     yield self._tmap.request_node(n, force_req=False)
                 else:
-                    print('%s is occupied, node state: %d' % (n, node_state))
-                    #TODO: compare new_cost and old_cost before request --> force_req and req_ret
-                    # yield self._tmap.request_node(n, force_req)
-                    new_route = self.get_route_nodes(self._current_node, target, n, False)  # avoid node n
-                    new_route_dc = self._tmap.route_dist_cost([self._current_node] + new_route)  # dc: distance cost
+                    print('%s: %s is occupied, node state: %d' % (self._name, n, node_state))
+                    new_route = self.get_route_nodes(self._current_node, target, n, False)  # avoid node n  TODO: if not exist dist_cost = 100000
+                    if new_route is None:
+                        new_route_dc = 100000
+                    else:
+                        new_route_dc = self._tmap.route_dist_cost([self._current_node] + new_route)  # dc: distance cost
                     wait_time = self._tmap.get_wait_time(n)   # TODO: fix wait_time
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost
-                    if self._name == 'Hurga' and n =='WayPoint74':  # temporal testing TODO: generalise later
+                    if self._name == 'Hurga' and n == 'WayPoint74':  # temporal testing TODO: generalise later
                         old_route_cost = 1000
+                    print('old_route_cost = %d, new_route_dc = %d' % (old_route_cost, new_route_dc))
                     if old_route_cost > new_route_dc:
                         self.route_nodes = new_route
+                        self._tmap.cancel_hold_time(n, hold_time)   # cancel the hold_time just set
                         idx = 0
+                        print('*** %s go NEW route: %s' % (self._name, self.route_nodes))
                         continue
+                    # elif self.is_couple:
+                    #     self._tmap.keep_active_node_info(self._name, self._current_node, n)
+                    #     print('Two robots are requesting each others node, choose low cost new route')
                     else:
+                        print('XXX %s wait %d, use old route %s' % (self._name, wait_time, [self._current_node] + self.route_nodes[idx:]))
                         yield self._tmap.request_node(n, force_req=True)
+
+
 
                 if self._env.now - start_wait > 0:
                     # The time that the robot has waited since requesting
@@ -467,7 +521,7 @@ class Robot():
             try:
                 time_to_travel = ceil(d_cur / (2 * self._speed_m_s))
                 yield self._tmap.env.timeout(time_to_travel)
-                yield self._tmap.release_node(self._current_node)  # TODO request = False?
+                yield self._tmap.release_node(self._current_node)
                 # The robot is reaching at the half way between the current node and next node
                 print('% 5d:  %s ---> %s reaching half way ---> %s' % (
                     self._tmap.env.now, self._current_node, self._name, n))
@@ -524,7 +578,7 @@ class Robot():
                     route = self._tmap.get_avoiding_route(cur_node, target, avoid_node)
 
                 if route is None:
-                    return [cur_node]
+                    return None   # [cur_node]
                 else:
                     r = route.source[1:]
                     r.append(target)
@@ -557,6 +611,29 @@ class Robot():
         self._cost['route'].append(node_name)
 
         return self._cost
+
+
+    # def is_couple(self):
+    #     """
+    #     Looking for couples of robots who are requesting each other's current node
+    #     """
+    #     for idx1, c in enumerate()
+
+# class RobotInfo():
+#     def __init__(self):
+#         self.robot_info = {'robot_name': '',
+#
+#
+#         }
+#
+#         self.robot_info['Hugar']['cur_node'] = 'WayPoint1'
+#         self.robot_info['Hugar']['req_node'] = 'WayPoint10'
+#         self.robot_info['Foo']['cur_node'] = 'WayPoint2'
+#         self.robot_info['Foo']['req_node'] = 'WayPoint20'
+#         self.robot_info['Foo2']['cur_node'] = 'WayPoint3'
+#         self.robot_info['Foo2']['req_node'] = 'WayPoint30'
+#
+
 
 
 def car(name, env, gas_station, fuel_pump):

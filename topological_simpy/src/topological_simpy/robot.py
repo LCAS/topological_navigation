@@ -138,10 +138,10 @@ class TopoMap():
 
         self._node_log = {}
         self._hold = {}
-        self.active_nodes = []   # keep all the occupied nodes for checking that any two robots requesting each other's nodes
+        self.active_nodes = {}   # keep all the occupied nodes for checking that any two robots requesting each other's nodes
 
-        self._has_queue_ = None
         self.req_ret = {}  # bool, request return: mode of the node requested
+        self.jam = []  # the robot that in traffic jam
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max
@@ -375,23 +375,29 @@ class TopoMap():
         else:
             return self.env.timeout(0)
 
-    def request_node(self, node, force_req=False):
+    def request_node(self, robot_name, node):
         """
         Put one robot into the _node_res, i.e., the node resource is occupied by the robot.
         Note: the robot starts requesting the next route node when the robot reaches the current node
         :param node: string, the node to be requested
-        :param force_req: bool, - True: request anyway no matter the node is occupied or not
-                                 - False: do not request the node if the node is occupied
+        :param robot_name: string, robot name
         """
+        self.add_act_node(robot_name, node)
+        if self.is_in_tra_jam(robot_name):
+            print('!!! %s is in traffic jam, prepare to change route' % robot_name)
+            self.pop_free_node(robot_name, node, jam=True)  # pop the node planned to request
+            self.add_robot_to_jam(robot_name, node)
+            return self.env.timeout(0)
         if self.env:
             return self._node_res[node].put(1)
         else:
             return self.env.timeout(0)
 
-    def release_node(self, node):
+    def release_node(self, robot_name, node):
         """
         Get the robot out of the _node_res, i.e., the node resource is released, the robot leaves this node
         """
+        self.pop_free_node(robot_name, node)
         if self.env:
             if self._node_res[node].level > 0:
                 return self._node_res[node].get(1)
@@ -412,10 +418,65 @@ class TopoMap():
         print("*% 4d:    nodes     %s      are occupied" % (self.env.now, sorted(occupied_nodes)))
         return occupied_nodes
 
-    def keep_active_node_info(self, robot_name, cur_node, req_node):
-        connected_nodes = {'robot_name': robot_name, 'cur_node': cur_node, 'req_node': req_node}
-        self.active_nodes.append(connected_nodes)
-        return connected_nodes
+    def add_robot_to_jam(self, robot_name, node):
+        """
+        Add active nodes to the shared list active_nodes
+        """
+        self.jam.append([robot_name, node])
+        return self.jam
+
+    def add_act_node(self, robot_name, node):
+        """
+        Add active nodes to the shared list active_nodes
+        """
+        self.active_nodes[robot_name].append(node)
+        return self.active_nodes
+
+    def pop_free_node(self, robot_name, cur_node, jam=False):   # TODO
+        if self.active_nodes[robot_name]:
+            if jam and cur_node == self.active_nodes[robot_name].pop(-1):
+                return True
+            elif cur_node == self.active_nodes[robot_name].pop(0):
+                return True
+        else:
+            print("Robot %s is not hold by any node" % robot_name)
+            return False
+
+    def get_couples(self, active_nodes):
+        """
+        Find two robots that are requesting each other's node, return all the couple nodes
+        """
+        couple_nodes = []
+        for a in active_nodes:
+            if len(active_nodes[a]) == 2:
+                for b in active_nodes:
+                    if len(active_nodes[b]) == 2:
+                        if a != b:
+                            if active_nodes[a][0] == active_nodes[b][1] and active_nodes[a][1] == active_nodes[b][0]:
+                                couple_nodes.append([a, b])
+            # elif len(active_nodes[a]) > 2:
+            #     print('Robot %s occupies more than 2 nodes!' % a)
+            #     return False
+            # elif len(active_nodes[a]) < 2:
+            #     print('Robot %s occupies only %d node!' % (a, len(active_nodes[a])))
+            #     return False
+        if couple_nodes:
+            return couple_nodes
+        else:
+            return False
+
+    def is_in_tra_jam(self, robot_name):
+        """
+        Check if the robot is in the traffic jam, waiting for each other
+        """
+        tra_jam = self.get_couples(self.active_nodes)
+        if tra_jam:
+            for c in tra_jam:
+                for r in c:
+                    if robot_name == r:
+                        return True
+        else:
+            return False
 
 
 class Robot():
@@ -435,14 +496,12 @@ class Robot():
                       'dist_cost': [],
                       'route': []}
 
-        # self.connected_nodes = {'robot_name': '',
-        #                         'cur_node': '',
-        #                         'req_node': ''}
-
         if self._tmap.env:
             self._tmap.req_ret[initial_node] = 1
             self._tmap.set_hold_time(initial_node, self.init_hold_t)
-            self._tmap.request_node(initial_node)
+            self._tmap.active_nodes[self._name] = []
+            self._tmap.request_node(self._name, initial_node)
+            #self._tmap.add_act_node(self._name, initial_node)
             #self._tmap.put_hold_info(self._name, initial_node, self.init_hold_t, self._tmap.req_ret[initial_node])
             # self._tmap._node_res[initial_node].count = 1
             # print(self._current_node)
@@ -475,7 +534,8 @@ class Robot():
                 self._tmap.set_hold_time(n, hold_time)
                 node_state = self._tmap.get_node_state(n)   # TODO: release node --> reset self.req_ret[n]?
                 if node_state is 1:
-                    yield self._tmap.request_node(n, force_req=False)
+                    yield self._tmap.request_node(self._name, n)
+                    print('active nodes connected by robots: %s ' % self._tmap.active_nodes)
                 else:
                     print('%s: %s is occupied, node state: %d' % (self._name, n, node_state))
                     new_route = self.get_route_nodes(self._current_node, target, n, False)  # avoid node n  TODO: if not exist dist_cost = 100000
@@ -486,8 +546,8 @@ class Robot():
                     wait_time = self._tmap.get_wait_time(n)   # TODO: fix wait_time
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost
-                    if self._name == 'Hurga' and n == 'WayPoint74':  # temporal testing TODO: generalise later
-                        old_route_cost = 1000
+                    # if self._name == 'Hurga' and n == 'WayPoint74':  # temporal testing TODO: generalise later
+                    #     old_route_cost = 1000
                     print('old_route_cost = %d, new_route_dc = %d' % (old_route_cost, new_route_dc))
                     if old_route_cost > new_route_dc:
                         self.route_nodes = new_route
@@ -495,12 +555,26 @@ class Robot():
                         idx = 0
                         print('*** %s go NEW route: %s' % (self._name, self.route_nodes))
                         continue
-                    # elif self.is_couple:
-                    #     self._tmap.keep_active_node_info(self._name, self._current_node, n)
+                    # elif self._tmap.is_in_tra_jam(self._name):
+                    #     #self._tmap.keep_active_node_info(self._name, self._current_node, n)
                     #     print('Two robots are requesting each others node, choose low cost new route')
                     else:
                         print('XXX %s wait %d, use old route %s' % (self._name, wait_time, [self._current_node] + self.route_nodes[idx:]))
-                        yield self._tmap.request_node(n, force_req=True)
+                        yield self._tmap.request_node(self._name, n)
+                        for j in self._tmap.jam:
+                            for r in j:
+                                if r == self._name:
+                                    print('%s is in traffic jam, change route now' % self._name)
+                                    self.route_nodes = new_route
+                                    self._tmap.cancel_hold_time(n, hold_time)   # cancel the hold_time just set
+                                    idx = 0
+                                    print('*** %s go NEW route: %s' % (self._name, self.route_nodes))
+                                    break
+                        if idx == 0:
+                            continue
+                        else:
+                            pass
+                       # print('active nodes connected by robots: %s ' % self._tmap.active_nodes)
 
 
 
@@ -521,7 +595,8 @@ class Robot():
             try:
                 time_to_travel = ceil(d_cur / (2 * self._speed_m_s))
                 yield self._tmap.env.timeout(time_to_travel)
-                yield self._tmap.release_node(self._current_node)
+                yield self._tmap.release_node(self._name, self._current_node)
+                #self._tmap.pop_free_node(self._name, self._current_node)
                 # The robot is reaching at the half way between the current node and next node
                 print('% 5d:  %s ---> %s reaching half way ---> %s' % (
                     self._tmap.env.now, self._current_node, self._name, n))
@@ -536,7 +611,7 @@ class Robot():
                     self._current_node, n
                 ))
                 print('% 5d: @@@ %s release previously acquired target node %s' % (self._env.now, self._name, n))
-                yield self._tmap.release_node(n)
+                yield self._tmap.release_node(self._name, n)
                 interrupted = True
                 break
             idx = idx + 1  # go to next while loop

@@ -69,7 +69,7 @@ while env.peek() < until:
     #         'ACTIVE' if r._active_process and r._active_process.is_alive else 'IDLE'
     #     ))
     env.step()
-print(tmap._node_log)
+#print(tmap._node_log)
 
 # write the node_log to file
 now = datetime.now()

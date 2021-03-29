@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import itertools
-import random
 import simpy
 from yaml import safe_load
 from topological_navigation.route_search2 import TopologicalRouteSearch2
@@ -43,6 +41,7 @@ def patch_resource(resource, pre=None, post=None):
     for name in ['put', 'get', 'request', 'release']:
         if hasattr(resource, name):
             setattr(resource, name, get_wrapper(getattr(resource, name)))
+
 
 def patch_res_put(resource, pre=None, post=None):
     """Patch *resource* so that it calls the callable *pre* before each
@@ -173,7 +172,7 @@ class TopoMap():
         :param resource: SimPy resource Container
         """
         self.adj_hold_info(node, self._hold[node]['hold_time'][-1], self.req_ret[node])
-    
+
     def set_hold_time(self, n, hold_t):
         """
         Set the time that the robot plan to occupy the node
@@ -194,32 +193,31 @@ class TopoMap():
             self._hold[n]['hold_time'].pop()
             return True
 
-    def get_wait_time(self, n):
+    def get_wait_time(self, node):
         """
         Get the time that the robot should wait before occupy the node
-        :param n: string, topological node name
+        :param node: string, topological node name
         return: integer, wait time that the robot should wait before occupying the node
         """
-        if self._hold[n]['wait_time'][-1] is not None:   # if self.req_ret[n] is 1: wait_time = 0
-            if self.req_ret[n] is 2:
+        if self._hold[node]['wait_time'][-1] is not None:   # if self.req_ret[n] is 1: wait_time = 0
+            now = self.env.now
+            wait_time = 0  # self.req_ret[n] == 1
+            queue_time = 0
+            start_moment = self._hold[node]['start_moment'][-1]
+            if self.req_ret[node] is 2:
                 now = self.env.now
                 queue_time = 0
-                start_moment = self._hold[n]['start_moment'][-1]
-                wait_time = queue_time + self._hold[n]['hold_time'][-2] - (now - start_moment)
-                if wait_time < 0:
-                    print('!%4d: %s has been hold longer than expected! Extend the wait time as before' % (
-                        self.env.now, n))
-                    wait_time = self._hold[n]['hold_time'][-2]  # Reset the wait time
-            elif self.req_ret[n] is 3:
-                now = self.env.now
-                queue_time = self._hold[n]['hold_time'][-2]  # the last robot's hold_time
-                start_moment = self._hold[n]['start_moment'][-1]
-                wait_time = self._hold[n]['hold_time'][-3] + queue_time - (now - start_moment)
-            elif self.req_ret[n] is 4:  # 2 robots in the queue, todo: n robots in the queue?
-                now = self.env.now
-                queue_time = self._hold[n]['hold_time'][-3] + self._hold[n]['hold_time'][-2]
-                start_moment = self._hold[n]['start_moment'][-1]
-                wait_time = self._hold[n]['hold_time'][-4] + queue_time - (now - start_moment)
+                wait_time = queue_time + self._hold[node]['hold_time'][-2] - (now - start_moment)
+            elif self.req_ret[node] > 2:
+                num = self.req_ret[node] - 2
+                for i in range(num):
+                    queue_time = queue_time + self._hold[node]['hold_time'][-2-i]
+                wait_time = self._hold[node]['hold_time'][-2-num] + queue_time - (now - start_moment)
+            if wait_time < 0:
+                print('!%4d: %s has held longer than expected! Extend the wait time as before' % (
+                    self.env.now, node))
+                wait_time = self._hold[node]['hold_time'][-2]  # Reset the wait time
+
             return wait_time
 
     def adj_hold_info(self, node_name, hold_time, req_ret):
@@ -235,18 +233,9 @@ class TopoMap():
             for r in self._hold[node_name]:
                 self._hold[node_name][r].pop(0)
             self.req_ret[node_name] = self.req_ret[node_name] - 1
-            return self._hold    
-                
-        elif req_ret is 2:
-            for r in self._hold[node_name]:
-                self._hold[node_name][r].pop(0)
-            if len(self._hold[node_name]['start_moment']):
-                self._hold[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
-                self._hold[node_name]['now'][0] = self.env.now
-            self.req_ret[node_name] = self.req_ret[node_name] - 1
-            return self._hold           
-        
-        elif req_ret is 3:
+            return self._hold
+
+        elif req_ret > 1:
             for r in self._hold[node_name]:
                 self._hold[node_name][r].pop(0)
             if len(self._hold[node_name]['start_moment']):
@@ -254,6 +243,15 @@ class TopoMap():
                 self._hold[node_name]['now'][0] = self.env.now
             self.req_ret[node_name] = self.req_ret[node_name] - 1
             return self._hold
+
+        # elif req_ret is 3:
+        #     for r in self._hold[node_name]:
+        #         self._hold[node_name][r].pop(0)
+        #     if len(self._hold[node_name]['start_moment']):
+        #         self._hold[node_name]['start_moment'][-1] = self._node_log[node_name][-1][0]
+        #         self._hold[node_name]['now'][0] = self.env.now
+        #     self.req_ret[node_name] = self.req_ret[node_name] - 1
+        #     return self._hold
 
     def put_hold_info(self, node_name, hold_time, req_ret):
         """
@@ -268,31 +266,33 @@ class TopoMap():
         hold_time: the time that the robot will hold the node if the robot occupies the node, not used at present
         start_moment: the moment that the current occupied robot started occupying the node
         """
+        queue_time = 0
+        wait_time = 0
         if req_ret is 1:  # the robot himself occupies the node
             now = self.env.now
             start_moment = now
-            queue_time = 0
-            wait_time = 0
 
-        elif req_ret is 2:
+        # elif req_ret is 2:
+        #     now = self.env.now
+        #     queue_time = 0
+        #     start_moment = self._hold[node_name]['start_moment'][-1]
+        #     wait_time = self._hold[node_name]['hold_time'][-1] - (now - start_moment)
+
+        # elif req_ret is 3:
+        #     now = self.env.now
+        #     queue_time = self._hold[node_name]['hold_time'][-1]  # the last robot's hold_time
+        #     start_moment = self._hold[node_name]['start_moment'][-1]
+        #     wait_time = self._hold[node_name]['hold_time'][-2] + queue_time - (now - start_moment)
+
+        elif req_ret > 1:
+            n = req_ret - 2
             now = self.env.now
-            queue_time = 0
+            for i in range(n):
+                queue_time = queue_time + self._hold[node_name]['hold_time'][-i-1]
             start_moment = self._hold[node_name]['start_moment'][-1]
-            wait_time = self._hold[node_name]['hold_time'][-1] - (now - start_moment)
+            wait_time = self._hold[node_name]['hold_time'][-n-1] + queue_time - (now - start_moment)
 
-        elif req_ret is 3:
-            now = self.env.now
-            queue_time = self._hold[node_name]['hold_time'][-1]  # the last robot's hold_time
-            start_moment = self._hold[node_name]['start_moment'][-1]
-            wait_time = self._hold[node_name]['hold_time'][-2] + queue_time - (now - start_moment)
-
-        elif req_ret is 4:  # 2 robots in the queue, todo: n robots in the queue?
-            now = self.env.now
-            queue_time = self._hold[node_name]['hold_time'][-2] + self._hold[node_name]['hold_time'][-1]
-            start_moment = self._hold[node_name]['start_moment'][-1]
-            wait_time = self._hold[node_name]['hold_time'][-3] + queue_time - (now - start_moment)
-
-        self._hold[node_name]['now'].append(now)
+        self._hold[node_name]['now'].append(self.env.now)
         self._hold[node_name]['queue_time'].append(queue_time)
         self._hold[node_name]['start_moment'].append(start_moment)
         self._hold[node_name]['wait_time'].append(wait_time)
@@ -537,6 +537,7 @@ class TopoMap():
         return self._node_log
 
 
+# noinspection PyBroadException
 class Robot():
     def __init__(self, name, tmap, initial_node='A'):
         self._current_node = initial_node
@@ -581,10 +582,10 @@ class Robot():
             hold_time = time_to_travel + time_to_travel_next  # the time node will hold the robot
             print('% 5d:  %s traversing route from node %10s to node %10s (distance: %f, travel time: %d, hold time: %d)'
                   % (self._tmap.env.now, self._name, self._current_node, n, d_cur, time_to_travel, hold_time))
-            
+
             try:
                 # The node to be requested may be occupied by other robots, mark the time when requesting
-                start_wait = self._env.now 
+                start_wait = self._env.now
                 self._tmap.set_hold_time(n, hold_time)
                 node_state = self._tmap.get_node_state(n)
                 if node_state is 1:
@@ -630,7 +631,7 @@ class Robot():
                     print('$% 4d:  %s has lock on %s after %d' % (
                         self._env.now, self._name, n,
                         self._env.now - start_wait))
-            except:
+            except Exception:
                 # Not triggered when requesting an occupied node!
                 # Not triggered when the robot has a goal running and be assigned a new goal
                 print('% 5d: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
@@ -732,7 +733,6 @@ class Robot():
         :param node_name: string, the node will be traversed
         return: dictionary, cost info
         """
-        robot_name = self._name
         dist_cost_total = 0
         time_wait_total = 0
         dist_cost = float('{:.2f}'.format(dist_cost))

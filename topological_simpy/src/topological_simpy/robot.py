@@ -542,6 +542,10 @@ class TopoMap():
         else:
             return False
 
+    @property
+    def node_log(self):
+        return self._node_log
+
 
 class Robot():
     def __init__(self, name, tmap, initial_node='A'):
@@ -554,16 +558,20 @@ class Robot():
         self.init_hold_t = 5  # initial hold time, for first node
         self._cost = {'robot_name': [],
                       'time_now': [],
-                      'cost': [],
-                      'time_cost': [],
+                      'time_wait': [],
                       'dist_cost': [],
-                      'route': []}
+                      'route': [],
+                      'dist_cost_total': [],
+                      'time_wait_total': [],
+                      'time_cost_total': [],
+                      'cost_total': []}
 
         if self._tmap.env:
             self._tmap.req_ret[initial_node] = 1
             self._tmap.set_hold_time(initial_node, self.init_hold_t)
             self._tmap.active_nodes[self._name] = []
             self._tmap.request_node(self._name, initial_node)
+            self.log_cost(self._name, 0, 0, initial_node)
 
     def _goto(self, target):
         route_nodes = self.get_route_nodes(self._current_node, target)
@@ -624,10 +632,11 @@ class Robot():
                                     print('^% 4d: %s go NEW route: %s' % (self._env.now, self._name, route_nodes))
                                     break
                         if idx == 0:
+                            self.log_cost(self._name, 0, 0, 'CHANGE ROUTE')  # for monitor
                             continue  # change to new route
                         else:
                             pass  # travel to the requested node
-                if self._env.now - start_wait > 0: # The time that the robot has waited since requesting
+                if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting
                     print('$% 4d:  %s has lock on %s after %d' % (
                         self._env.now, self._name, n,
                         self._env.now - start_wait))
@@ -652,12 +661,14 @@ class Robot():
                 remain_time_to_travel = ceil(d_cur / self._speed_m_s) - time_to_travel
                 yield self._tmap.env.timeout(remain_time_to_travel)
                 print('@% 4d:  %s reached node %s' % (self._tmap.env.now, self._name, n))
+                self.log_cost(self._name, self._env.now - start_wait, d_cur, n)  # for monitor
                 yield self._tmap.env.timeout(0)
             except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
                 print('% 5d: %s INTERRUPTED while travelling from node %s going to node %s' % (
                     self._tmap.env.now, self._name,
                     self._current_node, n
                 ))
+                self.log_cost(self._name, 0, 0, 'INTERRUPTED')  # for monitor
                 print('% 5d: @@@ %s release previously acquired target node %s' % (self._env.now, self._name, n))
                 yield self._tmap.release_node(self._name, n)
                 interrupted = True
@@ -667,8 +678,10 @@ class Robot():
         if interrupted:
             # When the robot has a goal running and be assigned a new goal node
             print('% 5d: %s ABORTED at %s' % (self._tmap.env.now, self._name, self._current_node))
+            self.log_cost(self._name, 0, 0, 'ABORTED')  # for monitor
         else:
             print('.% 4d: %s COMPLETED at %s' % (self._tmap.env.now, self._name, self._current_node))
+            self.log_cost(self._name, 0, 0, 'COMPLETED')  # for monitor
 
     def goto(self, target):
         """
@@ -720,22 +733,39 @@ class Robot():
         """
         return self._speed_m_s*waiting_time
 
-    def update_cost(self, time_cost, route_nodes, node_name):
+    def log_cost(self, robot_name, time_wait, dist_cost, node_name):
         """
         Update the time and distance cost
-        :param time_cost: float, waiting time cost
-        :param route_nodes: string list, the route robot will be traversing
-        :param node_name: string, the node traversed
-        return: dictionary
+        :param robot_name: string, robot name
+        :param time_wait: integer, waiting time before occupy the requested node
+        :param dist_cost: float, the distance from current node to next node
+        :param node_name: string, the node will be traversed
+        return: dictionary, cost info
         """
-        dist_cost = self._tmap.route_dist_cost(route_nodes)
-        cost = dist_cost + time_cost
-        self._cost['robot_name'].append(self._name)
+        robot_name = self._name
+        dist_cost_total = 0
+        time_wait_total = 0
+        dist_cost = float('{:.2f}'.format(dist_cost))
+        self._cost['robot_name'].append(robot_name)
         self._cost['time_now'].append(self._env.now)
-        self._cost['time_cost'].append(time_cost)
+        self._cost['time_wait'].append(time_wait)
         self._cost['dist_cost'].append(dist_cost)
-        self._cost['cost'].append(cost)
         self._cost['route'].append(node_name)
+        for n in self._cost['dist_cost']:
+            dist_cost_total = dist_cost_total + n
+        dist_cost_total = float('{:.2f}'.format(dist_cost_total))
+        self._cost['dist_cost_total'].append(dist_cost_total)
+        for n in self._cost['time_wait']:
+            time_wait_total = time_wait_total + n
+        time_cost_total = float('{:.2f}'.format(self.time_to_dist_cost(time_wait_total)))
+        self._cost['time_wait_total'].append(time_wait_total)
+        self._cost['time_cost_total'].append(time_cost_total)
+        cost_total = float('{:.2f}'.format(time_cost_total + dist_cost_total))
+        self._cost['cost_total'].append(cost_total)
+        return self._cost
+
+    @property
+    def cost(self):
         return self._cost
 
 

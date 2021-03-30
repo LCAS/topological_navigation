@@ -131,6 +131,7 @@ class TopoMap():
 
         self.req_ret = {}  # bool, request return: mode of the node requested
         self.jam = []  # the robot that in traffic jam
+        self.com_nodes = []  # the nodes that hold completed robots
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max
@@ -292,6 +293,11 @@ class TopoMap():
             start_moment = self._hold[node_name]['start_moment'][-1]
             wait_time = self._hold[node_name]['hold_time'][-n-1] + queue_time - (now - start_moment)
 
+        if wait_time < 0:
+            print('!%4d: %s has held longer than expected! Extend the wait time as before' % (
+                self.env.now, node_name))
+            wait_time = self._hold[node_name]['hold_time'][-2]  # Reset the wait time
+
         self._hold[node_name]['now'].append(self.env.now)
         self._hold[node_name]['queue_time'].append(queue_time)
         self._hold[node_name]['start_moment'].append(start_moment)
@@ -358,26 +364,44 @@ class TopoMap():
         self.route_planner = TopologicalRouteSearch2(self.t_map2)
         return self.route_planner.search_route(origin, target)
 
-    def delete_tmap_node(self, node_name):
+    def get_com_nodes(self):
+        """
+        Get nodes that robot completed and stops finally
+        """
+        return self.com_nodes
+
+    def add_com_node(self, node):
+        """
+        Add node to the com_nodes list
+        """
+        self.com_nodes.append(node)
+
+    def delete_tmap_node(self, node_names):
         """
         delete the node from the topological map, including the node and the edges pointed to the node
-        :param node_name: string, node name
+        :param node_names: string list, node names
+        return: topological map with deleted nodes
         """
-        for idx, n in enumerate(self.t_map['nodes']):
-            if n['node']['name'] == node_name:
-                children = get_conected_nodes_tmap2(n['node'])  # get all children names, type: string list
-                for child in children:
-                    node_idx = get_node_and_idx_from_tmap2(self.t_map, child)
-                    for e_idx, n_edge in enumerate(node_idx['node']['edges']):
-                        if n_edge['node'] == node_name:
-                            self.t_map['nodes'][node_idx['idx']]['node']['edges'].pop(e_idx)
-                pop_node = self.t_map['nodes'].pop(idx)
-                self.t_map2 = deepcopy(self.t_map)
-                self.t_map = deepcopy(self.tmap2)
-                break
-            elif idx == len(self.t_map['nodes']):
-                print('node %s not found' % node_name)
-                return self.env.timeout(0)
+        idx = 0
+        for node_name in node_names:
+            while idx < len(self.t_map['nodes']):
+                n = self.t_map['nodes'][idx]
+                if n['node']['name'] == node_name:
+                    children = get_conected_nodes_tmap2(n['node'])  # get all children names, type: string list
+                    for child in children:
+                        node_idx = get_node_and_idx_from_tmap2(self.t_map, child)
+                        for e_idx, n_edge in enumerate(node_idx['node']['edges']):
+                            if n_edge['node'] == node_name:
+                                self.t_map['nodes'][node_idx['idx']]['node']['edges'].pop(e_idx)
+                    self.t_map['nodes'].pop(idx)
+                    idx = 0
+                    break
+                idx = idx + 1
+        if self.t_map == self.tmap2:
+            print('%s not found in tmap' % node_names)
+        else:
+            self.t_map2 = deepcopy(self.t_map)
+            self.t_map = deepcopy(self.tmap2)
         return self.t_map2
 
     def get_node_state(self, node):
@@ -593,11 +617,22 @@ class Robot():
                     print('% 5d: active nodes connected to robots: %s ' % (self._env.now, self._tmap.active_nodes))
                 else:
                     print('% 5d: %s: %s is occupied, node state: %d' % (self._env.now, self._name, n, node_state))
-                    new_route = self.get_route_nodes(self._current_node, target, n, False)  # avoid node n
-                    if new_route is None:
-                        new_route_dc = 100000  # set a big cost that stops the robot considering a new route
-                    else:
+                    completed_nodes = self._tmap.get_com_nodes()
+                    avoid_nodes = [n] + completed_nodes
+                    avoid_nodes = list(set(avoid_nodes))  # ignore the duplicated nodes
+                    new_route = self.get_route_nodes(self._current_node, target, avoid_nodes)  # avoid node n
+
+                    # there is no new route available and all the other robots stop at their completed nodes
+                    if (new_route is None) and (len(completed_nodes) == len(self._tmap.active_nodes) - 1):
+                        print('?% 4d: %s: route %s blocked by other completed nodes - %s' % (
+                            self._env.now, self._name, route_nodes, completed_nodes
+                        ))
+                        interrupted = True
+                        break
+                    elif new_route:
                         new_route_dc = self._tmap.route_dist_cost([self._current_node] + new_route)  # dc: distance cost
+                    elif not new_route:
+                        new_route_dc = 10000   # no new route, return a big distance cost
                     wait_time = self._tmap.get_wait_time(n)
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost
@@ -673,6 +708,7 @@ class Robot():
         else:
             print('.% 4d: %s COMPLETED at %s' % (self._tmap.env.now, self._name, self._current_node))
             self.log_cost(self._name, 0, 0, 'COMPLETED')  # for monitor
+            self._tmap.add_com_node(self._current_node)
 
     def goto(self, target):
         """
@@ -688,14 +724,13 @@ class Robot():
         else:
             self._current_node = target
 
-    def get_route_nodes(self, cur_node, target, avoid_node=None, request_suc=True):
+    def get_route_nodes(self, cur_node, target, avoid_nodes=None):
         """
         get the topological route nodes from current node to target node, if request_node failed,
         then get the route nodes from current node to target node and avoid the failed node.
         :param cur_node: string, the current node traversed
         :param target: string, the target node that the robot will go to
-        :param avoid_node: string, the failed node when requesting
-        :param request_suc: bool, False - requesting node failed
+        :param avoid_nodes: string list, the nodes that won't be considered when planning route
         return: string list, route node names, from current node to target node
         """
         if self._tmap.env:
@@ -703,10 +738,10 @@ class Robot():
                 print('% 5d: %s is already at target %s' % (self._tmap.env.now, self._name, target))
                 return [target]
             else:
-                if request_suc:
+                if avoid_nodes is None:
                     route = self._tmap.get_route(cur_node, target)
                 else:
-                    route = self._tmap.get_avoiding_route(cur_node, target, avoid_node)
+                    route = self._tmap.get_avoiding_route(cur_node, target, avoid_nodes)
 
                 if route is None:
                     return None

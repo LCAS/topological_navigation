@@ -20,14 +20,15 @@ tmap = TopoMap('/home/zuyuan/catkin_ws/src/topological_navigation/topological_na
 # r2.goto('A')
 
 #robot_homes = ['dock_0', 'dock_1', 'dock_2']
-robot_homes = ['WayPoint131', 'WayPoint111', 'WayPoint66']
-target_nodes = ['WayPoint66', 'WayPoint142', 'WayPoint102']
+robot_homes = ['WayPoint131', 'WayPoint111', 'WayPoint66', 'WayPoint94']
+target_nodes = ['WayPoint66', 'WayPoint142', 'WayPoint102', 'WayPoint78']
 robots = [
     # Robot('Hurga', tmap, 'A'),
     # Robot('Foo', tmap, 'B'),
     Robot('Hurga', tmap, robot_homes[0]),
     Robot('Foo', tmap, robot_homes[1]),
-    Robot('Foo2', tmap, robot_homes[2])
+    Robot('Foo2', tmap, robot_homes[2]),
+    Robot('Thor', tmap, robot_homes[3])
 ]
 nodes = tmap.get_nodes()
 # print(nodes)
@@ -46,7 +47,7 @@ def goal_generator(env, robots, nodes, max_interval=50):
 
 
 def goal_generator2(env, robots, target_nodes):
-    for i in range(3):
+    for i in range(len(robots)):
         yield env.timeout(5)
         r = robots[i]
         print('+% 4d:    new goal for robot %10s: %s' % (env.now, r._name, target_nodes[i]))

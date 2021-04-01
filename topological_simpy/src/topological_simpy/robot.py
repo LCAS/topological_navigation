@@ -129,14 +129,14 @@ class TopoMap():
         self._hold = {}
         self.active_nodes = {}   # keep all the occupied nodes for checking that any two robots requesting each other's nodes
 
-        self.req_ret = {}  # bool, request return: mode of the node requested
+        self.req_ret = {}  # integer, request return: mode of the node requested
         self.jam = []  # the robot that in traffic jam
         self.com_nodes = []  # the nodes that hold completed robots
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max
                 self._node_log[n] = []
-                self.req_ret[n] = None
+                self.req_ret[n] = int()
                 self._hold[n] = {'now': [],
                                  'hold_time': [],
                                  'queue_time': [],

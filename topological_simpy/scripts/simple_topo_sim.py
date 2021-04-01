@@ -34,24 +34,24 @@ nodes = tmap.get_nodes()
 # print(nodes)
 
 
-def goal_generator(env, robots, nodes, max_interval=50):
+def goal_generator(_env, _robots, _nodes, max_interval=50):
     for i in itertools.count():
-        delay_time = randint(env.now + 1, env.now + max_interval)  # TODO decrease delay_time
+        delay_time = randint(_env.now + 1, _env.now + max_interval)  # TODO decrease delay_time
         #delay_time = randint(10, max_interval)  # TODO decrease delay_time
         print('.% 4d:    Generating goal after %6d seconds at %6d s' % (env.now, delay_time, env.now + delay_time))
-        yield env.timeout(delay_time)
-        r = choice(robots)
-        n = choice(nodes)
-        print('+% 4d:    new goal for robot %10s: %s' % (env.now, r._name, n))
-        r.goto(n)
+        yield _env.timeout(delay_time)
+        rob = choice(_robots)
+        n = choice(_nodes)
+        print('+% 4d:    new goal for robot %10s: %s' % (_env.now, rob._name, n))
+        rob.goto(n)
 
 
-def goal_generator2(env, robots, target_nodes):
-    for i in range(len(robots)):
-        yield env.timeout(5)
-        r = robots[i]
-        print('+% 4d:    new goal for robot %10s: %s' % (env.now, r._name, target_nodes[i]))
-        r.goto(target_nodes[i])
+def goal_generator2(_env, _robots, _target_nodes):
+    for i in range(len(_robots)):
+        yield _env.timeout(5)
+        rob = _robots[i]
+        print('+% 4d:    new goal for robot %10s: %s' % (_env.now, rob._name, _target_nodes[i]))
+        rob.goto(_target_nodes[i])
 
 
 #env.process(goal_generator(env, robots, nodes))

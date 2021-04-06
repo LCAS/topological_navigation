@@ -22,11 +22,11 @@ from move_base_msgs.msg import *
 
 from topological_navigation.navigation_stats import *
 from topological_navigation.tmap_utils import *
-from topological_navigation.route_search import *
 from topological_navigation.route_search2 import *
 from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
 
 from copy import deepcopy
+from rospy_message_converter import message_converter
 
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
 # If not listed then the param is not sent, e.g. TrajectoryPlannerROS doesn't have tolerances.
@@ -34,19 +34,10 @@ DYNPARAM_MAPPING = {
     "DWAPlannerROS": {
         "yaw_goal_tolerance": "yaw_goal_tolerance",
         "xy_goal_tolerance": "xy_goal_tolerance",
-        "max_vel_x": "max_vel_x",
-        "max_vel_trans": "max_vel_trans",
-        "max_trans_vel": "max_trans_vel",
     },
     "TebLocalPlannerROS": {
         "yaw_goal_tolerance": "yaw_goal_tolerance",
         "xy_goal_tolerance": "xy_goal_tolerance",
-        "max_vel_x": "max_vel_x",
-    },
-    "TrajectoryPlannerROS": {
-        "max_vel_x": "max_vel_x",
-        "max_vel_trans": "max_vel_x",
-        "max_trans_vel": "max_vel_x",
     },
 }
 
@@ -107,8 +98,6 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
 
-        self._action_name = "topological_navigation/execute_policy_mode"
-
         # Creating Action Server for navigation
         rospy.loginfo("Creating action server.")
         self._as = actionlib.SimpleActionServer(name, topological_navigation.msg.GotoNodeAction,
@@ -120,7 +109,7 @@ class TopologicalNavServer(object):
 
         # Creating Action Server for execute policy
         rospy.loginfo("Creating execute action server.")
-        self._as_exec_policy = actionlib.SimpleActionServer(self._action_name, strands_navigation_msgs.msg.ExecutePolicyModeAction, 
+        self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", strands_navigation_msgs.msg.ExecutePolicyModeAction, 
                                                             execute_cb=self.executeCallbackexecpolicy, auto_start=False)
         self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
         rospy.loginfo(" ...starting")
@@ -136,7 +125,7 @@ class TopologicalNavServer(object):
         self.monit_nav_cli = True
         rospy.loginfo(" ...done")
 
-        rospy.loginfo("Subscribing to Localisation Topics")
+        rospy.loginfo("Subscribing to Localisation Topics.")
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
@@ -218,10 +207,10 @@ class TopologicalNavServer(object):
         self.topol_map = self.lnodes["pointset"]
         self.curr_tmap = deepcopy(self.lnodes)
 
-        for i in self.lnodes["nodes"]:
-            for j in i["node"]["edges"]:
-                if j["action"] not in self.needed_actions:
-                    self.needed_actions.append(j["action"])
+        for node in self.lnodes["nodes"]:
+            for edge in node["node"]["edges"]:
+                if edge["action"] not in self.needed_actions:
+                    self.needed_actions.append(edge["action"])
         self._map_received = True
 
 
@@ -262,7 +251,7 @@ class TopologicalNavServer(object):
             result = False
             rospy.logwarn("Empty route in exec policy goal!")
 
-        if (not self.cancelled) and (not self.preempted):
+        if not self.cancelled and not self.preempted:
             self._result_exec_policy.success = result
             self._as_exec_policy.set_succeeded(self._result_exec_policy)
         else:
@@ -459,14 +448,7 @@ class TopologicalNavServer(object):
             rospy.logerr("Failed to get edge from id!! Invalid route!!")
             return False, inc
 
-        inf = Pose()
-        inf.position.x = o_node["pose"]["position"]["x"]
-        inf.position.y = o_node["pose"]["position"]["y"]
-        inf.position.z = o_node["pose"]["position"]["z"]
-        inf.orientation.w = o_node["pose"]["orientation"]["w"]
-        inf.orientation.x = o_node["pose"]["orientation"]["x"]
-        inf.orientation.y = o_node["pose"]["orientation"]["y"]
-        inf.orientation.z = o_node["pose"]["orientation"]["z"]
+        inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", o_node["pose"])
 
         # If the robot is not on a node or the first action is not move base type
         # navigate to closest node waypoint (only when first action is not move base)
@@ -529,7 +511,7 @@ class TopologicalNavServer(object):
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND
             # the current and following action are move_base or human_aware_navigation
-            if (rindex < route_len - 1 and a1 in self.move_base_actions and a in self.move_base_actions):
+            if rindex < route_len - 1 and a1 in self.move_base_actions and a in self.move_base_actions:
                 self.reconf_movebase(cedg, cnode, True)
             else:
                 if self.no_orientation:
@@ -540,19 +522,10 @@ class TopologicalNavServer(object):
             self.current_target = cedg["node"]
 
             self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
-            
             dt_text = self.stat.get_start_time_str()
             
-            inf = Pose()
-            inf.position.x = cnode["pose"]["position"]["x"]
-            inf.position.y = cnode["pose"]["position"]["y"]
-            inf.position.z = cnode["pose"]["position"]["z"]
-            inf.orientation.w = cnode["pose"]["orientation"]["w"]
-            inf.orientation.x = cnode["pose"]["orientation"]["x"]
-            inf.orientation.y = cnode["pose"]["orientation"]["y"]
-            inf.orientation.z = cnode["pose"]["orientation"]["z"]
+            inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", cnode["pose"])
 
-            # If we are using edge reconfigure
             if self.edge_reconfigure:
                 self.edgeReconfigureManager.register_edge(cedg)
                 self.edgeReconfigureManager.initialise()
@@ -649,6 +622,7 @@ class TopologicalNavServer(object):
         pubst.operation_time = self.stat.operation_time
         pubst.date_started = self.stat.get_start_time_str()
         pubst.date_at_node = self.stat.date_at_node.strftime("%A, %B %d %Y, at %H:%M:%S hours")
+        
         pubst.date_finished = self.stat.get_finish_time_str()
         self.stats_pub.publish(pubst)
         self.stat = None

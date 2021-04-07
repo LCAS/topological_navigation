@@ -17,7 +17,8 @@ class EdgeReconfigureManager(object):
         rospy.logwarn("Edge Reconfigure Manager: USING EDGE RECONFIGURE ...")
         
         self.edge = {}
-        self.default_config = {}
+        self.initial_config = {}                    
+        self.edge_config = {}
         self.namespaces = []
         
         self.current_edge_group = "none"
@@ -48,6 +49,7 @@ class EdgeReconfigureManager(object):
             client = dynamic_reconfigure.client.Client(namespace, timeout=2.0)
             try:
                 config = client.get_configuration()
+                
             except rospy.ServiceException as e:
                 rospy.logwarn("Edge Reconfigure Manager: Caught service exception: {}".format(e))
                 continue

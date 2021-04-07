@@ -39,25 +39,32 @@ class EdgeReconfigureManager(object):
         
     def initialise(self):
         
-        self.default_config = {}                    
+        self.initial_config = {}                    
         for namespace in self.namespaces:
-            rospy.loginfo("Edge Reconfigure Manager: Getting default configuration for {}".format(namespace))
+            rospy.loginfo("Edge Reconfigure Manager: Getting initial configuration for {}".format(namespace))
             
             client = dynamic_reconfigure.client.Client(namespace, timeout=2.0)
             try:
-                self.default_config[namespace] = client.get_configuration()
+                self.initial_config[namespace] = client.get_configuration()
                 
             except rospy.ServiceException as e:
                 rospy.warn("Edge Reconfigure Manager: Caught service exception: {}".format(e))
-            
-            
+        
+        self.initial_params = []        
+        if "config" in self.edge:
+            for param in self.edge["config"]:
+                if param["namespace"] in self.initial_config:
+                    value = self.initial_config[param["namespace"]][param["name"]]
+                    self.initial_params.append({"namespace":param["namespace"], "name":param["name"], "value":value})
+                
+        
     def reconfigure(self):
         """
         If using the new map then edge reconfigure is done using settings in the map.
         """
         if "config" in self.edge:
             for param in self.edge["config"]:
-                if param["namespace"] in self.default_config:
+                if param["namespace"] in self.initial_config:
                     rospy.loginfo("Edge Reconfigure Manager: Setting {} = {}".format("/".join((param["namespace"], param["name"])), param["value"]))                    
                     self.update(param["namespace"], {param["name"]: param["value"]})
                     
@@ -66,9 +73,9 @@ class EdgeReconfigureManager(object):
         """
         Used to reset edge params to their default values when the action has completed (only if using the new map)
         """
-        for namespace in self.default_config:
-            rospy.loginfo("Edge Reconfigure Manager: Resetting {} to its default configuration".format(namespace))            
-            self.update(namespace, self.default_config[namespace])
+        for param in self.initial_params:
+            rospy.loginfo("Edge Reconfigure Manager: Resetting {} = {}".format("/".join((param["namespace"], param["name"])), param["value"]))                    
+            self.update(param["namespace"], {param["name"]: param["value"]})
                 
                 
     def update(self, namespace, params):

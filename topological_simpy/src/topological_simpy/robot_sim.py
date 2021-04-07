@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 import simpy
-from yaml import safe_load
-from topological_navigation.route_search2 import TopologicalRouteSearch2
-from topological_navigation.tmap_utils import *
+# from yaml import safe_load
+# from topological_navigation.route_search2 import TopologicalRouteSearch2
+# from topological_navigation.tmap_utils import *
 from math import hypot, ceil
-from functools import partial, wraps
-from copy import deepcopy
-
+# from functools import partial, wraps
+# from copy import deepcopy
+from topological_simpy.robot import Robot
+from numpy import isclose
 
 # def patch_resource(resource, pre=None, post=None):
 #     """Patch *resource* so that it calls the callable *pre* before each
@@ -562,15 +563,18 @@ from copy import deepcopy
 
 
 # noinspection PyBroadException
-class Robot():   # TODO: object
-    def __init__(self, name, tmap, initial_node='A'):
-        self._current_node = initial_node
-        self._tmap = tmap
-        self._env = tmap.env
+class RobotSim(Robot):
+    def __init__(self, name, transportation_rate, max_n_trays, unloading_time, env, topo_graph, verbose):
+
+        super(RobotSim, self).__init__(name, transportation_rate, max_n_trays, unloading_time, env, topo_graph, verbose)
+
+        self._current_node = self.curr_node  # TODO: merge the two names
+        self._tmap = topo_graph
+        self._env = topo_graph.env  # TODO: to be fixed
         self._name = name
         self._speed_m_s = .3
         self._active_process = None
-        self.init_hold_t = 5  # initial hold time, for first node
+        self.init_hold_t = 5  # initial hold time, for first node TODO: assign a dynamic time--> reset when picker calls
         self._cost = {'robot_name': [],
                       'time_now': [],
                       'time_wait': [],
@@ -582,11 +586,143 @@ class Robot():   # TODO: object
                       'cost_total': []}
 
         if self._tmap.env:
-            self._tmap.req_ret[initial_node] = 1
-            self._tmap.set_hold_time(initial_node, self.init_hold_t)
+            self._tmap.req_ret[self._current_node] = 1
+            self._tmap.set_hold_time(self._current_node, self.init_hold_t)
             self._tmap.active_nodes[self._name] = []
-            self._tmap.request_node(self._name, initial_node)
-            self.log_cost(self._name, 0, 0, initial_node)
+            self._tmap.request_node(self._name, self._current_node)
+            self.log_cost(self._name, 0, 0, self._current_node)
+
+        self.action = self.env.process(self.normal_operation())   # TODO: will the super().action be override?
+
+    def normal_operation(self):
+        """
+        normal operation sequences of the robot in different modes  TODO: check picker calling info before taking action!
+        """
+        idle_start_time = self.env.now
+        transportation_start_time = 0.
+        loading_start_time = 0.
+        unloading_start_time = 0.
+        charging_start_time = 0.
+
+        while True:
+            if self.picking_finished and (self.mode == 0 or self.mode == 5):
+                self.loginfo("all rows picked. %s exiting" % self.robot_id)
+                self.env.exit("all rows picked and idle")
+                break
+
+            if self.mode == 0:
+                # check for assignments
+                if self.assigned_picker_id is not None:
+                    self.time_spent_idle += self.env.now - idle_start_time
+                    # change mode to transport to picker
+                    self.mode = 1
+                    transportation_start_time = self.env.now
+                    self.loginfo("%s is assigned to %s" % (self.robot_id, self.assigned_picker_id))
+
+                # TODO: idle state battery charge changes
+                if self.battery_charge < 40.0 or isclose(self.battery_charge, 40.0):
+                    self.loginfo("battery low on %s, going to charging mode" % self.robot_id)
+                    self.time_spent_idle += self.env.now - idle_start_time
+                    # change mode to charging
+                    self.mode = 5
+                    charging_start_time = self.env.now
+
+            elif self.mode == 1:
+                # farm assigns the robot to a picker by calling assign_robot_to_picker
+                # go to picker_node from curr_node
+                self.loginfo("%s going to %s" % (self.robot_id, self.assigned_picker_node))
+                yield self.env.process(self.goto(self.assigned_picker_node))
+                self.time_spent_transportation += self.env.now - transportation_start_time
+                self.loginfo("%s reached %s" % (self.robot_id, self.assigned_picker_node))
+                # change mode to waiting_for_loading
+                self.continue_transporting = False
+                self.mode = 2
+                loading_start_time = self.env.now
+
+            elif self.mode == 2:
+                self.loginfo("%s is waiting for the trays to be loaded" % self.robot_id)
+                yield self.env.process(self.wait_for_loading())  # this reset mode to 3
+                self.time_spent_loading += self.env.now - loading_start_time
+                self.loginfo("trays are loaded on %s" % self.robot_id)
+                while True:
+                    if self.continue_transporting:
+                        # change mode to transporting to storage
+                        self.mode = 3
+                        transportation_start_time = self.env.now
+                        break
+
+                    yield self.env.timeout(self.loop_timeout)
+
+            elif self.mode == 3:
+                if self.use_local_storage:
+                    # go to local_storage_node from picker_node
+                    self.loginfo("%s going to %s" % (self.robot_id, self.assigned_local_storage_node))
+                    yield self.env.process(self.goto(self.assigned_local_storage_node))
+                    self.time_spent_transportation += self.env.now - transportation_start_time
+                    self.loginfo("%s reached %s" % (self.robot_id, self.assigned_local_storage_node))
+
+                else:
+                    # go to cold_storage_node from picker_node
+                    self.loginfo("%s going to %s" % (self.robot_id, self.cold_storage_node))
+                    yield self.env.process(self.goto(self.cold_storage_node))
+                    self.time_spent_transportation += self.env.now - transportation_start_time
+                    self.loginfo("%s reached %s" % (self.robot_id, self.cold_storage_node))
+
+                # change mode to unloading
+                self.mode = 4
+                unloading_start_time = self.env.now
+
+            elif self.mode == 4:
+                # wait for unloading
+                self.loginfo("%s is waiting for the trays to be unloaded" % self.robot_id)
+                local_storage = self.assigned_local_storage_node  # backup needed for mode 6 if going that way
+                yield self.env.process(self.wait_for_unloading())  # this reset mode to 0
+                self.time_spent_unloading += self.env.now - unloading_start_time
+                self.loginfo("trays are unloaded from %s" % self.robot_id)
+                if self.use_local_storage:
+                    # change mode to idle
+                    local_storage = None  # no need of local storage, reset
+                    self.mode = 0
+                    idle_start_time = self.env.now
+                else:
+                    # picking_finished is not considered here to make sure no picker is stranded
+                    # change to transportation back to local storage of the picker's assigned row
+                    self.mode = 6
+                    transportation_start_time = self.env.now
+
+            elif self.mode == 5:
+                yield self.env.process(self.charging_process())
+                self.time_spent_charging += self.env.now - charging_start_time
+                # charging complete - now change mode to 0
+                self.mode = 0
+                idle_start_time = self.env.now
+
+            elif self.mode == 6:
+                # go to local_storage_node of the picker's assigned row
+                self.loginfo("%s going to %s" % (self.robot_id, local_storage))
+                yield self.env.process(self.goto(local_storage))
+                self.time_spent_transportation += self.env.now - transportation_start_time
+                self.loginfo("%s reached %s" % (self.robot_id, local_storage))
+                local_storage = None
+
+                # change mode to idle
+                self.mode = 0
+                idle_start_time = self.env.now
+
+            yield self.env.timeout(self.loop_timeout)
+        yield self.env.timeout(self.process_timeout)
+
+    def wait_for_loading(self):
+        """wait until picker loads trays and confirms it"""
+        while True:
+            # wait until picker calls loading_complete
+            if self.loaded:
+                break
+            else:
+                # TODO: battery decay
+                yield self.env.timeout(self.loop_timeout)
+
+        yield self.env.timeout(self.process_timeout)
 
     def _goto(self, target):
         route_nodes = self.get_route_nodes(self._current_node, target)
@@ -597,15 +733,16 @@ class Robot():   # TODO: object
             route_dist_cost = self._tmap.route_dist_cost([self._current_node] + route_nodes[idx:])
             d_cur = self._tmap.distance(self._current_node, n)
             time_to_travel = int(ceil(d_cur / self._speed_m_s))
-            if idx+1 < len(route_nodes):
+            if idx + 1 < len(route_nodes):
                 # estimate next distance cost and travelling time
-                d_next = self._tmap.distance(n, route_nodes[idx+1])
+                d_next = self._tmap.distance(n, route_nodes[idx + 1])
                 time_to_travel_next = ceil(d_next / (2 * self._speed_m_s))
             else:
                 time_to_travel_next = 0
             hold_time = time_to_travel + time_to_travel_next  # the time node will hold the robot
-            print('% 5d:  %s traversing route from node %10s to node %10s (distance: %f, travel time: %d, hold time: %d)'
-                  % (self._tmap.env.now, self._name, self._current_node, n, d_cur, time_to_travel, hold_time))
+            print(
+                        '% 5d:  %s traversing route from node %10s to node %10s (distance: %f, travel time: %d, hold time: %d)'
+                        % (self._tmap.env.now, self._name, self._current_node, n, d_cur, time_to_travel, hold_time))
 
             try:
                 # The node to be requested may be occupied by other robots, mark the time when requesting
@@ -632,7 +769,7 @@ class Robot():   # TODO: object
                     elif new_route:
                         new_route_dc = self._tmap.route_dist_cost([self._current_node] + new_route)  # dc: distance cost
                     elif not new_route:
-                        new_route_dc = 10000   # no new route, return a big distance cost
+                        new_route_dc = 10000  # no new route, return a big distance cost
                     wait_time = self._tmap.get_wait_time(n)
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost
@@ -653,7 +790,7 @@ class Robot():   # TODO: object
                                 if r == self._name:
                                     print('|% 4d: %s is in traffic jam, change route now' % (self._env.now, self._name))
                                     route_nodes = new_route
-                                    self._tmap.cancel_hold_time(n, hold_time)   # cancel the hold_time just set
+                                    self._tmap.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
                                     idx = 0
                                     print('^% 4d: %s go NEW route: %s' % (self._env.now, self._name, route_nodes))
                                     break
@@ -757,7 +894,7 @@ class Robot():   # TODO: object
         :param waiting_time: the time robot will be waiting
         return: float, the distance cost
         """
-        return self._speed_m_s*waiting_time
+        return self._speed_m_s * waiting_time
 
     def log_cost(self, robot_name, time_wait, dist_cost, node_name):
         """
@@ -788,6 +925,11 @@ class Robot():   # TODO: object
         cost_total = float('{:.2f}'.format(time_cost_total + dist_cost_total))
         self._cost['cost_total'].append(cost_total)
         return self._cost
+
+    def loginfo(self, msg):
+        """log info based on a flag"""
+        if self.verbose:
+            print(msg)
 
     @property
     def cost(self):

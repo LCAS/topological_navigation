@@ -243,7 +243,7 @@ class TopologicalForkGraph(object):
         self.agent_nodes = {}  # agent_id:agent.curr_node - should be updated by the agent
 
         # self.route_search = topological_navigation.route_search.TopologicalRouteSearch(self.topo_map)
-        self.route_search = TopologicalRouteSearch2(self.t_map2)
+        self.route_search = TopologicalRouteSearch2(self.t_map2)   # TODO: duplicate with self.route_planner
         # self.route_planner = TopologicalRouteSearch2(self.t_map2)
         """
         The bellow methods are used for model topological nodes as containers, each container can only hold one robot.
@@ -667,8 +667,8 @@ class TopologicalForkGraph(object):
     """ inherited from previous topo class"""
     def update_node_index(self):
         """once topo_map is received, get the indices of nodes for easy access to node object"""
-        for i in range(len(self.tmap2.nodes)):
-            self.node_index[self.tmap2.nodes[i].name] = i  # TODO: to be tested
+        for i in range(len(self.tmap2['nodes'])):
+            self.node_index[self.tmap2['nodes'][i]['node']['name']] = i  # TODO: to be tested
 
     def set_node_yields(self, node_yields):
         """set_node_yields: Set the yields at each node from the node yields
@@ -811,7 +811,8 @@ class TopologicalForkGraph(object):
         Keyword arguments:
 
         node -- name of the node in topological map"""
-        return self.tmap2.nodes[self.node_index[node]]
+        # return self.tmap2.nodes[self.node_index[node]]  # old tmap
+        return self.tmap2['nodes'][self.node_index[node]]  # new tmap2
 
     def get_distance_between_adjacent_nodes(self, from_node, to_node):
         """get_distance_between_adjacent_nodes: Given names of two nodes, return the distance of the edge
@@ -824,7 +825,7 @@ class TopologicalForkGraph(object):
         to_node -- name of the ending node name"""
         from_node_obj = self.get_node(from_node)
         to_node_obj = self.get_node(to_node)
-        return get_distance_to_node(from_node_obj, to_node_obj)
+        return get_distance_to_node_tmap2(from_node_obj['node'], to_node_obj['node'])
 
     def get_edges_between_nodes(self, from_node, to_node):
         """get_edges_between_nodes: Given names of two nodes, return the direct edges
@@ -836,7 +837,7 @@ class TopologicalForkGraph(object):
         from_node -- name of the starting node
         to_node -- name of the ending node name"""
         edge_ids = []
-        edges = get_edges_between(self.tmap2, from_node, to_node)
+        edges = get_edges_between_tmap2(self.tmap2, from_node, to_node)
         for edge in edges:
             edge_ids.append(edge.edge_id)
         return edge_ids

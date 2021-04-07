@@ -9,6 +9,7 @@ import topological_simpy.config_utils_mimic
 import topological_simpy.topo_mimic
 import topological_simpy.farm_mimic
 import topological_simpy.config_utils
+from topological_simpy.robot import Robot, TopoMap
 
 RANDOM_SEED = 10
 SIM_RT_FACTOR = 1.0
@@ -24,11 +25,17 @@ if __name__ == "__main__":
     # get the config params
     config_params = topological_simpy.config_utils_mimic.get_mimic_des_params(config_file)
 
+    # env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False) # todo: test later
+    env = simpy.Environment()
+    topo_map2_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2'
+    # tmap = TopoMap(topo_map2_file, env)   # TODO: fuse with old topo_graph
     # create the topo_graph
     topo_graph = topological_simpy.topo_mimic.TopologicalForkGraphMimic(config_params["n_polytunnels"],
                                                                         config_params["n_farm_rows"],
                                                                         config_params["n_topo_nav_rows"],
                                                                         config_params["second_head_lane"],
+                                                                        env,
+                                                                        topo_map2_file,
                                                                         VERBOSE)
 
     # set row_info, local_storage_nodes should be set separately
@@ -51,9 +58,6 @@ if __name__ == "__main__":
         "picker_unloading_time", config_params["picker_unloading_time"], picker_ids)
 
     robots = []   # todo: for what? import our robot generator, simpy version?
-
-    # env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False) # todo: test later
-    env = simpy.Environment()
 
     local_storages = [simpy.Resource(env, capacity=n_pickers) for i in range(len(config_params["local_storage_nodes"]))]
     topo_graph.set_local_storages(local_storages, config_params["local_storage_nodes"])

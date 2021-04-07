@@ -56,6 +56,8 @@ class FarmMimic(topological_simpy.farm.Farm):
 #        self.finished_allocating = lambda iteration: False if self.unallocated_rows[iteration] else True
         self.finished_allocating = lambda iteration: True if len(self.unallocated_rows[iteration]) == 0 else False
 
+        self.action = self.env.process(self.scheduler_monitor())
+
     def next_iteration(self):
         """checks whether incrementing the iteration number for all rows is possible
         """
@@ -121,7 +123,7 @@ class FarmMimic(topological_simpy.farm.Farm):
         inform_allocation_finished = False
         inform_picking_finished = False
         while True:
-            if rospy.is_shutdown():
+            if rospy.is_shutdown():   # TODO: comment out
                 break
 
             # increment curr_iteration of all idle pickers by one, if allocation for that iter is finished
@@ -172,7 +174,7 @@ class FarmMimic(topological_simpy.farm.Farm):
                         # finished the assigned row and are idle now
                         # if previously assigned any row, update its status
                         row_id = self.curr_picker_allocations[picker_id][1]
-                        self.finished_rows[iteration].append(row_id)
+                        self.finished_rows[iteration].append(row_id)    # TODO: just assigned to picker, finished assigning?
                         self.n_finished_rows[iteration] += 1
                         self.row_finish_time[iteration][row_id] = self.pickers[picker_id].row_finish_time
                         to_remove_pickers.append(picker_id)

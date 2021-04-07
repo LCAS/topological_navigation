@@ -178,4 +178,18 @@ def get_mimic_des_params(config_file):
 
     config_params["tray_capacity"] = config_data["tray_capacity"]
 
+    n_robots = config_data["n_robots"]
+
+    # robot parameters - des parameters
+    config_params['robot_transportation_rate'] = topological_simpy.config_utils.des_param_list_check("robot_transportation_rate",
+                                                     config_data["robot_transportation_rate"],
+                                                     n_robots)
+
+    config_params['robot_max_n_trays'] = topological_simpy.config_utils.des_param_list_check("robot_max_n_trays",
+                                             config_data["robot_max_n_trays"]["value"], n_robots,
+                                             config_data["robot_max_n_trays"]["func"])
+
+    config_params['robot_unloading_time'] = topological_simpy.config_utils.des_param_list_check("robot_unloading_time",
+                                                config_data["robot_unloading_time"], n_robots)
+
     return config_params

@@ -16,7 +16,9 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
     """TopologicalForkGraphMimic: A derived class from class TopologicalForkGraph to mimic the
         operation in an actual / gazebo simulated environment. Some methods are overloaded
     """
-    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, verbose=False):
+
+    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane,
+                 env, topo_map2_file, verbose=False):
         """TopologicalForkGraphMimic: A child class from TopologicalForkGraph class to store and retreive
         information of topological map, stored in the mongodb, necessary for the longer discrete event simulations
         mimicking longer picking operations with ros interfaces. Assumes a fork map with
@@ -30,8 +32,8 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         second_head_lane -- uses a secondary head lane, bool
         verbose -- to control rosinfo, bool
         """
-        super(TopologicalForkGraphMimic, self).__init__(n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, verbose)
-
+        super(TopologicalForkGraphMimic, self).__init__(n_polytunnels, n_farm_rows, n_topo_nav_rows,
+                                                        second_head_lane, env, topo_map2_file, verbose)
 
     def set_row_info(self, pri_head_nodes, row_nodes, sec_head_nodes=None):
         """set_row_info: Set information about each row
@@ -51,27 +53,27 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         # The row and head node names are hard coded now
         # An ugly way to sort the nodes is implemented
         # get_nodes in topological_utils.queries might be useful to get nodes with same tag
-        self.head_nodes = {"row-%02d" %(i):[] for i in range(self.n_topo_nav_rows)}
+        self.head_nodes = {"row-%02d" % (i): [] for i in range(self.n_topo_nav_rows)}
         for i in range(self.n_topo_nav_rows):
-            self.head_nodes["row-%02d" %(i)].append(pri_head_nodes[i])
+            self.head_nodes["row-%02d" % (i)].append(pri_head_nodes[i])
             if self.second_head_lane:
                 assert sec_head_nodes is not None
-                self.head_nodes["row-%02d" %(i)].append(sec_head_nodes[i])
+                self.head_nodes["row-%02d" % (i)].append(sec_head_nodes[i])
 
-        self.row_nodes = {"row-%02d" %(i):[] for i in range(self.n_topo_nav_rows)}
+        self.row_nodes = {"row-%02d" % (i): [] for i in range(self.n_topo_nav_rows)}
 
-        # rospy.sleep(1)
+        # rospy.sleep(1) TODO: this verification process could be ignored in the SimPy model, as all nodes are retrieved directly
         for i in range(self.n_topo_nav_rows):
-#            rospy.sleep(0.3)
+            #            rospy.sleep(0.3)
             for node_name in row_nodes[i]:
                 node_found = False
-                for node in self.topo_map.nodes:
-                    if node_name == node.name:
-                        self.row_nodes["row-%02d" %(i)].append(node.name)
+                for node in self.tmap2['nodes']:
+                    if node_name == node['node']['name']:
+                        self.row_nodes["row-%02d" % (i)].append(node['node']['name'])
                         node_found = True
                         break
                 if not node_found:
-                    msg = "node - %s not found in topological_map topic" %(node_name)
+                    msg = "node - %s not found in topological_map topic" % node_name
                     # rospy.logerr(msg)
                     raise Exception(msg)
 
@@ -84,7 +86,6 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
             if self.second_head_lane:
                 self.row_info[row_id].append(self.head_nodes[row_id][1])
 
-
     def set_local_storages(self, local_storages, local_storage_nodes):
         """set local_storage_nodes and local_storages
 
@@ -94,7 +95,7 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         """
         assert len(local_storages) == len(local_storage_nodes)
         # reset
-        self.local_storage_nodes = {row_id:None for row_id in self.row_ids}
+        self.local_storage_nodes = {row_id: None for row_id in self.row_ids}
         self.local_storages = {}
 
         # set local storage nodes
@@ -111,14 +112,14 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
             dist = float("inf")
             head_node = self.get_node(self.head_nodes[row_id][0])
             for storage in local_storage_nodes:
-                dist_to_storage = numpy.hypot(head_node.pose.position.x - storage_nodes[storage].pose.position.x,
-                               head_node.pose.position.y - storage_nodes[storage].pose.position.y)
+                dist_to_storage = numpy.hypot(
+                    (head_node['node']["pose"]["position"]["x"] - storage_nodes[storage]['node']["pose"]["position"]["x"]),
+                    (head_node['node']["pose"]["position"]["y"] - storage_nodes[storage]['node']["pose"]["position"]["y"]))
                 if dist_to_storage < dist:
                     dist = dist_to_storage
                     self.local_storage_nodes[row_id] = storage + ""
 
             self.row_info[row_id][3] = self.local_storage_nodes[row_id]
-
 
     def set_cold_storage(self, cold_storage, cold_storage_node):
         """set cold_storage_node and cold_storage
@@ -130,4 +131,3 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         self.cold_storage_node = cold_storage_node
         self.cold_storage = cold_storage
         self.use_local_storage = False
-

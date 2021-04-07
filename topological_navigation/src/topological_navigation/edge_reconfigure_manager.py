@@ -48,16 +48,17 @@ class EdgeReconfigureManager(object):
             client = dynamic_reconfigure.client.Client(namespace, timeout=2.0)
             try:
                 config = client.get_configuration()
-                self.initial_config[namespace] = {}
-                self.edge_config[namespace] = {}
-
-                for param in self.edge["config"]:
-                    if param["namespace"] == namespace:
-                        self.initial_config[namespace][param["name"]] = config[param["name"]]
-                        self.edge_config[namespace][param["name"]] = param["value"]
-
             except rospy.ServiceException as e:
                 rospy.logwarn("Edge Reconfigure Manager: Caught service exception: {}".format(e))
+                continue
+                
+            self.initial_config[namespace] = {}
+            self.edge_config[namespace] = {}
+
+            for param in self.edge["config"]:
+                if param["namespace"] == namespace:
+                    self.initial_config[namespace][param["name"]] = config[param["name"]]
+                    self.edge_config[namespace][param["name"]] = param["value"]
                 
         
     def reconfigure(self):

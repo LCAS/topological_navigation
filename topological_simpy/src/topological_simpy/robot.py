@@ -42,7 +42,7 @@ class Robot(object):
         self.time_spent_working = lambda: self.time_spent_loading + self.time_spent_transportation + self.time_spent_unloading
 
         self.loaded = False
-        self.picking_finished = False # this will be modified by farm
+        self.picking_finished = False  # this will be modified by farm
         self.allocation_finished = False
         self.continue_transporting = True
 

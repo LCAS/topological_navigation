@@ -87,9 +87,9 @@ def patch_res_put(resource, pre=None, post=None):
         return wrapper
 
     # Replace the original operations with our wrapper
-    for name in ['put']:
-        if hasattr(resource, name):
-            setattr(resource, name, get_wrapper(getattr(resource, name)))
+    name = 'put'
+    if hasattr(resource, name):
+        setattr(resource, name, get_wrapper(getattr(resource, name)))
 
 
 def patch_res_get(resource, pre=None, post=None):
@@ -121,9 +121,9 @@ def patch_res_get(resource, pre=None, post=None):
         return wrapper
 
     # Replace the original operations with our wrapper
-    for name in ['get']:
-        if hasattr(resource, name):
-            setattr(resource, name, get_wrapper(getattr(resource, name)))
+    name = 'get'
+    if hasattr(resource, name):
+        setattr(resource, name, get_wrapper(getattr(resource, name)))
 
 
 class TopologicalForkGraph(object):

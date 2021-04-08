@@ -22,13 +22,13 @@ class PickerSim(Pose):
         robots -- list of robot agents
         """
 
-        Pose.__init__(self)
+        Pose.__init__(self)   # TODO: check Pose is working?
         self.with_robots = with_robots
         self.closest_node = []
         self.current_node = []
         self.pose = Pose()
 
-        self.state = "INIT"   # robot state, "INIT", "CALLED", "ACCEPT", "ARRIVED":
+        self.picker_state = "INIT"   # picker state, "INIT", "CALLED", "WAIT", "LOADED" TODO: more states needed?
         self.curr_iteration = None
 
         self.picker_id = picker_id
@@ -111,10 +111,14 @@ class PickerSim(Pose):
 
         self.action = self.env.process(self.normal_operation())
 
+    def get_robot_state(self):
+        if self.assigned_robot_id:
+            return self.robots[self.assigned_robot_id].robot_state
+
     def set_picker_state(self, state):
         # msg = std_msgs.msg.String()
         # msg.data = '{\"user\":\"%s\", \"state\": \"%s\"}' %(self.picker_id, state)
-        self.state = state
+        self.picker_state = state
 
     def loginfo(self, msg):
         """
@@ -223,6 +227,9 @@ class PickerSim(Pose):
         """
         self.tot_trays += self.n_trays
         self.n_trays = 0
+
+        # inform the robot that the tray has been loaded, so the robot can stop waiting for the picker
+        self.robots[self.assigned_robot_id].trays_loaded()
 
     def reset_robot_assignment(self):
         """
@@ -402,7 +409,9 @@ class PickerSim(Pose):
 
                         # wait for the event to register
                         while True:
-                            if self.state == "CALLED" or self.state == "ACCEPT" or self.state == "ARRIVED":
+                            robot_state = self.get_robot_state()
+                            # if self.state == "CALLED" or self.state == "ACCEPT" or self.state == "ARRIVED":
+                            if robot_state == "CALLED" or robot_state == "ACCEPT" or robot_state == "ARRIVED":
                                 break
                             else:
                                 yield self.env.timeout(self.loop_timeout)
@@ -511,10 +520,13 @@ class PickerSim(Pose):
                 # wait for the robot to arrive
                 # the car state would change from CALLED -> ACCEPT -> ARRIVED
                 # after loading set state to LOADED
-                if self.state == "CALLED" or self.state == "ACCEPT":
+                robot_state = self.get_robot_state()
+                # if self.state == "CALLED" or self.state == "ACCEPT":
+                if robot_state == "CALLED" or robot_state == "ACCEPT":
                     # robot not yet assigned. wait
                     pass
-                elif self.state == "ARRIVED":
+                # elif self.state == "ARRIVED":
+                elif robot_state == "ARRIVED":
                     # robot is here. load the full trays and set state as LOADED
                     self.loginfo("%s reached %s" %(self.assigned_robot_id, self.picker_id))
                     self.time_spent_waiting += self.env.now - waiting_start_time
@@ -523,14 +535,15 @@ class PickerSim(Pose):
                     loading_start_time = self.env.now
                     wait_time = self.unloading_time * self.n_trays
                     yield self.env.timeout(wait_time)
-                    self.loginfo("%s loaded full trays on %s" %(self.picker_id, self.assigned_robot_id))
+                    self.loginfo("%5.1f: %s loaded full trays on %s" % (self.env.now, self.picker_id, self.assigned_robot_id))
                     self.time_spent_loading += self.env.now - loading_start_time
 
                     self.update_trays_loaded()
                     # set state to LOADED
                     # scheduler should know from the CAR status that the tray is loaded
                     self.set_picker_state("LOADED")
-                elif self.state == "INIT":
+                # elif self.state == "INIT":
+                elif robot_state == "INIT":
                     # scheduler knew the robot is loaded and set the state of picker to INIT
                     # the picker is now free to continue picking
                     if self.curr_row is not None:

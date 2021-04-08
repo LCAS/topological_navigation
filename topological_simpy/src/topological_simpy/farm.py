@@ -284,6 +284,8 @@ class Farm(object):
                 # update mode and pose in predictor
                 if picker.mode == 1:
                     goal_node = picker.goal_node
+                elif picker.mode == 2:
+                    pass  # TODO: anything else need to be done here?
                 elif picker.mode == 3:
                     # if local storage, it will be set according to picker.curr_row
                     goal_node = picker.local_storage_node if self.graph.use_local_storage else picker.cold_storage_node
@@ -317,17 +319,17 @@ class Farm(object):
             # predict only if (to reduce redundant predictions)
             #   any picker, not in previous predictions, started a new tray, or
             #   any picker in previous predictions changed the node
-            if new_tray_started or node_changed:
-                # predictions are made only for the pickers who are started picking and did not fill the current tray
-                predictions = self.predictor.predict_tray_full()
-
-                for picker_id in predictions:
-                    pred_row, pred_node, pred_dir, pred_time = predictions[picker_id][1:5]
-                    picker = self.pickers[picker_id]
-                    new_prediction = ("%s, %s, %s, %0.1f, from %s %s %0.1f" % (
-                    pred_row, pred_node, pred_dir, pred_time, picker.curr_node, picker.picking_dir, time_now))
-                    self.predictions[picker_id][self.tray_counts[picker_id]].append(new_prediction)
-                    predicted_from[picker_id] = picker.curr_node
+            # if new_tray_started or node_changed:   TODO: test predictor later 07-Apr-2021
+            #     # predictions are made only for the pickers who are started picking and did not fill the current tray
+            #     predictions = self.predictor.predict_tray_full()
+            #
+            #     for picker_id in predictions:
+            #         pred_row, pred_node, pred_dir, pred_time = predictions[picker_id][1:5]
+            #         picker = self.pickers[picker_id]
+            #         new_prediction = ("%s, %s, %s, %0.1f, from %s %s %0.1f" % (
+            #         pred_row, pred_node, pred_dir, pred_time, picker.curr_node, picker.picking_dir, time_now))
+            #         self.predictions[picker_id][self.tray_counts[picker_id]].append(new_prediction)
+            #         predicted_from[picker_id] = picker.curr_node
 
             # ==============================================================================
             #             # update modes of all assigned robots
@@ -448,7 +450,7 @@ class Farm(object):
             for row_id in allocated_rows:
                 self.unallocated_rows.remove(row_id)
 
-    def get_disatances_from_nodes_dict(self, nodes_dict, goal_node):
+    def get_distances_from_nodes_dict(self, nodes_dict, goal_node):
         """get distance to a goal_node from nodes given in a dict
 
         Keyword arguments:
@@ -523,7 +525,7 @@ class Farm(object):
                             robot_nodes[robot_id] = self.robots[robot_id].curr_node
 
                         picker_node = self.pickers[picker_id].curr_node
-                        robot_distances = self.get_disatances_from_nodes_dict(robot_nodes, picker_node)
+                        robot_distances = self.get_distances_from_nodes_dict(robot_nodes, picker_node)
                         sorted_robots = sorted(robot_distances.items(), key=operator.itemgetter(1))
 
                         # allocate to the first picker in the sorted

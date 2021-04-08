@@ -5,7 +5,7 @@ import numpy
 import topological_simpy.picker_sim
 import topological_simpy.config_utils_mimic
 import topological_simpy.topo_mimic
-import topological_simpy.farm_mimic
+import topological_simpy.farm
 import topological_simpy.config_utils
 import topological_simpy.robot_sim
 from topological_simpy.topo import TopologicalForkGraph
@@ -114,19 +114,18 @@ if __name__ == "__main__":
 
     scheduling_policy = "lexicographical"  # ["lexicographical", "shortest_distance", "uniform_utilisation"]
 
-    farm = topological_simpy.farm_mimic.FarmMimic(config_params["map_name"],
-                                                  env,
-                                                  config_params["n_topo_nav_rows"],
-                                                  topo_graph,
-                                                  robots,
-                                                  pickers,
-                                                  scheduling_policy,
-                                                  config_params["with_robots"],
-                                                  config_params["n_iteration"],
-                                                  VERBOSE)
+    farm = topological_simpy.farm.Farm(config_params["map_name"],
+                                       env,
+                                       config_params["n_topo_nav_rows"],
+                                       topo_graph,
+                                       robots,
+                                       pickers,
+                                       scheduling_policy,
+                                       # config_params["with_robots"],
+                                       # config_params["n_iteration"],
+                                       VERBOSE)
 
     nodes = topo_graph.get_nodes()
-
 
     # def goal_generator(_env, _robots, _nodes, max_interval=50):
     #     for idx in itertools.count():
@@ -146,7 +145,6 @@ if __name__ == "__main__":
     #         rob = _robots[idx]
     #         print('+% 4d:    new goal for robot %10s: %s' % (_env.now, rob._name, _target_nodes[idx]))
     #         rob.goto(_target_nodes[idx])
-
 
     # env.process(goal_generator(env, robots, nodes))
     # env.process(goal_generator2(env, robots, target_nodes))

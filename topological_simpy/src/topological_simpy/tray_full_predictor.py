@@ -10,13 +10,14 @@ import copy
 import rospy
 import numpy
 
-import rasberry_des.picker_predictor
+import topological_simpy.picker_predictor
 
 
 class TrayFullPredictor(object):
     """
     A class that can predict when pickers are going to finish their current tray
     """
+
     def __init__(self, picker_ids, env, topo_graph, n_robots, mean_idle_times, mean_tray_pick_dists,
                  mean_pick_rates, mean_trans_rates, mean_unload_times, mean_load_times, verbose=False):
         """
@@ -41,12 +42,13 @@ class TrayFullPredictor(object):
         self._free_rows = copy.deepcopy(self._unallocated_rows)
 
         # PickerPredictor is used as logging object for each picker
-        self.predictors = {picker_id:rasberry_des.picker_predictor.PickerPredictor(picker_id, self.env,
-                                                                                   self.graph, self.n_pickers, self.n_robots,
-                                                                                   mean_idle_times[picker_id], mean_tray_pick_dists[picker_id],
-                                                                                   mean_pick_rates[picker_id], mean_trans_rates[picker_id],
-                                                                                   mean_unload_times[picker_id], mean_load_times[picker_id],
-                                                                                   self.verbose) for picker_id in self.picker_ids}
+        self.predictors = {picker_id: topological_simpy.picker_predictor.PickerPredictor(
+                                         picker_id, self.env,
+                                         self.graph, self.n_pickers, self.n_robots,
+                                         mean_idle_times[picker_id], mean_tray_pick_dists[picker_id],
+                                         mean_pick_rates[picker_id], mean_trans_rates[picker_id],
+                                         mean_unload_times[picker_id], mean_load_times[picker_id],
+                                         self.verbose) for picker_id in self.picker_ids}
 
         # prediction related
         self._picker_modes = None
@@ -89,21 +91,22 @@ class TrayFullPredictor(object):
         time_org = time_now = self.env.now
 
         # start fresh
-        self._picker_modes = {picker_id:self.predictors[picker_id].mode[-1] for picker_id in self.picker_ids}
-        self._mode_start_times = {picker_id:self.predictors[picker_id].mode_start_times[-1] for picker_id in self.picker_ids}
-        self._mode_finish_modes = {picker_id:None for picker_id in self.picker_ids}
-        self._mode_finish_details = {picker_id:None for picker_id in self.picker_ids}
-        self._curr_nodes = {picker_id:self.predictors[picker_id].curr_node for picker_id in self.picker_ids}
-        self._curr_dirs = {picker_id:self.predictors[picker_id].curr_dir for picker_id in self.picker_ids}
-        self._curr_rows = {picker_id:self.predictors[picker_id].curr_row for picker_id in self.picker_ids}
-        self._goal_nodes = {picker_id:self.predictors[picker_id].goal_node for picker_id in self.picker_ids}
-        self._dists_picked = {picker_id:None for picker_id in self.picker_ids}
-        self._update_needed = {picker_id:True for picker_id in self.picker_ids}
-        self._tray_started = {picker_id:False for picker_id in self.picker_ids}
+        self._picker_modes = {picker_id: self.predictors[picker_id].mode[-1] for picker_id in self.picker_ids}  # keep updating during virtual picking
+        self._mode_start_times = {picker_id: self.predictors[picker_id].mode_start_times[-1] for picker_id in
+                                  self.picker_ids}
+        self._mode_finish_modes = {picker_id: None for picker_id in self.picker_ids}
+        self._mode_finish_details = {picker_id: None for picker_id in self.picker_ids}
+        self._curr_nodes = {picker_id: self.predictors[picker_id].curr_node for picker_id in self.picker_ids}  # ZZY, not updating when going to a node of new row
+        self._curr_dirs = {picker_id: self.predictors[picker_id].curr_dir for picker_id in self.picker_ids}
+        self._curr_rows = {picker_id: self.predictors[picker_id].curr_row for picker_id in self.picker_ids}  # ZZY, TODO: not updated during virtual picking. updating needed?
+        self._goal_nodes = {picker_id: self.predictors[picker_id].goal_node for picker_id in self.picker_ids}
+        self._dists_picked = {picker_id: None for picker_id in self.picker_ids}
+        self._update_needed = {picker_id: True for picker_id in self.picker_ids}
+        self._tray_started = {picker_id: False for picker_id in self.picker_ids}
 
         self._free_rows = copy.deepcopy(self._unallocated_rows)
 
-        picking_pickers = [] # once tray_full predictions of all these pickers are finished, break
+        picking_pickers = []  # once tray_full predictions of all these pickers are finished, break
 
         for picker_id in self.picker_ids:
             # not all pickers who started a new tray is in [2] mode (e.g. could be idle/go_to_row_node etc.)
@@ -139,7 +142,7 @@ class TrayFullPredictor(object):
             try:
                 assert time_now > time_org or numpy.isclose(time_now, time_org)
             except:
-                msg = "%0.2f, %0.2f" %(time_now, time_org)
+                msg = "%0.2f, %0.2f" % (time_now, time_org)
                 raise Exception(msg)
 
             mode_0_pickers = []
@@ -170,7 +173,7 @@ class TrayFullPredictor(object):
             for picker_id in mode_0_pickers:
                 self._start_idling(picker_id, time_now)
 
-            self._row_allocation(mode_1_pickers, time_now)
+            self._row_allocation(mode_1_pickers, time_now)   # if mode_1_pickers:  TODO: avoid empty calling
 
             for picker_id in mode_2_pickers:
                 self._start_picking(picker_id, time_now)
@@ -187,7 +190,7 @@ class TrayFullPredictor(object):
                                               time_now]
 
                     picking_pickers.remove(picker_id)
-                    msg = "removing %s from picking_pickers: [3]" %(picker_id)
+                    msg = "removing %s from picking_pickers: [3]" % (picker_id)
                     self.loginfo(msg)
 
             for picker_id in mode_4_pickers:
@@ -204,7 +207,7 @@ class TrayFullPredictor(object):
                                               self._curr_dirs[picker_id],
                                               time_now]
                     picking_pickers.remove(picker_id)
-                    msg = "removing %s from picking_pickers: [5]" %(picker_id)
+                    msg = "removing %s from picking_pickers: [5]" % (picker_id)
                     self.loginfo(msg)
 
             for picker_id in mode_6_pickers:
@@ -228,7 +231,8 @@ class TrayFullPredictor(object):
         #   [5] wait_loading, he is waiting for robot and for loading trays on it. next states idle [0] (if curr_node = row_finish_node) or picking [2]
         #   [6] go_to_local_from_cold, he will be reaching local storage and switch to idle [0]
         for picker_id in self.picker_ids:
-            msg = "%s, %s, %d" %(picker_id, self._update_needed[picker_id], self._picker_modes[picker_id])
+            msg = "%s: %s, %s, %d" % (self.__class__.__name__, picker_id, self._update_needed[picker_id],
+                                      self._picker_modes[picker_id])
             self.loginfo(msg)
 
             if not self._update_needed[picker_id]:
@@ -238,12 +242,14 @@ class TrayFullPredictor(object):
             if self._picker_modes[picker_id] == 0:
                 # idle will finish in idle mode if no more rows are unallocated
                 self._mode_finish_details[picker_id] = [self._curr_nodes[picker_id], None,
-                                                        self._mode_start_times[picker_id] + self.predictors[picker_id].mean_idle_time(),
+                                                        self._mode_start_times[picker_id] + self.predictors[
+                                                            picker_id].mean_idle_time(),
                                                         0.0]
                 # if the picker had started a tray and became idle, we should send him to storage to unload partial tray
                 if len(self._free_rows) == 0:
                     # if there are no unallocated rows, and not at storage, go to storage
-                    storage = self.graph.local_storage_nodes[self._curr_rows[picker_id]] if self.graph.use_local_storage else self.graph.cold_storage_node
+                    storage = self.graph.local_storage_nodes[
+                        self._curr_rows[picker_id]] if self.graph.use_local_storage else self.graph.cold_storage_node
                     if self._curr_nodes[picker_id] == storage:
                         # at storage, no free rows and already idle, setting mode_finish_time
                         # as inf so that this picker will be ignored in min_event_time
@@ -260,21 +266,23 @@ class TrayFullPredictor(object):
                 # could be to start node of a row or to resume picking from an
                 # intermediate row node
                 self._mode_finish_details[picker_id] = [self._goal_nodes[picker_id], "forward",
-                                                        time_now + self.predictors[picker_id].get_trans_time_to_node(self._curr_nodes[picker_id], self._goal_nodes[picker_id]),
+                                                        time_now + self.predictors[picker_id].get_trans_time_to_node(
+                                                            self._curr_nodes[picker_id], self._goal_nodes[picker_id]),
                                                         0.0]
                 self._mode_finish_modes[picker_id] = 2
                 self._update_needed[picker_id] = False
 
             elif self._picker_modes[picker_id] == 2:
                 # two possible events - tray_full -> [3/5] and row_finish -> [0/3]
-                next_event, event_details = self.predictors[picker_id].predict_picking_finish_event(self._curr_nodes[picker_id],
-                                                                                                    self._curr_dirs[picker_id],
-                                                                                                    self._dists_picked[picker_id],
-                                                                                                    time_now)
+                next_event, event_details = self.predictors[picker_id].predict_picking_finish_event(
+                    self._curr_nodes[picker_id],
+                    self._curr_dirs[picker_id],
+                    self._dists_picked[picker_id],
+                    time_now)
 
-                self._mode_finish_details[picker_id] = event_details # full details
+                self._mode_finish_details[picker_id] = event_details  # full details
                 if next_event == "tray_full":
-                    self._mode_finish_modes[picker_id] = 3 if self.n_robots==0 else 5
+                    self._mode_finish_modes[picker_id] = 3 if self.n_robots == 0 else 5
                 elif next_event == "row_finish":
                     self._mode_finish_modes[picker_id] = 0
                 else:
@@ -288,7 +296,8 @@ class TrayFullPredictor(object):
                 # dist from curr_node to storage / trans_rate
                 # storage node is already set as goal_node
                 self._mode_finish_details[picker_id] = [self._goal_nodes[picker_id], None,
-                                                        time_now + self.predictors[picker_id].get_trans_time_to_node(self._curr_nodes[picker_id], self._goal_nodes[picker_id]),
+                                                        time_now + self.predictors[picker_id].get_trans_time_to_node(
+                                                            self._curr_nodes[picker_id], self._goal_nodes[picker_id]),
                                                         0.0]
                 self._mode_finish_modes[picker_id] = 4
                 self._update_needed[picker_id] = False
@@ -331,8 +340,11 @@ class TrayFullPredictor(object):
 
             elif self._picker_modes[picker_id] == 6:
                 # next mode -- idle[0] at local storage
-                self._mode_finish_details[picker_id] = [self.graph.local_storage_nodes[self._curr_rows[picker_id]], None,
-                                                        time_now + self.predictors[picker_id].get_trans_time_to_node(self._curr_nodes[picker_id], self.graph.local_storage_nodes[self._curr_rows[picker_id]]),
+                self._mode_finish_details[picker_id] = [self.graph.local_storage_nodes[self._curr_rows[picker_id]],
+                                                        None,
+                                                        time_now + self.predictors[picker_id].get_trans_time_to_node(
+                                                            self._curr_nodes[picker_id],
+                                                            self.graph.local_storage_nodes[self._curr_rows[picker_id]]),
                                                         0.0]
                 self._mode_finish_modes[picker_id] = 0
                 self._update_needed[picker_id] = False
@@ -392,7 +404,7 @@ class TrayFullPredictor(object):
             self.loginfo(self._free_rows)
             if len(self._free_rows) > 0:
                 row_id = self._free_rows[0]
-                msg = "allocating %s to %s" %(row_id, picker_id)
+                msg = "allocating %s to %s" % (row_id, picker_id)
                 self.loginfo(msg)
                 self._go_to_row_node(row_id, picker_id, time_now)
                 unallocated_pickers.remove(picker_id)
@@ -425,6 +437,9 @@ class TrayFullPredictor(object):
         self._curr_dirs[picker_id] = self._mode_finish_details[picker_id][1]
         self._mode_start_times[picker_id] = time_now
         self._update_needed[picker_id] = True
+
+        # add by zuyuan: picker start picking a new row, update the current rows. TODO: causing any potential bugs? NO
+        self._curr_rows[picker_id] = self.graph.get_row_id_of_row_node(self._curr_nodes[picker_id])
 
     def _go_to_storage(self, picker_id, time_now):
         """virtual go to storage - set picker's mode to [3]
@@ -469,5 +484,7 @@ class TrayFullPredictor(object):
 
     def loginfo(self, msg):
         """log info based on a flag"""
+        # if self.verbose:
+        #     rospy.loginfo(msg)
         if self.verbose:
-            rospy.loginfo(msg)
+            print(msg)

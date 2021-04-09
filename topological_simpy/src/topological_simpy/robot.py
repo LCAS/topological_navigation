@@ -6,12 +6,13 @@
 # ----------------------------------
 
 import random
-import rospy
+# import rospy
 import numpy
 
 
 class Robot(object):
     """Robot class definition"""
+
     def __init__(self, robot_id, transportation_rate, max_n_trays, unloading_time,
                  env, topo_graph, verbose):
         self.robot_id = robot_id
@@ -77,11 +78,11 @@ class Robot(object):
         charging_start_time = 0.
 
         while True:
-            if rospy.is_shutdown():
-                break
+            # if rospy.is_shutdown():
+            #     break
 
             if self.picking_finished and (self.mode == 0 or self.mode == 5):
-                self.loginfo("all rows picked. %s exiting" %(self.robot_id))
+                self.loginfo("all rows picked. %s exiting" % self.robot_id)
                 self.env.exit("all rows picked and idle")
                 break
 
@@ -92,11 +93,11 @@ class Robot(object):
                     # change mode to transport to picker
                     self.mode = 1
                     transportation_start_time = self.env.now
-                    self.loginfo("%s is assigned to %s" %(self.robot_id, self.assigned_picker_id))
+                    self.loginfo("%s is assigned to %s" % (self.robot_id, self.assigned_picker_id))
 
                 # TODO: idle state battery charge changes
                 if self.battery_charge < 40.0 or numpy.isclose(self.battery_charge, 40.0):
-                    self.loginfo("battery low on %s, going to charging mode" %(self.robot_id))
+                    self.loginfo("battery low on %s, going to charging mode" % self.robot_id)
                     self.time_spent_idle += self.env.now - idle_start_time
                     # change mode to charging
                     self.mode = 5
@@ -105,23 +106,23 @@ class Robot(object):
             elif self.mode == 1:
                 # farm assigns the robot to a picker by calling assign_robot_to_picker
                 # go to picker_node from curr_node
-                self.loginfo("%s going to %s" %(self.robot_id, self.assigned_picker_node))
+                self.loginfo("%s going to %s" % (self.robot_id, self.assigned_picker_node))
                 yield self.env.process(self.go_to_node(self.assigned_picker_node))
                 self.time_spent_transportation += self.env.now - transportation_start_time
-                self.loginfo("%s reached %s" %(self.robot_id, self.assigned_picker_node))
+                self.loginfo("%s reached %s" % (self.robot_id, self.assigned_picker_node))
                 # change mode to waiting_for_loading
                 self.continue_transporting = False
                 self.mode = 2
                 loading_start_time = self.env.now
 
             elif self.mode == 2:
-                self.loginfo("%s is waiting for the trays to be loaded" %(self.robot_id))
-                yield self.env.process(self.wait_for_loading()) # this reset mode to 3
+                self.loginfo("%s is waiting for the trays to be loaded" % self.robot_id)
+                yield self.env.process(self.wait_for_loading())  # this reset mode to 3
                 self.time_spent_loading += self.env.now - loading_start_time
-                self.loginfo("trays are loaded on %s" %(self.robot_id))
+                self.loginfo("trays are loaded on %s" % self.robot_id)
                 while True:
-                    if rospy.is_shutdown():
-                        break
+                    # if rospy.is_shutdown():
+                    #     break
 
                     if self.continue_transporting:
                         # change mode to transporting to storage
@@ -134,17 +135,17 @@ class Robot(object):
             elif self.mode == 3:
                 if self.use_local_storage:
                     # go to local_storage_node from picker_node
-                    self.loginfo("%s going to %s" %(self.robot_id, self.assigned_local_storage_node))
+                    self.loginfo("%s going to %s" % (self.robot_id, self.assigned_local_storage_node))
                     yield self.env.process(self.go_to_node(self.assigned_local_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
-                    self.loginfo("%s reached %s" %(self.robot_id, self.assigned_local_storage_node))
+                    self.loginfo("%s reached %s" % (self.robot_id, self.assigned_local_storage_node))
 
                 else:
                     # go to cold_storage_node from picker_node
-                    self.loginfo("%s going to %s" %(self.robot_id, self.cold_storage_node))
+                    self.loginfo("%s going to %s" % (self.robot_id, self.cold_storage_node))
                     yield self.env.process(self.go_to_node(self.cold_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
-                    self.loginfo("%s reached %s" %(self.robot_id, self.cold_storage_node))
+                    self.loginfo("%s reached %s" % (self.robot_id, self.cold_storage_node))
 
                 # change mode to unloading
                 self.mode = 4
@@ -152,14 +153,14 @@ class Robot(object):
 
             elif self.mode == 4:
                 # wait for unloading
-                self.loginfo("%s is waiting for the trays to be unloaded" %(self.robot_id))
-                local_storage = self.assigned_local_storage_node # backup needed for mode 6 if going that way
-                yield self.env.process(self.wait_for_unloading()) # this reset mode to 0
+                self.loginfo("%s is waiting for the trays to be unloaded" % self.robot_id)
+                local_storage = self.assigned_local_storage_node  # backup needed for mode 6 if going that way
+                yield self.env.process(self.wait_for_unloading())  # this reset mode to 0
                 self.time_spent_unloading += self.env.now - unloading_start_time
-                self.loginfo("trays are unloaded from %s" %(self.robot_id))
+                self.loginfo("trays are unloaded from %s" % self.robot_id)
                 if self.use_local_storage:
                     # change mode to idle
-                    local_storage = None # no need of local storage, reset
+                    local_storage = None  # no need of local storage, reset
                     self.mode = 0
                     idle_start_time = self.env.now
                 else:
@@ -177,10 +178,10 @@ class Robot(object):
 
             elif self.mode == 6:
                 # go to local_storage_node of the picker's assigned row
-                self.loginfo("%s going to %s" %(self.robot_id, local_storage))
+                self.loginfo("%s going to %s" % (self.robot_id, local_storage))
                 yield self.env.process(self.go_to_node(local_storage))
                 self.time_spent_transportation += self.env.now - transportation_start_time
-                self.loginfo("%s reached %s" %(self.robot_id, local_storage))
+                self.loginfo("%s reached %s" % (self.robot_id, local_storage))
                 local_storage = None
 
                 # change mode to idle
@@ -195,7 +196,8 @@ class Robot(object):
         try:
             assert self.mode == 0
         except AssertionError:
-            raise Exception("Scheduler is trying to assign %s to %s, but robot is in %d" %(self.robot_id, picker_id, self.mode))
+            raise Exception(
+                "Scheduler is trying to assign %s to %s, but robot is in %d" % (self.robot_id, picker_id, self.mode))
 
         self.assigned_picker_id = picker_id
         self.assigned_picker_node = picker_node
@@ -206,7 +208,7 @@ class Robot(object):
         """scheduler confirms the robot can go to local storage and unload.
         this is to make sure the scheduler is aware that the picker has loaded trays on the robot.
         """
-        self.loginfo("%s can continue transporting to local storage" %(self.robot_id))
+        self.loginfo("%s can continue transporting to local storage" % self.robot_id)
         self.continue_transporting = True
 
     def go_to_node(self, goal_node):
@@ -215,15 +217,15 @@ class Robot(object):
         Keyword arguments:
         goal_node -- node to reach from current node
         """
-        self.loginfo("%s going to %s from %s" %(self.robot_id, goal_node, self.curr_node))
+        self.loginfo("%s going to %s from %s" % (self.robot_id, goal_node, self.curr_node))
         route_nodes, _, route_distance = self.graph.get_path_details(self.curr_node, goal_node)
         for i in range(len(route_nodes) - 1):
             # move through each edge
-            if rospy.is_shutdown():
-                break
+            # if rospy.is_shutdown():
+            #     break
 
             edge_distance = route_distance[i]
-#            travel_time = edge_distance / self.transportation_rate
+            #            travel_time = edge_distance / self.transportation_rate
             # adding Gaussian white noise to introduce variations
             travel_time = edge_distance / (self.transportation_rate + random.gauss(0, self.transportation_rate_std))
 
@@ -235,15 +237,15 @@ class Robot(object):
             # update agent_nodes in the topo_graph
             self.graph.agent_nodes[self.robot_id] = self.curr_node
 
-        self.loginfo("%s reached %s" %(self.robot_id, goal_node))
+        self.loginfo("%s reached %s" % (self.robot_id, goal_node))
         yield self.env.timeout(self.process_timeout)
 
     def wait_for_loading(self):
         """wait until picker loads trays and confirms it"""
         while True:
             # wait until picker calls loading_complete
-            if rospy.is_shutdown():
-                break
+            # if rospy.is_shutdown():
+            #     break
             if self.loaded:
                 break
             else:
@@ -260,7 +262,8 @@ class Robot(object):
 
     def wait_for_unloading(self):
         """wait for unloading the trays at the local storage"""
-        storage = self.graph.local_storages[self.assigned_local_storage_node] if self.use_local_storage else self.graph.cold_storage
+        storage = self.graph.local_storages[
+            self.assigned_local_storage_node] if self.use_local_storage else self.graph.cold_storage
         with storage.request() as req:
             # request to access local storage
             yield req
@@ -284,8 +287,8 @@ class Robot(object):
     def charging_process(self):
         """charging process"""
         while True:
-            if rospy.is_shutdown():
-                break
+            # if rospy.is_shutdown():
+            #     break
             yield self.env.timeout(1)
             self.battery_charge += 1
 
@@ -305,4 +308,5 @@ class Robot(object):
     def loginfo(self, msg):
         """log info based on a flag"""
         if self.verbose:
-            rospy.loginfo(msg)
+            # rospy.loginfo(msg)
+            print(msg)

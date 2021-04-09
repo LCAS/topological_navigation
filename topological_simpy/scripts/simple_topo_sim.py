@@ -67,6 +67,7 @@ if __name__ == "__main__":
     picker_unloading_time = topological_simpy.config_utils.param_list_to_dict(
         "picker_unloading_time", config_params["picker_unloading_time"], picker_ids)
 
+    # TODO: expand local storage node capacity(topo.py) to n_pickers + n_robots, so the node could hold multiple robots at the beginning
     local_storages = [simpy.Resource(env, capacity=n_pickers) for i in range(len(config_params["local_storage_nodes"]))]
     topo_graph.set_local_storages(local_storages, config_params["local_storage_nodes"])
 
@@ -74,8 +75,6 @@ if __name__ == "__main__":
         cold_storage = simpy.Resource(env, capacity=n_pickers)
         topo_graph.set_cold_storage(cold_storage, config_params["cold_storage_node"])
 
-    # robots = []   # todo: for what? import our robot generator, simpy version?
-    # def __init__(self, name, initial_node, transportation_rate, max_n_trays, unloading_time, env, topo_graph, verbose):
     # robot_homes = ['dock_0', 'dock_1', 'dock_2']
     robot_homes = ['WayPoint131', 'WayPoint111', 'WayPoint66', 'WayPoint94']
     target_nodes = ['WayPoint66', 'WayPoint142', 'WayPoint102', 'WayPoint78']
@@ -125,7 +124,7 @@ if __name__ == "__main__":
                                        # config_params["n_iteration"],
                                        VERBOSE)
 
-    nodes = topo_graph.get_nodes()
+    # nodes = topo_graph.get_nodes()
 
     # def goal_generator(_env, _robots, _nodes, max_interval=50):
     #     for idx in itertools.count():

@@ -540,11 +540,11 @@ class TopologicalForkGraph(object):
             print('>% 4d: %s is in traffic jam, prepare to change route' % (self.env.now, robot_name))
             self.pop_free_node(robot_name, node, jam=True)  # pop the node planned to request
             self.add_robot_to_jam(robot_name, node)
-            return self.env.timeout(0)
+            return self.env.timeout(0)   # todo: comment out
         if self.env:
-            return self._node_res[node].put(1)
+            return self._node_res[node].put(1)   # todo: comment out return
         else:
-            return self.env.timeout(0)
+            return self.env.timeout(0)  # todo: comment out
 
     def release_node(self, robot_name, node):
         """

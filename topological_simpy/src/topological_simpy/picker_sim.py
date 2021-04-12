@@ -161,7 +161,7 @@ class PickerSim(Pose):
         scheduler lets the picker continue picking after loading trays on robot.
         this is just to make sure the scheduler is aware that the robot is loaded
         """
-        self.loginfo("%5d: %s can continue picking" % (self.env.now, self.picker_id))
+        self.loginfo("  %5.1f: %s can continue picking" % (self.env.now, self.picker_id))
         self.continue_picking = True
 
     def picking_node_to_node(self):
@@ -245,7 +245,7 @@ class PickerSim(Pose):
         :param goal_node: string, topological node to reach from current node
         :param nav_speed: float, navigation speed (picking / transportation rate)
         """
-        self.loginfo('%5d: %s going to %s from %s' % (self.env.now, self.picker_id, goal_node, self.curr_node))
+        self.loginfo('  %5.1f: %s going to %s from %s' % (self.env.now, self.picker_id, goal_node, self.curr_node))
         route_nodes, _, route_distance = self.graph.get_path_details(self.curr_node, goal_node)  # TODO: avoid dead node?
         for i in range(len(route_nodes) - 1):
             # move through each node
@@ -258,7 +258,7 @@ class PickerSim(Pose):
             # update agent_nodes in the topo_graph
             self.graph.agent_nodes[self.picker_id] = self.curr_node
 
-        self.loginfo('%5d: %s reached %s' % (self.env.now, self.picker_id, goal_node))
+        self.loginfo('& %5.1f: %s reached %s' % (self.env.now, self.picker_id, goal_node))
         yield self.env.timeout(self.process_timeout)
 
     def finished_row_routine(self):
@@ -302,12 +302,12 @@ class PickerSim(Pose):
                     # go to local storage and unload all trays
                     if self.curr_node == self.local_storage_node:
                         # if already at local storage - do nothing
-                        self.loginfo("%s is idle and at local storage" % self.picker_id)
+                        self.loginfo("  %5.1f: %s is idle and at local storage" % (self.env.now, self.picker_id))
                         self.mode = 4
                         unloading_start_time = self.env.now
                     else:
                         # go to local storage node
-                        self.loginfo("%s is idle and going to local storage" % self.picker_id)
+                        self.loginfo("  %5.1f: %s is idle and going to local storage" % (self.env.now, self.picker_id))
                         self.goal_node = "" + self.local_storage_node
                         self.mode = 3
                         transportation_start_time = self.env.now
@@ -317,7 +317,7 @@ class PickerSim(Pose):
 
                 elif self.curr_row is not None:
                     # idle picker allocated to a new row
-                    self.loginfo("%s is allocated to %s" %(self.picker_id, self.curr_row))
+                    self.loginfo("  %5.1f: %s is allocated to %s" %(self.env.now, self.picker_id, self.curr_row))
                     self.time_spent_idle += self.env.now - idle_start_time
                     self.mode = 1 # transporting to a row_node from curr_node
                     transportation_start_time = self.env.now
@@ -328,7 +328,7 @@ class PickerSim(Pose):
                     # go to local storage and unload all trays
                     if self.curr_node == self.local_storage_node:
                         # if already at local storage - do nothing
-                        self.loginfo("%s is idle and at local storage" % self.picker_id)
+                        self.loginfo("%s is idle and at local storage" % (self.env.now, self.picker_id))
                         self.mode = 4
                         unloading_start_time = self.env.now
                     else:
@@ -346,13 +346,14 @@ class PickerSim(Pose):
             elif self.mode == 1:
                 # from curr_node go to a row_node (self.goal_node) and continue picking
                 # goal_node is set in allocate_row
-                self.loginfo("%s going to %s from %s" %(self.picker_id, self.goal_node, self.curr_node))
+                self.loginfo("  %5.1f: %s going to %s from %s" %
+                             (self.env.now, self.picker_id, self.goal_node, self.curr_node))
 #                yield self.env.process(self.go_to_node(self.goal_node, self.transportation_rate))
                 # adding Gaussian white noise to introduce variations
                 yield self.env.process(self.go_to_node(self.goal_node, self.transportation_rate + random.gauss(0, self.transportation_rate_std)))
                 self.time_spent_transportation += self.env.now - transportation_start_time
 
-                self.loginfo("%s will start picking now" % self.picker_id)
+                self.loginfo("P %5.1f: %s will start picking now" % (self.env.now, self.picker_id))
                 self.mode = 2 # picking
                 picking_start_time = self.env.now
 
@@ -371,23 +372,24 @@ class PickerSim(Pose):
 
                 # decide what is the next mode of action
                 if self.n_trays >= self.max_n_trays:
-                    self.loginfo("%s has trays full" % self.picker_id)
+                    self.loginfo("T %5.1f: %s has trays full" % (self.env.now, self.picker_id))
                     if not self.with_robots:
                         # picker should go to local storage to unload
                         # but, should s/he return?
                         if self.curr_node == row_end_node:
                             # inform row complete and go to local storage node and don't return
-                            self.loginfo("%s finished %s" %(self.picker_id, self.curr_row))
+                            self.loginfo("  %5.1f: %s finished %s" % (self.env.now, self.picker_id, self.curr_row))
                             self.finished_row_routine()
                             self.goal_node = "" + self.local_storage_node
                         elif self.curr_node == dir_change_node:
                             # forward -> reverse
-                            self.loginfo("%s changing direction to reverse" % self.picker_id)
+                            self.loginfo("  %5.1f: %s changing direction to reverse" % (self.env.now, self.picker_id))
                             self.picking_dir = "reverse"
                             self.goal_node = "" + self.curr_node
                         else:
                             # row not finished, so come back to curr_node and continue in same dir
-                            self.loginfo("%s going to %s and will return to %s" % (self.picker_id, self.local_storage_node, self.curr_node))
+                            self.loginfo("  %5.1f: %s going to %s and will return to %s" %
+                                         (self.env.now, self.picker_id, self.local_storage_node, self.curr_node))
                             self.goal_node = "" + self.curr_node
 
                         self.mode = 3
@@ -395,14 +397,15 @@ class PickerSim(Pose):
                     else:
                         if self.curr_node == row_end_node:
                             # inform row complete
-                            self.loginfo("%s finished %s" % (self.picker_id, self.curr_row))
+                            self.loginfo("  %5.1f: %s finished %s" % (self.env.now, self.picker_id, self.curr_row))
                             self.finished_row_routine()
                         elif self.curr_node == dir_change_node:
-                            self.loginfo("%s changing direction to reverse" % self.picker_id)
+                            self.loginfo("  %5.1f: %s changing direction to reverse" % (self.env.now, self.picker_id))
                             self.picking_dir = "reverse"
 
                         # go to wait_and_load_on_robot mode (5)
-                        self.loginfo("%s waiting for a robot to collect the trays" % self.picker_id)
+                        self.loginfo("  %5.1f: %s waiting for a robot to collect the trays" %
+                                     (self.env.now, self.picker_id))
                         self.continue_picking = False
                         self.mode = 5
                         self.set_picker_state("CALLED")
@@ -421,14 +424,14 @@ class PickerSim(Pose):
                 else:
                     # trays not full but has the row finished? if finished, wait for next allocation
                     if self.curr_node == row_end_node:
-                        self.loginfo("%s finished %s" %(self.picker_id, self.curr_row))
+                        self.loginfo("  %5.1f: %s finished %s" % (self.env.now, self.picker_id, self.curr_row))
                         self.finished_row_routine()
                         self.mode = 0
                         idle_start_time = self.env.now
 
                     elif self.curr_node == dir_change_node:
                         # forward -> reverse, continue picking
-                        self.loginfo("%s changing direction to reverse" %(self.picker_id))
+                        self.loginfo("  %5.1f: %s changing direction to reverse" % (self.env.now, self.picker_id))
                         self.picking_dir = "reverse"
                         self.mode = 2
                         picking_start_time = self.env.now
@@ -468,10 +471,13 @@ class PickerSim(Pose):
                         yield req
                         if not self.with_robots: # without robots
                             if self.picking_finished:
-                                self.loginfo("%s unloading all trays at %s" %(self.picker_id, storage_node))
-                                wait_time = self.unloading_time * (self.n_trays if self.picking_progress == 0 else self.n_trays + 1)
+                                self.loginfo("  %5.1f: %s unloading all trays at %s" %
+                                             (self.env.now, self.picker_id, storage_node))
+                                wait_time = self.unloading_time * (
+                                    self.n_trays if self.picking_progress == 0 else self.n_trays + 1)
                             else:
-                                self.loginfo("%s unloading full trays at %s" %(self.picker_id, storage_node))
+                                self.loginfo("  %5.1f: %s unloading full trays at %s" %
+                                             (self.env.now, self.picker_id, storage_node))
                                 wait_time = self.unloading_time * self.n_trays
                             yield self.env.timeout(wait_time)
                             self.time_spent_unloading += self.env.now - unloading_start_time
@@ -502,7 +508,8 @@ class PickerSim(Pose):
                         else: # with robots
                             # this unloading will happen if s/he finished picking the last allocated row
                             # and tray is not full
-                            self.loginfo("%s unloading all trays at %s" %(self.picker_id, storage_node))
+                            self.loginfo("  %5.1f: %s unloading all trays at %s" %
+                                         (self.env.now, self.picker_id, storage_node))
                             wait_time = self.unloading_time * (self.n_trays if self.picking_progress == 0 else self.n_trays + 1)
                             yield self.env.timeout(wait_time)
                             self.time_spent_unloading += self.env.now - unloading_start_time
@@ -512,7 +519,7 @@ class PickerSim(Pose):
                             idle_start_time = self.env.now
 
                 if self.picking_finished or (self.allocation_finished and self.mode == 0):
-                    self.loginfo("all rows picked. %s exiting" %(self.picker_id))
+                    self.loginfo("  %5.1f: all rows picked. %s exiting" % (self.env.now, self.picker_id))
                     self.env.exit("all rows picked and idle")
                     break
 
@@ -528,14 +535,15 @@ class PickerSim(Pose):
                 # elif self.state == "ARRIVED":
                 elif robot_state == "ARRIVED":
                     # robot is here. load the full trays and set state as LOADED
-                    self.loginfo("%s reached %s" %(self.assigned_robot_id, self.picker_id))
+                    self.loginfo("  %5.1f: %s reached %s" % (self.env.now, self.assigned_robot_id, self.picker_id))
                     self.time_spent_waiting += self.env.now - waiting_start_time
 
                     # wait for loading on the assigned robot
                     loading_start_time = self.env.now
                     wait_time = self.unloading_time * self.n_trays
                     yield self.env.timeout(wait_time)
-                    self.loginfo("%5.1f: %s loaded full trays on %s" % (self.env.now, self.picker_id, self.assigned_robot_id))
+                    self.loginfo("  %5.1f: %s loaded full trays on %s" %
+                                 (self.env.now, self.picker_id, self.assigned_robot_id))
                     self.time_spent_loading += self.env.now - loading_start_time
 
                     self.update_trays_loaded()
@@ -547,11 +555,12 @@ class PickerSim(Pose):
                     # scheduler knew the robot is loaded and set the state of picker to INIT
                     # the picker is now free to continue picking
                     if self.curr_row is not None:
-                        self.loginfo("%s will continue picking %s" %(self.picker_id, self.curr_row))
+                        self.loginfo("  %5.1f: %s will continue picking %s" %
+                                     (self.env.now, self.picker_id, self.curr_row))
                         self.mode = 2
                         picking_start_time = self.env.now
                     else:
-                        self.loginfo("%s does not have any rows allocated" %(self.picker_id))
+                        self.loginfo("  %5.1f: %s does not have any rows allocated" % (self.env.now, self.picker_id))
                         self.mode = 0
                         idle_start_time = self.env.now
 
@@ -559,16 +568,17 @@ class PickerSim(Pose):
                 # go back to previous row's local storage node
                 # from curr_node go to local_storage_node and stay idle
                 waiting_node = self.prev_row_info[3]
-                self.loginfo("%s going to %s from %s" %(self.picker_id, self.goal_node, waiting_node))
+                self.loginfo("  %5.1f: %s going to %s from %s" %
+                             (self.env.now, self.picker_id, self.goal_node, waiting_node))
                 yield self.env.process(self.go_to_node(waiting_node, self.transportation_rate))
                 self.time_spent_transportation += self.env.now - transportation_start_time
 
-                self.loginfo("%s is idle now" %(self.picker_id))
-                self.mode = 0 # picking
+                self.loginfo("  %5.1f: %s is idle now" % (self.env.now, self.picker_id))
+                self.mode = 0  # picking
                 idle_start_time = self.env.now
 
                 if self.picking_finished or (self.allocation_finished and self.mode == 0):
-                    self.loginfo("all rows picked. %s exiting" %(self.picker_id))
+                    self.loginfo("  %5.1f: all rows picked. %s exiting" % (self.env.now, self.picker_id))
                     self.env.exit("all rows picked and idle")
                     break
 

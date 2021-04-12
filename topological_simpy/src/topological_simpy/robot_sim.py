@@ -85,7 +85,7 @@ class RobotSim(Robot):
 
         while True:
             if self.picking_finished and (self.mode == 0 or self.mode == 5):
-                self.loginfo("all rows picked. %s exiting" % self.robot_id)
+                self.loginfo("X %5.1f: all rows picked. %s exiting" % (self._env.now, self.robot_id))
                 self.env.exit("all rows picked and idle")
                 break
 
@@ -96,12 +96,12 @@ class RobotSim(Robot):
                     # change mode to transport to picker
                     self.mode = 1
                     transportation_start_time = self.env.now
-                    self.loginfo(
-                        "%5.1f: %s is assigned to %s" % (self._env.now, self.robot_id, self.assigned_picker_id))
+                    self.loginfo("  %5.1f: %s is assigned to %s" %
+                                 (self._env.now, self.robot_id, self.assigned_picker_id))
 
                 # TODO: idle state battery charge changes
                 if self.battery_charge < 40.0 or isclose(self.battery_charge, 40.0):
-                    self.loginfo("%5d: battery low on %s, going to charging mode" % (self._env.now, self.robot_id))
+                    self.loginfo("  %5.1f: battery low on %s, going to charging mode" % (self._env.now, self.robot_id))
                     self.time_spent_idle += self.env.now - idle_start_time
                     # change mode to charging
                     self.mode = 5
@@ -110,10 +110,10 @@ class RobotSim(Robot):
             elif self.mode == 1:
                 # farm assigns the robot to a picker by calling assign_robot_to_picker
                 # go to picker_node from curr_node
-                self.loginfo("%5.1f: %s going to %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
+                self.loginfo("  %5.1f: %s going to %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
                 yield self.env.process(self.go_to_node(self.assigned_picker_node))
                 self.time_spent_transportation += self.env.now - transportation_start_time
-                self.loginfo("%5.1f: %s reached %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
+                self.loginfo("@ %5.1f: %s reached %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
                 self.set_robot_state("ARRIVED")
                 # change mode to waiting_for_loading
                 self.continue_transporting = False
@@ -121,10 +121,10 @@ class RobotSim(Robot):
                 loading_start_time = self.env.now
 
             elif self.mode == 2:
-                self.loginfo("%5.1f: %s is waiting for the trays to be loaded" % (self._env.now, self.robot_id))
+                self.loginfo("  %5.1f: %s is waiting for the trays to be loaded" % (self._env.now, self.robot_id))
                 yield self.env.process(self.wait_for_loading())  # this reset mode to 3
                 self.time_spent_loading += self.env.now - loading_start_time
-                self.loginfo("%5.1f: trays are loaded on %s" % (self._env.now, self.robot_id))
+                self.loginfo("L %5.1f: trays are loaded on %s" % (self._env.now, self.robot_id))
                 self.set_robot_state("LOADED")  # TODO: LOADED_ON
                 while True:
                     if self.continue_transporting:
@@ -138,17 +138,19 @@ class RobotSim(Robot):
             elif self.mode == 3:
                 if self.use_local_storage:
                     # go to local_storage_node from picker_node
-                    self.loginfo("%s going to %s" % (self.robot_id, self.assigned_local_storage_node))
+                    self.loginfo("  %5.1f: %s going to %s" %
+                                 (self._env.now, self.robot_id, self.assigned_local_storage_node))
                     yield self.env.process(self.go_to_node(self.assigned_local_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
-                    self.loginfo("%s reached %s" % (self.robot_id, self.assigned_local_storage_node))
+                    self.loginfo("@ %5.1f: %s reached %s" %
+                                 (self._env.now, self.robot_id, self.assigned_local_storage_node))
 
                 else:
                     # go to cold_storage_node from picker_node
-                    self.loginfo("%s going to %s" % (self.robot_id, self.cold_storage_node))
+                    self.loginfo("  %5.1f: %s going to %s" % (self._env.now, self.robot_id, self.cold_storage_node))
                     yield self.env.process(self.go_to_node(self.cold_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
-                    self.loginfo("%s reached %s" % (self.robot_id, self.cold_storage_node))
+                    self.loginfo("@ %5.1f: %s reached %s" % (self._env.now, self.robot_id, self.cold_storage_node))
 
                 # change mode to unloading
                 self.mode = 4
@@ -156,11 +158,11 @@ class RobotSim(Robot):
 
             elif self.mode == 4:
                 # wait for unloading
-                self.loginfo("%s is waiting for the trays to be unloaded" % self.robot_id)
+                self.loginfo("  %5.1f: %s is waiting for the trays to be unloaded" % (self._env.now, self.robot_id))
                 local_storage = self.assigned_local_storage_node  # backup needed for mode 6 if going that way
                 yield self.env.process(self.wait_for_unloading())  # this reset mode to 0
                 self.time_spent_unloading += self.env.now - unloading_start_time
-                self.loginfo("trays are unloaded from %s" % self.robot_id)
+                self.loginfo("  %5.1f: trays are unloaded from %s" % (self._env.now, self.robot_id))
                 if self.use_local_storage:
                     # change mode to idle
                     local_storage = None  # no need of local storage, reset
@@ -181,10 +183,10 @@ class RobotSim(Robot):
 
             elif self.mode == 6:
                 # go to local_storage_node of the picker's assigned row
-                self.loginfo("%s going to %s" % (self.robot_id, local_storage))
+                self.loginfo("  %5.1f: %s going to %s" % (self._env.now, self.robot_id, local_storage))
                 yield self.env.process(self.go_to_node(local_storage))
                 self.time_spent_transportation += self.env.now - transportation_start_time
-                self.loginfo("%s reached %s" % (self.robot_id, local_storage))
+                self.loginfo("@ %5.1f: %s reached %s" % (self._env.now, self.robot_id, local_storage))
                 local_storage = None
 
                 # change mode to idle

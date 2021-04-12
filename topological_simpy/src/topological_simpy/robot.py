@@ -208,7 +208,7 @@ class Robot(object):
         """scheduler confirms the robot can go to local storage and unload.
         this is to make sure the scheduler is aware that the picker has loaded trays on the robot.
         """
-        self.loginfo("%s can continue transporting to local storage" % self.robot_id)
+        self.loginfo("C %5.1f: %s can continue transporting to local storage" % (self.env.now, self.robot_id))
         self.continue_transporting = True
 
     def go_to_node(self, goal_node):
@@ -217,7 +217,7 @@ class Robot(object):
         Keyword arguments:
         goal_node -- node to reach from current node
         """
-        self.loginfo("%s going to %s from %s" % (self.robot_id, goal_node, self.curr_node))
+        self.loginfo("> %5.1f: %s going to %s from %s" % (self.env.now, self.robot_id, goal_node, self.curr_node))
         route_nodes, _, route_distance = self.graph.get_path_details(self.curr_node, goal_node)
         for i in range(len(route_nodes) - 1):
             # move through each edge
@@ -237,7 +237,7 @@ class Robot(object):
             # update agent_nodes in the topo_graph
             self.graph.agent_nodes[self.robot_id] = self.curr_node
 
-        self.loginfo("%s reached %s" % (self.robot_id, goal_node))
+        self.loginfo("@ %5.1f: %s reached %s" % (self.env.now, self.robot_id, goal_node))  # todo:WHY LOG 4 TIMES?
         yield self.env.timeout(self.process_timeout)
 
     def wait_for_loading(self):

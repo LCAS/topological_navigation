@@ -30,6 +30,7 @@ class RobotSim(Robot):
                       'cost_total': []}
 
         self.robot_state = "INIT"  # robot state, "INIT", "ACCEPTED", "TRAVELLING", "ARRIVED", "LOADED_ON", "LOADED_OFF"
+        self.robot_resource = simpy.Container(self._env, capacity=1, init=0)  # robot can only be occupied by 1 picker
 
         if self._tmap.env:
             self._tmap.req_ret[self._current_node] = 1
@@ -39,6 +40,20 @@ class RobotSim(Robot):
             self.log_cost(self._name, 0, 0, self._current_node)
 
         self.action = self.env.process(self.normal_operation())
+
+    def call_robot(self, picker_id):
+        self.loginfo("? %5.1f: %s call robot" % (self._env.now, picker_id))
+        return self.robot_resource.put(1)
+        # self.set_robot_state("ACCEPTED")
+        # self.log_cost(". %5.1f: call robot: ACCEPTED" % self._env.now)
+        # yield self._env.timeout(0)
+
+    def release_robot(self):
+        if self.robot_resource.level > 0:
+            self.loginfo(". %5.1f: release robot" % self._env.now)
+            return self.robot_resource.get(1)
+            # self.set_robot_state("INIT")
+            # self.loginfo(". %5.1f: release robot: INIT" % self._env.now)
 
     def set_robot_state(self, state):
         """
@@ -71,6 +86,7 @@ class RobotSim(Robot):
         self.assigned_picker_node = picker_node
         self.assigned_picker_n_trays = n_trays
         self.assigned_local_storage_node = local_storage_node
+        self.call_robot(picker_id)
         self.set_robot_state('ACCEPTED')
 
     def normal_operation(self):
@@ -163,6 +179,7 @@ class RobotSim(Robot):
                 yield self.env.process(self.wait_for_unloading())  # this reset mode to 0
                 self.time_spent_unloading += self.env.now - unloading_start_time
                 self.loginfo("  %5.1f: trays are unloaded from %s" % (self._env.now, self.robot_id))
+                self.release_robot()  # release the robot, so the next picker could use this robot
                 if self.use_local_storage:
                     # change mode to idle
                     local_storage = None  # no need of local storage, reset
@@ -299,14 +316,14 @@ class RobotSim(Robot):
 
             try:
                 time_to_travel = ceil(d_cur / (2 * self._speed_m_s))
-                yield self._tmap.env.timeout(time_to_travel)
+                yield self._tmap.env.timeout(round(time_to_travel, 1))
                 yield self._tmap.release_node(self._name, self._current_node)
                 # The robot is reaching at the half way between the current node and next node
                 print('% 5d:  %s ---> %s reaching half way ---> %s' % (
                     self._tmap.env.now, self._current_node, self._name, n))
                 self._current_node = n
                 remain_time_to_travel = ceil(d_cur / self._speed_m_s) - time_to_travel
-                yield self._tmap.env.timeout(remain_time_to_travel)
+                yield self._tmap.env.timeout(round(remain_time_to_travel, 1))
                 print('@% 4d:  %s reached node %s' % (self._tmap.env.now, self._name, n))
                 self.log_cost(self._name, self._env.now - start_wait, d_cur, n)  # for monitor
                 yield self._tmap.env.timeout(0)

@@ -230,7 +230,7 @@ class Robot(object):
             travel_time = edge_distance / (self.transportation_rate + random.gauss(0, self.transportation_rate_std))
 
             # travel the node distance
-            yield self.env.timeout(travel_time)
+            yield self.env.timeout(round(travel_time, 1))
 
             self.curr_node = route_nodes[i + 1]
 
@@ -269,7 +269,7 @@ class Robot(object):
             yield req
             # access to local storage is granted
             unloading_time = self.unloading_time * self.assigned_picker_n_trays
-            yield self.env.timeout(unloading_time)
+            yield self.env.timeout(round(unloading_time, 1))
         self.trays_unloaded()
         yield self.env.timeout(self.process_timeout)
 

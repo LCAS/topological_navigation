@@ -251,7 +251,7 @@ class PickerSim(Pose):
             # move through each node
             edge_distance = route_distance[i]
             travel_time = edge_distance / nav_speed
-            yield self.env.timeout(travel_time)
+            yield self.env.timeout(round(travel_time, 1))
 
             self.curr_node = route_nodes[i + 1]
 
@@ -479,7 +479,7 @@ class PickerSim(Pose):
                                 self.loginfo("  %5.1f: %s unloading full trays at %s" %
                                              (self.env.now, self.picker_id, storage_node))
                                 wait_time = self.unloading_time * self.n_trays
-                            yield self.env.timeout(wait_time)
+                            yield self.env.timeout(round(wait_time, 1))
                             self.time_spent_unloading += self.env.now - unloading_start_time
                             self.update_trays_unloaded()
 
@@ -511,7 +511,7 @@ class PickerSim(Pose):
                             self.loginfo("  %5.1f: %s unloading all trays at %s" %
                                          (self.env.now, self.picker_id, storage_node))
                             wait_time = self.unloading_time * (self.n_trays if self.picking_progress == 0 else self.n_trays + 1)
-                            yield self.env.timeout(wait_time)
+                            yield self.env.timeout(round(wait_time, 1))
                             self.time_spent_unloading += self.env.now - unloading_start_time
                             self.update_trays_unloaded()
 
@@ -541,7 +541,7 @@ class PickerSim(Pose):
                     # wait for loading on the assigned robot
                     loading_start_time = self.env.now
                     wait_time = self.unloading_time * self.n_trays
-                    yield self.env.timeout(wait_time)
+                    yield self.env.timeout(round(wait_time, 1))
                     self.loginfo("  %5.1f: %s loaded full trays on %s" %
                                  (self.env.now, self.picker_id, self.assigned_robot_id))
                     self.time_spent_loading += self.env.now - loading_start_time

@@ -173,7 +173,8 @@ class TrayFullPredictor(object):
             for picker_id in mode_0_pickers:
                 self._start_idling(picker_id, time_now)
 
-            self._row_allocation(mode_1_pickers, time_now)   # if mode_1_pickers:  TODO: avoid empty calling
+            if mode_1_pickers:
+                self._row_allocation(mode_1_pickers, time_now)   # if mode_1_pickers:  TODO: avoid empty calling
 
             for picker_id in mode_2_pickers:
                 self._start_picking(picker_id, time_now)

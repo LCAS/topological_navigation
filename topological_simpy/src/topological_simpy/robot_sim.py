@@ -14,7 +14,7 @@ class RobotSim(Robot):
 
         self._current_node = self.curr_node  # TODO: merge the two names
         self._tmap = topo_graph
-        self._env = topo_graph.env  # TODO: to be fixed
+        self._env = env  # revised from topo_graph.env, any potential bugs?
         self._name = name
         self._speed_m_s = .3
         self._active_process = None

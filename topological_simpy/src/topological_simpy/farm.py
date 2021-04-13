@@ -137,12 +137,12 @@ class Farm(object):
                 # time_now, event
                 self.events.append([time_now, "finished picking"])
                 inform_picking_finished = True
-                self.loginfo("all rows are picked")
+                self.loginfo("* %5.1f: all rows are picked" % self.env.now)
                 for robot_id in self.robot_ids:
                     self.robots[robot_id].inform_picking_finished()
                 for picker_id in self.picker_ids:
                     self.pickers[picker_id].inform_picking_finished()
-                self.loginfo("all rows picked. scheduler exiting")
+                self.loginfo("* %5.1f: all rows picked. scheduler exiting" % self.env.now)
                 self.env.exit("all rows are picked")
                 break
 

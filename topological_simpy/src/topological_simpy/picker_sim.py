@@ -307,7 +307,7 @@ class PickerSim(Pose):
                         unloading_start_time = self.env.now
                     else:
                         # go to local storage node
-                        self.loginfo("  %5.1f: %s is idle and going to local storage" % (self.env.now, self.picker_id))
+                        self.loginfo("I %5.1f: %s is idle and going to local storage" % (self.env.now, self.picker_id))
                         self.goal_node = "" + self.local_storage_node
                         self.mode = 3
                         transportation_start_time = self.env.now
@@ -328,12 +328,12 @@ class PickerSim(Pose):
                     # go to local storage and unload all trays
                     if self.curr_node == self.local_storage_node:
                         # if already at local storage - do nothing
-                        self.loginfo("%s is idle and at local storage" % (self.env.now, self.picker_id))
+                        self.loginfo("I %5.1f: %s is idle and at local storage" % (self.env.now, self.picker_id))
                         self.mode = 4
                         unloading_start_time = self.env.now
                     else:
                         # go to local storage node
-                        self.loginfo("%s is idle and going to local storage" % self.picker_id)
+                        self.loginfo("I %5.1f: %s is idle and going to local storage" % (self.env.now, self.picker_id))
                         self.goal_node = "" + self.local_storage_node
                         self.mode = 3
                         transportation_start_time = self.env.now

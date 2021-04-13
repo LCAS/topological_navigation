@@ -41,8 +41,8 @@ class RobotSim(Robot):
 
         self.action = self.env.process(self.normal_operation())
 
-    def call_robot(self, picker_id):
-        self.loginfo("? %5.1f: %s call robot" % (self._env.now, picker_id))
+    def call_robot(self, picker_id, robot_id):
+        self.loginfo("? %5.1f: %s call robot %s" % (self._env.now, picker_id, robot_id))
         return self.robot_resource.put(1)
         # self.set_robot_state("ACCEPTED")
         # self.log_cost(". %5.1f: call robot: ACCEPTED" % self._env.now)
@@ -50,7 +50,7 @@ class RobotSim(Robot):
 
     def release_robot(self):
         if self.robot_resource.level > 0:
-            self.loginfo(". %5.1f: release robot" % self._env.now)
+            self.loginfo(". %5.1f: release robot %s" % (self._env.now, self._name))
             return self.robot_resource.get(1)
             # self.set_robot_state("INIT")
             # self.loginfo(". %5.1f: release robot: INIT" % self._env.now)
@@ -86,7 +86,7 @@ class RobotSim(Robot):
         self.assigned_picker_node = picker_node
         self.assigned_picker_n_trays = n_trays
         self.assigned_local_storage_node = local_storage_node
-        self.call_robot(picker_id)
+        self.call_robot(picker_id, self._name)
         self.set_robot_state('ACCEPTED')
 
     def normal_operation(self):
@@ -163,10 +163,10 @@ class RobotSim(Robot):
 
                 else:
                     # go to cold_storage_node from picker_node
-                    self.loginfo("  %5.1f: %s going to %s" % (self._env.now, self.robot_id, self.cold_storage_node))
+                    self.loginfo("  %5.1f: %s going to cold_storage_node: %s" % (self._env.now, self.robot_id, self.cold_storage_node))
                     yield self.env.process(self.go_to_node(self.cold_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
-                    self.loginfo("@ %5.1f: %s reached %s" % (self._env.now, self.robot_id, self.cold_storage_node))
+                    self.loginfo("@ %5.1f: %s reached cold_storage_node: %s" % (self._env.now, self.robot_id, self.cold_storage_node))
 
                 # change mode to unloading
                 self.mode = 4
@@ -180,6 +180,7 @@ class RobotSim(Robot):
                 self.time_spent_unloading += self.env.now - unloading_start_time
                 self.loginfo("  %5.1f: trays are unloaded from %s" % (self._env.now, self.robot_id))
                 self.release_robot()  # release the robot, so the next picker could use this robot
+                self.set_robot_state("INIT")
                 if self.use_local_storage:
                     # change mode to idle
                     local_storage = None  # no need of local storage, reset
@@ -200,10 +201,10 @@ class RobotSim(Robot):
 
             elif self.mode == 6:
                 # go to local_storage_node of the picker's assigned row
-                self.loginfo("  %5.1f: %s going to %s" % (self._env.now, self.robot_id, local_storage))
+                self.loginfo("  %5.1f: %s going to local_storage: %s" % (self._env.now, self.robot_id, local_storage))
                 yield self.env.process(self.go_to_node(local_storage))
                 self.time_spent_transportation += self.env.now - transportation_start_time
-                self.loginfo("@ %5.1f: %s reached %s" % (self._env.now, self.robot_id, local_storage))
+                self.loginfo("@ %5.1f: %s reached local_storage: %s" % (self._env.now, self.robot_id, local_storage))
                 local_storage = None
 
                 # change mode to idle

@@ -79,7 +79,7 @@ if __name__ == "__main__":
     robot_homes = ['WayPoint131', 'WayPoint111', 'WayPoint66', 'WayPoint94']
     target_nodes = ['WayPoint66', 'WayPoint142', 'WayPoint102', 'WayPoint78']
     # robot_ids = ['Hurga', 'Foo', 'Foo2']
-    robot_ids = ['Hurga']
+    robot_ids = ['Hurga', 'Foo']
     robot_transportation_rate = topological_simpy.config_utils.param_list_to_dict(
         "robot_transportation_rate", config_params["robot_transportation_rate"], robot_ids)
     robot_max_n_trays = topological_simpy.config_utils.param_list_to_dict(

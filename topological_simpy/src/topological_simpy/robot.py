@@ -237,7 +237,7 @@ class Robot(object):
             # update agent_nodes in the topo_graph
             self.graph.agent_nodes[self.robot_id] = self.curr_node
 
-        self.loginfo("@ %5.1f: %s reached %s" % (self.env.now, self.robot_id, goal_node))  # todo:WHY LOG 4 TIMES?
+        self.loginfo("@ %5.1f: %s reached %s" % (self.env.now, self.robot_id, goal_node))
         yield self.env.timeout(self.process_timeout)
 
     def wait_for_loading(self):

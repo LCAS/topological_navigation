@@ -413,13 +413,13 @@ class PickerSim(Pose):
                         # wait for the event to register
                         while True:
                             robot_state = self.get_robot_state()
-                            # if self.state == "CALLED" or self.state == "ACCEPT" or self.state == "ARRIVED":
-                            if robot_state == "CALLED" or robot_state == "ACCEPT" or robot_state == "ARRIVED":
-                                break
+                            # todo: check idle robots or any robots put this picker into the robot's loading queue?
+                            if robot_state == "CALLED" or robot_state == "ACCEPTED" or robot_state == "ARRIVED":
+                                break   # TODO: make sure the robot answering this picker, not other pickers
                             else:
                                 yield self.env.timeout(self.loop_timeout)
 
-                        waiting_start_time = self.env.now
+                        waiting_start_time = self.env.now  # todo: waiting should start before while loop?
 
                 else:
                     # trays not full but has the row finished? if finished, wait for next allocation
@@ -525,15 +525,14 @@ class PickerSim(Pose):
 
             elif self.mode == 5:
                 # wait for the robot to arrive
-                # the car state would change from CALLED -> ACCEPT -> ARRIVED
+                # the car state would change from CALLED -> ACCEPTED -> ARRIVED
                 # after loading set state to LOADED
-                robot_state = self.get_robot_state()
-                # if self.state == "CALLED" or self.state == "ACCEPT":
-                if robot_state == "CALLED" or robot_state == "ACCEPT":
+                robot_state = self.get_robot_state()   # TODO: self.get_robot_state(picker_id)
+                # if self.state == "CALLED" or self.state == "ACCEPTED":
+                if robot_state == "CALLED" or robot_state == "ACCEPTED":
                     # robot not yet assigned. wait
                     pass
-                # elif self.state == "ARRIVED":
-                elif robot_state == "ARRIVED":
+                elif robot_state == "ARRIVED":   # TODO: check whether robot arriving at the picker who calls the robot
                     # robot is here. load the full trays and set state as LOADED
                     self.loginfo("  %5.1f: %s reached %s" % (self.env.now, self.assigned_robot_id, self.picker_id))
                     self.time_spent_waiting += self.env.now - waiting_start_time
@@ -550,12 +549,11 @@ class PickerSim(Pose):
                     # set state to LOADED
                     # scheduler should know from the CAR status that the tray is loaded
                     self.set_picker_state("LOADED")
-                # elif self.state == "INIT":
-                elif robot_state == "INIT":
+                elif robot_state == "LOADED":
                     # scheduler knew the robot is loaded and set the state of picker to INIT
                     # the picker is now free to continue picking
                     if self.curr_row is not None:
-                        self.loginfo("  %5.1f: %s will continue picking %s" %
+                        self.loginfo("P %5.1f: %s will continue picking %s" %
                                      (self.env.now, self.picker_id, self.curr_row))
                         self.mode = 2
                         picking_start_time = self.env.now

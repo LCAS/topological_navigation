@@ -191,7 +191,7 @@ class PickerSim(Pose):
 
         yield self.env.timeout(self.process_timeout)
 
-    def update_trays_unload(self):
+    def update_trays_unloaded(self):
         """
         update tray counts after unloading
         """

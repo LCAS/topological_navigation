@@ -67,7 +67,7 @@ class Robot(object):
         self.use_local_storage = self.graph.use_local_storage  # if False, store at cold storage
         self.cold_storage_node = self.graph.cold_storage_node
 
-        self.action = self.env.process(self.normal_operation())
+        # self.action = self.env.process(self.normal_operation())
 
     def normal_operation(self):
         """normal operation sequences of the robot in different modes"""

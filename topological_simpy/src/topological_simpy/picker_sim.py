@@ -415,7 +415,7 @@ class PickerSim(Pose):
                             robot_state = self.get_robot_state()
                             # todo: check idle robots or any robots put this picker into the robot's loading queue?
                             if robot_state == "CALLED" or robot_state == "ACCEPTED" or robot_state == "ARRIVED":
-                                break   # TODO: make sure the robot answering this picker, not other pickers
+                                break
                             else:
                                 yield self.env.timeout(self.loop_timeout)
 
@@ -519,7 +519,7 @@ class PickerSim(Pose):
                             idle_start_time = self.env.now
 
                 if self.picking_finished or (self.allocation_finished and self.mode == 0):
-                    self.loginfo("  %5.1f: all rows picked. %s exiting" % (self.env.now, self.picker_id))
+                    self.loginfo("X %5.1f: all rows picked. %s exiting" % (self.env.now, self.picker_id))
                     self.env.exit("all rows picked and idle")
                     break
 
@@ -527,7 +527,7 @@ class PickerSim(Pose):
                 # wait for the robot to arrive
                 # the car state would change from CALLED -> ACCEPTED -> ARRIVED
                 # after loading set state to LOADED
-                robot_state = self.get_robot_state()   # TODO: self.get_robot_state(picker_id)
+                robot_state = self.get_robot_state()
                 # if self.state == "CALLED" or self.state == "ACCEPTED":
                 if robot_state == "CALLED" or robot_state == "ACCEPTED":
                     # robot not yet assigned. wait
@@ -545,7 +545,7 @@ class PickerSim(Pose):
                                  (self.env.now, self.picker_id, self.assigned_robot_id))
                     self.time_spent_loading += self.env.now - loading_start_time
 
-                    self.update_trays_loaded()
+                    self.update_trays_loaded()  # here, robot_state is set to "LOADED"
                     # set state to LOADED
                     # scheduler should know from the CAR status that the tray is loaded
                     self.set_picker_state("LOADED")
@@ -562,6 +562,9 @@ class PickerSim(Pose):
                         self.mode = 0
                         idle_start_time = self.env.now
 
+                    # picker loaded trays on robot, the robot is not assigned to the picker anymore
+                    self.reset_robot_assignment()
+
             elif self.mode == 6:
                 # go back to previous row's local storage node
                 # from curr_node go to local_storage_node and stay idle
@@ -576,7 +579,7 @@ class PickerSim(Pose):
                 idle_start_time = self.env.now
 
                 if self.picking_finished or (self.allocation_finished and self.mode == 0):
-                    self.loginfo("  %5.1f: all rows picked. %s exiting" % (self.env.now, self.picker_id))
+                    self.loginfo("X %5.1f: all rows picked. %s exiting" % (self.env.now, self.picker_id))
                     self.env.exit("all rows picked and idle")
                     break
 

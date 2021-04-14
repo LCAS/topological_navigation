@@ -297,7 +297,7 @@ class TopologicalForkGraph(object):
                     queue_time = queue_time + self._hold[node]['hold_time'][-2-i]
                 wait_time = self._hold[node]['hold_time'][-2-num] + queue_time - (now - start_moment)
             if wait_time < 0:
-                print('!%4d: %s has held longer than expected! Extend the wait time as before' % (
+                print('! %5.1f: %s has held longer than expected! Extend the wait time as before' % (
                     self.env.now, node))
                 wait_time = self._hold[node]['hold_time'][-2]  # Reset the wait time
 
@@ -376,7 +376,7 @@ class TopologicalForkGraph(object):
             wait_time = self._hold[node_name]['hold_time'][-n-1] + queue_time - (now - start_moment)
 
         if wait_time < 0:
-            print('!%4d: %s has held longer than expected! Extend the wait time as before' % (
+            print('! %5.1f: %s has held longer than expected! Extend the wait time as before' % (
                 self.env.now, node_name))
             wait_time = self._hold[node_name]['hold_time'][-2]  # Reset the wait time
 
@@ -515,14 +515,14 @@ class TopologicalForkGraph(object):
         """
         self.add_act_node(robot_name, node)
         if self.is_in_tra_jam(robot_name):
-            print('>% 4d: %s is in traffic jam, prepare to change route' % (self.env.now, robot_name))
+            print('> %5.1f: %s is in traffic jam, prepare to change route' % (self.env.now, robot_name))
             self.pop_free_node(robot_name, node, jam=True)  # pop the node planned to request
             self.add_robot_to_jam(robot_name, node)
-            return self.env.timeout(0)   # todo: comment out
+            return self.env.timeout(0)
         if self.env:
-            return self._node_res[node].put(1)   # todo: comment out return
+            return self._node_res[node].put(1)
         else:
-            return self.env.timeout(0)  # todo: comment out
+            return self.env.timeout(0)
 
     def release_node(self, robot_name, node):
         """
@@ -557,7 +557,7 @@ class TopologicalForkGraph(object):
         for n in self._node_res:
             if self._node_res[n].level > 0:
                 occupied_nodes.append(n)
-        print("% 5d:    nodes     %s      are occupied" % (self.env.now, sorted(occupied_nodes)))
+        print("  %5.1f:    nodes     %s      are occupied" % (self.env.now, sorted(occupied_nodes)))
         return occupied_nodes
 
     def add_robot_to_jam(self, robot_name, node):

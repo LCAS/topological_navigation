@@ -16,7 +16,7 @@ class RobotSim(Robot):
         self._tmap = topo_graph
         self._env = env  # revised from topo_graph.env, any potential bugs?
         self._name = name
-        self._speed_m_s = .3
+        self._speed_m_s = transportation_rate
         self._active_process = None
         self.init_hold_t = 5  # initial hold time, for first node TODO: assign a dynamic time--> reset when picker calls
         self._cost = {'robot_name': [],
@@ -127,7 +127,7 @@ class RobotSim(Robot):
                 # farm assigns the robot to a picker by calling assign_robot_to_picker
                 # go to picker_node from curr_node
                 self.loginfo("  %5.1f: %s going to %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
-                yield self.env.process(self.go_to_node(self.assigned_picker_node))
+                yield self.env.process(self._goto(self.assigned_picker_node))
                 self.time_spent_transportation += self.env.now - transportation_start_time
                 self.loginfo("@ %5.1f: %s reached %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
                 self.set_robot_state("ARRIVED")
@@ -156,7 +156,7 @@ class RobotSim(Robot):
                     # go to local_storage_node from picker_node
                     self.loginfo("  %5.1f: %s going to %s" %
                                  (self._env.now, self.robot_id, self.assigned_local_storage_node))
-                    yield self.env.process(self.go_to_node(self.assigned_local_storage_node))
+                    yield self.env.process(self._goto(self.assigned_local_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
                     self.loginfo("@ %5.1f: %s reached %s" %
                                  (self._env.now, self.robot_id, self.assigned_local_storage_node))
@@ -164,7 +164,7 @@ class RobotSim(Robot):
                 else:
                     # go to cold_storage_node from picker_node
                     self.loginfo("  %5.1f: %s going to cold_storage_node: %s" % (self._env.now, self.robot_id, self.cold_storage_node))
-                    yield self.env.process(self.go_to_node(self.cold_storage_node))
+                    yield self.env.process(self._goto(self.cold_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
                     self.loginfo("@ %5.1f: %s reached cold_storage_node: %s" % (self._env.now, self.robot_id, self.cold_storage_node))
 
@@ -202,7 +202,7 @@ class RobotSim(Robot):
             elif self.mode == 6:
                 # go to local_storage_node of the picker's assigned row
                 self.loginfo("  %5.1f: %s going to local_storage: %s" % (self._env.now, self.robot_id, local_storage))
-                yield self.env.process(self.go_to_node(local_storage))
+                yield self.env.process(self._goto(local_storage))
                 self.time_spent_transportation += self.env.now - transportation_start_time
                 self.loginfo("@ %5.1f: %s reached local_storage: %s" % (self._env.now, self.robot_id, local_storage))
                 local_storage = None
@@ -234,11 +234,11 @@ class RobotSim(Robot):
             n = route_nodes[idx]
             route_dist_cost = self._tmap.route_dist_cost([self._current_node] + route_nodes[idx:])
             d_cur = self._tmap.distance(self._current_node, n)
-            time_to_travel = int(ceil(d_cur / self._speed_m_s))
+            time_to_travel = round(d_cur / self._speed_m_s, 1)
             if idx + 1 < len(route_nodes):
                 # estimate next distance cost and travelling time
                 d_next = self._tmap.distance(n, route_nodes[idx + 1])
-                time_to_travel_next = ceil(d_next / (2 * self._speed_m_s))
+                time_to_travel_next = round(d_next / (2 * self._speed_m_s), 1)
             else:
                 time_to_travel_next = 0
             hold_time = time_to_travel + time_to_travel_next  # the time node will hold the robot
@@ -253,9 +253,9 @@ class RobotSim(Robot):
                 node_state = self._tmap.get_node_state(n)
                 if node_state is 1:
                     yield self._tmap.request_node(self._name, n)
-                    print('% 5d: active nodes connected to robots: %s ' % (self._env.now, self._tmap.active_nodes))
+                    print('  %5.1f: active nodes connected to robots: %s ' % (self._env.now, self._tmap.active_nodes))
                 else:
-                    print('% 5d: %s: %s is occupied, node state: %d' % (self._env.now, self._name, n, node_state))
+                    print('  %5.1f: %s: %s is occupied, node state: %d' % (self._env.now, self._name, n, node_state))
                     completed_nodes = self._tmap.get_com_nodes()
                     avoid_nodes = [n] + completed_nodes
                     avoid_nodes = list(set(avoid_nodes))  # ignore the duplicated nodes
@@ -263,7 +263,7 @@ class RobotSim(Robot):
 
                     # there is no new route available and all the other robots stop at their completed nodes
                     if (new_route is None) and (len(completed_nodes) == len(self._tmap.active_nodes) - 1):
-                        print('?% 4d: %s: route %s blocked by other completed nodes - %s' % (
+                        print('? %5.1f: %s: route %s blocked by other completed nodes - %s' % (
                             self._env.now, self._name, route_nodes, completed_nodes
                         ))
                         interrupted = True
@@ -275,26 +275,26 @@ class RobotSim(Robot):
                     wait_time = self._tmap.get_wait_time(n)
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost
-                    print('$% 4d: old_route_cost = %d, new_route_dc = %d' % (
+                    print('$ %5.1f: old_route_cost = %d, new_route_dc = %d' % (
                         self._env.now, old_route_cost, new_route_dc))
                     if old_route_cost > new_route_dc:
                         route_nodes = new_route
                         self._tmap.cancel_hold_time(n, hold_time)  # found cheap route, cancel the hold_time just be set
                         idx = 0
-                        print('~%4d: %s go NEW route: %s' % (self._env.now, self._name, route_nodes))
+                        print('~ %5.1f: %s go NEW route: %s' % (self._env.now, self._name, route_nodes))
                         continue
                     else:
-                        print('*% 4d: %s wait %d, use old route %s' % (
+                        print('* %5.1f: %s wait %d, use old route %s' % (
                             self._env.now, self._name, wait_time, [self._current_node] + route_nodes[idx:]))
                         yield self._tmap.request_node(self._name, n)
                         for j in self._tmap.jam:
                             for r in j:
                                 if r == self._name:
-                                    print('|% 4d: %s is in traffic jam, change route now' % (self._env.now, self._name))
+                                    print('| %5.1f: %s is in traffic jam, change route now' % (self._env.now, self._name))
                                     route_nodes = new_route
                                     self._tmap.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
                                     idx = 0
-                                    print('^% 4d: %s go NEW route: %s' % (self._env.now, self._name, route_nodes))
+                                    print('^ %5.1f: %s go NEW route: %s' % (self._env.now, self._name, route_nodes))
                                     break
                         if idx == 0:
                             self.log_cost(self._name, 0, 0, 'CHANGE ROUTE')  # for monitor
@@ -302,13 +302,13 @@ class RobotSim(Robot):
                         else:
                             pass  # travel to the requested node
                 if self._env.now - start_wait > 0:  # The time that the robot has waited since requesting
-                    print('$% 4d:  %s has lock on %s after %d' % (
+                    print('$ %5.1f:  %s has lock on %s after %d' % (
                         self._env.now, self._name, n,
                         self._env.now - start_wait))
             except Exception:
                 # Not triggered when requesting an occupied node!
                 # Not triggered when the robot has a goal running and be assigned a new goal
-                print('% 5d: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
+                print('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
                     self._tmap.env.now, self._name,
                     self._current_node, n
                 ))
@@ -316,25 +316,25 @@ class RobotSim(Robot):
                 break
 
             try:
-                time_to_travel = ceil(d_cur / (2 * self._speed_m_s))
-                yield self._tmap.env.timeout(round(time_to_travel, 1))
+                time_to_travel = round(d_cur / (2 * self._speed_m_s), 1)
+                yield self._tmap.env.timeout(time_to_travel)
                 yield self._tmap.release_node(self._name, self._current_node)
                 # The robot is reaching at the half way between the current node and next node
-                print('% 5d:  %s ---> %s reaching half way ---> %s' % (
+                print('  %5.1f:  %s ---> %s reaching half way ---> %s' % (
                     self._tmap.env.now, self._current_node, self._name, n))
                 self._current_node = n
-                remain_time_to_travel = ceil(d_cur / self._speed_m_s) - time_to_travel
-                yield self._tmap.env.timeout(round(remain_time_to_travel, 1))
-                print('@% 4d:  %s reached node %s' % (self._tmap.env.now, self._name, n))
+                remain_time_to_travel = round(d_cur / self._speed_m_s, 1) - time_to_travel
+                yield self._tmap.env.timeout(remain_time_to_travel)
+                print('@ %5.1f:  %s reached node %s' % (self._tmap.env.now, self._name, n))
                 self.log_cost(self._name, self._env.now - start_wait, d_cur, n)  # for monitor
                 yield self._tmap.env.timeout(0)
             except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
-                print('% 5d: %s INTERRUPTED while travelling from node %s going to node %s' % (
+                print('  %5.1f: %s INTERRUPTED while travelling from node %s going to node %s' % (
                     self._tmap.env.now, self._name,
                     self._current_node, n
                 ))
                 self.log_cost(self._name, 0, 0, 'INTERRUPTED')  # for monitor
-                print('% 5d: @@@ %s release previously acquired target node %s' % (self._env.now, self._name, n))
+                print('  %5.1f: @@@ %s release previously acquired target node %s' % (self._env.now, self._name, n))
                 yield self._tmap.release_node(self._name, n)
                 interrupted = True
                 break
@@ -342,10 +342,10 @@ class RobotSim(Robot):
 
         if interrupted:
             # When the robot has a goal running and be assigned a new goal node
-            print('% 5d: %s ABORTED at %s' % (self._tmap.env.now, self._name, self._current_node))
+            print('  %5.1f: %s ABORTED at %s' % (self._tmap.env.now, self._name, self._current_node))
             self.log_cost(self._name, 0, 0, 'ABORTED')  # for monitor
         else:
-            print('.% 4d: %s COMPLETED at %s' % (self._tmap.env.now, self._name, self._current_node))
+            print('. %5.1f: %s COMPLETED at %s' % (self._tmap.env.now, self._name, self._current_node))
             self.log_cost(self._name, 0, 0, 'COMPLETED')  # for monitor
             self._tmap.add_com_node(self._current_node)
 
@@ -374,7 +374,7 @@ class RobotSim(Robot):
         """
         if self._tmap.env:
             if target == cur_node:
-                print('% 5d: %s is already at target %s' % (self._tmap.env.now, self._name, target))
+                print('  %5.1f: %s is already at target %s' % (self._tmap.env.now, self._name, target))
                 return [target]
             else:
                 if avoid_nodes is None:
@@ -387,7 +387,7 @@ class RobotSim(Robot):
                 else:
                     r = route.source[1:]
                     r.append(target)
-                    print('% 5d: %s going from node %s to node %s via route %s' % (
+                    print('  %5.1f: %s going from node %s to node %s via route %s' % (
                         self._tmap.env.now, self._name, cur_node, target, r))
                     return r
 

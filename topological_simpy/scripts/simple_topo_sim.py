@@ -19,7 +19,7 @@ from datetime import datetime
 
 RANDOM_SEED = 10
 SIM_RT_FACTOR = 1.0
-VERBOSE = True
+VERBOSE = False
 
 seed(RANDOM_SEED)
 numpy.random.seed(RANDOM_SEED)
@@ -36,7 +36,6 @@ if __name__ == "__main__":
     # env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False) # todo: test later
     env = simpy.Environment()
     tmap_config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2'
-    # tmap = TopologicalForkGraph(env, tmap_config_file, verbose=True) #TODO: tmap --> topo_graph
     topo_graph = topological_simpy.topo_mimic.TopologicalForkGraphMimic(config_params["n_polytunnels"],
                                                                         config_params["n_farm_rows"],
                                                                         config_params["n_topo_nav_rows"],
@@ -148,7 +147,7 @@ if __name__ == "__main__":
     # env.process(goal_generator(env, robots, nodes))
     # env.process(goal_generator2(env, robots, target_nodes))
 
-    until = 3000
+    until = 360
     while env.peek() < until:
         # topo_graph.monitor()
         # for r in robots:

@@ -241,10 +241,17 @@ class RobotSim(Robot):
                 time_to_travel_next = round(d_next / (2 * self._speed_m_s), 1)
             else:
                 time_to_travel_next = 0
-            hold_time = time_to_travel + time_to_travel_next  # the time node will hold the robot
-            print(
-                    '% 5d:  %s traversing route from node %10s to node %10s (distance: %f, travel time: %d, hold time: %d)'
-                    % (self._tmap.env.now, self._name, self._current_node, n, d_cur, time_to_travel, hold_time))
+
+            # the time that node will hold the robot
+            # if the node is the cold_storage_node, the hold time needs to consider robot unloading trays(unloading_time)
+            if n == self.cold_storage_node:
+                hold_time = time_to_travel + time_to_travel_next + self.unloading_time * self.assigned_picker_n_trays
+            else:
+                hold_time = time_to_travel + time_to_travel_next
+
+            print('  %5.1f:  %s traversing route from node %10s to node %10s '
+                  '(distance: %f, travel time: %d, plan hold time: %d)' %
+                  (self._tmap.env.now, self._name, self._current_node, n, d_cur, time_to_travel, hold_time))
 
             try:
                 # The node to be requested may be occupied by other robots, mark the time when requesting

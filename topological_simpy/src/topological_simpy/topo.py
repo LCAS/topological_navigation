@@ -127,13 +127,13 @@ def patch_res_get(resource, pre=None, post=None):
 
 
 class TopologicalForkGraph(object):
-    """TopologicalForkGraph: A class to store and retreive information of topological map,
+    """TopologicalForkGraph: A class to store and retrieve information of topological map,
         stored in the mongodb, necessary for the discrete event simulations.Assumes a fork map with
         one head lane and different rows.
     """
 
     def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, env, topo_map2_file, verbose):
-        """TopologicalForkGraph: A class to store and retreive information of topological map,
+        """TopologicalForkGraph: A class to store and retrieve information of topological map,
         stored in the mongodb, necessary for the discrete event simulations.Assumes a fork map with
         one/two head lane and different rows.
 
@@ -151,7 +151,6 @@ class TopologicalForkGraph(object):
         self._route_planner = TopologicalRouteSearch2(self.tmap2)
         self.t_map = deepcopy(self.tmap2)  # used for map node managing
         self.t_map2 = deepcopy(self.tmap2)  # used for map node managing
-        self.route_planner = TopologicalRouteSearch2(self.t_map2)
         self.env = env
 
         self._nodes = sorted([n['node']['name'] for n in self.tmap2['nodes']])
@@ -218,33 +217,12 @@ class TopologicalForkGraph(object):
 
         self.verbose = verbose
 
-        # self.topo_map = self.tmap2      # TODO: merge the two map name
         self.node_index = {}  # index of node in topo_map
-        # for i in range(10):
-        #     try:
-        #         self.topo_map = rospy.wait_for_message(ns + "topological_map",
-        #                                                strands_navigation_msgs.msg.TopologicalMap, timeout=10)
-        #     except:
-        #         rospy.logerr(ns + "topological_map topic is not published?")
-        #         rospy.sleep(0.1)
-        #     else:
-        #         self.loginfo("TopologicalForkGraph object ready")
-        #         break
-
-        # if not self.topo_map:
-        #     raise Exception(ns + "topological_map topic not received")
-
-
-        # if len(self.topo_map.nodes) == 0:
-        #     raise Exception("No nodes in topo_map. Try relaunching topological_navigation nodes.")
 
         self.update_node_index()
 
         self.agent_nodes = {}  # agent_id:agent.curr_node - should be updated by the agent
 
-        # self.route_search = topological_navigation.route_search.TopologicalRouteSearch(self.topo_map)
-        self.route_search = TopologicalRouteSearch2(self.t_map2)   # TODO: duplicate with self.route_planner
-        # self.route_planner = TopologicalRouteSearch2(self.t_map2)
         """
         The bellow methods are used for model topological nodes as containers, each container can only hold one robot.
         Pickers don't use this container feature but use the same topological map. 
@@ -327,7 +305,7 @@ class TopologicalForkGraph(object):
 
     def adj_hold_info(self, node_name, hold_time, req_ret):
         """
-        Whenever release a node, clear the corresponding occupy info
+        Adjust holt information, whenever release a node, clear the corresponding occupy info
         :param node_name: string, topological map node
         :param hold_time: integer, the time that robot plan to hold the node, to be used later
         :param req_ret: integer, the return of requesting a node,
@@ -465,8 +443,8 @@ class TopologicalForkGraph(object):
         return: string list, route node names, from current node to target node
         """
         self.t_map2 = self.delete_tmap_node(avoid_node)
-        self.route_planner = TopologicalRouteSearch2(self.t_map2)
-        return self.route_planner.search_route(origin, target)
+        route_planner = TopologicalRouteSearch2(self.t_map2)
+        return route_planner.search_route(origin, target)
 
     def get_com_nodes(self):
         """
@@ -791,7 +769,7 @@ class TopologicalForkGraph(object):
         if start_node == goal_node:
             return [start_node], route_edges, route_distances
 
-        route = self.route_search.search_route(start_node, goal_node)
+        route = self._route_planner.search_route(start_node, goal_node)
         if route is not None:
             route_nodes = route.source
             route_edges = route.edge_id

@@ -187,7 +187,7 @@ class Farm(object):
 
                 elif picker.mode == 1:
                     # moving to a row_node possibly from the previous node
-                    # this can heppen either after a trip to a storage or after a new row allocation
+                    # this can happen either after a trip to a storage or after a new row allocation
                     # picker will be in picking mode (2) soon
                     if self.assigned_picker_robot[picker_id] is not None:
                         # if there is a robot assigned to the picker, loading has been completed
@@ -323,7 +323,6 @@ class Farm(object):
             #   any picker in previous predictions changed the node
             if new_tray_started or node_changed:
                 # predictions are made only for the pickers who are started picking and did not fill the current tray
-                # TODO: exclude pickers who are not in mode 2 09-Apr-2021, picker102 shouldn't be predicted when not ready
                 predictions = self.predictor.predict_tray_full()
 
                 for picker_id in predictions:
@@ -388,7 +387,7 @@ class Farm(object):
 
                 elif robot.mode == 5:
                     # charging - after transporting and becoming idle
-                    # schdeuler missed the idle mode
+                    # scheduler missed the idle mode
                     picker_id = self.assigned_robot_picker[robot_id]
                     self.assigned_robot_picker[robot_id] = None
                     if self.assigned_picker_robot[picker_id] == robot_id:

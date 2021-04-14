@@ -28,7 +28,7 @@ class PickerSim(Pose):
         self.current_node = []
         self.pose = Pose()
 
-        self.picker_state = "INIT"   # picker state, "INIT", "CALLED", "WAIT", "LOADED" TODO: more states needed?
+        self.picker_state = "INIT"   # picker state, "INIT", "CALLED", "WAIT", "LOADED"
         self.curr_iteration = None
 
         self.picker_id = picker_id

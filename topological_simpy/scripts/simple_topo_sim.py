@@ -40,6 +40,7 @@ if __name__ == "__main__":
                                                                         config_params["n_farm_rows"],
                                                                         config_params["n_topo_nav_rows"],
                                                                         config_params["second_head_lane"],
+                                                                        config_params["single_track_route"],
                                                                         env,
                                                                         tmap_config_file,
                                                                         VERBOSE)

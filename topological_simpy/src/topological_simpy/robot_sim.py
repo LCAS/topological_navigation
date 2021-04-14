@@ -127,7 +127,7 @@ class RobotSim(Robot):
                 # farm assigns the robot to a picker by calling assign_robot_to_picker
                 # go to picker_node from curr_node
                 self.loginfo("  %5.1f: %s going to %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
-                yield self.env.process(self._goto(self.assigned_picker_node))
+                yield self.env.process(self.goto(self.assigned_picker_node))
                 self.time_spent_transportation += self.env.now - transportation_start_time
                 self.loginfo("@ %5.1f: %s reached %s" % (self._env.now, self.robot_id, self.assigned_picker_node))
                 self.set_robot_state("ARRIVED")
@@ -156,7 +156,7 @@ class RobotSim(Robot):
                     # go to local_storage_node from picker_node
                     self.loginfo("  %5.1f: %s going to %s" %
                                  (self._env.now, self.robot_id, self.assigned_local_storage_node))
-                    yield self.env.process(self._goto(self.assigned_local_storage_node))
+                    yield self.env.process(self.goto(self.assigned_local_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
                     self.loginfo("@ %5.1f: %s reached %s" %
                                  (self._env.now, self.robot_id, self.assigned_local_storage_node))
@@ -164,7 +164,7 @@ class RobotSim(Robot):
                 else:
                     # go to cold_storage_node from picker_node
                     self.loginfo("  %5.1f: %s going to cold_storage_node: %s" % (self._env.now, self.robot_id, self.cold_storage_node))
-                    yield self.env.process(self._goto(self.cold_storage_node))
+                    yield self.env.process(self.goto(self.cold_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
                     self.loginfo("@ %5.1f: %s reached cold_storage_node: %s" % (self._env.now, self.robot_id, self.cold_storage_node))
 
@@ -202,7 +202,7 @@ class RobotSim(Robot):
             elif self.mode == 6:
                 # go to local_storage_node of the picker's assigned row
                 self.loginfo("  %5.1f: %s going to local_storage: %s" % (self._env.now, self.robot_id, local_storage))
-                yield self.env.process(self._goto(local_storage))
+                yield self.env.process(self.goto(local_storage))
                 self.time_spent_transportation += self.env.now - transportation_start_time
                 self.loginfo("@ %5.1f: %s reached local_storage: %s" % (self._env.now, self.robot_id, local_storage))
                 local_storage = None
@@ -225,6 +225,15 @@ class RobotSim(Robot):
                 yield self.env.timeout(self.loop_timeout)
 
         yield self.env.timeout(self.process_timeout)
+
+    def is_in_single_track_route(self, target):
+        """ check if the target node is in the single_track_route"""
+        if target in self._tmap.single_track_route:
+            for node in self._tmap.single_track_route:
+                if self._tmap._node_res[node].level is not 0:
+                    return True
+        else:
+            return False
 
     def _goto(self, target):
         route_nodes = self.get_route_nodes(self._current_node, target)
@@ -361,14 +370,28 @@ class RobotSim(Robot):
         Start the _goto(target) process
         :param target: string, topological node that to be reached
         """
-        if self._tmap.env:
-            if self._active_process:
-                if self._active_process.is_alive:  # The robot has an alive goal running
-                    self._active_process.interrupt()
-                    self._active_process = None  # Clear the old goal
-            self._active_process = self._tmap.env.process(self._goto(target))
-        else:
-            self._current_node = target
+        # before go to the target, if the target node is in the single_track_route, and the single_track_route is
+        # occupied by a robot, then go back to home node and keep waiting until the single_track_route is free to use
+        while self.is_in_single_track_route(target):
+            for home_node in self._tmap.local_storages.keys():
+                # if the home node(local_storages) is not full, go to home node, or stay at current node
+                if self._tmap._node_res[home_node].level < self._tmap._node_res[home_node].capacity:
+                    self._goto(home_node)
+                else:
+                    self._goto(self._current_node)
+            yield self._env.timeout(self.loop_timeout)
+
+        # the single_track_route is free or the target is not in single_track_route, then go to the target
+        self._goto(target)
+
+        # if self._tmap.env:
+        #     if self._active_process:
+        #         if self._active_process.is_alive:  # The robot has an alive goal running
+        #             self._active_process.interrupt()
+        #             self._active_process = None  # Clear the old goal
+        #     self._active_process = self._tmap.env.process(self._goto(target))
+        # else:
+        #     self._current_node = target
 
     def get_route_nodes(self, cur_node, target, avoid_nodes=None):
         """

@@ -132,7 +132,7 @@ class TopologicalForkGraph(object):
         one head lane and different rows.
     """
 
-    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, env, topo_map2_file, verbose):
+    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, single_track_route, env, topo_map2_file, verbose):
         """TopologicalForkGraph: A class to store and retrieve information of topological map,
         stored in the mongodb, necessary for the discrete event simulations.Assumes a fork map with
         one/two head lane and different rows.
@@ -143,6 +143,8 @@ class TopologicalForkGraph(object):
         n_farm_rows -- list of number of farm beds for each polytunnel, list of ints
         n_topo_nav_rows -- number of navigation rows, int
         second_head_lane -- uses a secondary head lane, bool
+        single_track_route -- single track route to cold_storage_node, when the road is not free, the agent should wait
+                              at home node
         verbose -- to control rosinfo, bool
         """
         # ns = rospy.get_namespace()
@@ -152,6 +154,8 @@ class TopologicalForkGraph(object):
         self.t_map = deepcopy(self.tmap2)  # used for map node managing
         self.t_map2 = deepcopy(self.tmap2)  # used for map node managing
         self.env = env
+
+        self.single_track_route = single_track_route
 
         self._nodes = sorted([n['node']['name'] for n in self.tmap2['nodes']])
         self._nodes_dict = {n['node']['name']: n['node'] for n in self.tmap2['nodes']}
@@ -164,6 +168,12 @@ class TopologicalForkGraph(object):
         self.req_ret = {}  # integer, request return: mode of the node requested
         self.jam = []  # the robot that in traffic jam
         self.com_nodes = []  # the nodes that hold completed robots
+
+        # TODO: 1. Set the capacity of local_storage_node(WayPoint66) to len(robot_ids), so all robots could be hold at
+        #            this node.
+        #       2. Or, keep the capacity of each node at 1, set the home positions of robot to different nodes:
+        #           WayPoint142, WayPoint140, WayPoint141... The robot starts from the home node and returns to the home
+        #           node at the end.
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max

@@ -17,7 +17,7 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         operation in an actual / gazebo simulated environment. Some methods are overloaded
     """
 
-    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane,
+    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, single_track_route,
                  env, topo_map2_file, verbose=False):
         """TopologicalForkGraphMimic: A child class from TopologicalForkGraph class to store and retreive
         information of topological map, stored in the mongodb, necessary for the longer discrete event simulations
@@ -32,8 +32,8 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         second_head_lane -- uses a secondary head lane, bool
         verbose -- to control rosinfo, bool
         """
-        super(TopologicalForkGraphMimic, self).__init__(n_polytunnels, n_farm_rows, n_topo_nav_rows,
-                                                        second_head_lane, env, topo_map2_file, verbose)
+        super(TopologicalForkGraphMimic, self).__init__(n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane,
+                                                        single_track_route, env, topo_map2_file, verbose)
 
     def set_row_info(self, pri_head_nodes, row_nodes, sec_head_nodes=None):
         """set_row_info: Set information about each row

@@ -51,6 +51,9 @@
 #                              cold storage is used
 # use_cold_storage: true/false, unload at cold storage / local storage
 # cold_storage_node: string, name of the cold storage node in topo map
+# single_track_route: the route nodes to cold_storage_node, only one way leading to these nodes.
+#                     When one robot is on this route to or back from cold_storage_node,
+#                     the other robots should wait until this route is free
 ##-----------------------------------------------------------------------------
 map_name: riseholme_sim
 n_polytunnels: 1
@@ -87,6 +90,8 @@ local_storage_nodes: [WayPoint66]
 #, WayPoint74]
 use_cold_storage: true
 cold_storage_node: WayPoint69
+
+single_track_route: [WayPoint67, WayPoint143, WayPoint68, WayPoint69]
 
 ##-----------------------------------------------------------------------------
 # des related parameters

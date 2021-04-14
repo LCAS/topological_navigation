@@ -96,6 +96,8 @@ def get_mimic_des_params(config_file):
         "n_farm_rows", config_data["n_farm_rows"]["value"],
         config_params["n_polytunnels"], config_data["n_farm_rows"]["func"])
 
+    config_params["single_track_route"] = config_data["single_track_route"]
+
     # n_rows+1 picking rows are needed, all except first and last (in a polytunnel)
     # rows are forward and reverse. first and last are forward/reverse only
     if config_params["n_polytunnels"] == 0:

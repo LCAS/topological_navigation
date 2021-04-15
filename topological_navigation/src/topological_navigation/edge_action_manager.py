@@ -13,8 +13,6 @@ class EdgeActionManager(object):
     
     def __init__(self, edge):
         
-        self.client_created = False
-        
         action_type = edge["action_type"]
         action_name = edge["action"]
         
@@ -23,18 +21,20 @@ class EdgeActionManager(object):
         goal_spec = items[1]
         action_spec = items[1][:-4] + "Action"
         
+        rospy.loginfo("Edge Action Manager: Importing {} from {}.msg".format(action_spec, package))
+        
         action = self._import(package, action_spec)
         goal = self._import(package, goal_spec)
         
-        rospy.loginfo("Edge Action Manager: Creating {} client with {} imported from {}.msg ...".format(action_name, action_spec, package))
+        rospy.loginfo("Edge Action Manager: Creating {} client ...".format(action_name))
         
         action_client = actionlib.SimpleActionClient(action_name, action)        
-        self.client_created = action_client.wait_for_server(rospy.Duration(5.0))
+        action_client.wait_for_server()
         
-        if self.client_created:
-            rospy.loginfo("Edge Action Manager: Client created")
-        else:
-            rospy.logerr("Edge Action Manager: Client not created")
+        rospy.loginfo("Edge Action Manager: Client created")
+        print action_client.get_state()
+        res = action_client.get_result()
+
             
     
     def _import(self, package, object_name):

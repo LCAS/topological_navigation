@@ -67,8 +67,10 @@ if __name__ == "__main__":
     picker_unloading_time = topological_simpy.config_utils.param_list_to_dict(
         "picker_unloading_time", config_params["picker_unloading_time"], picker_ids)
 
+    robot_ids = ['Hurga', 'Foo']
+    local_storage_capacity = len(robot_ids) + n_pickers
     # TODO: expand local storage node capacity(topo.py) to n_pickers + n_robots, so the node could hold multiple robots at the beginning
-    local_storages = [simpy.Resource(env, capacity=n_pickers) for i in range(len(config_params["local_storage_nodes"]))]
+    local_storages = [simpy.Resource(env, capacity=local_storage_capacity) for i in range(len(config_params["local_storage_nodes"]))]
     topo_graph.set_local_storages(local_storages, config_params["local_storage_nodes"])
 
     if config_params["use_cold_storage"]:

@@ -376,13 +376,14 @@ class RobotSim(Robot):
             for home_node in self._tmap.local_storages.keys():
                 # if the home node(local_storages) is not full, go to home node, or stay at current node
                 if self._tmap._node_res[home_node].level < self._tmap._node_res[home_node].capacity:
-                    self._goto(home_node)
+                    yield self._tmap.env.process(self._goto(home_node))
                 else:
-                    self._goto(self._current_node)
+                    continue
+                    # self._active_process = self._tmap.env.process(self._goto(self._current_node))
             yield self._env.timeout(self.loop_timeout)
 
         # the single_track_route is free or the target is not in single_track_route, then go to the target
-        self._goto(target)
+        yield self._tmap.env.process(self._goto(target))
 
         # if self._tmap.env:
         #     if self._active_process:

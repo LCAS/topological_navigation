@@ -36,19 +36,19 @@ class RobotSim(Robot):
 
         self.action = self.env.process(self.normal_operation())
 
-    def call_robot(self, picker_id, robot_id):
-        self.loginfo("? %5.1f: %s call robot %s" % (self.env.now, picker_id, robot_id))
-        return self.robot_resource.put(1)
-        # self.set_robot_state("ACCEPTED")
-        # self.log_cost(". %5.1f: call robot: ACCEPTED" % self.env.now)
-        # yield self.env.timeout(0)
-
-    def release_robot(self):
-        if self.robot_resource.level > 0:
-            self.loginfo(". %5.1f: release robot %s" % (self.env.now, self.robot_id))
-            return self.robot_resource.get(1)
-            # self.set_robot_state("INIT")
-            # self.loginfo(". %5.1f: release robot: INIT" % self.env.now)
+    # def call_robot(self, picker_id, robot_id):
+    #     self.loginfo("? %5.1f: %s call robot %s" % (self.env.now, picker_id, robot_id))
+    #     return self.robot_resource.put(1)
+    #     # self.set_robot_state("ACCEPTED")
+    #     # self.log_cost(". %5.1f: call robot: ACCEPTED" % self.env.now)
+    #     # yield self.env.timeout(0)
+    #
+    # def release_robot(self):
+    #     if self.robot_resource.level > 0:
+    #         self.loginfo(". %5.1f: release robot %s" % (self.env.now, self.robot_id))
+    #         return self.robot_resource.get(1)
+    #         # self.set_robot_state("INIT")
+    #         # self.loginfo(". %5.1f: release robot: INIT" % self.env.now)
 
     def set_robot_state(self, state):
         """

@@ -18,7 +18,7 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
     """
 
     def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, single_track_route,
-                 env, topo_map2_file, verbose=False):
+                 base_stations, wait_nodes, env, topo_map2_file, verbose=False):
         """TopologicalForkGraphMimic: A child class from TopologicalForkGraph class to store and retreive
         information of topological map, stored in the mongodb, necessary for the longer discrete event simulations
         mimicking longer picking operations with ros interfaces. Assumes a fork map with
@@ -33,7 +33,8 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         verbose -- to control rosinfo, bool
         """
         super(TopologicalForkGraphMimic, self).__init__(n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane,
-                                                        single_track_route, env, topo_map2_file, verbose)
+                                                        single_track_route, base_stations, wait_nodes, env,
+                                                        topo_map2_file, verbose)
 
     def set_row_info(self, pri_head_nodes, row_nodes, sec_head_nodes=None):
         """set_row_info: Set information about each row

@@ -93,6 +93,12 @@ cold_storage_node: WayPoint69
 
 single_track_route: [WayPoint67, WayPoint143, WayPoint68, WayPoint69]
 
+#base station used as robot home and waiting place when the single_track_route is busy
+base_station_nodes: &id_base_stations
+  - WayPoint140
+  - WayPoint141
+wait_nodes: *id_base_stations
+
 ##-----------------------------------------------------------------------------
 # des related parameters
 # ----------------------

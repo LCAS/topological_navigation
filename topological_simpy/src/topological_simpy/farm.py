@@ -284,8 +284,6 @@ class Farm(object):
                 # update mode and pose in predictor
                 if picker.mode == 1:
                     goal_node = picker.goal_node
-                elif picker.mode == 2:
-                    pass  # TODO: anything else need to be done here?
                 elif picker.mode == 3:
                     # if local storage, it will be set according to picker.curr_row
                     goal_node = picker.local_storage_node if self.graph.use_local_storage else picker.cold_storage_node

@@ -132,7 +132,8 @@ class TopologicalForkGraph(object):
         one head lane and different rows.
     """
 
-    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, single_track_route, env, topo_map2_file, verbose):
+    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, single_track_route,
+                 base_stations, wait_nodes, env, topo_map2_file, verbose):
         """TopologicalForkGraph: A class to store and retrieve information of topological map,
         stored in the mongodb, necessary for the discrete event simulations.Assumes a fork map with
         one/two head lane and different rows.
@@ -174,6 +175,9 @@ class TopologicalForkGraph(object):
         #       2. Or, keep the capacity of each node at 1, set the home positions of robot to different nodes:
         #           WayPoint142, WayPoint140, WayPoint141... The robot starts from the home node and returns to the home
         #           node at the end.
+        self.base_stations = base_stations
+        self.wait_nodes = wait_nodes
+
         if self.env:
             for n in self._nodes:
                 self._node_res[n] = simpy.Container(self.env, capacity=1, init=0)  # each node can hold one robot max

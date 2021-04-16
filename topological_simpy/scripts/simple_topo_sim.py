@@ -36,11 +36,43 @@ if __name__ == "__main__":
     # env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False) # todo: test later
     env = simpy.Environment()
     tmap_config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2'
+
+    picker_ids = config_params["picker_ids"]
+    robot_ids = ['Hurga', 'Foo']
+    n_pickers = len(picker_ids)
+    n_robots = len(robot_ids)
+
+    _wait_nodes = config_params["wait_nodes"]  # list of waiting nodes
+    wait_nodes = {}
+    if _wait_nodes is None:
+        wait_nodes = {robot_id: "none" for robot_id in robot_ids}
+    elif _wait_nodes.__class__ == str:
+        if len(robot_ids) > 1:
+            raise Exception("Not enough wait nodes (1) for %d robots!!!" % (len(robot_ids)))
+        wait_nodes = {robot_id: _wait_nodes for robot_id in robot_ids}
+    elif _wait_nodes.__class__ == list:
+        if len(_wait_nodes) != len(robot_ids):
+            raise Exception("Not enough base stations (%d) for %d robots!!!" % (len(_wait_nodes), len(robot_ids)))
+        wait_nodes = {robot_ids[i]: _wait_nodes[i] for i in range(len(robot_ids))}
+
+    _base_stations = config_params["base_station_nodes"]  # list of base station nodes
+    base_stations = {}
+    if _base_stations.__class__ == str:
+        if len(robot_ids) > 1:
+            raise Exception("Not enough base stations (1) for %d robots!!!" % (len(robot_ids)))
+        base_stations = {robot_id: _base_stations for robot_id in robot_ids}
+    elif _base_stations.__class__ == list:
+        if len(_base_stations) != len(robot_ids):
+            raise Exception("Not enough base stations (%d) for %d robots!!!" % (len(_base_stations), len(robot_ids)))
+        base_stations = {robot_ids[i]: _base_stations[i] for i in range(len(robot_ids))}
+
     topo_graph = topological_simpy.topo_mimic.TopologicalForkGraphMimic(config_params["n_polytunnels"],
                                                                         config_params["n_farm_rows"],
                                                                         config_params["n_topo_nav_rows"],
                                                                         config_params["second_head_lane"],
                                                                         config_params["single_track_route"],
+                                                                        base_stations,
+                                                                        wait_nodes,
                                                                         env,
                                                                         tmap_config_file,
                                                                         VERBOSE)
@@ -55,9 +87,7 @@ if __name__ == "__main__":
                                 config_params["row_nodes"])
     # set node_yields
     topo_graph.set_node_yields(config_params["yield_per_node"])
-
-    picker_ids = config_params["picker_ids"]
-    n_pickers = len(picker_ids)
+    
     picker_picking_rate = topological_simpy.config_utils.param_list_to_dict(
         "picker_picker_rate", config_params["picker_picking_rate"], picker_ids)
     picker_transportation_rate = topological_simpy.config_utils.param_list_to_dict(
@@ -67,8 +97,7 @@ if __name__ == "__main__":
     picker_unloading_time = topological_simpy.config_utils.param_list_to_dict(
         "picker_unloading_time", config_params["picker_unloading_time"], picker_ids)
 
-    robot_ids = ['Hurga', 'Foo']
-    local_storage_capacity = len(robot_ids) + n_pickers
+    local_storage_capacity = n_robots + n_pickers
     # TODO: expand local storage node capacity(topo.py) to n_pickers + n_robots, so the node could hold multiple robots at the beginning
     local_storages = [simpy.Resource(env, capacity=local_storage_capacity) for i in range(len(config_params["local_storage_nodes"]))]
     topo_graph.set_local_storages(local_storages, config_params["local_storage_nodes"])
@@ -78,10 +107,10 @@ if __name__ == "__main__":
         topo_graph.set_cold_storage(cold_storage, config_params["cold_storage_node"])
 
     # robot_homes = ['dock_0', 'dock_1', 'dock_2']
-    robot_homes = ['WayPoint131', 'WayPoint111', 'WayPoint66', 'WayPoint94']
-    target_nodes = ['WayPoint66', 'WayPoint142', 'WayPoint102', 'WayPoint78']
+    # robot_homes = ['WayPoint131', 'WayPoint111', 'WayPoint66', 'WayPoint94']
+    # target_nodes = ['WayPoint66', 'WayPoint142', 'WayPoint102', 'WayPoint78']
     # robot_ids = ['Hurga', 'Foo', 'Foo2']
-    robot_ids = ['Hurga', 'Foo']
+    # robot_ids = ['Hurga', 'Foo']
     robot_transportation_rate = topological_simpy.config_utils.param_list_to_dict(
         "robot_transportation_rate", config_params["robot_transportation_rate"], robot_ids)
     robot_max_n_trays = topological_simpy.config_utils.param_list_to_dict(

@@ -194,4 +194,7 @@ def get_mimic_des_params(config_file):
     config_params['robot_unloading_time'] = topological_simpy.config_utils.des_param_list_check("robot_unloading_time",
                                                 config_data["robot_unloading_time"], n_robots)
 
+    config_params['wait_nodes'] = config_data['wait_nodes']
+    config_params['base_station_nodes'] = config_data['base_station_nodes']
+
     return config_params

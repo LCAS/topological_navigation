@@ -71,7 +71,8 @@ class map_manager_2(object):
             self.tmap2["transformation"] = self.transformation
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = self.get_time()
-            self.tmap2["nodes"] = []
+            self.tmap2["nodes"] = []            
+            rospy.set_param('topological_map_name', self.name)
 
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -151,6 +152,8 @@ class map_manager_2(object):
         self.transformation = self.tmap2["transformation"]
         
         self.map_check()
+        
+        rospy.set_param('topological_map_name', self.name)
         
         rospy.loginfo("Caching the map ...")
         self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))

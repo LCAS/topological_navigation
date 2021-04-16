@@ -49,7 +49,8 @@ class Robot(object):
 
         # TODO: local storage node of the first row is assumed to be the starting loc
         # After reaching another local storage, the robot can wait there
-        self.curr_node = self.graph.local_storage_nodes[self.graph.row_ids[0]]
+        # self.curr_node = self.graph.local_storage_nodes[self.graph.row_ids[0]]
+        self.curr_node = self.graph.base_stations[self.robot_id]  # robot starting position
         # update agent_nodes in topo_graph, robot's initial node
         self.graph.agent_nodes[self.robot_id] = self.curr_node
 

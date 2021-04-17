@@ -418,6 +418,8 @@ class map_manager_2(object):
             
         node["node"]["restrictions_planning"] = restrictions_planning
         node["node"]["restrictions_runtime"] = restrictions_runtime
+        
+        node["node"]["parant_frame"] = self.transformation["parent"]
             
         self.tmap2["nodes"].append(node)
         
@@ -496,7 +498,10 @@ class map_manager_2(object):
             
         if goal == "default":
             edge["goal"] = {}
-            edge["goal"]["target_pose"] = "$node.pose"
+            edge["goal"]["target_pose"] = {}
+            edge["goal"]["target_pose"]["pose"] = "$node.pose"
+            edge["goal"]["target_pose"]["header"] = {}
+            edge["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
         else:
             edge["goal"] = goal
             

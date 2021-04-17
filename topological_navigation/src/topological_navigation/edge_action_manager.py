@@ -7,20 +7,20 @@ Created on Tue Apr 13 22:02:24 2021
 #########################################################################################################
 import rospy, actionlib
 from rospy_message_converter import message_converter
-from collections import namedtuple
+import operator
 from copy import deepcopy
+from functools import reduce  # forward compatibility for Python 3
 
 
 class EdgeActionManager(object):
     
     
-    def __init__(self, edge, destination_node, frame_id="map"):
+    def __init__(self, edge, destination_node):
         
         rospy.loginfo("Edge Action Manager: Processing edge {} ...".format(edge["edge_id"]))
         
         self.edge = edge
         self.destination_node = destination_node
-        self.frame_id = frame_id
         
         action_type = edge["action_type"]
         self.action_name = edge["action"]
@@ -40,28 +40,42 @@ class EdgeActionManager(object):
         self.construct_goal(action_type, edge["goal"])
         
         
-    def _import(self, _file, object_name):
-        mod = __import__(_file, fromlist=[object_name]) 
+    def _import(self, location, object_name):
+        mod = __import__(location, fromlist=[object_name]) 
         return getattr(mod, object_name) 
         
         
     def construct_goal(self, action_type, goal_args):
         
-        node_dict = deepcopy(self.destination_node)
+        goal_args_cpy = deepcopy(goal_args)
+        stack = list(goal_args_cpy.items()) 
         
-        # pose field of node modified to match a geometry_msgs/PoseStamped msg
-        node_dict["pose"] = {"pose": node_dict["pose"]}
-        node_dict["pose"]["header"] = {}
-        node_dict["pose"]["header"]["frame_id"] = self.frame_id
-        
-        node = namedtuple("Node", node_dict.keys())(*node_dict.values())
-        
-        for arg in goal_args.keys():
-            value = deepcopy(goal_args[arg])
-            if type(value) is str and value.startswith("$node"):
-                goal_args[arg] = eval(value[1:]) 
+        visited = set() 
+        keys = []
+        while stack: 
+            k, v = stack.pop() 
+            if isinstance(v, dict): 
+                keys.append(k)
+                if k not in visited: 
+                    stack.extend(v.items()) 
+            else:
+                keys.append(k)
+                if isinstance(v, str) and v.startswith("$"):
+                    _property = self.getFromDict(self.destination_node, v[1:].split("."))
+                    self.setInDict(goal_args, keys, _property)
+                
+                keys = [keys[0]]
+            visited.add(k)
         
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
+        
+        
+    def getFromDict(self, dataDict, mapList):
+        return reduce(operator.getitem, mapList, dataDict)
+
+
+    def setInDict(self, dataDict, mapList, value):
+        self.getFromDict(dataDict, mapList[:-1])[mapList[-1]] = value
         
         
     def execute(self):

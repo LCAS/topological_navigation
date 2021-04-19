@@ -16,10 +16,18 @@ def _import(location, object_name):
 
 
 class dict_tools(object):
+                
+                
+    def get_paths_from_nested_dict(self, nested):
+        paths = list(self.nested_dict_iter(nested))
+        return [{"keys": item[0], "value": item[1]} for item in paths]
     
     
     def nested_dict_iter(self, nested, prefix=""):
-        
+        """
+        Recursively loops through a nested dictionary. 
+        For each inner-most value generates the list of keys needed to access it.
+        """
         for key, value in nested.iteritems():
             path = "{},{}".format(prefix, key)
             if isinstance(value, collections.Mapping):
@@ -33,7 +41,7 @@ class dict_tools(object):
         return reduce(operator.getitem, mapList, dataDict)
 
 
-    def setInDict(self, dataDict, mapList, value):
+    def setInDict(self, dataDict, mapList, value):     
         self.getFromDict(dataDict, mapList[:-1])[mapList[-1]] = value
         return dataDict
 #########################################################################################################
@@ -71,16 +79,16 @@ class EdgeActionManager(object):
     def construct_goal(self, action_type, goal_args):
         
         dt = dict_tools()
-        paths = list(dt.nested_dict_iter(goal_args))
+        paths = dt.get_paths_from_nested_dict(goal_args)
         
-        for path in paths:
-            keys = path[0]
-            value = path[1]
+        for item in paths:
+            keys = item["keys"]
+            value = item["value"]
         
             if isinstance(value, str) and value.startswith("$"):
                 _property = dt.getFromDict(self.destination_node, value[1:].split("."))
                 goal_args = dt.setInDict(goal_args, keys, _property)
-        
+
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
         
         

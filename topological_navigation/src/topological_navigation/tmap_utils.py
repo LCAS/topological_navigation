@@ -28,7 +28,7 @@ def get_node(top_map, node_name):
 def get_node_from_tmap2(top_map, node_name):
     for i in top_map["nodes"]:
         if i["node"]["name"] == node_name:
-            return i["node"]
+            return i
     return None
 
 
@@ -95,8 +95,8 @@ def get_distance_to_node(nodea, nodeb):
 
 def get_distance_to_node_tmap2(nodea, nodeb):
     dist = math.hypot(
-        (nodeb["pose"]["position"]["x"] - nodea["pose"]["position"]["x"]),
-        (nodeb["pose"]["position"]["y"] - nodea["pose"]["position"]["y"]),
+        (nodeb["node"]["pose"]["position"]["x"] - nodea["node"]["pose"]["position"]["x"]),
+        (nodeb["node"]["pose"]["position"]["y"] - nodea["node"]["pose"]["position"]["y"]),
     )
     return dist
 
@@ -124,7 +124,7 @@ def get_conected_nodes(node):
 
 def get_conected_nodes_tmap2(node):
     childs = []
-    for i in node["edges"]:
+    for i in node["node"]["edges"]:
         childs.append(i["node"])
     return childs
 
@@ -155,7 +155,7 @@ def get_edges_between(top_map, nodea, nodeb):
 def get_edges_between_tmap2(top_map, nodea, nodeb):
     ab = []
     noda = get_node_from_tmap2(top_map, nodea)
-    for j in noda["edges"]:
+    for j in noda["node"]["edges"]:
         if j["node"] == nodeb:
             ab.append(j)
     return ab
@@ -185,7 +185,7 @@ def get_edge_from_id(top_map, node_name, edge_id):
 
 def get_edge_from_id_tmap2(top_map, node_name, edge_id):
     node = get_node_from_tmap2(top_map, node_name)
-    for i in node["edges"]:
+    for i in node["node"]["edges"]:
         if i["edge_id"] == edge_id:
             return i
     return None

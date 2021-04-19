@@ -149,15 +149,15 @@ class TopologicalNavServer(object):
 
     def reconf_movebase(self, cedg, cnode, intermediate):
 
-        if cnode["properties"]["xy_goal_tolerance"] <= 0.1:
+        if cnode["node"]["properties"]["xy_goal_tolerance"] <= 0.1:
             cxygtol = 0.1
         else:
-            cxygtol = cnode["properties"]["xy_goal_tolerance"]
+            cxygtol = cnode["node"]["properties"]["xy_goal_tolerance"]
         if not intermediate:
-            if cnode["properties"]["yaw_goal_tolerance"] <= 0.087266:
+            if cnode["node"]["properties"]["yaw_goal_tolerance"] <= 0.087266:
                 cytol = 0.087266
             else:
-                cytol = cnode["properties"]["yaw_goal_tolerance"]
+                cytol = cnode["node"]["properties"]["yaw_goal_tolerance"]
         else:
             cytol = 6.283
 
@@ -359,7 +359,7 @@ class TopologicalNavServer(object):
             # Target and Origin are not None
             if g_node is not None and o_node is not None:
                 rsearch = TopologicalRouteSearch2(self.lnodes)
-                route = rsearch.search_route(o_node["name"], target)
+                route = rsearch.search_route(o_node["node"]["name"], target)
                 route = self.enforce_navigable_route(route, target)
                 print route
                 
@@ -448,7 +448,7 @@ class TopologicalNavServer(object):
             rospy.logerr("Failed to get edge from id!! Invalid route!!")
             return False, inc
 
-        inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", o_node["pose"])
+        inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", o_node["node"]["pose"])
 
         # If the robot is not on a node or the first action is not move base type
         # navigate to closest node waypoint (only when first action is not move base)
@@ -524,7 +524,7 @@ class TopologicalNavServer(object):
             self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
             dt_text = self.stat.get_start_time_str()
             
-            inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", cnode["pose"])
+            inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", cnode["node"]["pose"])
 
             if self.edge_reconfigure:
                 self.edgeReconfigureManager.register_edge(cedg)

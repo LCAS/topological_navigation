@@ -113,6 +113,7 @@ class map_manager_2(object):
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
         self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
+        self.update_action_type_srv=rospy.Service('/topological_map_manager2/update_action_type', topological_navigation_msgs.srv.UpdateActionType, self.update_action_type_cb)
 
         
     def get_time(self):
@@ -977,6 +978,29 @@ class map_manager_2(object):
         else:
             rospy.logerr("Error updating the restrictions of edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
             return False, ""
+        
+        
+    def update_action_type_cb(self, req):
+        """
+        Updates an edge's action type (definition) for all edges in the tmap
+        """
+        return self.update_action_type(req.action_name, req.action_type)
+    
+    
+    def update_action_type(self, action_name, action_type):
+        
+        success = False
+        for node in self.tmap2["nodes"]:
+            for edge in node["node"]["edges"]:
+                if edge["action"] == action_name:
+                    edge["action_type"] = action_type
+                    success = True
+        
+        if success:            
+            self.update()
+            self.write_topological_map(self.filename)
+    
+        return success
         
         
     def get_instances_of_node(self, node_name):

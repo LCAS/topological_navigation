@@ -193,7 +193,7 @@ class PolicyExecutionServer(object):
         """
         Creates the dynamic reconfigure clients for the given actions
         """
-        rcnfsrvrname= rospy.get_namespace() + mb_action +'/' + self.move_base_planner
+        rcnfsrvrname= rospy.get_namespace() + mb_action +'/' + self.move_base_reconf_service
         test_service = rcnfsrvrname+'/set_parameters'
 
         service_created = False
@@ -212,7 +212,7 @@ class PolicyExecutionServer(object):
                     rospy.logwarn("I couldn't create reconfigure client %s. remaining tries %d" % (rcnfsrvrname,service_created_tries))
                     rospy.sleep(1)
                 else:
-                    rospy.logerr("I couldn't create reconfigure client %s. is %s running?" % (rcnfsrvrname, i))
+                    rospy.logerr("I couldn't create reconfigure client %s. is %s running?" % (rcnfsrvrname, rcnfsrvrname))
         return False
 
 

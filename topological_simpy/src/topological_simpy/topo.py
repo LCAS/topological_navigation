@@ -241,6 +241,17 @@ class TopologicalForkGraph(object):
         The bellow methods are used for model topological nodes as containers, each container can only hold one robot.
         Pickers don't use this container feature but use the same topological map. 
         """
+    def get_node_res_level(self, node):
+        """
+        get the level of the node resource
+        """
+        return self._node_res[node].level
+
+    def get_node_res_capacity(self, node):
+        """
+        get the capacity of the node resource
+        """
+        return self._node_res[node].capacity
 
     def log_resource(self, node, resource):
         """

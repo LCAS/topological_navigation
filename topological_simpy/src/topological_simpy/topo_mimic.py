@@ -132,3 +132,16 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         self.cold_storage_node = cold_storage_node
         self.cold_storage = cold_storage
         self.use_local_storage = False
+        
+    def get_row_head_node_of_row_node(self, node):
+        """get the head node of the current row of the node
+
+        Keyword arguments:
+
+        node -- node from any row
+        """        
+        row_id = self.get_row_id_of_row_node(node)
+        if row_id is not None:
+            return self.head_nodes[row_id][0]
+        else:
+            return None

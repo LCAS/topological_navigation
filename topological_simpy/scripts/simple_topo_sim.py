@@ -39,6 +39,7 @@ if __name__ == "__main__":
 
     picker_ids = config_params["picker_ids"]
     robot_ids = ['Hurga', 'Foo']
+    # robot_ids = ['Hurga', 'Foo', 'Foo2']
     n_pickers = len(picker_ids)
     n_robots = len(robot_ids)
 
@@ -179,7 +180,7 @@ if __name__ == "__main__":
     # env.process(goal_generator(env, robots, nodes))
     # env.process(goal_generator2(env, robots, target_nodes))
 
-    until = 360
+    until = 600
     while env.peek() < until:
         # topo_graph.monitor()
         # for r in robots:

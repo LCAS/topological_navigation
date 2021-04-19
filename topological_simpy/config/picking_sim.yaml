@@ -97,6 +97,7 @@ single_track_route: [WayPoint67, WayPoint143, WayPoint68, WayPoint69]
 base_station_nodes: &id_base_stations
   - WayPoint140
   - WayPoint141
+#  - WayPoint142
 wait_nodes: *id_base_stations
 
 ##-----------------------------------------------------------------------------

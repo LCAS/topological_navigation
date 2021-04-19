@@ -5,7 +5,9 @@ Created on Tue Apr 13 22:02:24 2021
 
 """
 #########################################################################################################
-import rospy, actionlib, operator, collections, json
+import rospy, actionlib
+import operator, collections, json
+
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
 
@@ -53,6 +55,8 @@ class EdgeActionManager(object):
     
     def __init__(self, edge, destination_node):
         
+        self.client_created = False
+        
         self.edge = eval(json.dumps(edge)) # remove unicode prefix notation u
         self.destination_node = eval(json.dumps(destination_node))
         
@@ -74,6 +78,7 @@ class EdgeActionManager(object):
         rospy.loginfo("Edge Action Manager: Creating a {} client".format(action_name))
         self.client = actionlib.SimpleActionClient(action_name, action)        
         self.client.wait_for_server()
+        self.client_created = True
         
         
     def construct_goal(self, action_type, goal_args):

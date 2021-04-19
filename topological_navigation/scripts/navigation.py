@@ -9,7 +9,6 @@ import strands_navigation_msgs.msg
 
 import dynamic_reconfigure.client
 
-from strands_navigation_msgs.msg import MonitoredNavigationAction, MonitoredNavigationGoal
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
@@ -99,6 +98,9 @@ class TopologicalNavServer(object):
         while not self._map_received:
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
+        
+        self.edge_action_manager = None
+        self.client_created = False
 
         # Creating Action Server for navigation
         rospy.loginfo("Creating action server.")
@@ -119,13 +121,6 @@ class TopologicalNavServer(object):
         rospy.loginfo(" ...done")
 
         rospy.loginfo("EPM All Done ...")
-
-        rospy.loginfo("Creating monitored navigation client.")
-        self.monit_nav_cli = False
-        self.monNavClient = actionlib.SimpleActionClient("monitored_navigation", MonitoredNavigationAction)
-        self.monNavClient.wait_for_server()
-        self.monit_nav_cli = True
-        rospy.loginfo(" ...done")
 
         rospy.loginfo("Subscribing to Localisation Topics.")
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
@@ -222,18 +217,15 @@ class TopologicalNavServer(object):
         """
         self.cancel_current_action(timeout_secs=10)
 
-        if self.monit_nav_cli:
-            self.cancelled = False
-            self.preempted = False
-            self.no_orientation = goal.no_orientation
-            print "NO ORIENTATION (%s)" % self.no_orientation
-            
-            self._feedback.route = "Starting..."
-            self._as.publish_feedback(self._feedback)
-            rospy.loginfo("Navigating From %s to %s", self.closest_node, goal.target)
-            self.navigate(goal.target)
-        else:
-            rospy.loginfo("Monitored Navigation client has not started!!!")
+        self.cancelled = False
+        self.preempted = False
+        self.no_orientation = goal.no_orientation
+        print "NO ORIENTATION (%s)" % self.no_orientation
+        
+        self._feedback.route = "Starting..."
+        self._as.publish_feedback(self._feedback)
+        rospy.loginfo("Navigating From %s to %s", self.closest_node, goal.target)
+        self.navigate(goal.target)
 
 
     def executeCallbackexecpolicy(self, goal):
@@ -277,8 +269,6 @@ class TopologicalNavServer(object):
 
     def closestNodeCallback(self, msg):
         self.closest_node = msg.data
-        if not self.monit_nav_cli:
-            rospy.loginfo("Monitored Navigation client has not started!!!")
 
 
     def closestEdgesCallback(self, msg):
@@ -450,8 +440,6 @@ class TopologicalNavServer(object):
             rospy.logerr("Failed to get edge from id!! Invalid route!!")
             return False, inc
 
-        inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", o_node["node"]["pose"])
-
         # If the robot is not on a node or the first action is not move base type
         # navigate to closest node waypoint (only when first action is not move base)
         if self.current_node == "none" and a not in self.move_base_actions:
@@ -525,8 +513,6 @@ class TopologicalNavServer(object):
 
             self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
             dt_text = self.stat.get_start_time_str()
-            
-            inf = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", cnode["node"]["pose"])
 
             if self.edge_reconfigure:
                 self.edgeReconfigureManager.register_edge(cedg)
@@ -587,7 +573,11 @@ class TopologicalNavServer(object):
         Cancels the action is currently in execution. Returns True if the current goal is correctly ended.
         """
         rospy.loginfo("Cancelling current navigation goal, timeout_secs={}...".format(timeout_secs))
-        self.monNavClient.cancel_all_goals()
+        
+        if self.edge_action_manager is not None:
+            self.client_created = self.edge_action_manager.client_created
+            if self.client_created:
+                self.edge_action_manager.client.cancel_all_goals()
         self.cancelled = True
 
         if timeout_secs > 0:
@@ -634,20 +624,21 @@ class TopologicalNavServer(object):
         
         inc = 0
         result = True
-
         self.goal_reached = False
-        edge_action_manager = EdgeActionManager(edge, destination_node)
-        edge_action_manager.execute()
-        status = edge_action_manager.client.get_state()
+        
+        self.edge_action_manager = EdgeActionManager(edge, destination_node)
+        self.edge_action_manager.execute()
+        
+        status = self.edge_action_manager.client.get_state()
         while (
             (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
             and not self.cancelled
             and not self.goal_reached
         ):
-            status = edge_action_manager.client.get_state()
+            status = self.edge_action_manager.client.get_state()
             rospy.sleep(rospy.Duration.from_sec(0.01))
 
-        res = edge_action_manager.client.get_result()
+        res = self.edge_action_manager.client.get_result()
 
         if status != GoalStatus.SUCCEEDED:
             if not self.goal_reached:
@@ -662,13 +653,9 @@ class TopologicalNavServer(object):
                 inc = 1
             else:
                 inc = 0
-#        else:
-#            if res.recovered is True and res.human_interaction is False:
-#                inc = 1
-#            else:
-#                inc = 0
 
         rospy.sleep(rospy.Duration.from_sec(0.3))
+        
         return result, inc
 ###################################################################################################################
         

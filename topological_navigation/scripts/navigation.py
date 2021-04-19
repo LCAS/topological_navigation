@@ -23,6 +23,8 @@ from move_base_msgs.msg import *
 from topological_navigation.navigation_stats import *
 from topological_navigation.tmap_utils import *
 from topological_navigation.route_search2 import *
+
+from topological_navigation.edge_action_manager import EdgeActionManager
 from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
 
 from copy import deepcopy
@@ -462,7 +464,7 @@ class TopologicalNavServer(object):
                 self.reconfigure_movebase_params(params)
 
                 self.current_target = Orig
-                nav_ok, inc = self.monitored_navigation(inf, self.move_base_name)
+                nav_ok, inc = self.execute_action(edge_from_id, o_node)
         else:
             if a not in self.move_base_actions:
                 move_base_act = False
@@ -479,7 +481,7 @@ class TopologicalNavServer(object):
                 else:
                     rospy.loginfo("Getting to exact pose")
                     self.current_target = Orig
-                    nav_ok, inc = self.monitored_navigation(inf, self.move_base_name)
+                    nav_ok, inc = self.execute_action(edge_from_id, o_node)
                     rospy.loginfo("going to waypoint in node resulted in")
                     print nav_ok
 
@@ -531,7 +533,7 @@ class TopologicalNavServer(object):
                 self.edgeReconfigureManager.initialise()
                 self.edgeReconfigureManager.reconfigure()
 
-            nav_ok, inc = self.monitored_navigation(inf, a)
+            nav_ok, inc = self.execute_action(cedg, cnode)
 
             if self.edge_reconfigure:
                 self.edgeReconfigureManager._reset()
@@ -628,29 +630,24 @@ class TopologicalNavServer(object):
         self.stat = None
         
 
-    def monitored_navigation(self, gpose, command):
+    def execute_action(self, edge, destination_node):
         
         inc = 0
         result = True
 
-        goal = MonitoredNavigationGoal()
-        goal.action_server = command
-        goal.target_pose.header.frame_id = "map"
-        goal.target_pose.header.stamp = rospy.get_rostime()
-        goal.target_pose.pose = gpose
-
         self.goal_reached = False
-        self.monNavClient.send_goal(goal)
-        status = self.monNavClient.get_state()
+        edge_action_manager = EdgeActionManager(edge, destination_node)
+        edge_action_manager.execute()
+        status = edge_action_manager.client.get_state()
         while (
             (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
             and not self.cancelled
             and not self.goal_reached
         ):
-            status = self.monNavClient.get_state()
+            status = edge_action_manager.client.get_state()
             rospy.sleep(rospy.Duration.from_sec(0.01))
 
-        res = self.monNavClient.get_result()
+        res = edge_action_manager.client.get_result()
 
         if status != GoalStatus.SUCCEEDED:
             if not self.goal_reached:
@@ -665,11 +662,11 @@ class TopologicalNavServer(object):
                 inc = 1
             else:
                 inc = 0
-        else:
-            if res.recovered is True and res.human_interaction is False:
-                inc = 1
-            else:
-                inc = 0
+#        else:
+#            if res.recovered is True and res.human_interaction is False:
+#                inc = 1
+#            else:
+#                inc = 0
 
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result, inc

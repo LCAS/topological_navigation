@@ -5,7 +5,7 @@ Created on Tue Apr 13 22:02:24 2021
 
 """
 #########################################################################################################
-import rospy, actionlib, operator, collections
+import rospy, actionlib, operator, collections, json
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
 
@@ -53,13 +53,13 @@ class EdgeActionManager(object):
     
     def __init__(self, edge, destination_node):
         
-        rospy.loginfo("Edge Action Manager: Processing edge {} ...".format(edge["edge_id"]))
+        self.edge = eval(json.dumps(edge)) # remove unicode prefix notation u
+        self.destination_node = eval(json.dumps(destination_node))
         
-        self.edge = edge
-        self.destination_node = destination_node
+        rospy.loginfo("Edge Action Manager: Processing edge {} ...".format(self.edge["edge_id"]))
         
-        action_type = edge["action_type"]
-        self.action_name = edge["action"]
+        action_type = self.edge["action_type"]
+        action_name = self.edge["action"]
         
         items = action_type.split("/")
         package = items[0]
@@ -69,10 +69,10 @@ class EdgeActionManager(object):
         action = _import(package + ".msg", action_spec)
         
         rospy.loginfo("Edge Action Manager: Constructing the goal")
-        self.construct_goal(action_type, edge["goal"])
+        self.construct_goal(action_type, self.edge["goal"])
         
-        rospy.loginfo("Edge Action Manager: Creating a {} client".format(self.action_name))
-        self.client = actionlib.SimpleActionClient(self.action_name, action)        
+        rospy.loginfo("Edge Action Manager: Creating a {} client".format(action_name))
+        self.client = actionlib.SimpleActionClient(action_name, action)        
         self.client.wait_for_server()
         
         
@@ -99,8 +99,6 @@ class EdgeActionManager(object):
         
         rospy.loginfo("Edge Action Manager: Waiting for the result ...")
         self.client.wait_for_result()
-        
-        return self.client.get_result()
     
 
     def execute_callback(self, status, result):

@@ -420,7 +420,7 @@ class map_manager_2(object):
         node["node"]["restrictions_planning"] = restrictions_planning
         node["node"]["restrictions_runtime"] = restrictions_runtime
         
-        node["node"]["parant_frame"] = self.transformation["parent"]
+        node["node"]["parent_frame"] = self.transformation["parent"]
             
         self.tmap2["nodes"].append(node)
         

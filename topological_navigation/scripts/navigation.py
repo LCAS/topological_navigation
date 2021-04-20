@@ -516,12 +516,13 @@ class TopologicalNavServer(object):
 
             if self.edge_reconfigure:
                 self.edgeReconfigureManager.register_edge(cedg)
-                self.edgeReconfigureManager.initialise()
-                self.edgeReconfigureManager.reconfigure()
+                if self.edgeReconfigureManager.active:
+                    self.edgeReconfigureManager.initialise()
+                    self.edgeReconfigureManager.reconfigure()
 
             nav_ok, inc = self.execute_action(cedg, cnode)
 
-            if self.edge_reconfigure:
+            if self.edge_reconfigure and self.edgeReconfigureManager.active:
                 self.edgeReconfigureManager._reset()
                 rospy.sleep(rospy.Duration.from_sec(0.3))
 

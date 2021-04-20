@@ -477,7 +477,7 @@ class map_manager_2(object):
         
         
     def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[], 
-                         recovery_behaviours_config="", action_type="default", goal="default", fail_policy="fail", 
+                         recovery_behaviours_config="", action_type="move_base_msgs/MoveBaseGoal", goal="default", fail_policy="fail", 
                          restrictions_planning="True", restrictions_runtime="True"):
         
         edge = {}
@@ -1075,14 +1075,7 @@ class map_manager_2(object):
                 msg.map = self.metric_map
                 msg.pointset = point_set
                 
-                msg.pose.position.x = node["node"]["pose"]["position"]["x"]
-                msg.pose.position.y = node["node"]["pose"]["position"]["y"]
-                msg.pose.position.z = node["node"]["pose"]["position"]["z"]
-                
-                msg.pose.orientation.x = node["node"]["pose"]["orientation"]["x"]
-                msg.pose.orientation.y = node["node"]["pose"]["orientation"]["y"]
-                msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
-                msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
+                msg.pose = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", node["node"]["pose"])
                 
                 msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
                 msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]

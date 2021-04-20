@@ -18,8 +18,8 @@ from datetime import datetime
 
 RANDOM_SEED = 10
 SIM_RT_FACTOR = 1.0
-VERBOSE = False
-SHOW_VIS = False
+VERBOSE = True
+SHOW_VIS = True
 trial = 0
 
 seed(RANDOM_SEED)

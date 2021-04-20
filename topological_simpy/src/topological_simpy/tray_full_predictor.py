@@ -487,5 +487,6 @@ class TrayFullPredictor(object):
         """log info based on a flag"""
         # if self.verbose:
         #     rospy.loginfo(msg)
-        if self.verbose:
-            print(msg)
+        # uncomment to use
+        # if self.verbose:
+        #     print(msg)

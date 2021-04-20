@@ -7,6 +7,9 @@
 
 
 import topological_simpy.visualise
+import random
+import os
+from datetime import datetime
 
 
 class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
@@ -19,6 +22,16 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
         super(VisualiseAgentsSim, self).__init__(topo_graph, robots, pickers, policy, show_cs=False,
                                                  save_random=False, trial=0)
+        self.show_cold_storage = show_cs  # should the cold storage be shown
+        self.save_fig = save_random
+        self.trial = trial
+
+        try:
+            os.mkdir("../data/fig")
+        except OSError as e:
+            print("fig directory exists")
+        if self.save_fig:
+            self.fig_name_base = "../data/fig" + "/P%d_R%d_S%s_T%d_" % (self.n_pickers, self.n_robots, self.policy, self.trial)
 
     def init_plot(self):
         """Initialise the plot frame"""
@@ -54,21 +67,25 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
             if self.graph.second_head_lane:
                 # from head_node to last_row_node of the row
-                nav_rows_x.append((pri_head_node['node']['pose']['position']['x'], sec_head_node['node']['pose']['position']['x']))
-                nav_rows_y.append((pri_head_node['node']['pose']['position']['y'], sec_head_node['node']['pose']['position']['y']))
+                nav_rows_x.append(
+                    (pri_head_node['node']['pose']['position']['x'], sec_head_node['node']['pose']['position']['x']))
+                nav_rows_y.append(
+                    (pri_head_node['node']['pose']['position']['y'], sec_head_node['node']['pose']['position']['y']))
             else:
                 # from head_node to last_row_node of the row
-                nav_rows_x.append((pri_head_node['node']['pose']['position']['x'], last_node['node']['pose']['position']['x']))
-                nav_rows_y.append((pri_head_node['node']['pose']['position']['y'], last_node['node']['pose']['position']['y']))
+                nav_rows_x.append(
+                    (pri_head_node['node']['pose']['position']['x'], last_node['node']['pose']['position']['x']))
+                nav_rows_y.append(
+                    (pri_head_node['node']['pose']['position']['y'], last_node['node']['pose']['position']['y']))
 
             # primary head lane
-#            if (i == 0) or (i == self.graph.n_topo_nav_rows - 1):
+            #            if (i == 0) or (i == self.graph.n_topo_nav_rows - 1):
             pri_head_lane_x.append(pri_head_node['node']['pose']['position']['x'])
             pri_head_lane_y.append(pri_head_node['node']['pose']['position']['y'])
 
             # secondary head lane
             if self.graph.second_head_lane:
-#                if (i == 0) or (i == self.graph.n_topo_nav_rows - 1):
+                #                if (i == 0) or (i == self.graph.n_topo_nav_rows - 1):
                 sec_head_lane_x.append(sec_head_node['node']['pose']['position']['x'])
                 sec_head_lane_y.append(sec_head_node['node']['pose']['position']['y'])
 
@@ -81,10 +98,18 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                     curr_row_last_node = self.graph.get_node(self.graph.row_nodes[curr_row_id][-1])
                     next_row_start_node = self.graph.get_node(self.graph.row_nodes[next_row_id][0])
                     next_row_last_node = self.graph.get_node(self.graph.row_nodes[next_row_id][-1])
-                    start_node_x = curr_row_start_node['node']['pose']['position']['x'] + 0.5 * (next_row_start_node['node']['pose']['position']['x'] - curr_row_start_node['node']['pose']['position']['x'])
-                    start_node_y = curr_row_start_node['node']['pose']['position']['y'] + 0.5 * (next_row_start_node['node']['pose']['position']['y'] - curr_row_start_node['node']['pose']['position']['y'])
-                    last_node_x = curr_row_last_node['node']['pose']['position']['x'] + 0.5 * (next_row_last_node['node']['pose']['position']['x'] - curr_row_last_node['node']['pose']['position']['x'])
-                    last_node_y = curr_row_last_node['node']['pose']['position']['y'] + 0.5 * (next_row_last_node['node']['pose']['position']['y'] - curr_row_last_node['node']['pose']['position']['y'])
+                    start_node_x = curr_row_start_node['node']['pose']['position']['x'] + 0.5 * (
+                                next_row_start_node['node']['pose']['position']['x'] -
+                                curr_row_start_node['node']['pose']['position']['x'])
+                    start_node_y = curr_row_start_node['node']['pose']['position']['y'] + 0.5 * (
+                                next_row_start_node['node']['pose']['position']['y'] -
+                                curr_row_start_node['node']['pose']['position']['y'])
+                    last_node_x = curr_row_last_node['node']['pose']['position']['x'] + 0.5 * (
+                                next_row_last_node['node']['pose']['position']['x'] -
+                                curr_row_last_node['node']['pose']['position']['x'])
+                    last_node_y = curr_row_last_node['node']['pose']['position']['y'] + 0.5 * (
+                                next_row_last_node['node']['pose']['position']['y'] -
+                                curr_row_last_node['node']['pose']['position']['y'])
 
                     farm_rows_x.append((start_node_x, last_node_x))
                     farm_rows_y.append((start_node_y, last_node_y))
@@ -108,8 +133,8 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
             max_y = max(max(nav_rows_y[-1]), max(farm_rows_y[-1]))
 
             # limits of the axes
-            self.ax.set_xlim(min_x - 1, max_x + 1)
-            self.ax.set_ylim(min_y - 1, max_y + 1)
+            self.ax.set_xlim(min_x - 5, max_x + 2.5)
+            self.ax.set_ylim(min_y - 5, max_y + 7.5)
         else:
             min_x = min(min(nav_rows_x[0]), min(farm_rows_x[0]), cold_storage_x)
             max_x = max(max(nav_rows_x[-1]), max(farm_rows_x[-1]), cold_storage_x)
@@ -117,11 +142,11 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
             max_y = max(max(nav_rows_y[-1]), max(farm_rows_y[-1]), cold_storage_y)
 
             # limits of the axes
-            self.ax.set_xlim(min_x - 5, max_x + 5)
-            self.ax.set_ylim(min_y - 5, max_y + 5)
+            self.ax.set_xlim(min_x - 15, max_x + 15)
+            self.ax.set_ylim(min_y - 15, max_y + 15)
 
-#        self.fig.set_figheight((max_y - min_y + 2)*2)
-#        self.fig.set_figwidth((max_x - min_x + 2)*2)
+            # self.fig.set_figheight((max_y - min_y + 2)*2)
+            # self.fig.set_figwidth((max_x - min_x + 2)*2)
 
         # static objects - nodes
         # nav_rows
@@ -202,11 +227,11 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                                                           markeredgecolor="#8b12b3",
                                                           linestyle="none")[0])
             self.robot_status_texts.append(self.ax.text(x + 0.6, y + 0.5,
-                                                        "R_%s:%d" % (robot_id[-2:], robot.mode),
+                                                        "R_%s:%d" % (robot_id, robot.mode),
                                                         fontdict=self.font))
         self.fig.canvas.draw()
         if self.save_fig:
-            self.fig.savefig(self.fig_name_base+"%.1f.svg" % self.graph.env.now)
+            self.fig.savefig(self.fig_name_base + datetime.now().isoformat() + "_S_%.1f.svg" % self.graph.env.now)
 
         return (self.static_lines + self.picker_position_lines +
                 self.picker_status_texts + self.robot_position_lines + self.robot_status_texts)
@@ -223,7 +248,7 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                 x = y = 0.
 
             self.picker_position_lines[i].set_data(x, y)
-            self.picker_status_texts[i].set_text("P_%s:%d" %(picker.picker_id[-2:], picker.mode))
+            self.picker_status_texts[i].set_text("P_%s:%d" % (picker.picker_id[-2:], picker.mode))
             self.picker_status_texts[i].set_position((x - 2.9, y + 0.5))
 
         for i in range(self.n_robots):
@@ -235,14 +260,14 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
             else:
                 x = y = 0.
             self.robot_position_lines[i].set_data(x, y)
-            self.robot_status_texts[i].set_text("R_%s:%d" %(robot.robot_id[-2:], robot.mode))
+            self.robot_status_texts[i].set_text("R_%s:%d" % (robot.robot_id, robot.mode))
             self.robot_status_texts[i].set_position((x + 1.0, y + 0.5))
 
         self.fig.canvas.draw()
 
         if self.save_fig:
             if random.random() < 0.001:
-                self.fig.savefig(self.fig_name_base + "%.1f.svg" % self.graph.env.now)
+                self.fig.savefig(self.fig_name_base + datetime.now().isoformat() + "_S_%.1f.svg" % self.graph.env.now)
 
         return (self.static_lines + self.picker_position_lines + self.picker_status_texts +
                 self.robot_position_lines + self.robot_status_texts)

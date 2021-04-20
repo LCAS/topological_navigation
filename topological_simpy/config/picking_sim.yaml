@@ -97,7 +97,7 @@ single_track_route: [WayPoint67, WayPoint143, WayPoint68, WayPoint69]
 base_station_nodes: &id_base_stations
   - WayPoint140
   - WayPoint141
-#  - WayPoint142
+  - WayPoint142
 wait_nodes: *id_base_stations
 
 ##-----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ tray_capacity: 1200
 #                                        all pickers, or single value to be
 #                                        copied), s
 ##-----------------------------------------------------------------------------
-n_robots: 2  # 3
+n_robots: 3  # 3
 robot_transportation_rate: [1.0]
 robot_max_n_trays:
   func: copy

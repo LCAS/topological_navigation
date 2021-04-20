@@ -38,8 +38,8 @@ if __name__ == "__main__":
     tmap_config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2'
 
     picker_ids = config_params["picker_ids"]
-    robot_ids = ['Hurga', 'Foo']
-    # robot_ids = ['Hurga', 'Foo', 'Foo2']
+    # robot_ids = ['Hurga', 'Foo']
+    robot_ids = ['Hurga', 'Foo', 'Foo2']
     n_pickers = len(picker_ids)
     n_robots = len(robot_ids)
 

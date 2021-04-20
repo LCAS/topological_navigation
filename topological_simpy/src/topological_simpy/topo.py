@@ -177,6 +177,7 @@ class TopologicalForkGraph(object):
         #           node at the end.
         self.base_stations = base_stations
         self.wait_nodes = wait_nodes
+        self.cold_storage_usage_queue = []   # robots that need to use cold storage for unloading will join the queue
 
         if self.env:
             for n in self._nodes:
@@ -241,6 +242,32 @@ class TopologicalForkGraph(object):
         The bellow methods are used for model topological nodes as containers, each container can only hold one robot.
         Pickers don't use this container feature but use the same topological map. 
         """
+    def add_cold_storage_usage_queue(self, robot_id):
+        """
+        robots that need to use cold storage for unloading will join the queue
+        """
+        self.cold_storage_usage_queue.append(robot_id)
+
+    def remove_cold_storage_usage_queue(self, robot_id):
+        """
+        robots that have used cold storage for unloading will be removed from the queue
+        """
+        if robot_id in self.cold_storage_usage_queue:
+            self.cold_storage_usage_queue.remove(robot_id)
+        else:
+            msg = "%s not in cold_storage_usage_queue: %s" % (robot_id, self.cold_storage_usage_queue)
+            raise Exception(msg)
+
+
+    def get_cold_storage_usage_queue_head(self):
+        """
+        get the first element of the queue
+        """
+        if len(self.cold_storage_usage_queue) > 0:
+            return self.cold_storage_usage_queue[0]
+        else:
+            return None
+
     def get_node_res_level(self, node):
         """
         get the level of the node resource

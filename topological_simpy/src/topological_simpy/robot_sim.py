@@ -577,8 +577,8 @@ class RobotSim(Robot):
         time_wait_total = 0
         dist_cost = float('{:.2f}'.format(dist_cost))
         self._cost['robot_id'].append(robot_id)
-        self._cost['time_now'].append(self.env.now)
-        self._cost['time_wait'].append(time_wait)
+        self._cost['time_now'].append(round(self.env.now, 1))
+        self._cost['time_wait'].append(round(time_wait, 1))
         self._cost['dist_cost'].append(dist_cost)
         self._cost['route'].append(node_name)
         for n in self._cost['dist_cost']:
@@ -586,7 +586,7 @@ class RobotSim(Robot):
         dist_cost_total = float('{:.2f}'.format(dist_cost_total))
         self._cost['dist_cost_total'].append(dist_cost_total)
         for n in self._cost['time_wait']:
-            time_wait_total = time_wait_total + n
+            time_wait_total = round(time_wait_total + n, 1)
         time_cost_total = float('{:.2f}'.format(self.time_to_dist_cost(time_wait_total)))
         self._cost['time_wait_total'].append(time_wait_total)
         self._cost['time_cost_total'].append(time_cost_total)

@@ -8,11 +8,10 @@ import topological_simpy.topo_mimic
 import topological_simpy.farm
 import topological_simpy.config_utils
 import topological_simpy.robot_sim
-from topological_simpy.topo import TopologicalForkGraph
 import simpy
-import itertools
 import csv
 import os
+import topological_simpy.visualise_sim
 
 from random import randint, choice, seed
 from datetime import datetime
@@ -20,6 +19,8 @@ from datetime import datetime
 RANDOM_SEED = 10
 SIM_RT_FACTOR = 1.0
 VERBOSE = False
+SHOW_VIS = False
+trial = 0
 
 seed(RANDOM_SEED)
 numpy.random.seed(RANDOM_SEED)
@@ -88,7 +89,7 @@ if __name__ == "__main__":
                                 config_params["row_nodes"])
     # set node_yields
     topo_graph.set_node_yields(config_params["yield_per_node"])
-    
+
     picker_picking_rate = topological_simpy.config_utils.param_list_to_dict(
         "picker_picker_rate", config_params["picker_picking_rate"], picker_ids)
     picker_transportation_rate = topological_simpy.config_utils.param_list_to_dict(
@@ -100,7 +101,8 @@ if __name__ == "__main__":
 
     local_storage_capacity = n_robots + n_pickers
     # TODO: expand local storage node capacity(topo.py) to n_pickers + n_robots, so the node could hold multiple robots at the beginning
-    local_storages = [simpy.Resource(env, capacity=local_storage_capacity) for i in range(len(config_params["local_storage_nodes"]))]
+    local_storages = [simpy.Resource(env, capacity=local_storage_capacity) for i in
+                      range(len(config_params["local_storage_nodes"]))]
     topo_graph.set_local_storages(local_storages, config_params["local_storage_nodes"])
 
     if config_params["use_cold_storage"]:
@@ -156,49 +158,36 @@ if __name__ == "__main__":
                                        # config_params["n_iteration"],
                                        VERBOSE)
 
-    # nodes = topo_graph.get_nodes()
+    if SHOW_VIS:
+        vis = topological_simpy.visualise_sim.VisualiseAgentsSim(topo_graph, robots,
+                                                                 pickers, scheduling_policy,
+                                                                 show_cs=True,
+                                                                 save_random=True,
+                                                                 trial=trial)
 
-    # def goal_generator(_env, _robots, _nodes, max_interval=50):
-    #     for idx in itertools.count():
-    #         delay_time = randint(_env.now + 1, _env.now + max_interval)  # TODO decrease delay_time
-    #         # delay_time = randint(10, max_interval)  # TODO decrease delay_time
-    #         print('.% 4d:    Generating goal after %6d seconds at %6d s' % (env.now, delay_time, env.now + delay_time))
-    #         yield _env.timeout(delay_time)
-    #         rob = choice(_robots)
-    #         n = choice(_nodes)
-    #         print('+% 4d:    new goal for robot %10s: %s' % (_env.now, rob._name, n))
-    #         rob.goto(n)
-    #
-    #
-    # def goal_generator2(_env, _robots, _target_nodes):
-    #     for idx in range(len(_robots)):
-    #         yield _env.timeout(5)
-    #         rob = _robots[idx]
-    #         print('+% 4d:    new goal for robot %10s: %s' % (_env.now, rob._name, _target_nodes[idx]))
-    #         rob.goto(_target_nodes[idx])
-
-    # env.process(goal_generator(env, robots, nodes))
-    # env.process(goal_generator2(env, robots, target_nodes))
-
+    # instead of env.run() we should env.step() to have any control (Ctrl+c)
+    # If multiple events are scheduled for the same simpy.time, there would be
+    # at least a ms delay (in ros/realtime clock) between the events
+    # This seems to be unavoidable at this stage
     until = 600
     while env.peek() < until:
-        # topo_graph.monitor()
-        # for r in robots:
-        #     print("R% 3d:     STATUS: % 10s: %s (%s)" % (
-        #         env.now,
-        #         r._name,
-        #         r._current_node,
-        #         'ACTIVE' if r._active_process and r._active_process.is_alive else 'IDLE'
-        #     ))
-        env.step()
-    # print(tmap._node_log)
+        try:
+            env.step()
+            if SHOW_VIS:
+                vis.update_plot()
+        except simpy.core.EmptySchedule:
+            if SHOW_VIS:
+                vis.close_plot()
+            break
+        else:
+            pass
 
     # write the node_log to file
     now = datetime.now()
 
     file_name = 'node_log_' + now.isoformat() + '.csv'
     try:
-        os.mkdir("./data")
+        os.mkdir("../data")
     except OSError as e:
         print("Directory exists")
 

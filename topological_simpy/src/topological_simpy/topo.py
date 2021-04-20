@@ -258,7 +258,6 @@ class TopologicalForkGraph(object):
             msg = "%s not in cold_storage_usage_queue: %s" % (robot_id, self.cold_storage_usage_queue)
             raise Exception(msg)
 
-
     def get_cold_storage_usage_queue_head(self):
         """
         get the first element of the queue
@@ -287,7 +286,7 @@ class TopologicalForkGraph(object):
         :param resource: SimPy resource Container
         """
         item = (
-            resource._env.now,
+            round(resource._env.now, 1),
             resource.level
         )
         self._node_log[node].append(item)

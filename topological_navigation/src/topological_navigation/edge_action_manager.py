@@ -100,18 +100,7 @@ class EdgeActionManager(object):
     def execute(self):
         
         rospy.loginfo("Edge Action Manager: Executing the action")
-        self.client.send_goal(self.goal, self.execute_callback)
+        self.client.send_goal(self.goal)
         
         rospy.loginfo("Edge Action Manager: Waiting for the result ...")
-        self.client.wait_for_result()
-    
-
-    def execute_callback(self, status, result):
-        
-        if status == 3:
-            rospy.loginfo("Edge Action Manager: Succeeded")
-        elif status == 2 or status == 6:
-            rospy.logwarn("Edge Action Manager: Preempted")
-        elif status != 3:
-            rospy.logerr("Edge Action Manager: Failed")    
 #########################################################################################################

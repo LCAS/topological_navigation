@@ -280,7 +280,7 @@ class TopologicalNavServer(object):
         if self.current_node != msg.data:  # is there any change on this topic?
             self.current_node = msg.data  # we are at this new node
             if msg.data != "none":  # are we at a node?
-                rospy.loginfo("new node reached %s", self.current_node)
+                rospy.loginfo("new node reached: {}".format(self.current_node))
                 if self.navigation_activated:  # is the action server active?
                     if self.stat:
                         self.stat.set_at_node()
@@ -304,14 +304,14 @@ class TopologicalNavServer(object):
         succeeded, inc = self.followRoute(route, target, 1)
 
         if succeeded:
-            rospy.loginfo("navigation finished successfully")
+            rospy.loginfo("Navigation Finished Successfully")
             self.publish_feedback_exec_policy(GoalStatus.SUCCEEDED)
         else:
             if self.cancelled:
-                rospy.loginfo("Fatal fail")
+                rospy.loginfo("Fatal Fail")
                 self.publish_feedback_exec_policy(GoalStatus.PREEMPTED)
             else:
-                rospy.loginfo("navigation failed")
+                rospy.loginfo("Navigation Failed")
                 self.nfails += 1
                 if self.nfails >= self.n_tries:
                     self.publish_feedback_exec_policy(GoalStatus.ABORTED)
@@ -542,13 +542,13 @@ class TopologicalNavServer(object):
 
             if nav_ok:
                 self.stat.status = "success"
-                rospy.loginfo("navigation finished on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
+                rospy.loginfo("Navigation Finished on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
             else:
                 if not_fatal:
-                    rospy.loginfo("navigation failed on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
+                    rospy.loginfo("Navigation Failed on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
                     self.stat.status = "failed"
                 else:
-                    rospy.loginfo("Fatal fail on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
+                    rospy.loginfo("Fatal Fail on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
                     self.stat.status = "fatal"
 
             self.publish_stats()

@@ -574,7 +574,7 @@ class TopologicalNavServer(object):
         rospy.loginfo("Cancelling current navigation goal, timeout_secs={}...".format(timeout_secs))
         
         if self.edge_action_manager is not None:
-            self.edge_action_manager.register_preempt(True)
+            self.edge_action_manager.preempt()
         self.cancelled = True
 
         if timeout_secs > 0:
@@ -644,7 +644,7 @@ class TopologicalNavServer(object):
                     self.preempted = True
             else:
                 result = True
-                self.edge_action_manager.register_preempt(True)
+                self.edge_action_manager.preempt()
 
         if not res:
             if not result:

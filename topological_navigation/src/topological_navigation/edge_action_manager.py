@@ -107,9 +107,9 @@ class EdgeActionManager(object):
         rospy.loginfo("Edge Action Manager: Waiting for the result ...")
         
         
-    def register_preempt(self, preempt_requested):
+    def preempt(self):
         
-        if preempt_requested and self.client is not None:
+        if self.client is not None:
             status = self.client.get_state()
             if status == GoalStatus.PENDING or status == GoalStatus.ACTIVE:
                 self.client.cancel_all_goals()

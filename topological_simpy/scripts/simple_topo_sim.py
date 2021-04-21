@@ -109,11 +109,6 @@ if __name__ == "__main__":
         cold_storage = simpy.Resource(env, capacity=n_pickers)
         topo_graph.set_cold_storage(cold_storage, config_params["cold_storage_node"])
 
-    # robot_homes = ['dock_0', 'dock_1', 'dock_2']
-    # robot_homes = ['WayPoint131', 'WayPoint111', 'WayPoint66', 'WayPoint94']
-    # target_nodes = ['WayPoint66', 'WayPoint142', 'WayPoint102', 'WayPoint78']
-    # robot_ids = ['Hurga', 'Foo', 'Foo2']
-    # robot_ids = ['Hurga', 'Foo']
     robot_transportation_rate = topological_simpy.config_utils.param_list_to_dict(
         "robot_transportation_rate", config_params["robot_transportation_rate"], robot_ids)
     robot_max_n_trays = topological_simpy.config_utils.param_list_to_dict(
@@ -170,10 +165,11 @@ if __name__ == "__main__":
     # at least a ms delay (in ros/realtime clock) between the events
     # This seems to be unavoidable at this stage
     until = 600
+    n = 0
     while env.peek() < until:
         try:
             env.step()
-            if SHOW_VIS:
+            if SHOW_VIS and (n % 50 == 0):
                 vis.update_plot()
         except simpy.core.EmptySchedule:
             if SHOW_VIS:
@@ -181,6 +177,7 @@ if __name__ == "__main__":
             break
         else:
             pass
+        n += 1
 
     # write the node_log to file
     now = datetime.now()

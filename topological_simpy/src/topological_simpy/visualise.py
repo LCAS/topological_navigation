@@ -42,11 +42,14 @@ class VisualiseAgents(object):
                                                                                self.policy,
                                                                                self.trial)
 
-        self.fig = matplotlib.pyplot.figure(figsize=(9.6, 12), dpi=100)
+        # self.fig = matplotlib.pyplot.figure(figsize=(9.6, 12), dpi=100)
 
-        self.ax = self.fig.add_subplot(111, frameon=True)
+        # subfigs if needed
+        self.fig, self.ax = matplotlib.pyplot.subplots(2, 1, figsize=(16, 10), sharex=False, sharey=False)
 
-        self.font = {'family': 'serif', 'color':  'red', 'weight': 'bold', 'size': 9,}
+        # self.ax = self.fig.add_subplot(111, frameon=True)
+
+        self.font = {'family': 'serif', 'color':  'red', 'weight': 'bold', 'size': 9}
 
         self.static_lines = []
         self.picker_position_lines = []

@@ -72,13 +72,13 @@ class EdgeActionManager(object):
         rospy.loginfo("Edge Action Manager: Importing {} from {}.msg".format(action_spec, package))
         action = _import(package + ".msg", action_spec)
         
-        rospy.loginfo("Edge Action Manager: Constructing the goal")
-        self.construct_goal(action_type, self.edge["goal"])
-        
         rospy.loginfo("Edge Action Manager: Creating a {} client".format(action_name))
         self.client = actionlib.SimpleActionClient(action_name, action)        
         self.client.wait_for_server()
         self.client_created = True
+        
+        rospy.loginfo("Edge Action Manager: Constructing the goal")
+        self.construct_goal(action_type, self.edge["goal"])
         
         
     def construct_goal(self, action_type, goal_args):

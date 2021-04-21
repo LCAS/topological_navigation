@@ -71,7 +71,8 @@ class map_manager_2(object):
             self.tmap2["transformation"] = self.transformation
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = self.get_time()
-            self.tmap2["nodes"] = []
+            self.tmap2["nodes"] = []            
+            rospy.set_param('topological_map_name', self.name)
 
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -112,6 +113,7 @@ class map_manager_2(object):
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
         self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
+        self.update_action_type_srv=rospy.Service('/topological_map_manager2/update_action_type', topological_navigation_msgs.srv.UpdateActionType, self.update_action_type_cb)
 
         
     def get_time(self):
@@ -151,6 +153,8 @@ class map_manager_2(object):
         self.transformation = self.tmap2["transformation"]
         
         self.map_check()
+        
+        rospy.set_param('topological_map_name', self.name)
         
         rospy.loginfo("Caching the map ...")
         self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
@@ -415,6 +419,8 @@ class map_manager_2(object):
             
         node["node"]["restrictions_planning"] = restrictions_planning
         node["node"]["restrictions_runtime"] = restrictions_runtime
+        
+        node["node"]["parent_frame"] = self.transformation["parent"]
             
         self.tmap2["nodes"].append(node)
         
@@ -471,7 +477,7 @@ class map_manager_2(object):
         
         
     def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[], 
-                         recovery_behaviours_config="", action_type="default", goal="default", fail_policy="fail", 
+                         recovery_behaviours_config="", action_type="move_base_msgs/MoveBaseGoal", goal="default", fail_policy="fail", 
                          restrictions_planning="True", restrictions_runtime="True"):
         
         edge = {}
@@ -493,7 +499,10 @@ class map_manager_2(object):
             
         if goal == "default":
             edge["goal"] = {}
-            edge["goal"]["target_pose"] = "$node.pose"
+            edge["goal"]["target_pose"] = {}
+            edge["goal"]["target_pose"]["pose"] = "$node.pose"
+            edge["goal"]["target_pose"]["header"] = {}
+            edge["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
         else:
             edge["goal"] = goal
             
@@ -971,6 +980,29 @@ class map_manager_2(object):
             return False, ""
         
         
+    def update_action_type_cb(self, req):
+        """
+        Updates an edge's action type (definition) for all edges in the tmap
+        """
+        return self.update_action_type(req.action_name, req.action_type)
+    
+    
+    def update_action_type(self, action_name, action_type):
+        
+        success = False
+        for node in self.tmap2["nodes"]:
+            for edge in node["node"]["edges"]:
+                if edge["action"] == action_name:
+                    edge["action_type"] = action_type
+                    success = True
+        
+        if success:            
+            self.update()
+            self.write_topological_map(self.filename)
+    
+        return success
+        
+        
     def get_instances_of_node(self, node_name):
         
         num_available = 0
@@ -1043,14 +1075,7 @@ class map_manager_2(object):
                 msg.map = self.metric_map
                 msg.pointset = point_set
                 
-                msg.pose.position.x = node["node"]["pose"]["position"]["x"]
-                msg.pose.position.y = node["node"]["pose"]["position"]["y"]
-                msg.pose.position.z = node["node"]["pose"]["position"]["z"]
-                
-                msg.pose.orientation.x = node["node"]["pose"]["orientation"]["x"]
-                msg.pose.orientation.y = node["node"]["pose"]["orientation"]["y"]
-                msg.pose.orientation.z = node["node"]["pose"]["orientation"]["z"]
-                msg.pose.orientation.w = node["node"]["pose"]["orientation"]["w"]
+                msg.pose = message_converter.convert_dictionary_to_ros_message("geometry_msgs/Pose", node["node"]["pose"])
                 
                 msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
                 msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]

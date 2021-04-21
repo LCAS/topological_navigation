@@ -45,7 +45,7 @@ class TopologicalRouteSearch2(object):
         #print 'searching route from %s to %s' %(orig.name, goal.name)
 
         #self.get_distance_to_node(goal, orig)
-        nte = NodeToExpand(orig["name"], 'none', 0.0, get_distance_to_node_tmap2(goal, orig))  #Node to Expand
+        nte = NodeToExpand(orig["node"]["name"], 'none', 0.0, get_distance_to_node_tmap2(goal, orig))  #Node to Expand
         expanded.append(nte)
         #to_expand.append(nte)
 
@@ -61,7 +61,7 @@ class TopologicalRouteSearch2(object):
                 not_goal=False
                 route_found=True
                 cdist = get_distance_to_node_tmap2(cen, goal)
-                cnte = NodeToExpand(goal["name"], nte.name, nte.current_distance+cdist, 0.0)  #Node to Expand
+                cnte = NodeToExpand(goal["node"]["name"], nte.name, nte.current_distance+cdist, 0.0)  #Node to Expand
                 expanded.append(cnte)
                 #print "goal found"
             else :
@@ -90,7 +90,7 @@ class TopologicalRouteSearch2(object):
                         nnn = get_node_from_tmap2(self.top_map, i)
                         tdist = get_distance_to_node_tmap2(goal, nnn)
                         cdist = get_distance_to_node_tmap2(cen, nnn)
-                        cnte = NodeToExpand(nnn["name"], nte.name, nte.current_distance+cdist, tdist)  #Node to Expand
+                        cnte = NodeToExpand(nnn["node"]["name"], nte.name, nte.current_distance+cdist, tdist)  #Node to Expand
                         to_expand.append(cnte)
                         to_expand = sorted(to_expand, key=lambda node: node.cost)
                     else:

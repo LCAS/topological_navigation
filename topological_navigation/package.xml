@@ -39,7 +39,6 @@
   <run_depend>mongodb_store</run_depend>
   <run_depend>strands_navigation_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
-  <run_depend>monitored_navigation</run_depend>
   <run_depend>dwa_local_planner</run_depend>
   <run_depend>fremenserver</run_depend>
   <run_depend>rospy_message_converter</run_depend>

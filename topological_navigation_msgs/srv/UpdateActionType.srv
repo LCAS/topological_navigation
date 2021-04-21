@@ -1,0 +1,4 @@
+string action_name    # the action for which you are setting the type
+string action_type    # e.g. move_base_msgs/MoveBaseGoal
+---
+bool success

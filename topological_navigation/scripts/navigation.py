@@ -647,6 +647,7 @@ class TopologicalNavServer(object):
                     self.preempted = True
             else:
                 result = True
+                self.edge_action_manager.client.cancel_all_goals()
 
         if not res:
             if not result:

@@ -42,7 +42,7 @@ class VisualiseAgents(object):
                                                                                self.policy,
                                                                                self.trial)
 
-        self.fig = matplotlib.pyplot.figure(figsize=(14.4, 12), dpi=100)
+        self.fig = matplotlib.pyplot.figure(figsize=(9.6, 12), dpi=100)
 
         self.ax = self.fig.add_subplot(111, frameon=True)
 

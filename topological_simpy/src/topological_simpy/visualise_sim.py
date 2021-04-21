@@ -134,7 +134,7 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
             # limits of the axes
             self.ax.set_xlim(min_x - 5, max_x + 2.5)
-            self.ax.set_ylim(min_y - 5, max_y + 7.5)
+            self.ax.set_ylim(min_y - 2.5, max_y + 7.5)
         else:
             min_x = min(min(nav_rows_x[0]), min(farm_rows_x[0]), cold_storage_x)
             max_x = max(max(nav_rows_x[-1]), max(farm_rows_x[-1]), cold_storage_x)
@@ -208,7 +208,7 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                                                            markeredgecolor="b",
                                                            linestyle="none")[0])
             self.picker_status_texts.append(self.ax.text(x - 2.9, y + 0.5,
-                                                         "P_%s:%d" % (picker_id[-2:], picker.mode),
+                                                         "P_%s:%d" % (picker_id[-3:], picker.mode),
                                                          fontdict=self.font))
         # robots
         for i in range(self.n_robots):
@@ -248,7 +248,7 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                 x = y = 0.
 
             self.picker_position_lines[i].set_data(x, y)
-            self.picker_status_texts[i].set_text("P_%s:%d" % (picker.picker_id[-2:], picker.mode))
+            self.picker_status_texts[i].set_text("P_%s:%d" % (picker.picker_id[-3:], picker.mode))
             self.picker_status_texts[i].set_position((x - 2.9, y + 0.5))
 
         for i in range(self.n_robots):

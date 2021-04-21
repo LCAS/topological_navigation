@@ -276,9 +276,9 @@ class RobotSim(Robot):
             else:
                 hold_time = time_to_travel + time_to_travel_next
 
-            print('  %5.1f:  %s traversing route from node %10s to node %10s '
-                  '(distance: %f, travel time: %5.1f, plan hold time: %5.1f)' %
-                  (self.graph.env.now, self.robot_id, self.curr_node, n, d_cur, time_to_travel, hold_time))
+            # self.loginfo('  %5.1f:  %s traversing route from node %s to node %s '
+            #              '(distance: %f, travel time: %5.1f, plan hold time: %5.1f)' %
+            #              (self.graph.env.now, self.robot_id, self.curr_node, n, d_cur, time_to_travel, hold_time))
 
             try:
                 # The node to be requested may be occupied by other robots, mark the time when requesting
@@ -287,9 +287,9 @@ class RobotSim(Robot):
                 node_state = self.graph.get_node_state(n)
                 if node_state is 1:
                     yield self.graph.request_node(self.robot_id, n)
-                    print('  %5.1f: active nodes connected to robots: %s ' % (self.env.now, self.graph.active_nodes))
+                    # self.loginfo('  %5.1f: active nodes connected to robots: %s ' % (self.env.now, self.graph.active_nodes))
                 else:
-                    print('  %5.1f: %s: %s is occupied, node state: %d' % (self.env.now, self.robot_id, n, node_state))
+                    # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' % (self.env.now, self.robot_id, n, node_state))
                     avoid_nodes = [n]
                     new_route = self.get_route_nodes(self.curr_node, target, avoid_nodes)  # avoid node n
                     new_route_dc = 0
@@ -303,27 +303,27 @@ class RobotSim(Robot):
                     wait_time = round(self.graph.get_wait_time(n), 1)
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost
-                    print('$ %5.1f: old_route_cost = %d, new_route_dc = %d' % (
-                        self.env.now, old_route_cost, new_route_dc))
+                    # self.loginfo('$ %5.1f: old_route_cost = %d, new_route_dc = %d' % (
+                    #     self.env.now, old_route_cost, new_route_dc))
                     if old_route_cost > new_route_dc:
                         route_nodes = new_route
                         self.graph.cancel_hold_time(n, hold_time)  # found cheap route, cancel the hold_time just be set
                         idx = 0
-                        print('~ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
+                        self.loginfo('~ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
                         continue
                     else:
-                        print('* %5.1f: %s wait %5.1f, use old route %s' % (
+                        self.loginfo('* %5.1f: %s wait %5.1f, use old route %s' % (
                             self.env.now, self.robot_id, wait_time, [self.curr_node] + route_nodes[idx:]))
                         yield self.graph.request_node(self.robot_id, n)
                         for j in self.graph.jam:
                             for r in j:
                                 if r == self.robot_id:
-                                    print('| %5.1f: %s is in traffic jam, change route now' % (self.env.now, self.robot_id))
+                                    self.loginfo('| %5.1f: %s is in traffic jam, change route now' % (self.env.now, self.robot_id))
                                     route_nodes = new_route
                                     self.graph.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
                                     idx = 0
                                     change_route = True
-                                    print('^ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
+                                    self.loginfo('^ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
                                     break
                         if change_route:
                             self.log_cost(self.robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
@@ -331,13 +331,13 @@ class RobotSim(Robot):
                         else:
                             pass  # travel to the requested node
                 if self.env.now - start_wait > 0:  # The time that the robot has waited since requesting
-                    print('$ %5.1f:  %s has lock on %s after %5.1f' % (
+                    self.loginfo('$ %5.1f:  %s has lock on %s after %5.1f' % (
                         self.env.now, self.robot_id, n,
                         self.env.now - start_wait))
             except Exception:
                 # Not triggered when requesting an occupied node!
                 # Not triggered when the robot has a goal running and be assigned a new goal
-                print('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
+                self.loginfo('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
                     self.graph.env.now, self.robot_id,
                     self.curr_node, n
                 ))
@@ -349,23 +349,23 @@ class RobotSim(Robot):
                 yield self.graph.env.timeout(time_to_travel)
                 yield self.graph.release_node(self.robot_id, self.curr_node)
                 # The robot is reaching at the half way between the current node and next node
-                print('  %5.1f:  %s ---> %s reaching half way ---> %s' % (
-                    self.graph.env.now, self.curr_node, self.robot_id, n))
+                # self.loginfo('  %5.1f:  %s ---> %s reaching half way ---> %s' % (
+                #     self.graph.env.now, self.curr_node, self.robot_id, n))
                 self.curr_node = n
                 self.graph.agent_nodes[self.robot_id] = self.curr_node
 
                 remain_time_to_travel = round(d_cur / self.transportation_rate, 1) - time_to_travel
                 yield self.graph.env.timeout(remain_time_to_travel)
-                print('@ %5.1f:  %s reached node %s' % (self.graph.env.now, self.robot_id, n))
+                self.loginfo('@ %5.1f:  %s reached node %s' % (self.graph.env.now, self.robot_id, n))
                 self.log_cost(self.robot_id, self.env.now - start_wait, d_cur, n)  # for monitor
                 yield self.graph.env.timeout(0)
             except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
-                print('  %5.1f: %s INTERRUPTED while travelling from node %s going to node %s' % (
+                self.loginfo('  %5.1f: %s INTERRUPTED while travelling from node %s going to node %s' % (
                     self.graph.env.now, self.robot_id,
                     self.curr_node, n
                 ))
                 self.log_cost(self.robot_id, 0, 0, 'INTERRUPTED')  # for monitor
-                print('  %5.1f: @@@ %s release previously acquired target node %s' % (self.env.now, self.robot_id, n))
+                self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' % (self.env.now, self.robot_id, n))
                 yield self.graph.release_node(self.robot_id, n)
                 interrupted = True
                 break
@@ -373,10 +373,10 @@ class RobotSim(Robot):
 
         if interrupted:
             # When the robot has a goal running and be assigned a new goal node
-            print('  %5.1f: %s ABORTED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
+            self.loginfo('  %5.1f: %s ABORTED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
             self.log_cost(self.robot_id, 0, 0, 'ABORTED')  # for monitor
         else:
-            print('. %5.1f: %s COMPLETED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
+            self.loginfo('. %5.1f: %s COMPLETED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
             self.log_cost(self.robot_id, 0, 0, 'COMPLETED')  # for monitor
             self.graph.add_com_node(self.curr_node)
 

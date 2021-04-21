@@ -23,7 +23,7 @@ class AbstractRestriction():
     robot_state = {}
 
     @abstractmethod
-    def evaluate(self, node=None, value=None, **robot_state={}):
+    def evaluate(self, node=None, value=None, robot_state={}):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
         raise NotImplementedError()
 

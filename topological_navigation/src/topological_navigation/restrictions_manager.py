@@ -20,8 +20,10 @@ class AbstractRestriction():
     """ Abstract definition of a restriction that can be evaluated in real-time """
     __metaclass__ = ABCMeta
 
+    robot_state = {}
+
     @abstractmethod
-    def get_value(self, node=None, value=None, **robot_state):
+    def evaluate(self, node=None, value=None, **robot_state={}):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
         raise NotImplementedError()
 
@@ -30,15 +32,40 @@ class AbstractRestriction():
         """ The name must correspond to the restriction variable name in the map definition """
         raise NotImplementedError()
 
+    @abstractmethod 
+    def ground_to_robot(self, robot_namespace=None):
+        """ Retrieves and saves internally the state of the robot necessary for evaluating the restriction  """
+        raise NotImplementedError()
+
 class RobotType(AbstractRestriction):
     name = "robot"
 
     def __init__(self):
         super(AbstractRestriction, self).__init__()
 
-    def get_value(self, node, value, **robot_state):
+    def evaluate(self, node, value, robot_state={}):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        return value.lower() == robot_state["robot"].lower()
+        evaluation = True
+        if "robot" in robot_state:
+            evaluation = value.lower() == robot_state["robot"].lower()
+        elif "robot" in self.robot_state:
+            evaluation = value.lower() == self.robot_state["robot"].lower()
+        
+        return evaluation
+
+    def ground_to_robot(self, robot_namespace=None):
+        if robot_namespace is None:
+            # robot namespace under which this script is running
+            robot_namespace = rospy.get_namespace()
+        try:
+            topic_name = "/{}/type".format(robot_namespace)
+            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
+        except rospy.ROSException:
+            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(self.name, topic_name))
+        else:
+            self.robot_state.update({
+                "robot": robot_type["data"]
+            })
 
 class TaskName(AbstractRestriction):
     name = "task"
@@ -46,10 +73,30 @@ class TaskName(AbstractRestriction):
     def __init__(self):
         super(AbstractRestriction, self).__init__()
 
-    def get_value(self, node, value, **robot_state):
+    def evaluate(self, node, value, robot_state={}):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        return value.lower() == robot_state["task"].lower()
+        evaluation = True
+        if "task" in robot_state:
+            evaluation = value.lower() == robot_state["task"].lower()
+        elif "task" in self.robot_state:
+            evaluation = value.lower() == self.robot_state["task"].lower()
 
+        return evaluation
+
+    def ground_to_robot(self, robot_namespace=None):
+        if robot_namespace is None:
+            # robot namespace under which this script is running
+            robot_namespace = rospy.get_namespace()
+        try:
+            topic_name = "/{}/task".format(robot_namespace)
+            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
+        except rospy.ROSException:
+            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(
+                self.name, topic_name))
+        else:
+            self.robot_state.update({
+                "task": robot_type["data"]
+            })
 ###############################
 
 
@@ -126,7 +173,7 @@ class RestrictionsManager():
             restriction = restriction_predicate.atoms().pop()
             restr_elements = restriction.name.split("_")
             condition = self.conditions[restr_elements[0]]
-            evaluation = condition.get_value(
+            evaluation = condition.evaluate(
                 node = node_name,
                 value = restr_elements[1] if len(
                     restr_elements) > 1 else None,

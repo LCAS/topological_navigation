@@ -6,10 +6,15 @@ import yaml
 import sys
 import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapRequest, RestrictMapResponse
+from topological_navigation.manager2 import map_manager_2
+from strands_navigation_msgs.msg import TopologicalMap
 from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 from std_msgs.msg import String
 from abc import ABCMeta, abstractmethod, abstractproperty
 from sympy.parsing.sympy_parser import parse_expr
+
+## TODO make this publish the planning restricted topological_map under the robot namespace
+## TODO add visualise_map for each robot launchfile to visualise the restricted maps
 
 ###############################
 ##
@@ -122,6 +127,10 @@ class RestrictionsManager():
         # for each node contains the indexes of the nodes which have an edge ending in it
         self.back_edges_idx = {}
 
+        # publishers for restricted tmap
+        self.restricted_tmap_pub = rospy.Publisher("topological_map", TopologicalMap, queue_size=10)
+        self.restricted_tmap2_pub = rospy.Publisher("topological_map_2", String, queue_size=10)
+
         rospy.Subscriber("/topological_map_2",
                          String, self._topomap_cb)
         rospy.loginfo("Waiting for topological map...")
@@ -203,13 +212,26 @@ class RestrictionsManager():
         return not restriction_predicate
         
     def restrict_planning_map_handle(self, request):
-        return self._restrict_map_handle(request, "restrictions_planning")
+        response = RestrictMapResponse()
+        response.success = True
+
+        new_topo_map = self._restrict_map_handle(request, "restrictions_planning")
+
+        response.restricted_tmap = yaml.dump(new_topo_map)
+
+        return response
     
     def restrict_runtime_map_handle(self, request):
-        return self._restrict_map_handle(request, "restrictions_runtime")
+        response = RestrictMapResponse()
+        response.success = True
+
+        new_topo_map = self._restrict_map_handle(request, "restrictions_runtime")
+
+        response.restricted_tmap = yaml.dump(new_topo_map)
+
+        return response
    
     def _restrict_map_handle(self, request, restrictions_arg):
-        response = RestrictMapResponse()
         new_topo_map = copy.deepcopy(self.topo_map)
         robot_state = {}
         try:
@@ -264,10 +286,7 @@ class RestrictionsManager():
             for ni in sorted(to_remove_nodes, reverse=True):
                 del new_topo_map["nodes"][ni]
 
-            response.success = True
-
-        response.restricted_tmap = yaml.dump(new_topo_map)
-        return response
+        return new_topo_map
 
     def _topomap_cb(self, msg):
         self.topo_map = yaml.safe_load(msg.data)
@@ -283,6 +302,15 @@ class RestrictionsManager():
                     self.back_edges_idx.update({
                         edge["node"]: {ni: ei}
                     })
+
+        restricted_tmap2 = self._restrict_map_handle({}, "restrictions_planning")
+
+        self.restricted_tmap2_pub.publish(yaml.dump(restricted_tmap2))
+
+        old_restricted_tmap = map_manager_2.convert_tmap2_to_tmap(
+            restricted_tmap2, restricted_tmap2["pointset"], restricted_tmap2["metric_map"])
+
+        self.restricted_tmap_pub.publish(old_restricted_tmap)
 
 
 if __name__ == '__main__':

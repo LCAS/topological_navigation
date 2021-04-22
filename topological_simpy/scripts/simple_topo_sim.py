@@ -21,7 +21,7 @@ from random import seed
 from datetime import datetime
 
 RANDOM_SEED = 10
-SIM_RT_FACTOR = 0.2
+SIM_RT_FACTOR = 0.2   # 0.2
 VERBOSE = True
 SHOW_VIS = True
 trial = 0
@@ -158,7 +158,7 @@ if __name__ == "__main__":
         vis = topological_simpy.visualise_sim.VisualiseAgentsSim(topo_graph, robots,
                                                                  pickers, scheduling_policy,
                                                                  show_cs=True,
-                                                                 save_random=True,
+                                                                 save_random=False,
                                                                  trial=trial)
 
     # instead of env.run() we should env.step() to have any control (Ctrl+c)

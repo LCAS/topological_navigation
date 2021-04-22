@@ -150,8 +150,8 @@ class TopologicalForkGraph(object):
         with open(topo_map2_file, "r") as f:
             self.tmap2 = safe_load(f)
         self._route_planner = TopologicalRouteSearch2(self.tmap2)
-        self.t_map = deepcopy(self.tmap2)  # used for map node managing
-        self.t_map2 = deepcopy(self.tmap2)  # used for map node managing
+        # self.t_map = deepcopy(self.tmap2)  # only used in delete_tmap_node method
+        # self.t_map2 = deepcopy(self.tmap2)  # only used in delete_tmap_node method
         self.env = env
 
         self._nodes = sorted([n['node']['name'] for n in self.tmap2['nodes']])
@@ -166,11 +166,6 @@ class TopologicalForkGraph(object):
         self.jam = []  # the robot that in traffic jam
         self.com_nodes = []  # the nodes that hold completed robots
 
-        # TODO: 1. Set the capacity of local_storage_node(WayPoint66) to len(robot_ids), so all robots could be hold at
-        #            this node.
-        #       2. Or, keep the capacity of each node at 1, set the home positions of robot to different nodes:
-        #           WayPoint142, WayPoint140, WayPoint141... The robot starts from the home node and returns to the home
-        #           node at the end.
         self.base_stations = base_stations
         self.wait_nodes = wait_nodes
         self.cold_storage_usage_queue = []   # robots that need to use cold storage for unloading will join the queue
@@ -282,7 +277,7 @@ class TopologicalForkGraph(object):
         :param resource: SimPy resource Container
         """
         item = (
-            round(resource._env.now, 1),
+            round(self.env.now, 1),
             resource.level
         )
         self._node_log[node].append(item)
@@ -481,16 +476,16 @@ class TopologicalForkGraph(object):
         if self.env:
             return time_cost * speed_m_s
 
-    def get_avoiding_route(self, origin, target, avoid_node):
+    def get_avoiding_route(self, origin, target, avoid_nodes):
         """
         get the topological route from origin to target but avoiding avoid_node
         :param origin: string, origin topological node
         :param target: string, target topological node
-        :param avoid_node: string, topological node that should be avoided when planning the route
+        :param avoid_nodes: string, topological node that should be avoided when planning the route
         return: string list, route node names, from current node to target node
         """
-        self.t_map2 = self.delete_tmap_node(avoid_node)
-        route_planner = TopologicalRouteSearch2(self.t_map2)
+        dynamic_map = self.get_topo_map_no_occupied_rownodes(avoid_nodes)
+        route_planner = TopologicalRouteSearch2(dynamic_map)
         return route_planner.search_route(origin, target)
 
     def get_com_nodes(self):
@@ -504,34 +499,6 @@ class TopologicalForkGraph(object):
         Add node to the com_nodes list
         """
         self.com_nodes.append(node)
-
-    def delete_tmap_node(self, node_names):
-        """
-        delete the node from the topological map, including the node and the edges pointed to the node
-        :param node_names: string list, node names
-        return: topological map with deleted nodes
-        """
-        idx = 0
-        for node_name in node_names:
-            while idx < len(self.t_map['nodes']):
-                n = self.t_map['nodes'][idx]
-                if n['node']['name'] == node_name:
-                    children = get_conected_nodes_tmap2(n['node'])  # get all children names, type: string list
-                    for child in children:
-                        node_idx = get_node_and_idx_from_tmap2(self.t_map, child)
-                        for e_idx, n_edge in enumerate(node_idx['node']['edges']):
-                            if n_edge['node'] == node_name:
-                                self.t_map['nodes'][node_idx['idx']]['node']['edges'].pop(e_idx)
-                    self.t_map['nodes'].pop(idx)
-                    idx = 0
-                    break
-                idx = idx + 1
-        if self.t_map == self.tmap2:
-            print('%s not found in tmap' % node_names)
-        else:
-            self.t_map2 = deepcopy(self.t_map)
-            self.t_map = deepcopy(self.tmap2)
-        return self.t_map2
 
     def get_node_state(self, node):
         """
@@ -867,6 +834,7 @@ class TopologicalForkGraph(object):
             edge_ids.append(edge.edge_id)
         return edge_ids
 
+    # deprecated, only works with tmap1, use get_topo_map_no_occupied_rownodes instead
     def get_topo_map_no_agent_rownodes(self):
         """get the current topological map without the edges connecting to row nodes with agents.
         this map should be used for route_search for all route searches here."""
@@ -897,6 +865,31 @@ class TopologicalForkGraph(object):
                 edge_indices.sort(reverse=True)
                 for edge_index in edge_indices:
                     dyn_map.nodes[self.node_index[nbr_node]].edges.pop(edge_index)
+
+        return dyn_map
+
+    def get_topo_map_no_occupied_rownodes(self, avoid_nodes):
+        """get the current topological map without the edges connecting to row nodes occupied by robots.
+        this map should be used for route_search for all route searches here."""
+        dyn_map = copy.deepcopy(self.tmap2)  # copy of map to be modified
+
+        for node in avoid_nodes:
+            # find neighbouring nodes and edges from the agent node
+            nbr_nodes = []
+            for edge in dyn_map['nodes'][self.node_index[node]]['node']['edges']:
+                nbr_nodes.append(edge['node'])
+            # remove all edges
+            dyn_map['nodes'][self.node_index[node]]['node']['edges'] = []
+
+            # for each neighbour, find and remove the edge back to the agent node
+            for nbr_node in nbr_nodes:
+                edge_indices = []
+                for edge in dyn_map['nodes'][self.node_index[nbr_node]]['node']['edges']:
+                    if edge['node'] == node:
+                        edge_indices.append(dyn_map['nodes'][self.node_index[nbr_node]]['node']['edges'].index(edge))
+                edge_indices.sort(reverse=True)
+                for edge_index in edge_indices:
+                    dyn_map['nodes'][self.node_index[nbr_node]]['node']['edges'].pop(edge_index)
 
         return dyn_map
 

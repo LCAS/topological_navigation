@@ -116,7 +116,6 @@ class EdgeActionManager(object):
         
         if self.client is not None:
             status = self.client.get_state()
-            print status
             if status == GoalStatus.PENDING or status == GoalStatus.ACTIVE:
                 self.client.cancel_all_goals()
 #########################################################################################################

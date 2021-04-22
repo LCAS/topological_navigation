@@ -14,7 +14,8 @@ Assumptions:
 - Robot joins a queue and waits at base station when the cold storage node is being used
 - Robot will consider to use new route if a planned node is occupied by other robots if the new route costs less than waiting, or choose to wait the node to be released
 
-#Running step:
+# unning step:
 
 Go to topological_simpy/scripts/
+
 `python simple_topo_sim.py`

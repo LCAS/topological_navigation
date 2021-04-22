@@ -132,7 +132,7 @@ class TopologicalForkGraph(object):
         one head lane and different rows.
     """
 
-    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, single_track_route,
+    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane,
                  base_stations, wait_nodes, env, topo_map2_file, verbose):
         """TopologicalForkGraph: A class to store and retrieve information of topological map,
         stored in the mongodb, necessary for the discrete event simulations.Assumes a fork map with
@@ -144,8 +144,6 @@ class TopologicalForkGraph(object):
         n_farm_rows -- list of number of farm beds for each polytunnel, list of ints
         n_topo_nav_rows -- number of navigation rows, int
         second_head_lane -- uses a secondary head lane, bool
-        single_track_route -- single track route to cold_storage_node, when the road is not free, the agent should wait
-                              at home node
         verbose -- to control rosinfo, bool
         """
         # ns = rospy.get_namespace()
@@ -155,8 +153,6 @@ class TopologicalForkGraph(object):
         self.t_map = deepcopy(self.tmap2)  # used for map node managing
         self.t_map2 = deepcopy(self.tmap2)  # used for map node managing
         self.env = env
-
-        self.single_track_route = single_track_route
 
         self._nodes = sorted([n['node']['name'] for n in self.tmap2['nodes']])
         self._nodes_dict = {n['node']['name']: n['node'] for n in self.tmap2['nodes']}

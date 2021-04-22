@@ -17,7 +17,7 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         operation in an actual / gazebo simulated environment. Some methods are overloaded
     """
 
-    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane, single_track_route,
+    def __init__(self, n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane,
                  base_stations, wait_nodes, env, topo_map2_file, verbose=False):
         """TopologicalForkGraphMimic: A child class from TopologicalForkGraph class to store and retreive
         information of topological map, stored in the mongodb, necessary for the longer discrete event simulations
@@ -33,7 +33,7 @@ class TopologicalForkGraphMimic(topological_simpy.topo.TopologicalForkGraph):
         verbose -- to control rosinfo, bool
         """
         super(TopologicalForkGraphMimic, self).__init__(n_polytunnels, n_farm_rows, n_topo_nav_rows, second_head_lane,
-                                                        single_track_route, base_stations, wait_nodes, env,
+                                                        base_stations, wait_nodes, env,
                                                         topo_map2_file, verbose)
 
     def set_row_info(self, pri_head_nodes, row_nodes, sec_head_nodes=None):

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-
+# ----------------------------------
+# @author: ZuyuanZhu
+# @email: zuyuanzhu@gmail.com
+# @date: 07 Apr 2021
+# ----------------------------------
 
 import numpy
 import topological_simpy.picker_sim
@@ -72,7 +76,6 @@ if __name__ == "__main__":
                                                                         config_params["n_farm_rows"],
                                                                         config_params["n_topo_nav_rows"],
                                                                         config_params["second_head_lane"],
-                                                                        config_params["single_track_route"],
                                                                         base_stations,
                                                                         wait_nodes,
                                                                         env,
@@ -149,8 +152,6 @@ if __name__ == "__main__":
                                               robots,
                                               pickers,
                                               scheduling_policy,
-                                              # config_params["with_robots"],
-                                              # config_params["n_iteration"],
                                               VERBOSE)
 
     if SHOW_VIS:

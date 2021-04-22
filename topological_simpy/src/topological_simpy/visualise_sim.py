@@ -285,8 +285,8 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
         self.ax[1].set_xticklabels(names, fontsize=9, rotation=45)
 
         # display simulation time
-        title_text = 'Up: discrete event simulation for picking and transporting task\n' \
-                     'Down: topological map node usage times\n' \
+        title_text = 'Up: Discrete Event Simulation for Picking and Transporting Task\n' \
+                     'Down: Topological Map Node Usage\n' \
                      'Simulation Time: %.1f s' % self.graph.env.now
         self.fig.suptitle(title_text)
 

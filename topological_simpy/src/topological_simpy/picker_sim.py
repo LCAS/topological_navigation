@@ -22,11 +22,11 @@ class PickerSim(Pose):
         robots -- list of robot agents
         """
 
-        Pose.__init__(self)   # TODO: check Pose is working?
+        # Pose.__init__(self)   # TODO: check Pose is working?
         self.with_robots = with_robots
         self.closest_node = []
         self.current_node = []
-        self.pose = Pose()
+        # self.pose = Pose()
 
         self.picker_state = "INIT"   # picker state, "INIT", "CALLED", "WAIT", "LOADED"
         self.curr_iteration = None
@@ -215,7 +215,7 @@ class PickerSim(Pose):
             robot_x = robot_node_obj.pose.position.x  # TODO: to be matched with the fake ROS msg
             robot_y = robot_node_obj.pose.position.y
 
-            curr_node_obj = self.graph.get_node(robot_node)
+            curr_node_obj = self.graph.get_node(self.curr_node)
             curr_x = curr_node_obj.pose.position.x
             curr_y = curr_node_obj.pose.position.y
 

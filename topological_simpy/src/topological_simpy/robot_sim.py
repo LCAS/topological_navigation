@@ -36,20 +36,6 @@ class RobotSim(Robot):
 
         self.action = self.env.process(self.normal_operation())
 
-    # def call_robot(self, picker_id, robot_id):
-    #     self.loginfo("? %5.1f: %s call robot %s" % (self.env.now, picker_id, robot_id))
-    #     return self.robot_resource.put(1)
-    #     # self.set_robot_state("ACCEPTED")
-    #     # self.log_cost(". %5.1f: call robot: ACCEPTED" % self.env.now)
-    #     # yield self.env.timeout(0)
-    #
-    # def release_robot(self):
-    #     if self.robot_resource.level > 0:
-    #         self.loginfo(". %5.1f: release robot %s" % (self.env.now, self.robot_id))
-    #         return self.robot_resource.get(1)
-    #         # self.set_robot_state("INIT")
-    #         # self.loginfo(". %5.1f: release robot: INIT" % self.env.now)
-
     def set_robot_state(self, state):
         """
         robot state:
@@ -121,7 +107,7 @@ class RobotSim(Robot):
                 # farm assigns the robot to a picker by calling assign_robot_to_picker
                 # go to picker_node from curr_node
                 self.loginfo("  %5.1f: %s going to %s" % (self.env.now, self.robot_id, self.assigned_picker_node))
-                yield self.env.process(self.goto_scheduler2(self.assigned_picker_node))
+                yield self.env.process(self.goto_scheduler(self.assigned_picker_node))
                 self.time_spent_transportation += self.env.now - transportation_start_time
                 self.loginfo("@ %5.1f: %s reached %s" % (self.env.now, self.robot_id, self.assigned_picker_node))
                 self.set_robot_state("ARRIVED")
@@ -151,7 +137,7 @@ class RobotSim(Robot):
                     # go to local_storage_node from picker_node
                     self.loginfo("  %5.1f: %s going to %s" %
                                  (self.env.now, self.robot_id, self.assigned_local_storage_node))
-                    yield self.env.process(self.goto_scheduler2(self.assigned_local_storage_node))
+                    yield self.env.process(self.goto_scheduler(self.assigned_local_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
                     self.loginfo("@ %5.1f: %s reached %s" %
                                  (self.env.now, self.robot_id, self.assigned_local_storage_node))
@@ -159,7 +145,7 @@ class RobotSim(Robot):
                 else:
                     # go to cold_storage_node from picker_node
                     self.loginfo("  %5.1f: %s going to cold_storage_node: %s" % (self.env.now, self.robot_id, self.cold_storage_node))
-                    yield self.env.process(self.goto_scheduler2(self.cold_storage_node))
+                    yield self.env.process(self.goto_scheduler(self.cold_storage_node))
                     self.time_spent_transportation += self.env.now - transportation_start_time
                     self.loginfo("@ %5.1f: %s reached cold_storage_node: %s" % (self.env.now, self.robot_id, self.cold_storage_node))
 
@@ -205,7 +191,7 @@ class RobotSim(Robot):
                 # go to base_storage node of the robot, in this case, abandon local_storage prepared in previous modes
                 self.loginfo("  %5.1f: %s going to base_storage: %s" %
                              (self.env.now, self.robot_id, self.graph.base_stations[self.robot_id]))
-                yield self.env.process(self.goto_scheduler2(self.graph.base_stations[self.robot_id]))
+                yield self.env.process(self.goto_scheduler(self.graph.base_stations[self.robot_id]))
                 self.time_spent_transportation += self.env.now - transportation_start_time
                 self.loginfo("@ %5.1f: %s reached base station: %s" %
                              (self.env.now, self.robot_id, self.graph.base_stations[self.robot_id]))
@@ -232,24 +218,13 @@ class RobotSim(Robot):
 
         yield self.env.timeout(self.process_timeout)
 
-    def is_single_track_route_busy(self):
-        """ check if the target node is in the single_track_route
-        :return: True, if the single track route is busy
-        """
-        busy_state = False
-        for node in self.graph.single_track_route:
-            if self.graph.get_node_res_level(node) > 0:
-                busy_state = True
-
-        return busy_state
-
     def _goto(self, target):
         """
-        robot goes from current node go to target node.
+        robot goes from current node to target node.
         The robot always chooses minimum-distance-cost route(original_route) and travels from current node to target.
-        If robot finds one node is occupied during travelling, the robot will try to find a new route avoiding the
-        occupied node, i.e., new_route. But at the same time, the robot also evaluates the waiting time cost if keeps
-        using the original_route.  The robot always chooses low cost route between new_route and original_route.
+        If robot finds the next node is occupied during travelling, the robot will try to find a new_route avoiding the
+        occupied node. But at the same time, the robot also evaluates the waiting time cost if keeps
+        using the original_route. The robot always chooses low cost route between new_route and original_route.
 
         :param target: string, target node
         """
@@ -299,7 +274,7 @@ class RobotSim(Robot):
                     elif new_route:
                         new_route_dc = self.graph.route_dist_cost([self.curr_node] + new_route)  # dc: distance cost
                     elif not new_route:
-                        new_route_dc = 10000  # no new route, return a big distance cost
+                        new_route_dc = float("inf")  # no new route, return a big distance cost
                     wait_time = round(self.graph.get_wait_time(n), 1)
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost
@@ -380,12 +355,13 @@ class RobotSim(Robot):
             self.log_cost(self.robot_id, 0, 0, 'COMPLETED')  # for monitor
             self.graph.add_com_node(self.curr_node)
 
-    def goto_scheduler2(self, target):
+    def goto_scheduler(self, target):
         """
         Scheduler of assigning target node to the robot based on whether the target is the cold_storage_node and
         whether the queue of waiting for using cold storage node is free (len(cold_storage_usage_queue) == 0). if
         the target is not cold_storage_node or the queue is free, then go to the target directly. Or, join the queue
-        and keep waiting until the previous robots have finished usage before going to the target(cold_storage_node)
+        and keep waiting until the previous robots have finished using the cold_storage_node before going to the
+        target(cold_storage_node)
 
         :param target: string, topological node that to be reached
         """
@@ -417,117 +393,6 @@ class RobotSim(Robot):
                 self.loginfo("F %5.1f: cold_storage_node free, %s going to target node: %s, wait time: %5.1f" %
                              (self.env.now, self.robot_id, target, wait_time))
                 yield self.env.process(self._goto(target))
-
-    # def goto_scheduler(self, target):
-    #     """
-    #     @DEPRECATED, aborted without queue for booking cold_storage_node
-    #     Scheduler of the assigning the robot target node based on whether the target is in the single track route and
-    #     whether the single track route is busy
-    #     :param target: string, topological node that to be reached
-    #     """
-    #     # before go to the target, if the target node is not in the single_track_route, go to the target directly
-    #     start_time = self.env.now
-    #     if target not in self.graph.single_track_route:
-    #         self._active_process = self.graph.env.process(self._goto(target))
-    #         yield self._active_process
-    #
-    #     # if the target node is in the single_track_route, and usually this is in mode 3
-    #     else:
-    #         try:
-    #             assert self.mode == 3  # robot go to local_storage_node or cold_storage_node from picker_node
-    #         except AssertionError:
-    #             raise Exception("goto_scheduler is trying to assign %s going to %s, but robot is in %d" %
-    #                             (self.robot_id, target, self.mode))
-    #
-    #         # target in single track route, the single track route may be free now but occupied later by some robots
-    #         # before the current robot reaching the target. Here, divide the entire route into 3 parts:
-    #         # current node -> row head node -> base station -> target (eg. cold storage)
-    #         # go to the head node of current row first, then check whether the single track route becomes free:
-    #         #  current node -> row head node
-    #         head_node = self.graph.get_row_head_node_of_row_node(self.curr_node)
-    #         if head_node is None:  # robot is not in one of rows
-    #             pass
-    #         else:
-    #             self.loginfo("  %5.1f: target in single track route, %s going to head node first: %s" %
-    #                          (self.env.now, self.robot_id, head_node))
-    #             yield self.graph.env.process(self._goto(head_node))
-    #
-    #             # row head node -> base station
-    #             # TODO: model the single track route as simpy container, so when there are more than 3 robots running
-    #             #       on the map, two or more robots will be waiting in a queue at base stations and one robot running
-    #             #       in the single track route.
-    #             #  check the single track route again, if the single track route becomes free:
-    #             #       Step 1: find route_to_single_track from head node to adjacent node of the
-    #             #               first node of the single track route
-    #             #       Step 2: for sub_target in route_to_single_track:
-    #             #                   go to sub_target
-    #             #                   if single_track_route busy:
-    #             #                       go to base station
-    #             #                       break
-    #             #               keep waiting until single track is free
-    #             #               go to target
-    #             # if single track route is busy, go to base station
-    #             if not self.is_single_track_route_busy():
-    #                 self.loginfo("  %5.1f: single track route free, %s going to target node: %s" %
-    #                              (self.env.now, self.robot_id, target))
-    #                 yield self.graph.env.process(self._goto(target))
-    #             else:
-    #                 self.loginfo("B %5.1f: single track route busy, %s going to base station: %s" %
-    #                              (self.env.now, self.robot_id, self.graph.base_stations[self.robot_id]))
-    #                 yield self.graph.env.process(self._goto(self.graph.base_stations[self.robot_id]))
-    #
-    #                 # keep checking the single track route and waiting, until the route is free
-    #                 # base station -> target (eg. cold storage)
-    #                 start_time = self.env.now
-    #                 while self.is_single_track_route_busy():
-    #                     yield self.env.timeout(self.loop_timeout)
-    #                 wait_time = self.env.now - start_time
-    #                 self.loginfo("  %5.1f: single track route free, %s going to target node: %s, wait time: %5.1f" %
-    #                              (self.env.now, self.robot_id, target, wait_time))
-    #                 yield self.graph.env.process(self._goto(target))
-    #
-    # def goto(self, target):
-    #     """
-    #     @DEPRECATED
-    #     Start the _goto(target) process
-    #     :param target: string, topological node that to be reached
-    #     """
-    #     # before go to the target, if the target node is in the single_track_route, and the single_track_route is
-    #     # occupied by a robot, then go back to base_stations node and keep waiting until the single_track_route is
-    #     # free to use
-    #     if (target not in self.graph.single_track_route) or (not self.is_single_track_route_busy()):
-    #         self._active_process = self.graph.env.process(self._goto(target))
-    #         yield self._active_process
-    #
-    #     else:
-    #         # target in single track route and route is busy
-    #         # go to base_station first, keep waiting until the route is free
-    #         # then go to the target
-    #         base_station = self.graph.base_stations[self.robot_id]
-    #         self.loginfo("! %5.1f: route to cold storage is busy, %s go to base station %s and wait there"
-    #                      % (self.env.now, self.robot_id, base_station))
-    #         # if the base_station is free, go to base_station, or stay at head node of current row
-    #         if self.graph.get_node_res_level(base_station) < self.graph.get_node_res_capacity(base_station):
-    #             self._active_process = self.graph.env.process(self._goto(base_station))
-    #             yield self._active_process
-    #         # TODO: go to head node of current row
-    #
-    #         while self.is_single_track_route_busy():
-    #             # wait here until single track route is free
-    #             yield self.env.timeout(self.loop_timeout)
-    #
-    #         # the single track route is free again, go to the target
-    #         self._active_process = self.graph.env.process(self._goto(target))
-    #         yield self._active_process
-    #
-    #     # if self.graph.env:
-    #     #     if self._active_process:
-    #     #         if self._active_process.is_alive:  # The robot has an alive goal running
-    #     #             self._active_process.interrupt()
-    #     #             self._active_process = None  # Clear the old goal
-    #     #     self._active_process = self.graph.env.process(self._goto(target))
-    #     # else:
-    #     #     self.curr_node = target
 
     def get_route_nodes(self, cur_node, target, avoid_nodes=None):
         """

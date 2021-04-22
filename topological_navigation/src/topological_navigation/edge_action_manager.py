@@ -56,8 +56,9 @@ class EdgeActionManager(object):
     
     
     def __init__(self):
+        
         self.client = None        
-    
+        self.current_action = None
     
     def initialise(self, edge, destination_node):
         
@@ -68,6 +69,9 @@ class EdgeActionManager(object):
         
         action_type = self.edge["action_type"]
         self.action_name = self.edge["action"]
+        
+        if self.action_name != self.current_action:
+            self.preempt()
         
         items = action_type.split("/")
         package = items[0]
@@ -104,6 +108,7 @@ class EdgeActionManager(object):
         
         rospy.loginfo("Edge Action Manager: Executing the action")
         self.client.send_goal(self.goal)
+        self.current_action = self.action_name
         rospy.loginfo("Edge Action Manager: Waiting for the result ...")
         
         
@@ -111,6 +116,7 @@ class EdgeActionManager(object):
         
         if self.client is not None:
             status = self.client.get_state()
+            print status
             if status == GoalStatus.PENDING or status == GoalStatus.ACTIVE:
                 self.client.cancel_all_goals()
 #########################################################################################################

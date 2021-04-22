@@ -643,7 +643,6 @@ class TopologicalNavServer(object):
                     self.preempted = True
             else:
                 result = True
-                self.edge_action_manager.preempt()
 
         if not res:
             if not result:

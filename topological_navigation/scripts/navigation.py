@@ -98,8 +98,7 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         
-        self.edge_action_manager = None
-        self.client_created = False
+        self.edge_action_manager = EdgeActionManager()
 
         # Creating Action Server for navigation
         rospy.loginfo("Creating action server.")
@@ -574,10 +573,7 @@ class TopologicalNavServer(object):
         """
         rospy.loginfo("Cancelling current navigation goal, timeout_secs={}...".format(timeout_secs))
         
-        if self.edge_action_manager is not None:
-            self.client_created = self.edge_action_manager.client_created
-            if self.client_created:
-                self.edge_action_manager.client.cancel_all_goals()
+        self.edge_action_manager.preempt()
         self.cancelled = True
 
         if timeout_secs > 0:
@@ -626,7 +622,7 @@ class TopologicalNavServer(object):
         result = True
         self.goal_reached = False
         
-        self.edge_action_manager = EdgeActionManager(edge, destination_node)
+        self.edge_action_manager.initialise(edge, destination_node)
         self.edge_action_manager.execute()
         
         status = self.edge_action_manager.client.get_state()
@@ -647,7 +643,6 @@ class TopologicalNavServer(object):
                     self.preempted = True
             else:
                 result = True
-                self.edge_action_manager.client.cancel_all_goals()
 
         if not res:
             if not result:

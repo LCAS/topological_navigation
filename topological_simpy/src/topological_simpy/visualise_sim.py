@@ -239,13 +239,6 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                                                            "R_%s:%d" % (robot_id, robot.mode),
                                                            fontdict=self.font))
 
-        # # node_log, slow down simulation heavily
-        # valid_node_log = dict((k, v) for k, v in self.graph._node_log.iteritems() if v)
-        # names = list(valid_node_log.keys())
-        # values = [len(value) for value in valid_node_log.values()]
-        # self.ax[1].bar(names, values, color=(0.2, 0.4, 0.6, 0.6))
-        # self.ax[1].set_xticklabels(names, fontsize=9, rotation=90)
-
         self.fig.canvas.draw()
         if self.save_fig:
             self.fig.savefig(self.fig_name_base + datetime.now().isoformat() + "_S_%.1f.svg" % self.graph.env.now)
@@ -281,16 +274,21 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
             self.robot_status_texts[i].set_position((x + 1.0, y + 0.5))
 
         # plot the node resource usage
-        valid_node_log = dict((k, v) for k, v in self.graph._node_log.iteritems() if v)
+        valid_node_log = dict((k, v) for k, v in self.graph.node_log.iteritems() if v)
         names = list(valid_node_log.keys())
         values = [len(value) for value in valid_node_log.values()]
         self.ax[1].clear()
         self.ax[1].bar(range(len(names)), values, color='b')
-        # self.ax[1].xlabel("Topological node")
-        # self.ax[1].ylabel("Access times")
-        # self.ax[1].title("Topological node usage")
+        self.ax[1].set_xlabel('Topological node')
+        self.ax[1].set_ylabel("Access times")
         self.ax[1].set_xticks(range(len(names)))
         self.ax[1].set_xticklabels(names, fontsize=9, rotation=45)
+
+        # display simulation time
+        title_text = 'Up: discrete event simulation for picking and transporting task\n' \
+                     'Down: topological map node usage times\n' \
+                     'Simulation Time: %.1f s' % self.graph.env.now
+        self.fig.suptitle(title_text)
 
         self.fig.canvas.draw()
 

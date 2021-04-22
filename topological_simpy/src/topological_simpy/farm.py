@@ -111,7 +111,7 @@ class Farm(object):
 
         self.events = []  # events = ["starting the process", "finished row allocations", "finished picking"]
 
-        self.action = self.env.process(self.scheduler_monitor())
+        # self.action = self.env.process(self.scheduler_monitor())
 
     def scheduler_monitor(self):
         """A process to allocate rows to the pickers.

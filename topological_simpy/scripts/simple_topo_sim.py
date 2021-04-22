@@ -5,7 +5,7 @@ import numpy
 import topological_simpy.picker_sim
 import topological_simpy.config_utils_mimic
 import topological_simpy.topo_mimic
-import topological_simpy.farm
+import topological_simpy.farm_sim
 import topological_simpy.config_utils
 import topological_simpy.robot_sim
 import simpy
@@ -13,11 +13,11 @@ import csv
 import os
 import topological_simpy.visualise_sim
 
-from random import randint, choice, seed
+from random import seed
 from datetime import datetime
 
 RANDOM_SEED = 10
-SIM_RT_FACTOR = 1.0
+SIM_RT_FACTOR = 0.2
 VERBOSE = True
 SHOW_VIS = True
 trial = 0
@@ -34,8 +34,8 @@ if __name__ == "__main__":
     config_params = topological_simpy.config_utils_mimic.get_mimic_des_params(config_file)
     # config_params = topological_simpy.config_utils.get_des_config_parameters(config_file_des)
 
-    # env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False) # todo: test later
-    env = simpy.Environment()
+    env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
+    # env = simpy.Environment()
     tmap_config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2'
 
     picker_ids = config_params["picker_ids"]
@@ -142,16 +142,16 @@ if __name__ == "__main__":
 
     scheduling_policy = "lexicographical"  # ["lexicographical", "shortest_distance", "uniform_utilisation"]
 
-    farm = topological_simpy.farm.Farm(config_params["map_name"],
-                                       env,
-                                       config_params["n_topo_nav_rows"],
-                                       topo_graph,
-                                       robots,
-                                       pickers,
-                                       scheduling_policy,
-                                       # config_params["with_robots"],
-                                       # config_params["n_iteration"],
-                                       VERBOSE)
+    farm = topological_simpy.farm_sim.FarmSim(config_params["map_name"],
+                                              env,
+                                              config_params["n_topo_nav_rows"],
+                                              topo_graph,
+                                              robots,
+                                              pickers,
+                                              scheduling_policy,
+                                              # config_params["with_robots"],
+                                              # config_params["n_iteration"],
+                                              VERBOSE)
 
     if SHOW_VIS:
         vis = topological_simpy.visualise_sim.VisualiseAgentsSim(topo_graph, robots,
@@ -165,19 +165,19 @@ if __name__ == "__main__":
     # at least a ms delay (in ros/realtime clock) between the events
     # This seems to be unavoidable at this stage
     until = 600
-    n = 0
+    monitor = farm.monitor(pickers, robots)
     while env.peek() < until:
         try:
             env.step()
-            if SHOW_VIS and (n % 50 == 0):
+            if SHOW_VIS and (monitor != farm.monitor(pickers, robots)):
                 vis.update_plot()
+                monitor = farm.monitor(pickers, robots)
         except simpy.core.EmptySchedule:
             if SHOW_VIS:
                 vis.close_plot()
             break
         else:
             pass
-        n += 1
 
     # write the node_log to file
     now = datetime.now()
@@ -197,4 +197,3 @@ if __name__ == "__main__":
             for key, value in r.cost.items():
                 writer.writerow([key, value])
             writer.writerow('')
-    # env.run(until=3600)

@@ -72,6 +72,9 @@ class EdgeActionManager(object):
         action_type = self.edge["action_type"]
         self.action_name = self.edge["action"]
         
+        if self.action_name != self.current_action and self.current_action is not None:
+            self.preempt()
+        
         items = action_type.split("/")
         package = items[0]
         action_spec = items[1][:-4] + "Action"
@@ -85,9 +88,6 @@ class EdgeActionManager(object):
         
         rospy.loginfo("Edge Action Manager: Constructing the goal")
         self.construct_goal(action_type, self.edge["goal"])
-        
-        if self.action_name != self.current_action and self.current_action is not None:
-            self.preempt()
         
         
     def construct_goal(self, action_type, goal_args):

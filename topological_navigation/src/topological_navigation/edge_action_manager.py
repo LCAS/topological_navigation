@@ -104,14 +104,6 @@ class EdgeActionManager(object):
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
         
- 
-    def execute(self):
-        
-        rospy.loginfo("Edge Action Manager: Executing the action")
-        self.client.send_goal(self.goal)
-        self.current_action = self.action_name
-        rospy.loginfo("Edge Action Manager: Waiting for the result ...")
-        
         
     def preempt(self):
         
@@ -119,4 +111,12 @@ class EdgeActionManager(object):
             status = self.client.get_state()
             if status == GoalStatus.PENDING or status == GoalStatus.ACTIVE:
                 self.client.cancel_all_goals()
+        
+ 
+    def execute(self):
+        
+        rospy.loginfo("Edge Action Manager: Executing the action")
+        self.client.send_goal(self.goal)
+        self.current_action = self.action_name
+        rospy.loginfo("Edge Action Manager: Waiting for the result ...")
 #########################################################################################################

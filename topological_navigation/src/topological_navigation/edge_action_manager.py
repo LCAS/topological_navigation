@@ -59,6 +59,7 @@ class EdgeActionManager(object):
         
         self.client = None        
         self.current_action = None
+        self.dt = dict_tools()
     
     def initialise(self, edge, destination_node):
         
@@ -70,7 +71,7 @@ class EdgeActionManager(object):
         action_type = self.edge["action_type"]
         self.action_name = self.edge["action"]
         
-        if self.action_name != self.current_action:
+        if self.action_name != self.current_action and self.current_action is not None:
             self.preempt()
         
         items = action_type.split("/")
@@ -90,16 +91,15 @@ class EdgeActionManager(object):
         
     def construct_goal(self, action_type, goal_args):
         
-        dt = dict_tools()
-        paths = dt.get_paths_from_nested_dict(goal_args)
+        paths = self.dt.get_paths_from_nested_dict(goal_args)
         
         for item in paths:
             keys = item["keys"]
             value = item["value"]
         
             if isinstance(value, str) and value.startswith("$"):
-                _property = dt.getFromDict(self.destination_node, value[1:].split("."))
-                goal_args = dt.setInDict(goal_args, keys, _property)
+                _property = self.dt.getFromDict(self.destination_node, value[1:].split("."))
+                goal_args = self.dt.setInDict(goal_args, keys, _property)
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
         

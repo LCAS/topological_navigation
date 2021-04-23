@@ -21,9 +21,9 @@ from random import seed
 from datetime import datetime
 
 RANDOM_SEED = 10
-SIM_RT_FACTOR = 0.2   # 0.2
+SIM_RT_FACTOR = 0.2    # simulation speed, 1: real time; 0.01: 100 times faster
 VERBOSE = True
-SHOW_VIS = True
+SHOW_VIS = True        # show visualisation
 trial = 0
 
 seed(RANDOM_SEED)

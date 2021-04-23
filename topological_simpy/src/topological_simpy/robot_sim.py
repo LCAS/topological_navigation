@@ -41,7 +41,6 @@ class RobotSim(Robot):
         robot state:
                     "INIT",  initial state
                     "ACCEPTED", robot accepted picker's call, i.e., robot had been assigned to a picker
-                    "TRAVELLING", robot is travelling to the goal node
                     "LOADED", picker loaded trays on robot
                     "ARRIVED", robot arrived at the goal node
         """
@@ -52,7 +51,7 @@ class RobotSim(Robot):
         self.n_empty_trays -= self.assigned_picker_n_trays
         self.n_full_trays += self.assigned_picker_n_trays
         self.loaded = True
-        self.set_robot_state("LOADED")  # "LOADED_ON" necessary ?
+        self.set_robot_state("LOADED")
 
     def assign_robot_to_picker(self, picker_id, picker_node, n_trays, local_storage_node):
         """assign a picker to the robot, if it is idle - called by scheduler"""
@@ -320,16 +319,16 @@ class RobotSim(Robot):
                 break
 
             try:
-                time_to_travel = round(d_cur / (2 * self.transportation_rate), 1)
-                yield self.graph.env.timeout(time_to_travel)
+                time_to_travel_before_release = round(d_cur / (2 * self.transportation_rate), 1)
+                yield self.graph.env.timeout(time_to_travel_before_release)
                 yield self.graph.release_node(self.robot_id, self.curr_node)
-                # The robot is reaching at the half way between the current node and next node
-                # self.loginfo('  %5.1f:  %s ---> %s reaching half way ---> %s' % (
-                #     self.graph.env.now, self.curr_node, self.robot_id, n))
+                # The robot is reaching at the half way between the current node and next node, release current node
+                # self.loginfo('  %5.1f:  %s ---> %s reaching half way ---> %s, releasing %s' % (
+                #     self.graph.env.now, self.curr_node, self.robot_id, n, self.curr_node))
                 self.curr_node = n
                 self.graph.agent_nodes[self.robot_id] = self.curr_node
 
-                remain_time_to_travel = round(d_cur / self.transportation_rate, 1) - time_to_travel
+                remain_time_to_travel = time_to_travel - time_to_travel_before_release
                 yield self.graph.env.timeout(remain_time_to_travel)
                 self.loginfo('@ %5.1f:  %s reached node %s' % (self.graph.env.now, self.robot_id, n))
                 self.log_cost(self.robot_id, self.env.now - start_wait, d_cur, n)  # for monitor

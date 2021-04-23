@@ -14,12 +14,10 @@ import numpy
 import random
 import copy
 from topological_navigation.tmap_utils import *
-import strands_navigation_msgs.msg
 import topological_simpy.config_utils
 from yaml import safe_load
 from topological_navigation.route_search2 import TopologicalRouteSearch2
-from copy import deepcopy
-from math import hypot, ceil
+from math import hypot
 from functools import partial, wraps
 import simpy
 
@@ -150,8 +148,7 @@ class TopologicalForkGraph(object):
         with open(topo_map2_file, "r") as f:
             self.tmap2 = safe_load(f)
         self._route_planner = TopologicalRouteSearch2(self.tmap2)
-        # self.t_map = deepcopy(self.tmap2)  # only used in delete_tmap_node method
-        # self.t_map2 = deepcopy(self.tmap2)  # only used in delete_tmap_node method
+
         self.env = env
 
         self._nodes = sorted([n['node']['name'] for n in self.tmap2['nodes']])
@@ -457,8 +454,10 @@ class TopologicalForkGraph(object):
         return: float, distance cost of the route
         """
         cost = 0.0
-        if len(route_nodes) < 2:
-            print('One node left before arriving at goal.')
+        if len(route_nodes) is 0:
+            msg = "route_nodes: %s, please provide at least 1 node" % route_nodes
+            raise Exception(msg)
+        if len(route_nodes) is 1:
             return cost
         else:
             for idx, n in enumerate(route_nodes[:-1]):

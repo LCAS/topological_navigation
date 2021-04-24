@@ -103,12 +103,11 @@ class EdgeActionManager(object):
         paths = self.dt.get_paths_from_nested_dict(goal_args)
         
         for item in paths:
-            keys = item["keys"]
             value = item["value"]
-        
+            
             if isinstance(value, str) and value.startswith("$"):
                 _property = self.dt.getFromDict(self.destination_node, value[1:].split("."))
-                goal_args = self.dt.setInDict(goal_args, keys, _property)
+                goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
         

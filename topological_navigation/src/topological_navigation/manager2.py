@@ -72,7 +72,7 @@ class map_manager_2(object):
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = self.get_time()
             self.tmap2["nodes"] = []            
-            rospy.set_param('topological_map_name', self.name)
+            rospy.set_param('topological_map_name', self.filename)
 
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -154,7 +154,7 @@ class map_manager_2(object):
         
         self.map_check()
         
-        rospy.set_param('topological_map_name', self.name)
+        rospy.set_param('topological_map_name', self.filename)
         
         rospy.loginfo("Caching the map ...")
         self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
@@ -803,12 +803,12 @@ class map_manager_2(object):
     
     def update_edge_cb(self, req):
         """
-        Update an edge's action and top_vel 
+        Update an edge's action
         """
-        return self.update_edge(req.edge_id, req.action, req.top_vel)
+        return self.update_edge(req.edge_id, req.action)
       
 
-    def update_edge(self, edge_id, action, top_vel):
+    def update_edge(self, edge_id, action):
         
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
@@ -818,14 +818,6 @@ class map_manager_2(object):
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
                     edge["action"] = action or edge["action"]
-                    
-                    if "config" in edge and "top_vel" in edge["config"]:
-                        edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
-                    elif "config" in edge and "top_vel" not in edge["config"]:
-                        edge["config"]["top_vel"] = top_vel
-                    else:
-                        edge["config"] = {}
-                        edge["config"]["top_vel"] = top_vel
                     
             self.tmap2["nodes"][index] = the_node
             self.update()

@@ -90,6 +90,14 @@ class EdgeActionManager(object):
         self.construct_goal(action_type, self.edge["goal"])
         
         
+    def preempt(self):
+        
+        if self.client is not None:
+            status = self.client.get_state()
+            if status == GoalStatus.PENDING or status == GoalStatus.ACTIVE:
+                self.client.cancel_all_goals()
+        
+        
     def construct_goal(self, action_type, goal_args):
         
         paths = self.dt.get_paths_from_nested_dict(goal_args)
@@ -103,14 +111,6 @@ class EdgeActionManager(object):
                 goal_args = self.dt.setInDict(goal_args, keys, _property)
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
-        
-        
-    def preempt(self):
-        
-        if self.client is not None:
-            status = self.client.get_state()
-            if status == GoalStatus.PENDING or status == GoalStatus.ACTIVE:
-                self.client.cancel_all_goals()
         
  
     def execute(self):

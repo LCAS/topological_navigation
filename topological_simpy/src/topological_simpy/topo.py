@@ -65,7 +65,7 @@ def patch_res_put(resource, pre=None, post=None):
     """
 
     def get_wrapper(func):
-        # Generate a wrapper for put/get/request/release
+        # Generate a wrapper for put
         @wraps(func)
         def wrapper(*args, **kwargs):
             # This is the actual wrapper
@@ -99,7 +99,7 @@ def patch_res_get(resource, pre=None, post=None):
     """
 
     def get_wrapper(func):
-        # Generate a wrapper for put/get/request/release
+        # Generate a wrapper for get
         @wraps(func)
         def wrapper(*args, **kwargs):
             # This is the actual wrapper

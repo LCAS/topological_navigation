@@ -7,7 +7,7 @@
 
 import numpy
 import topological_simpy.picker_sim
-import topological_simpy.config_utils_mimic
+import topological_simpy.config_utils_sim
 import topological_simpy.topo_mimic
 import topological_simpy.farm_sim
 import topological_simpy.config_utils
@@ -30,21 +30,16 @@ seed(RANDOM_SEED)
 numpy.random.seed(RANDOM_SEED)
 
 if __name__ == "__main__":
-    # config parameters, specified in rasberry-multisim.yaml, for VPICKER_CONFIG
-    # config_file = '/home/zuyuan/rasberry_ws/src/RASberry/rasberry_bringup/config/site_files/riseholme/polytunnel/transportation/picking_des.yaml'
-    # config_file_des = '/home/zuyuan/rasberry_ws/src/RASberry/rasberry_des/config/des_config.yaml'
     config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_simpy/config/picking_sim.yaml'
     # get the config params
-    config_params = topological_simpy.config_utils_mimic.get_mimic_des_params(config_file)
-    # config_params = topological_simpy.config_utils.get_des_config_parameters(config_file_des)
+    config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
     tmap_config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2'
 
     picker_ids = config_params["picker_ids"]
-    # robot_ids = ['Hurga', 'Foo']
-    robot_ids = ['Hurga', 'Foo', 'Foo2']
+    robot_ids = config_params["robot_ids"]
     n_pickers = len(picker_ids)
     n_robots = len(robot_ids)
 
@@ -103,7 +98,8 @@ if __name__ == "__main__":
         "picker_unloading_time", config_params["picker_unloading_time"], picker_ids)
 
     local_storage_capacity = n_robots + n_pickers
-    # TODO: expand local storage node capacity(topo.py) to n_pickers + n_robots, so the node could hold multiple robots at the beginning
+    # expand local storage node capacity(topo.py) to n_pickers + n_robots,
+    # so the node could hold multiple robots at the beginning
     local_storages = [simpy.Resource(env, capacity=local_storage_capacity) for i in
                       range(len(config_params["local_storage_nodes"]))]
     topo_graph.set_local_storages(local_storages, config_params["local_storage_nodes"])

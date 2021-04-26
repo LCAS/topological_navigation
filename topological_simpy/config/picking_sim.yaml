@@ -152,7 +152,7 @@ tray_capacity: 1200
 ##-----------------------------------------------------------------------------
 # robot related parameters
 # ----------------------
-# n_robots: integer >= 0, number of robots in the farm
+# robot_ids: robot names
 # robot_transportation_rate: array of floats, speed of a robot (values for all
 #                                             robots, or single value to be
 #                                             copied), m/s
@@ -166,7 +166,7 @@ tray_capacity: 1200
 #                                        all pickers, or single value to be
 #                                        copied), s
 ##-----------------------------------------------------------------------------
-n_robots: 3  # 3
+robot_ids: [Hurga, Foo, Foo2]
 robot_transportation_rate: [1.0]
 robot_max_n_trays:
   func: copy

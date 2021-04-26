@@ -33,7 +33,7 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
             print("fig directory exists")
         if self.save_fig:
             self.fig_name_base = "../data/fig" + "/P%d_R%d_S%s_T%d_" % (
-            self.n_pickers, self.n_robots, self.policy, self.trial)
+                self.n_pickers, self.n_robots, self.policy, self.trial)
 
     def init_plot(self):
         """Initialise the plot frame"""

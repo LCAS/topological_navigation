@@ -1,15 +1,18 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
-Created on: Day Mon DD HH:MM:SS YYYY
-
-@author: gpdas
+----------------------------------
+@author: gpdas, ZuyuanZhu
+@date: 05-Feb-2018
+@info: 26-Apr-2021, updates @ZuyuanZhu:
+       1. add robot parameters
+       2. remove rospy
+----------------------------------
 """
 
-import topological_simpy.config_utils
-import rospy
+import topological_simpy.config_utils as config
 
-get_config_data = topological_simpy.config_utils.get_config_data
+
+get_config_data = config.get_config_data
 
 
 def check_mimic_des_params(config_data):
@@ -18,17 +21,27 @@ def check_mimic_des_params(config_data):
     req_params = ["map_name", "n_polytunnels", "n_farm_rows",
                   "second_head_lane", "pri_head_nodes", "sec_head_nodes", "row_nodes", "yield_per_node",
                   "local_storage_nodes", "use_cold_storage", "cold_storage_node",
+                  "base_station_nodes", "wait_nodes",
                   "with_robots", "n_iteration",
                   "picker_ids", "picker_picking_rate", "picker_transportation_rate",
-                  "picker_max_n_trays", "picker_unloading_time", "tray_capacity"]
+                  "picker_max_n_trays", "picker_unloading_time", "tray_capacity",
+                  "robot_ids", "robot_transportation_rate", "robot_max_n_trays", "robot_unloading_time"]
     missing_params = []
     for param in req_params:
         if param not in config_data:
             missing_params.append(param)
+    redundant_params = []
+
+    for key in config_data.keys():
+        if key not in req_params:
+            redundant_params.append(key)
+    if len(redundant_params) is not 0:
+        print("Not all parameters are used: %s" % redundant_params)
+
     if len(missing_params) != 0:
         msg = "Not all required parameters are not in the config_file"
-        rospy.logerr(msg)
-        rospy.logerr(missing_params)
+        print(msg)
+        print(missing_params)
         raise Exception(msg)
     return missing_params
 
@@ -42,11 +55,9 @@ def get_head_nodes(node_dict_str, node_dict, n_polytunnels, n_farm_rows):
         poly = "polytunnel_%02d" % (poly_num + 1)
         if poly not in node_dict:
             msg = "%s info missing from config_data['%s']" % (poly, node_dict_str)
-            rospy.logerr(msg)
             raise Exception(msg)
         elif len(node_dict[poly]) != n_farm_rows[poly_num] + 1:
             msg = "Not all %s row info available for %s" % (node_dict_str, poly)
-            rospy.logerr(msg)
             raise Exception(msg)
         else:
             for item in node_dict[poly]:
@@ -63,12 +74,10 @@ def get_row_nodes(row_nodes, n_polytunnels, n_farm_rows):
         poly = "polytunnel_%02d" % (poly_num + 1)
         if poly not in row_nodes:
             msg = "%s info missing from config_data['row_nodes']" % (poly)
-            rospy.logerr(msg)
             raise Exception(msg)
         else:
             if len(row_nodes[poly].keys()) != n_farm_rows[poly_num] + 1:
                 msg = "Not all row_nodes are available for %s" % (poly)
-                rospy.logerr(msg)
                 raise Exception(msg)
             else:
                 # there are (n_farm_rows[poly_num] + 1) topo_nav_rows
@@ -86,13 +95,11 @@ def get_mimic_des_params(config_file):
     # check for all params
     check_mimic_des_params(config_data)
     # place holder for all params
-    config_params = {}
+    config_params = {"map_name": config_data["map_name"], "n_polytunnels": config_data["n_polytunnels"]}
     # extract params
     # map-related
-    config_params["map_name"] = config_data["map_name"]
-    config_params["n_polytunnels"] = config_data["n_polytunnels"]
     assert config_params["n_polytunnels"] > 0
-    config_params["n_farm_rows"] = topological_simpy.config_utils.graph_param_to_poly_list(
+    config_params["n_farm_rows"] = config.graph_param_to_poly_list(
         "n_farm_rows", config_data["n_farm_rows"]["value"],
         config_params["n_polytunnels"], config_data["n_farm_rows"]["func"])
 
@@ -120,14 +127,14 @@ def get_mimic_des_params(config_file):
                                                config_params["n_polytunnels"],
                                                config_params["n_farm_rows"])
     # yield per node
-    config_params["yield_per_node"] = topological_simpy.config_utils.graph_param_list_check("yield_per_node",
-                                                                                       config_data["yield_per_node"][
-                                                                                           "value"],
-                                                                                       config_params["n_polytunnels"],
-                                                                                       config_params["n_farm_rows"],
-                                                                                       config_params["n_topo_nav_rows"],
-                                                                                       config_data["yield_per_node"][
-                                                                                           "func"])
+    config_params["yield_per_node"] = config.graph_param_list_check("yield_per_node",
+                                                                    config_data["yield_per_node"][
+                                                                        "value"],
+                                                                    config_params["n_polytunnels"],
+                                                                    config_params["n_farm_rows"],
+                                                                    config_params["n_topo_nav_rows"],
+                                                                    config_data["yield_per_node"][
+                                                                        "func"])
     # storages
     config_params["local_storage_nodes"] = config_data["local_storage_nodes"]
     config_params["use_cold_storage"] = config_data["use_cold_storage"]
@@ -143,54 +150,55 @@ def get_mimic_des_params(config_file):
     # picker info
     config_params["picker_ids"] = config_data["picker_ids"]
     n_pickers = len(config_params["picker_ids"])
-    config_params["picker_picking_rate"] = topological_simpy.config_utils.des_param_list_check("picker_picking_rate",
-                                                                                          config_data[
-                                                                                              "picker_picking_rate"][
-                                                                                              "value"],
-                                                                                          n_pickers,
-                                                                                          config_data[
-                                                                                              "picker_picking_rate"][
-                                                                                              "func"])
+    config_params["picker_picking_rate"] = config.des_param_list_check("picker_picking_rate",
+                                                                       config_data[
+                                                                           "picker_picking_rate"][
+                                                                           "value"],
+                                                                       n_pickers,
+                                                                       config_data[
+                                                                           "picker_picking_rate"][
+                                                                           "func"])
 
-    config_params["picker_transportation_rate"] = topological_simpy.config_utils.des_param_list_check(
+    config_params["picker_transportation_rate"] = config.des_param_list_check(
         "picker_transportation_rate",
         config_data["picker_transportation_rate"]["value"],
         n_pickers,
         config_data["picker_transportation_rate"]["func"])
 
-    config_params["picker_max_n_trays"] = topological_simpy.config_utils.des_param_list_check("picker_max_n_trays",
-                                                                                         config_data[
-                                                                                             "picker_max_n_trays"][
-                                                                                             "value"],
-                                                                                         n_pickers,
-                                                                                         config_data[
-                                                                                             "picker_max_n_trays"][
-                                                                                             "func"])
+    config_params["picker_max_n_trays"] = config.des_param_list_check("picker_max_n_trays",
+                                                                      config_data[
+                                                                          "picker_max_n_trays"][
+                                                                          "value"],
+                                                                      n_pickers,
+                                                                      config_data[
+                                                                          "picker_max_n_trays"][
+                                                                          "func"])
 
-    config_params["picker_unloading_time"] = topological_simpy.config_utils.des_param_list_check("picker_unloading_time",
-                                                                                            config_data[
-                                                                                                "picker_unloading_time"][
-                                                                                                "value"],
-                                                                                            n_pickers,
-                                                                                            config_data[
-                                                                                                "picker_unloading_time"][
-                                                                                                "func"])
+    config_params["picker_unloading_time"] = config.des_param_list_check("picker_unloading_time",
+                                                                         config_data[
+                                                                             "picker_unloading_time"][
+                                                                             "value"],
+                                                                         n_pickers,
+                                                                         config_data[
+                                                                             "picker_unloading_time"][
+                                                                             "func"])
 
     config_params["tray_capacity"] = config_data["tray_capacity"]
 
-    n_robots = config_data["n_robots"]
-
     # robot parameters - des parameters
-    config_params['robot_transportation_rate'] = topological_simpy.config_utils.des_param_list_check("robot_transportation_rate",
-                                                     config_data["robot_transportation_rate"],
-                                                     n_robots)
+    config_params["robot_ids"] = config_data["robot_ids"]
+    n_robots = len(config_params["robot_ids"])
+    config_params['robot_transportation_rate'] = config.des_param_list_check("robot_transportation_rate",
+                                                                             config_data["robot_transportation_rate"],
+                                                                             n_robots)
 
-    config_params['robot_max_n_trays'] = topological_simpy.config_utils.des_param_list_check("robot_max_n_trays",
-                                             config_data["robot_max_n_trays"]["value"], n_robots,
-                                             config_data["robot_max_n_trays"]["func"])
+    config_params['robot_max_n_trays'] = config.des_param_list_check("robot_max_n_trays",
+                                                                     config_data["robot_max_n_trays"]["value"],
+                                                                     n_robots,
+                                                                     config_data["robot_max_n_trays"]["func"])
 
-    config_params['robot_unloading_time'] = topological_simpy.config_utils.des_param_list_check("robot_unloading_time",
-                                                config_data["robot_unloading_time"], n_robots)
+    config_params['robot_unloading_time'] = config.des_param_list_check("robot_unloading_time",
+                                                                        config_data["robot_unloading_time"], n_robots)
 
     config_params['wait_nodes'] = config_data['wait_nodes']
     config_params['base_station_nodes'] = config_data['base_station_nodes']

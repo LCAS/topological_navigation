@@ -257,11 +257,13 @@ class TopologicalNavServer(object):
 
     def preemptCallback(self):
         rospy.logwarn("Preempting toponav")
+        self.preempted = True
         self.cancel_current_action(timeout_secs=2)
 
 
     def preemptCallbackexecpolicy(self):
         rospy.logwarn("Preempting toponav exec_policy")
+        self.preempted = True
         self.cancel_current_action(timeout_secs=2)
 
 
@@ -339,6 +341,7 @@ class TopologicalNavServer(object):
         """
         tries = 0
         result = False
+        route_found = False
 
         while tries <= self.n_tries and not result and not self.cancelled:
             o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
@@ -350,10 +353,10 @@ class TopologicalNavServer(object):
             if g_node is not None and o_node is not None:
                 rsearch = TopologicalRouteSearch2(self.lnodes)
                 route = rsearch.search_route(o_node["node"]["name"], target)
-                route = self.enforce_navigable_route(route, target)
-                print route
-                
-                if route:
+
+                if route.source:
+                    route_found = True
+                    route = self.enforce_navigable_route(route, target)
                     rospy.loginfo("Navigating Case 1")
                     self.publish_route(route, target)
                     result, inc = self.followRoute(route, target, 0)
@@ -374,6 +377,9 @@ class TopologicalNavServer(object):
                 
             tries += inc
             rospy.loginfo("Navigating next try: %d", tries)
+        
+        if not route_found:
+            self.cancelled = True
 
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
@@ -569,7 +575,7 @@ class TopologicalNavServer(object):
 
     def cancel_current_action(self, timeout_secs=-1):
         """
-        Cancels the action is currently in execution. Returns True if the current goal is correctly ended.
+        Cancels the action currently in execution. Returns True if the current goal is correctly ended.
         """
         rospy.loginfo("Cancelling current navigation goal, timeout_secs={}...".format(timeout_secs))
         

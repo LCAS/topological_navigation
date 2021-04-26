@@ -2,7 +2,7 @@
 import rospy
 import sympy
 import copy
-import yaml
+import json
 import sys
 import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapRequest, RestrictMapResponse
@@ -128,18 +128,11 @@ class RestrictionsManager():
         self.back_edges_idx = {}
 
         # publishers for restricted tmap
-        self.restricted_tmap_pub = rospy.Publisher("topological_map", TopologicalMap, queue_size=10)
-        self.restricted_tmap2_pub = rospy.Publisher("topological_map_2", String, queue_size=10)
-
-        rospy.Subscriber("/topological_map_2",
-                         String, self._topomap_cb)
-        rospy.loginfo("Waiting for topological map...")
-        while self.topo_map is None:
-            rospy.sleep(0.5)
-        rospy.loginfo("DONE")
-
-        rospy.Service("restrictions_manager/restrict_planning_map", RestrictMap, self.restrict_planning_map_handle)
-        rospy.Service("restrictions_manager/restrict_runtime_map", RestrictMap, self.restrict_runtime_map_handle)
+        self.restricted_tmap_pub = rospy.Publisher("topological_map",
+                         TopologicalMap, queue_size=10, latch=True)
+        self.restricted_tmap2_pub = rospy.Publisher(
+                         "topological_map_2", String, queue_size=10,
+                         latch=True)
     
     def register_restriction(self, condition_obj):
         """ This method receive a condition implementing AbstractRestriction class that can be evaluated"""
@@ -148,6 +141,19 @@ class RestrictionsManager():
         })
         rospy.loginfo(
             "New condition `{}` registered".format(condition_obj.name))
+
+    def register_connections(self):
+        rospy.Subscriber("/topological_map_2",
+                         String, self._topomap_cb)
+        rospy.loginfo("Waiting for topological map...")
+        while self.topo_map is None:
+            rospy.sleep(0.5)
+        rospy.loginfo("DONE")
+
+        rospy.Service("restrictions_manager/restrict_planning_map",
+                      RestrictMap, self.restrict_planning_map_handle)
+        rospy.Service("restrictions_manager/restrict_runtime_map",
+                      RestrictMap, self.restrict_runtime_map_handle)
 
     # Create a predicate from the restrictions string and returns the conditions to be checked
     def _predicate_from_string(self, restriction_str):
@@ -217,7 +223,7 @@ class RestrictionsManager():
 
         new_topo_map = self._restrict_map_handle(request, "restrictions_planning")
 
-        response.restricted_tmap = yaml.dump(new_topo_map)
+        response.restricted_tmap = json.dumps(new_topo_map)
 
         return response
     
@@ -227,7 +233,7 @@ class RestrictionsManager():
 
         new_topo_map = self._restrict_map_handle(request, "restrictions_runtime")
 
-        response.restricted_tmap = yaml.dump(new_topo_map)
+        response.restricted_tmap = json.dumps(new_topo_map)
 
         return response
    
@@ -289,7 +295,9 @@ class RestrictionsManager():
         return new_topo_map
 
     def _topomap_cb(self, msg):
-        self.topo_map = yaml.safe_load(msg.data)
+
+        rospy.loginfo("Received updated topomap")
+        self.topo_map = json.loads(msg.data)
         # print("got topomap", self.topo_map["nodes"][0])
 
         for ni, node in enumerate(self.topo_map["nodes"]):
@@ -303,9 +311,10 @@ class RestrictionsManager():
                         edge["node"]: {ni: ei}
                     })
 
+        rospy.loginfo("Creating restricted topomaps")
         restricted_tmap2 = self._restrict_map_handle({}, "restrictions_planning")
 
-        self.restricted_tmap2_pub.publish(yaml.dump(restricted_tmap2))
+        self.restricted_tmap2_pub.publish(json.dumps(restricted_tmap2))
 
         old_restricted_tmap = map_manager_2.convert_tmap2_to_tmap(
             restricted_tmap2, restricted_tmap2["pointset"], restricted_tmap2["metric_map"])
@@ -323,5 +332,7 @@ if __name__ == '__main__':
     for restriction in clsmembers:
         if issubclass(restriction[1], AbstractRestriction) and not inspect.isabstract(restriction[1]):
             manager.register_restriction(restriction[1]())
+
+    manager.register_connections()
 
     rospy.spin()

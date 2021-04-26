@@ -144,3 +144,41 @@ class TopologicalRouteSearch2(object):
         
         return route
 
+
+class RouteChecker(object):
+    
+    
+    def __init__(self, tmap):
+        
+        self.d = {}
+        for node in tmap["nodes"]:
+            self.d[node["node"]["name"]] = []
+            for edge in node["node"]["edges"]:
+                self.d[node["node"]["name"]].append(edge["node"])
+                
+                
+    def check_route(self, route):
+
+        source_nodes = route.source        
+        N = len(source_nodes)
+        
+        if N < 1:
+            return False
+        
+        route_ok = True
+        for i in range(N-1):
+            
+            node = source_nodes[i]
+            if node not in self.d:
+                route_ok = False
+                break
+                
+            next_node = source_nodes[i+1]  
+            if next_node not in self.d[node]:
+                route_ok = False
+                break
+                
+        if source_nodes[-1] not in self.d:
+            route_ok = False
+                
+        return route_ok

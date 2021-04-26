@@ -92,13 +92,6 @@ use_cold_storage: true
 cold_storage_node: WayPoint69
 
 
-#base station used as robot home and waiting place when the cold storage node is busy
-base_station_nodes: &id_base_stations
-  - WayPoint140
-  - WayPoint141
-  - WayPoint142
-wait_nodes: *id_base_stations
-
 ##-----------------------------------------------------------------------------
 # des related parameters
 # ----------------------
@@ -134,7 +127,7 @@ n_iteration: 3
 # tray_capacity: 3000 # capacity of each tray, g
 ##-----------------------------------------------------------------------------
 picker_ids: [picker101, picker102]
-#, picker103]
+# , picker103]
 picker_picking_rate:
   func: gauss
   value: [0.4, 0.02]
@@ -172,3 +165,11 @@ robot_max_n_trays:
   func: copy
   value: [4]
 robot_unloading_time: [10.0]
+
+# base station used as robot home and waiting place when the cold storage node is busy
+# number of base stations should equal to number of robots
+base_station_nodes: &id_base_stations
+  - WayPoint140
+  - WayPoint141
+  - WayPoint142
+wait_nodes: *id_base_stations

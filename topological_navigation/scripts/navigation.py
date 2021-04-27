@@ -353,10 +353,10 @@ class TopologicalNavServer(object):
             if g_node is not None and o_node is not None:
                 rsearch = TopologicalRouteSearch2(self.lnodes)
                 route = rsearch.search_route(o_node["node"]["name"], target)
+                route = self.enforce_navigable_route(route, target)
 
                 if route.source:
                     route_found = True
-                    route = self.enforce_navigable_route(route, target)
                     rospy.loginfo("Navigating Case 1")
                     self.publish_route(route, target)
                     result, inc = self.followRoute(route, target, 0)

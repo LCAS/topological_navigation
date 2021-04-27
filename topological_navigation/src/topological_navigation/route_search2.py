@@ -155,7 +155,7 @@ class RouteChecker(object):
 
         N = len(route.source)
         if N < 1 or N != len(route.edge_id):
-            rospy.logerr("Failed: Either no route specified or the number of nodes do not equal the number of edge ids")
+            rospy.logerr("Invalid Route: Either the route is empty or the number of nodes do not equal the number of edge ids")
             return False
         
         for i in range(N-1):
@@ -164,7 +164,7 @@ class RouteChecker(object):
             edge_id = route.edge_id[i]
             
             if node not in self.edge_dict:
-                rospy.logerr("Failed: node {} does not exist".format(node))
+                rospy.logerr("Invalid Route: node {} does not exist".format(node))
                 return False
                 
             next_node = route.source[i+1]  
@@ -174,14 +174,14 @@ class RouteChecker(object):
                     n+=1
                     
             if n!=1:
-                rospy.logerr("Failed: no edge from {} to {} with id {} found or multiple edges found".format(node, next_node, edge_id))
+                rospy.logerr("Invalid Route: no edge from {} to {} with id {} found or multiple edges found".format(node, next_node, edge_id))
                 return False
         
         final_node = route.source[-1]    
         final_edge_id = route.edge_id[-1]
         
         if final_node not in self.edge_dict:
-            rospy.logerr("Failed: node {} does not exist".format(final_node))
+            rospy.logerr("Invalid Route: node {} does not exist".format(final_node))
             return False
         
         n=0
@@ -190,9 +190,9 @@ class RouteChecker(object):
                     n+=1
                     
         if n!=1:
-            rospy.logerr("Failed: no edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))
+            rospy.logerr("Invalid Route: no edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))
             return False
         
-        rospy.loginfo("Passed")
+        rospy.loginfo("Route is Valid")
         return True
 #########################################################################################################

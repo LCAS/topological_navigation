@@ -201,11 +201,13 @@ class TopologicalNavServer(object):
         self.lnodes = json.loads(msg.data)
         self.topol_map = self.lnodes["pointset"]
         self.curr_tmap = deepcopy(self.lnodes)
+        self.route_checker = RouteChecker(self.lnodes)
 
         for node in self.lnodes["nodes"]:
             for edge in node["node"]["edges"]:
                 if edge["action"] not in self.needed_actions:
                     self.needed_actions.append(edge["action"])
+        
         self._map_received = True
 
 
@@ -235,13 +237,12 @@ class TopologicalNavServer(object):
         self.cancelled = False
         self.preempted = False
 
-        self.init_reconfigure()
-
-        if len(goal.route.source) > 0 and goal.route.source[0] != "":
+        if self.route_checker.check_route(goal.route):
             result = self.execute_policy(goal.route)
         else:
             result = False
-            rospy.logwarn("Empty route in exec policy goal!")
+            self.cancelled = True
+            rospy.logwarn("Empty or invalid route in exec policy goal!")
 
         if not self.cancelled and not self.preempted:
             self._result_exec_policy.success = result
@@ -329,7 +330,7 @@ class TopologicalNavServer(object):
                 self._feedback_exec_policy.current_wp = self.current_node
         else:
             self._feedback_exec_policy.current_wp = self.current_node
-            
+        
         self._feedback_exec_policy.status = nav_outcome
         self._as_exec_policy.publish_feedback(self._feedback_exec_policy)
 

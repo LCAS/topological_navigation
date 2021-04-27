@@ -190,7 +190,7 @@ class RouteChecker(object):
                     n+=1
                     
         if n!=1:
-            rospy.logerr("Failed: no edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, edge_id))
+            rospy.logerr("Failed: no edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))
             return False
         
         rospy.loginfo("Passed")

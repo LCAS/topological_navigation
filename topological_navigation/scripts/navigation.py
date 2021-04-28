@@ -216,6 +216,7 @@ class TopologicalNavServer(object):
         This Functions is called when the topo nav Action Server is called
         """
         self.cancel_current_action(timeout_secs=10)
+        rospy.sleep(0.5)
 
         self.cancelled = False
         self.preempted = False
@@ -233,6 +234,7 @@ class TopologicalNavServer(object):
         This Function is called when the execute policy Action Server is called
         """
         self.cancel_current_action(timeout_secs=10)
+        rospy.sleep(0.5)
 
         self.cancelled = False
         self.preempted = False

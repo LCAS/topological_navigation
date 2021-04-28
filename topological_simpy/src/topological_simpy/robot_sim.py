@@ -381,8 +381,11 @@ class RobotSim(Robot):
                 yield self.env.process(self._goto(target))
             # if any robot is using cold_storage_node, go to base station and wait until the queue is free
             else:
+                # robot join waiting queue for using cold storage node
                 self.graph.add_cold_storage_usage_queue(self.robot_id)
-                yield self.env.process(self._goto(self.graph.base_stations[self.robot_id]))
+                # if robot is not at base station, then go to the base station
+                if self.curr_node != self.graph.base_stations[self.robot_id]:
+                    yield self.env.process(self._goto(self.graph.base_stations[self.robot_id]))
 
                 # keep waiting at the base station until previous robots have finished usage
                 start_time = self.env.now
@@ -405,7 +408,7 @@ class RobotSim(Robot):
         if self.graph.env:
             if target == cur_node:
                 print('  %5.1f: %s is already at target %s' % (self.graph.env.now, self.robot_id, target))
-                return [target]
+                return []
             else:
                 if avoid_nodes is None:
                     route = self.graph.get_route(cur_node, target)

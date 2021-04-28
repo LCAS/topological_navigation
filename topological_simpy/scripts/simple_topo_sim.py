@@ -21,7 +21,7 @@ from random import seed
 from datetime import datetime
 
 RANDOM_SEED = 10
-SIM_RT_FACTOR = 0.2    # simulation speed, 1: real time; 0.01: 100 times faster
+SIM_RT_FACTOR = 0.2   # simulation speed, 1: real time; 0.01: 100 times faster
 VERBOSE = True
 SHOW_VIS = True        # show visualisation
 trial = 0
@@ -30,7 +30,7 @@ seed(RANDOM_SEED)
 numpy.random.seed(RANDOM_SEED)
 
 if __name__ == "__main__":
-    config_file = '../config/picking_sim.yaml'
+    config_file = '../config/picking_sim_combined.yaml'
     # get the config params
     config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 

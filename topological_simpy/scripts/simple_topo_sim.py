@@ -30,13 +30,13 @@ seed(RANDOM_SEED)
 numpy.random.seed(RANDOM_SEED)
 
 if __name__ == "__main__":
-    config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_simpy/config/picking_sim.yaml'
+    config_file = '../config/picking_sim.yaml'
     # get the config params
     config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
-    tmap_config_file = '/home/zuyuan/catkin_ws/src/topological_navigation/topological_navigation/maps/riseholme.tmap2'
+    tmap_config_file = '../maps/riseholme.tmap2'
 
     picker_ids = config_params["picker_ids"]
     robot_ids = config_params["robot_ids"]

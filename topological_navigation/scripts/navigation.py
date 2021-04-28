@@ -230,15 +230,21 @@ class TopologicalNavServer(object):
 
     def executeCallbackexecpolicy(self, goal):
         """
-        This Functions is called when the execute policy Action Server is called
+        This Function is called when the execute policy Action Server is called
         """
         self.cancel_current_action(timeout_secs=10)
 
         self.cancelled = False
         self.preempted = False
-
-        if self.route_checker.check_route(goal.route):
-            result = self.execute_policy(goal.route)
+        
+        route = goal.route
+        target = route.source[-1]
+        self._target = target
+        
+        route = self.enforce_navigable_route(route, target)
+        
+        if self.route_checker.check_route(route):
+            result = self.execute_policy(route, target)
         else:
             result = False
             self.cancelled = True
@@ -294,45 +300,6 @@ class TopologicalNavServer(object):
                     ):
                         rospy.loginfo("intermediate node reached %s", self.current_node)
                         self.goal_reached = True
-
-
-    def execute_policy(self, route):
-        
-        target = route.source[-1]
-        self._target = target
-
-        route = self.enforce_navigable_route(route, target)
-        succeeded, inc = self.followRoute(route, target, 1)
-
-        if succeeded:
-            rospy.loginfo("Navigation Finished Successfully")
-            self.publish_feedback_exec_policy(GoalStatus.SUCCEEDED)
-        else:
-            if self.cancelled:
-                rospy.loginfo("Fatal Fail")
-                self.publish_feedback_exec_policy(GoalStatus.PREEMPTED)
-            else:
-                rospy.loginfo("Navigation Failed")
-                self.nfails += 1
-                if self.nfails >= self.n_tries:
-                    self.publish_feedback_exec_policy(GoalStatus.ABORTED)
-
-        return succeeded
-    
-
-    def publish_feedback_exec_policy(self, nav_outcome):
-        
-        if self.current_node == "none":  # Happens due to lag in fetch system
-            rospy.sleep(0.5)
-            if self.current_node == "none":
-                self._feedback_exec_policy.current_wp = self.closest_node
-            else:
-                self._feedback_exec_policy.current_wp = self.current_node
-        else:
-            self._feedback_exec_policy.current_wp = self.current_node
-        
-        self._feedback_exec_policy.status = nav_outcome
-        self._as_exec_policy.publish_feedback(self._feedback_exec_policy)
 
 
     def navigate(self, target):
@@ -396,6 +363,39 @@ class TopologicalNavServer(object):
             else:
                 self._result.success = False
                 self._as.set_preempted(self._result)
+
+
+    def execute_policy(self, route, target):
+        
+        succeeded, inc = self.followRoute(route, target, 1)
+
+        if succeeded:
+            rospy.loginfo("Navigation Finished Successfully")
+            self.publish_feedback_exec_policy(GoalStatus.SUCCEEDED)
+        else:
+            if self.cancelled and self.preempted:
+                rospy.loginfo("Fatal Fail")
+                self.publish_feedback_exec_policy(GoalStatus.PREEMPTED)
+            elif self.cancelled:
+                rospy.loginfo("Navigation Failed")
+                self.publish_feedback_exec_policy(GoalStatus.ABORTED)
+
+        return succeeded
+    
+
+    def publish_feedback_exec_policy(self, nav_outcome=None):
+        
+        if self.current_node == "none":  # Happens due to lag in fetch system
+            rospy.sleep(0.5)
+            if self.current_node == "none":
+                self._feedback_exec_policy.current_wp = self.closest_node
+            else:
+                self._feedback_exec_policy.current_wp = self.current_node
+        else:
+            self._feedback_exec_policy.current_wp = self.current_node
+        if nav_outcome is not None:
+            self._feedback_exec_policy.status = nav_outcome
+        self._as_exec_policy.publish_feedback(self._feedback_exec_policy)
 
 
     def enforce_navigable_route(self, route, target_node):
@@ -501,6 +501,8 @@ class TopologicalNavServer(object):
             if not exec_policy:
                 self._feedback.route = "%s to %s using %s" % (route.source[rindex], cedg["node"], a)
                 self._as.publish_feedback(self._feedback)
+            else:
+                self.publish_feedback_exec_policy()
 
             cnode = get_node_from_tmap2(self.lnodes, cedg["node"])
 

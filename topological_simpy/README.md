@@ -10,7 +10,7 @@ This demo  shows how the `simpy.Container`  is used for a picking and transporti
 
 Features of this package:
 - Independent of ROS
-- Quick test on a Topo map for multi-robot path planning and  multi-picker task allocating (next target)
+- Quick test on a Topo map for multi-robot path planning and  multi-picker task allocating
 - Works with all topological maps
 
 Assumptions:

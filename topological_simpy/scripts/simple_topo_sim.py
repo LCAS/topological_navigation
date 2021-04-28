@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
-    tmap_config_file = '../maps/riseholme.tmap2'
+    tmap_config_file = '../maps/tmap.yaml'
 
     picker_ids = config_params["picker_ids"]
     robot_ids = config_params["robot_ids"]

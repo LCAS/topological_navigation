@@ -43,7 +43,9 @@ catkin_python_setup()
  add_message_files(
    FILES
    DistributionStamped.msg
-#   Message2.msg
+   PoseObservation.msg
+   LikelihoodObservation.msg
+   ParticlesState.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -53,6 +55,9 @@ add_service_files(
   StopLocalise.srv
   UpdatePoseObservation.srv
   UpdateLikelihoodObservation.srv
+  UpdatePriorLikelihoodObservation.srv
+  Predict.srv
+  SetFloat64.srv
 )
 
 ## Generate actions in the 'action' folder

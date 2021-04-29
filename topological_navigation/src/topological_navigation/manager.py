@@ -38,13 +38,19 @@ class map_manager(object):
             self.names = self.create_list_of_nodes()
             self.tmap_to_tmap2() # convert map to new format
 
-            rospy.set_param('topological_map_name', self.nodes.pointset)
+            if not load_from_file:
+                rospy.set_param('topological_map_name', self.nodes.pointset)
+            else:
+                rospy.set_param('topological_map_name', name)
         else:
             self.nodes = strands_navigation_msgs.msg.TopologicalMap()
             self.nodes.name = name
             self.nodes.pointset = name
             self.names=[]
-            rospy.set_param('topological_map_name', self.nodes.pointset)
+            if not load_from_file:
+                rospy.set_param('topological_map_name', self.nodes.pointset)
+            else:
+                rospy.set_param('topological_map_name', name)
 
 
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
@@ -413,11 +419,16 @@ class map_manager(object):
     def switch_topological_map_cb(self, req):
         self.nodes=[]
         self.name = req.pointset
-        self.nodes = self.loadMap(req.pointset)
+        if not self.load_from_file:
+            self.nodes = self.loadMap(req.pointset)
+        else:
+            self.nodes, self.tmap = self.load_map_from_file(req.pointset)
         print "Returning Map %s"%req.pointset
         #nodes.nodes.sort(key=lambda node: node.name)
         self.names = self.create_list_of_nodes()
         self.map_pub.publish(self.nodes)
+                    
+        rospy.set_param('topological_map_name', req.pointset)
         return self.nodes
 
 

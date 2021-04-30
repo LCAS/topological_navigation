@@ -262,12 +262,12 @@ class TopologicalNavServer(object):
             self.preempted = False
             
             route = goal.route
-            target = route.source[-1]
-            self._target = target
+            valid_route = self.route_checker.check_route(route)
             
-            route = self.enforce_navigable_route(route, target)
-            
-            if self.route_checker.check_route(route):
+            if valid_route:
+                target = route.source[-1]
+                self._target = target
+                route = self.enforce_navigable_route(route, target)
                 result = self.execute_policy(route, target)
             else:
                 result = False

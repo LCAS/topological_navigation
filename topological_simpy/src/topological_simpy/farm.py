@@ -50,27 +50,27 @@ class Farm(object):
 
         # related to picker finishing a row
         # finished_rows
-        self.finished_rows = []
-        self.n_finished_rows = 0
-        self.row_finish_time = {row_id: None for row_id in self.graph.row_ids}  # {row_id: finish time}
+        # self.finished_rows = []
+        # self.n_finished_rows = 0
+        # self.row_finish_time = {row_id: None for row_id in self.graph.row_ids}  # {row_id: finish time}
 
         # related to allocation
-        self.unallocated_rows = [] + self.graph.row_ids  # a list of unallocated rows
-        self.allocations = {row_id: None for row_id in self.graph.row_ids}  # {row_ids: picker_id}
-        self.allocation_time = {row_id: None for row_id in self.graph.row_ids}  # {row_id: allocation time}
+        # self.unallocated_rows = [] + self.graph.row_ids  # a list of unallocated rows
+        # self.allocations = {row_id: None for row_id in self.graph.row_ids}  # {row_ids: picker_id}
+        # self.allocation_time = {row_id: None for row_id in self.graph.row_ids}  # {row_id: allocation time}
 
-        self.picker_allocations = {picker_id: [] for picker_id in self.picker_ids}  # {picker_id:[row_ids]}
-        self.curr_picker_allocations = {picker_id: None for picker_id in
-                                        self.picker_ids}  # {picker_id:row_id} row=None if free
+        # self.picker_allocations = {picker_id: [] for picker_id in self.picker_ids}  # {picker_id:[row_ids]}
+        # self.curr_picker_allocations = {picker_id: None for picker_id in
+        #                                 self.picker_ids}  # {picker_id:row_id} row=None if free
 
         self.process_timeout = 0.10
         self.loop_timeout = 0.10
 
-        self.finished_picking = lambda: True if self.n_finished_rows == self.n_topo_nav_rows else False
-        self.finished_allocating = lambda: False if self.unallocated_rows else True
+        # self.finished_picking = lambda: True if self.n_finished_rows == self.n_topo_nav_rows else False
+        # self.finished_allocating = lambda: False if self.unallocated_rows else True
 
         self.idle_pickers = [] + self.picker_ids  # for next assignment
-        self.allocated_pickers = []  # for monitoring row_finish
+        # self.allocated_pickers = []  # for monitoring row_finish
         self.waiting_for_robot_pickers = []  # for assigning a robot to the picker
 
         self.assigned_picker_robot = {picker_id: None for picker_id in self.picker_ids}

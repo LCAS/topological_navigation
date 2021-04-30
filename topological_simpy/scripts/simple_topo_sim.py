@@ -21,9 +21,10 @@ from random import seed
 from datetime import datetime
 
 RANDOM_SEED = 10
-SIM_RT_FACTOR = 0.2   # simulation speed, 1: real time; 0.01: 100 times faster
+SIM_RT_FACTOR = 0.1   # simulation speed, 1: real time; 0.01: 100 times faster
 VERBOSE = True
-SHOW_VIS = True        # show visualisation
+SHOW_VIS = False        # show visualisation
+SAVE_RANDOM = False     # save random figures
 trial = 0
 
 seed(RANDOM_SEED)
@@ -148,22 +149,25 @@ if __name__ == "__main__":
                                               robots,
                                               pickers,
                                               scheduling_policy,
+                                              config_params["n_iteration"],
                                               VERBOSE)
 
     if SHOW_VIS:
         vis = topological_simpy.visualise_sim.VisualiseAgentsSim(topo_graph, robots,
                                                                  pickers, scheduling_policy,
                                                                  show_cs=True,
-                                                                 save_random=False,
+                                                                 save_random=SAVE_RANDOM,
                                                                  trial=trial)
 
     # instead of env.run() we should env.step() to have any control (Ctrl+c)
     # If multiple events are scheduled for the same simpy.time, there would be
     # at least a ms delay (in ros/realtime clock) between the events
     # This seems to be unavoidable at this stage
-    until = 600
+    until = 3600
+    env_peek = 0.0
     monitor = farm.monitor(pickers, robots)
     while env.peek() < until:
+        env_peek = env.peek()
         try:
             env.step()
             if SHOW_VIS and (monitor != farm.monitor(pickers, robots)):
@@ -175,6 +179,9 @@ if __name__ == "__main__":
             break
         else:
             pass
+    if until - env_peek < 0.1:
+        print("Stop at simulation time: %.1f, allowed maximum-simulation-time: %.1f " % (env_peek, until))
+        print("Considering increase allowed maximum-simulation-time: 'until', and run again!")
 
     # write the node_log to file
     now = datetime.now()

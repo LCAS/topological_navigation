@@ -266,14 +266,13 @@ class RobotSim(Robot):
                     # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' % (self.env.now, self.robot_id, n, node_state))
                     avoid_nodes = [n]
                     new_route = self.get_route_nodes(self.curr_node, target, avoid_nodes)  # avoid node n
-                    new_route_dc = 0
+                    new_route_dc = 0  # dc: distance cost
                     if new_route is None:
-                        interrupted = True
-                        break
-                    elif new_route:
-                        new_route_dc = self.graph.route_dist_cost([self.curr_node] + new_route)  # dc: distance cost
-                    elif not new_route:
-                        new_route_dc = float("inf")  # no new route, return a big distance cost
+                        new_route_dc = float("inf")
+                    elif new_route is []:    # robot is at target now
+                        new_route_dc = 0
+                    else:
+                        new_route_dc = self.graph.route_dist_cost([self.curr_node] + new_route)
                     wait_time = round(self.graph.get_wait_time(n), 1)
                     time_cost = self.time_to_dist_cost(wait_time)
                     old_route_cost = route_dist_cost + time_cost

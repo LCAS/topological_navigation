@@ -23,9 +23,6 @@
 	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen">
 		<param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
 	</node>
-	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen">
-		<param name="retries" type="int" value="$(arg execute_policy_retries)"/>
-	</node>
 
 	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)"/>
 

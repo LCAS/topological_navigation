@@ -15,9 +15,5 @@
         <param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
         <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
     </node>
-    <node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen" respawn="true">
-        <param name="retries" type="int" value="$(arg execute_policy_retries)"/>
-        <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
-    </node>
   </group>
 </launch>

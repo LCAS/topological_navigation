@@ -192,7 +192,7 @@ class RouteChecker(object):
         n = 0
         for edge in self.edge_dict[final_node]:
             if edge["edge_id"] == final_edge_id and edge["node"] in self.edge_dict:
-                    n += 1
+                n += 1
                     
         if n != 1:
             rospy.logerr("Invalid Route: No edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))

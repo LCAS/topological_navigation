@@ -144,6 +144,7 @@ class RouteChecker(object):
         self.edge_dict = {}
         for node in tmap["nodes"]:
             self.edge_dict[node["node"]["name"]] = []
+            
             for edge in node["node"]["edges"]:
                 item = {"node": edge["node"], "edge_id": edge["edge_id"]}
                 self.edge_dict[node["node"]["name"]].append(item)
@@ -158,39 +159,43 @@ class RouteChecker(object):
             rospy.logerr("Invalid Route: Either the route is empty or the number of nodes do not equal the number of edge ids")
             return False
         
+        if "" in route.source or "" in route.edge_id:
+            rospy.logerr("Invalid Route: Empty string found in nodes or edge ids or both")
+            return False
+        
         for i in range(N-1):
             
             node = route.source[i]
             edge_id = route.edge_id[i]
             
             if node not in self.edge_dict:
-                rospy.logerr("Invalid Route: node {} does not exist".format(node))
+                rospy.logerr("Invalid Route: Node {} does not exist".format(node))
                 return False
                 
+            n = 0
             next_node = route.source[i+1]  
-            n=0
             for edge in self.edge_dict[node]:
                 if edge["edge_id"] == edge_id and edge["node"] == next_node:
-                    n+=1
+                    n += 1
                     
-            if n!=1:
-                rospy.logerr("Invalid Route: no edge from {} to {} with id {} found or multiple edges found".format(node, next_node, edge_id))
+            if n != 1:
+                rospy.logerr("Invalid Route: No edge from {} to {} with id {} found or multiple edges found".format(node, next_node, edge_id))
                 return False
         
         final_node = route.source[-1]    
         final_edge_id = route.edge_id[-1]
         
         if final_node not in self.edge_dict:
-            rospy.logerr("Invalid Route: node {} does not exist".format(final_node))
+            rospy.logerr("Invalid Route: Node {} does not exist".format(final_node))
             return False
         
-        n=0
+        n = 0
         for edge in self.edge_dict[final_node]:
             if edge["edge_id"] == final_edge_id and edge["node"] in self.edge_dict:
-                    n+=1
+                    n += 1
                     
-        if n!=1:
-            rospy.logerr("Invalid Route: no edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))
+        if n != 1:
+            rospy.logerr("Invalid Route: No edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))
             return False
         
         rospy.loginfo("Route is Valid")

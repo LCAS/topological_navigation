@@ -69,12 +69,11 @@ class EdgeActionManager(object):
         
         rospy.loginfo("Edge Action Manager: Processing edge {} ...".format(self.edge["edge_id"]))
         
-        action_type = self.edge["action_type"]
         self.action_name = self.edge["action"]
-        
         if self.action_name != self.current_action and self.current_action is not None:
             self.preempt()
-        
+
+        action_type = self.edge["action_type"]        
         items = action_type.split("/")
         package = items[0]
         action_spec = items[1][:-4] + "Action"

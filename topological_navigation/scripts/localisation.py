@@ -127,7 +127,7 @@ class TopologicalNavLoc(object):
         self.get_tagged_srv=rospy.Service('topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
         self.loc_pos_srv=rospy.Service('topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
 
-        rospy.Subscriber('/topological_map_2', String, self.MapCallback)
+        rospy.Subscriber('topological_map_2', String, self.MapCallback)
             
         rospy.loginfo("Waiting for Topological map ...")
         while not self.rec_map :

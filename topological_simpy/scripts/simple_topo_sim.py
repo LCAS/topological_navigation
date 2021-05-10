@@ -461,6 +461,8 @@ if __name__ == "__main__":
                 print >> f_handle, "loading_time: %0.3f" % robots[i].time_spent_loading
                 print >> f_handle, "unloading_time: %0.3f" % robots[i].time_spent_unloading
                 print >> f_handle, "charging_time: %0.3f" % robots[i].time_spent_charging
+                print >> f_handle, "requesting_time: %0.3f" % robots[i].time_spent_requesting
+                print >> f_handle, "base_time: %0.3f" % robots[i].time_spent_base
                 print >> f_handle, "total_working_time: %0.3f" % (robots[i].time_spent_working())
                 print >> f_handle, "-----------------\n"
 

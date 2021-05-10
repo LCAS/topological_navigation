@@ -27,6 +27,9 @@ class RobotSim(Robot):
         self.robot_state = "INIT"  # "INIT", "ACCEPTED", "ARRIVED", "LOADED"
         # self.robot_resource = simpy.Container(self.env, capacity=1, init=0)  # robot can only be occupied by 1 picker
 
+        self.time_spent_requesting = .0
+        self.time_spent_base = .0
+
         if self.graph.env:
             self.graph.req_ret[self.curr_node] = 1
             self.graph.set_hold_time(self.curr_node, self.init_hold_t)
@@ -304,6 +307,7 @@ class RobotSim(Robot):
                         else:
                             pass  # travel to the requested node
                 if self.env.now - start_wait > 0:  # The time that the robot has waited since requesting
+                    self.time_spent_requesting += self.env.now - start_wait
                     self.loginfo('$ %5.1f:  %s has lock on %s after %5.1f' % (
                         self.env.now, self.robot_id, n,
                         self.env.now - start_wait))
@@ -390,6 +394,7 @@ class RobotSim(Robot):
                 start_time = self.env.now
                 while self.graph.get_cold_storage_usage_queue_head() != self.robot_id:
                     yield self.env.timeout(self.loop_timeout)
+                self.time_spent_base += self.env.now - start_time
                 wait_time = self.env.now - start_time
                 self.loginfo("F %5.1f: cold_storage_node free, %s going to target node: %s, wait time: %5.1f" %
                              (self.env.now, self.robot_id, target, wait_time))

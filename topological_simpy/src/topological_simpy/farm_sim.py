@@ -148,7 +148,7 @@ class FarmSim(topological_simpy.farm.Farm):
                         row_id = self.curr_picker_allocations[picker_id]
                         self.finished_rows[iteration].append(row_id)
                         self.n_finished_rows[iteration] += 1
-                        self.row_finish_time[iteration][row_id] = self.pickers[picker_id].row_finish_time
+                        self.row_finish_time[iteration][row_id[1]] = self.pickers[picker_id].row_finish_time
                         to_remove_pickers.append(picker_id)
 
                         if self.assigned_picker_robot[picker_id] is not None:

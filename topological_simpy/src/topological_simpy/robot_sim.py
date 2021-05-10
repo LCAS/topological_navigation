@@ -4,6 +4,7 @@ import simpy
 from math import ceil
 from topological_simpy.robot import Robot
 from numpy import isclose
+import random
 
 
 # noinspection PyBroadException
@@ -238,11 +239,12 @@ class RobotSim(Robot):
             n = route_nodes[idx]
             route_dist_cost = self.graph.route_dist_cost([self.curr_node] + route_nodes[idx:])
             d_cur = self.graph.distance(self.curr_node, n)
-            time_to_travel = round(d_cur / self.transportation_rate, 1)
+            time_to_travel = round(d_cur / self.transportation_rate + random.gauss(0, self.transportation_rate_std), 1)
             if idx + 1 < len(route_nodes):
                 # estimate next distance cost and travelling time
                 d_next = self.graph.distance(n, route_nodes[idx + 1])
-                time_to_travel_next = round(d_next / (2 * self.transportation_rate), 1)
+                time_to_travel_next = round(d_next / (2 * (self.transportation_rate +
+                                                           random.gauss(0, self.transportation_rate_std))), 1)
             else:
                 time_to_travel_next = 0
 
@@ -322,7 +324,8 @@ class RobotSim(Robot):
                 break
 
             try:
-                time_to_travel_before_release = round(d_cur / (2 * self.transportation_rate), 1)
+                time_to_travel_before_release = round(d_cur / (2 * (self.transportation_rate +
+                                                                    random.gauss(0, self.transportation_rate_std))), 1)
                 yield self.graph.env.timeout(time_to_travel_before_release)
                 yield self.graph.release_node(self.robot_id, self.curr_node)
                 # The robot is reaching at the half way between the current node and next node, release current node
@@ -433,7 +436,7 @@ class RobotSim(Robot):
         :param waiting_time: the time robot will be waiting
         return: float, the distance cost
         """
-        return self.transportation_rate * waiting_time
+        return (self.transportation_rate + random.gauss(0, self.transportation_rate_std)) * waiting_time
 
     def log_cost(self, robot_id, time_wait, dist_cost, node_name):
         """

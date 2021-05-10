@@ -507,11 +507,11 @@ class TopologicalForkGraph(object):
         """
         state = None
         if self._node_res[node]:
-            if self._node_res[node].level == 0 and self._node_res[node].put_queue == []:
+            if self._node_res[node].capacity - self._node_res[node].level > 0 and self._node_res[node].put_queue == []:
                 state = 1
-            elif self._node_res[node].level == 1 and self._node_res[node].put_queue == []:
+            elif self._node_res[node].capacity - self._node_res[node].level == 0 and self._node_res[node].put_queue == []:
                 state = 2
-            elif self._node_res[node].level == 1 and self._node_res[node].put_queue != []:
+            elif self._node_res[node].capacity - self._node_res[node].level == 0 and self._node_res[node].put_queue != []:
                 state = 2 + len(self._node_res[node].put_queue)
             self.req_ret[node] = state
             return state

@@ -269,7 +269,8 @@ class RobotSim(Robot):
                     # self.loginfo('  %5.1f: active nodes connected to robots: %s ' % (self.env.now, self.graph.active_nodes))
                 else:
                     # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' % (self.env.now, self.robot_id, n, node_state))
-                    avoid_nodes = [n]
+                    avoid_nodes = [n] + self.graph.get_active_nodes([self.robot_id])
+                    avoid_nodes = list(dict.fromkeys(avoid_nodes))
                     new_route = self.get_route_nodes(self.curr_node, target, avoid_nodes)  # avoid node n
                     new_route_dc = 0  # dc: distance cost
                     if new_route is None:

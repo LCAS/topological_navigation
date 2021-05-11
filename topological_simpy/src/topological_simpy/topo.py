@@ -433,6 +433,24 @@ class TopologicalForkGraph(object):
         """
         return self._nodes
 
+    def get_active_nodes(self, robot_ids_to_remove=[]):
+        """
+        get the nodes occupied by robots who are not in the list of robot_ids_to_remove
+        """
+        active_nodes = []
+        active_nodes_to_remove = []
+        for robot_id in self.active_nodes:
+            if robot_id not in robot_ids_to_remove:
+                active_nodes += self.active_nodes[robot_id]
+        active_nodes = list(dict.fromkeys(active_nodes))
+        for robot_id in robot_ids_to_remove:
+            active_nodes_to_remove += self.active_nodes[robot_id]
+        active_nodes_to_remove = list(dict.fromkeys(active_nodes_to_remove))
+        for node in active_nodes_to_remove:
+            if node in active_nodes:
+                active_nodes.remove(node)
+        return active_nodes
+
     def distance(self, nodeA, nodeB):
         """
         get the distance between node A and node B

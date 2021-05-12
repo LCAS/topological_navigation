@@ -63,3 +63,6 @@ coverage.xml
 
 # Local History for Visual Studio Code
 .history/
+
+# virtual environment
+venv/

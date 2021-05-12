@@ -174,8 +174,8 @@ class TopologicalVis(object):
         marker.ns='/zones'
         return marker
 
-
     def publish_markers(self):
+        self.topmap_pub.publish(MarkerArray())
         self.topmap_pub.publish(self.map_markers)
         
 

@@ -2,14 +2,19 @@
 import rospy
 import sympy
 import copy
-import yaml
+import json
 import sys
 import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapRequest, RestrictMapResponse
+from topological_navigation.manager2 import map_manager_2
+from strands_navigation_msgs.msg import TopologicalMap
 from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 from std_msgs.msg import String
 from abc import ABCMeta, abstractmethod, abstractproperty
 from sympy.parsing.sympy_parser import parse_expr
+
+## TODO make this publish the planning restricted topological_map under the robot namespace
+## TODO add visualise_map for each robot launchfile to visualise the restricted maps
 
 ###############################
 ##
@@ -20,8 +25,10 @@ class AbstractRestriction():
     """ Abstract definition of a restriction that can be evaluated in real-time """
     __metaclass__ = ABCMeta
 
+    robot_state = {}
+
     @abstractmethod
-    def get_value(self, node=None, value=None, **robot_state):
+    def evaluate(self, node=None, value=None, robot_state={}):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
         raise NotImplementedError()
 
@@ -30,15 +37,46 @@ class AbstractRestriction():
         """ The name must correspond to the restriction variable name in the map definition """
         raise NotImplementedError()
 
+    @abstractmethod 
+    def ground_to_robot(self, robot_namespace=None):
+        """ Retrieves and saves internally the state of the robot necessary for evaluating the restriction  """
+        raise NotImplementedError()
+
 class RobotType(AbstractRestriction):
     name = "robot"
 
     def __init__(self):
         super(AbstractRestriction, self).__init__()
 
-    def get_value(self, node, value, **robot_state):
+    def evaluate(self, node, value, robot_state={}):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        return value.lower() == robot_state["robot"].lower()
+        evaluation = True
+
+        # default state
+        if len(robot_state) == 0:
+            self.ground_to_robot()
+            robot_state = self.robot_state
+
+        if "robot" in robot_state:
+            evaluation = value.lower() == robot_state["robot"].lower()
+        elif "robot" in self.robot_state:
+            evaluation = value.lower() == self.robot_state["robot"].lower()
+        
+        return evaluation
+
+    def ground_to_robot(self):
+        # if robot_namespace is None:
+        #     # robot namespace under which this script is running
+        #     robot_namespace = rospy.get_namespace()
+        try:
+            topic_name = "type"
+            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
+        except rospy.ROSException:
+            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(self.name, topic_name))
+        else:
+            self.robot_state.update({
+                "robot": robot_type.data
+            })
 
 class TaskName(AbstractRestriction):
     name = "task"
@@ -46,10 +84,36 @@ class TaskName(AbstractRestriction):
     def __init__(self):
         super(AbstractRestriction, self).__init__()
 
-    def get_value(self, node, value, **robot_state):
+    def evaluate(self, node, value, robot_state={}):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        return value.lower() == robot_state["task"].lower()
+        evaluation = True
 
+        # default state
+        if len(robot_state) == 0:
+            self.ground_to_robot()
+            robot_state = self.robot_state
+
+        if "task" in robot_state:
+            evaluation = value.lower() == robot_state["task"].lower()
+        elif "task" in self.robot_state:
+            evaluation = value.lower() == self.robot_state["task"].lower()
+
+        return evaluation
+
+    def ground_to_robot(self):
+        # if robot_namespace is None:
+        #     # robot namespace under which this script is running
+        #     robot_namespace = rospy.get_namespace()
+        try:
+            topic_name = "task"
+            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
+        except rospy.ROSException:
+            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(
+                self.name, topic_name))
+        else:
+            self.robot_state.update({
+                "task": robot_type.data
+            })
 ###############################
 
 
@@ -63,15 +127,12 @@ class RestrictionsManager():
         # for each node contains the indexes of the nodes which have an edge ending in it
         self.back_edges_idx = {}
 
-        rospy.Subscriber("topological_map_2",
-                         String, self._topomap_cb)
-        rospy.loginfo("Waiting for topological map...")
-        while self.topo_map is None:
-            rospy.sleep(0.5)
-        rospy.loginfo("DONE")
-
-        rospy.Service("/topological_restrictions_manager/restrict_planning_map", RestrictMap, self.restrict_planning_map_handle)
-        rospy.Service("/topological_restrictions_manager/restrict_runtime_map", RestrictMap, self.restrict_runtime_map_handle)
+        # publishers for restricted tmap
+        self.restricted_tmap_pub = rospy.Publisher("topological_map",
+                         TopologicalMap, queue_size=10, latch=True)
+        self.restricted_tmap2_pub = rospy.Publisher(
+                         "topological_map_2", String, queue_size=10,
+                         latch=True)
     
     def register_restriction(self, condition_obj):
         """ This method receive a condition implementing AbstractRestriction class that can be evaluated"""
@@ -80,6 +141,19 @@ class RestrictionsManager():
         })
         rospy.loginfo(
             "New condition `{}` registered".format(condition_obj.name))
+
+    def register_connections(self):
+        rospy.Subscriber("/topological_map_2",
+                         String, self._topomap_cb)
+        rospy.loginfo("Waiting for topological map...")
+        while self.topo_map is None:
+            rospy.sleep(0.5)
+        rospy.loginfo("DONE")
+
+        rospy.Service("restrictions_manager/restrict_planning_map",
+                      RestrictMap, self.restrict_planning_map_handle)
+        rospy.Service("restrictions_manager/restrict_runtime_map",
+                      RestrictMap, self.restrict_runtime_map_handle)
 
     # Create a predicate from the restrictions string and returns the conditions to be checked
     def _predicate_from_string(self, restriction_str):
@@ -126,7 +200,7 @@ class RestrictionsManager():
             restriction = restriction_predicate.atoms().pop()
             restr_elements = restriction.name.split("_")
             condition = self.conditions[restr_elements[0]]
-            evaluation = condition.get_value(
+            evaluation = condition.evaluate(
                 node = node_name,
                 value = restr_elements[1] if len(
                     restr_elements) > 1 else None,
@@ -144,20 +218,34 @@ class RestrictionsManager():
         return not restriction_predicate
         
     def restrict_planning_map_handle(self, request):
-        return self._restrict_map_handle(request, "restrictions_planning")
+        response = RestrictMapResponse()
+        response.success = True
+
+        new_topo_map = self._restrict_map_handle(request, "restrictions_planning")
+
+        response.restricted_tmap = json.dumps(new_topo_map)
+
+        return response
     
     def restrict_runtime_map_handle(self, request):
-        return self._restrict_map_handle(request, "restrictions_runtime")
+        response = RestrictMapResponse()
+        response.success = True
+
+        new_topo_map = self._restrict_map_handle(request, "restrictions_runtime")
+
+        response.restricted_tmap = json.dumps(new_topo_map)
+
+        return response
    
     def _restrict_map_handle(self, request, restrictions_arg):
-        response = RestrictMapResponse()
         new_topo_map = copy.deepcopy(self.topo_map)
+        robot_state = {}
         try:
             robot_state = eval(request.state)
-        except TypeError:
-            rospy.logerr("Message data conversion to dictionary not valid, skip message")
-            response.success = False    
-        else:
+        except:
+            rospy.logwarn("Robot state data conversion to dictionary not valid, skip message")
+            # robot_state = None 
+        finally:
             # tmp_topo_map = copy.deepcopy(self.topo_map)
             to_remove_edges = {}
             to_remove_nodes = set({})
@@ -204,13 +292,12 @@ class RestrictionsManager():
             for ni in sorted(to_remove_nodes, reverse=True):
                 del new_topo_map["nodes"][ni]
 
-            response.success = True
-
-        response.restricted_tmap = yaml.dump(new_topo_map)
-        return response
+        return new_topo_map
 
     def _topomap_cb(self, msg):
-        self.topo_map = yaml.safe_load(msg.data)
+
+        rospy.loginfo("Received updated topomap")
+        self.topo_map = json.loads(msg.data)
         # print("got topomap", self.topo_map["nodes"][0])
 
         for ni, node in enumerate(self.topo_map["nodes"]):
@@ -224,6 +311,16 @@ class RestrictionsManager():
                         edge["node"]: {ni: ei}
                     })
 
+        rospy.loginfo("Creating restricted topomaps")
+        restricted_tmap2 = self._restrict_map_handle({}, "restrictions_planning")
+
+        self.restricted_tmap2_pub.publish(json.dumps(restricted_tmap2))
+
+        old_restricted_tmap = map_manager_2.convert_tmap2_to_tmap(
+            restricted_tmap2, restricted_tmap2["pointset"], restricted_tmap2["metric_map"])
+
+        self.restricted_tmap_pub.publish(old_restricted_tmap)
+
 
 if __name__ == '__main__':
     rospy.init_node("topological_restrictions_manager")
@@ -235,5 +332,7 @@ if __name__ == '__main__':
     for restriction in clsmembers:
         if issubclass(restriction[1], AbstractRestriction) and not inspect.isabstract(restriction[1]):
             manager.register_restriction(restriction[1]())
+
+    manager.register_connections()
 
     rospy.spin()

@@ -1,0 +1,101 @@
+Examples that the robot finds new routes when the requested node is occupied:
+
+
+#Example 1:
+
+* 2287:    nodes     ['WayPoint47', 'WayPoint50', 'WayPoint60']      are occupied
+
+2287: Hurga going from node WayPoint47 to node WayPoint126 via route ['WayPoint48', 'WayPoint49', 'WayPoint50', 'WayPoint51', 'WayPoint52', 'WayPoint53', 'WayPoint54', 'WayPoint57', 'WayPoint66', 'WayPoint74', 'WayPoint73', 'WayPoint67', 'WayPoint131', 'WayPoint128', 'WayPoint127', 'WayPoint126']
+
+2287:  Hurga traversing route from node WayPoint47 to node WayPoint48 (distance: 2.727391, time: 10)
+
+2297:  Hurga traversing route from node WayPoint48 to node WayPoint49 (distance: 2.878804, time: 10)
+
+2307:  Hurga traversing route from node WayPoint49 to node WayPoint50 (distance: 2.972501, time: 10)
+
+++++++++    Hurga use a new route avoiding node WayPoint50 ++++++++
+
+2307: Hurga going from node WayPoint49 to node WayPoint126 via route ['WayPoint48', 'WayPoint47', 'WayPoint46', 'WayPoint45', 'WayPoint44', 'WayPoint43', 'WayPoint42', 'WayPoint41', 'WayPoint40', 'WayPoint39', 'WayPoint38', 'WayPoint37', 'WayPoint58', 'WayPoint66', 'WayPoint74', 'WayPoint73', 'WayPoint67', 'WayPoint131', 'WayPoint128', 'WayPoint127', 'WayPoint126']
+
+
+
+
+
+
+#Example 2:
+
+* 3111:    nodes     ['WayPoint112', 'WayPoint45']      are occupied
+
+3111: Hurga going from node WayPoint45 to node WayPoint119 via route ['WayPoint44', 'WayPoint43', 'WayPoint42', 'WayPoint41', 'WayPoint40', 'WayPoint39', 'WayPoint38', 'WayPoint37', 'WayPoint58', 'WayPoint66', 'WayPoint74', 'WayPoint73', 'WayPoint132', 'WayPoint111', 'WayPoint112', 'WayPoint113', 'WayPoint114', 'WayPoint115', 'WayPoint116', 'WayPoint117', 'WayPoint118', 'WayPoint119']
+
+3111:  Hurga traversing route from node WayPoint45 to node WayPoint44 (distance: 3.353727, time: 12)
+
+
+...
+
+
+3261:  Hurga traversing route from node WayPoint111 to node WayPoint112 (distance: 2.948206, time: 10)
+
+++++++++    Hurga use a new route avoiding node WayPoint112 ++++++++
+
+3261: Hurga going from node WayPoint111 to node WayPoint119 via route ['WayPoint132', 'WayPoint67', 'WayPoint131', 'WayPoint128', 'WayPoint127', 'WayPoint126', 'WayPoint125', 'WayPoint124', 'WayPoint123', 'WayPoint122', 'WayPoint121', 'WayPoint120', 'WayPoint119']
+
+
+
+
+
+#Example 3:
+
+*   5:    nodes     ['WayPoint111', 'WayPoint131', 'WayPoint66']      are occupied
+
+5: Hurga going from node WayPoint131 to node WayPoint1 via route ['WayPoint67', 'WayPoint73', 'WayPoint74', 'WayPoint66', 'WayPoint56', 'WayPoint63', 'WayPoint65', 'WayPoint6', 'WayPoint2', 'WayPoint1']
+
+
+*  10:    nodes     ['WayPoint111', 'WayPoint131', 'WayPoint66', 'WayPoint67']      are occupied
+
+10: Foo going from node WayPoint111 to node WayPoint10 via route ['WayPoint132', 'WayPoint73', 'WayPoint74', 'WayPoint66', 'WayPoint56', 'WayPoint64', 'WayPoint18', 'WayPoint17', 'WayPoint16', 'WayPoint15', 'WayPoint14', 'WayPoint13', 'WayPoint12', 'WayPoint11', 'WayPoint10']
+
+10:  Foo traversing route from node WayPoint111 to node WayPoint132 (distance: 3.680420, time: 13)
+
+15: Foo2 going from node WayPoint66 to node WayPoint100 via route ['WayPoint74', 'WayPoint73', 'WayPoint134', 'WayPoint93', 'WayPoint94', 'WayPoint95', 'WayPoint96', 'WayPoint97', 'WayPoint98', 'WayPoint99', 'WayPoint100']
+
+*  23:    nodes     ['WayPoint132', 'WayPoint73', 'WayPoint74']      are occupied
+
+++++++++      Foo use a new route avoiding node WayPoint73 ++++++++
+
+23: Foo going from node WayPoint132 to node WayPoint10 via route ['WayPoint111', 'WayPoint112', 'WayPoint113', 'WayPoint114', 'WayPoint115', 'WayPoint116', 'WayPoint117', 'WayPoint118', 'WayPoint119', 'WayPoint110', 'WayPoint101', 'WayPoint84', 'WayPoint85', 'WayPoint86', 'WayPoint87', 'WayPoint88', 'WayPoint89', 'WayPoint90', 'WayPoint91', 'WayPoint92', 'WayPoint138', 'WayPoint74', 'WayPoint66', 'WayPoint56', 'WayPoint64', 'WayPoint18', 'WayPoint17', 'WayPoint16', 'WayPoint15', 'WayPoint14', 'WayPoint13', 'WayPoint12', 'WayPoint11', 'WayPoint10']
+
+
+*  25:    nodes     ['WayPoint132', 'WayPoint73', 'WayPoint74']      are occupied
+
+++++++++     Foo2 use a new route avoiding node WayPoint73 ++++++++
+
+25: Foo2 going from node WayPoint74 to node WayPoint100 via route ['WayPoint138', 'WayPoint92', 'WayPoint91', 'WayPoint90', 'WayPoint89', 'WayPoint88', 'WayPoint87', 'WayPoint86', 'WayPoint85', 'WayPoint84', 'WayPoint101', 'WayPoint100']
+
+
+++++++++    Hurga use a new route avoiding node WayPoint74 ++++++++
+
+25: Hurga going from node WayPoint73 to node WayPoint1 via route ['WayPoint141', 'WayPoint140', 'WayPoint142', 'WayPoint56', 'WayPoint63', 'WayPoint65', 'WayPoint6', 'WayPoint2', 'WayPoint1']
+
+
+++++++++    Hurga use a new route avoiding node WayPoint56 ++++++++
+
+44: Hurga going from node WayPoint66 to node WayPoint1 via route ['WayPoint58', 'WayPoint37', 'WayPoint38', 'WayPoint39', 'WayPoint40', 'WayPoint41', 'WayPoint42', 'WayPoint43', 'WayPoint44', 'WayPoint45', 'WayPoint36', 'WayPoint27', 'WayPoint10', 'WayPoint9', 'WayPoint8', 'WayPoint7', 'WayPoint3', 'WayPoint4', 'WayPoint5', 'WayPoint1']
+
+
+++++++++      Foo use a new route avoiding node WayPoint66 ++++++++
+   44: Foo going from node WayPoint74 to node WayPoint10 via route ['WayPoint140', 'WayPoint142', 'WayPoint56', 'WayPoint64', 'WayPoint18', 'WayPoint17', 'WayPoint16', 'WayPoint15', 'WayPoint14', 'WayPoint13', 'WayPoint12', 'WayPoint11', 'WayPoint10']
+
+
+++++++++    Hurga use a new route avoiding node WayPoint63 ++++++++
+   54: Hurga going from node WayPoint56 to node WayPoint1 via route ['WayPoint64', 'WayPoint18', 'WayPoint17', 'WayPoint16', 'WayPoint15', 'WayPoint14', 'WayPoint13', 'WayPoint12', 'WayPoint11', 'WayPoint10', 'WayPoint9', 'WayPoint8', 'WayPoint7', 'WayPoint3', 'WayPoint4', 'WayPoint5', 'WayPoint1']
+
+++++++++      Foo use a new route avoiding node WayPoint56 ++++++++
+   54: Foo going from node WayPoint66 to node WayPoint10 via route ['WayPoint58', 'WayPoint37', 'WayPoint38', 'WayPoint39', 'WayPoint40', 'WayPoint41', 'WayPoint42', 'WayPoint43', 'WayPoint44', 'WayPoint45', 'WayPoint36', 'WayPoint27', 'WayPoint10']
+
+
+
+##### Problems
+1. The new route cost >> original route, take new route or wait?
+2. Change route too frequent, wait or change?
+3. Q2 is similar to Q1, just need to compare the cost beween new route and original route+wait. 

@@ -834,7 +834,7 @@ class TopologicalForkGraph(object):
         to_node -- name of the ending node name"""
         from_node_obj = self.get_node(from_node)
         to_node_obj = self.get_node(to_node)
-        return get_distance_to_node_tmap2(from_node_obj['node'], to_node_obj['node'])
+        return get_distance_to_node_tmap2(from_node_obj, to_node_obj)
 
     def get_edges_between_nodes(self, from_node, to_node):
         """get_edges_between_nodes: Given names of two nodes, return the direct edges

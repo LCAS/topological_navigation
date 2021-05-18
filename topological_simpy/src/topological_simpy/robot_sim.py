@@ -5,6 +5,7 @@ from math import ceil
 from topological_simpy.robot import Robot
 from numpy import isclose
 import random
+from copy import deepcopy
 
 
 # noinspection PyBroadException
@@ -235,6 +236,11 @@ class RobotSim(Robot):
         interrupted = False
         idx = 0
         change_route = False
+
+        if len(route_nodes) == 0:
+            print("len(route_nodes)=0, no route from %s to %s" % (self.curr_node, target))
+            interrupted = True
+
         while idx < len(route_nodes):
             n = route_nodes[idx]
             route_dist_cost = self.graph.route_dist_cost([self.curr_node] + route_nodes[idx:])
@@ -250,6 +256,7 @@ class RobotSim(Robot):
 
             # the time that node will hold the robot
             # if the node is the cold_storage_node, the hold time needs to consider robot unloading trays(unloading_time)
+            # TODO: the agent's rotating time should be considered
             if n == self.cold_storage_node:
                 hold_time = time_to_travel + time_to_travel_next + self.unloading_time * self.assigned_picker_n_trays
             else:
@@ -266,13 +273,14 @@ class RobotSim(Robot):
                 node_state = self.graph.get_node_state(n)
                 if node_state is 1:
                     yield self.graph.request_node(self.robot_id, n)
-                    # self.loginfo('  %5.1f: active nodes connected to robots: %s ' % (self.env.now, self.graph.active_nodes))
+                    # self.loginfo('  %5.1f: active nodes connected to robots: %s ' %
+                    #              (self.env.now, self.graph.active_nodes))
                 else:
-                    # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' % (self.env.now, self.robot_id, n, node_state))
+                    # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' %
+                    #              (self.env.now, self.robot_id, n, node_state))
                     avoid_nodes = [n] + self.graph.get_active_nodes([self.robot_id])
                     avoid_nodes = list(dict.fromkeys(avoid_nodes))
                     new_route = self.get_route_nodes(self.curr_node, target, avoid_nodes)  # avoid node n
-                    new_route_dc = 0  # dc: distance cost
                     if new_route is None:
                         new_route_dc = float("inf")
                     elif new_route is []:    # robot is at target now
@@ -291,21 +299,68 @@ class RobotSim(Robot):
                         self.loginfo('~ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
                         continue
                     else:
+                        route_nodes_to_go = [self.curr_node] + route_nodes[idx:]
                         self.loginfo('* %5.1f: %s wait %5.1f, use old route %s' % (
-                            self.env.now, self.robot_id, wait_time, [self.curr_node] + route_nodes[idx:]))
+                            self.env.now, self.robot_id, wait_time, route_nodes_to_go))
                         yield self.graph.request_node(self.robot_id, n)
-                        for j in self.graph.jam:
-                            for r in j:
-                                if r == self.robot_id:
-                                    self.loginfo('| %5.1f: %s is in traffic jam, change route now' % (self.env.now, self.robot_id))
+                        for robot_id in self.graph.deadlocks['deadlock_robot_ids']:
+                            if robot_id == self.robot_id:
+                                self.loginfo('| %5.1f: %s is in deadlock, change route now' %
+                                             (self.env.now, self.robot_id))
+                                # TODO: 1. find avoid route: new_route = self.get_route_nodes(
+                                #                                           self.curr_node, target, avoid_nodes),
+                                #          if new_route is not None, go for new_route; if new_route is None, then?
+                                if new_route is not None:
                                     route_nodes = new_route
-                                    self.graph.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
-                                    idx = 0
-                                    change_route = True
-                                    self.loginfo('^ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
-                                    break
+                                else:
+                                    avoid_nodes = self.graph.get_active_nodes([self.robot_id])
+                                    curr_node_edges = self.graph.get_node_edges(self.curr_node)
+                                    # get all the edge nodes that could be used for dodging
+                                    for node in avoid_nodes:
+                                        if node in curr_node_edges:
+                                            curr_node_edges.remove(node)
+                                    # find the node to dodge:  node_to_dodge
+                                    if n in avoid_nodes:
+                                        avoid_nodes.remove(n)
+                                        route_nodes_to_dodge = self.graph.get_route_between_adjacent_nodes(
+                                            self.curr_node, n, avoid_nodes)
+                                        if len(route_nodes_to_dodge) != 0:
+                                            node_to_dodge = route_nodes_to_dodge[0]
+                                            # Without considering avoid_nodes, route_nodes_to_dodge is ensured
+                                            # with a valid route_nodes
+                                            # TODO: is it better to get route_nodes with avoiding avoid_nodes?
+                                            route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+                                            route_nodes = [node_to_dodge] + route_nodes_to_dodge
+                                        elif len(curr_node_edges) != 0:
+                                            node_to_dodge = curr_node_edges[0]  # TODO: any better selecting criteria?
+                                            route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+                                            route_nodes = [node_to_dodge] + route_nodes_to_dodge
+                                        else:
+                                            # no edges for dodging, wait for other agents to move
+                                            # TODO: Inform another deadlocked robot to dodge.
+                                            #       note: another robot has locked two nodes
+                                            #       Double check if another deadlocked robot releases the node and
+                                            #       the node then be occupied by a third robot: what the
+                                            #       current robot should do?
+                                            route_nodes = None
+                                            yield self.env.timeout(self.loop_timeout)
+                                    else:
+                                        # todo: impossible, remove the if-else later
+                                        msg = "Error: node %s not in avoid_nodes: %s" % (n, avoid_nodes)
+                                        raise Exception(msg)
+                                        print("%s not in avoid_nodes" % n)
+
+                                # prepare to change to the new route_nodes
+                                self.graph.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
+                                idx = 0
+                                change_route = True
+                                self.loginfo('^ %5.1f: %s go NEW route: %s' %
+                                             (self.env.now, self.robot_id, route_nodes))
+                                break
                         if change_route:
                             self.log_cost(self.robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
+                            self.graph.remove_robot_from_deadlock(self.robot_id)
+                            # TODO: how to ensure that the deadlock will be resolved?
                             continue  # change to new route
                         else:
                             pass  # travel to the requested node
@@ -317,10 +372,8 @@ class RobotSim(Robot):
             except Exception:
                 # Not triggered when requesting an occupied node!
                 # Not triggered when the robot has a goal running and be assigned a new goal
-                self.loginfo('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s' % (
-                    self.graph.env.now, self.robot_id,
-                    self.curr_node, n
-                ))
+                self.loginfo('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s'
+                             % (self.graph.env.now, self.robot_id, self.curr_node, n))
                 interrupted = True
                 break
 
@@ -346,7 +399,8 @@ class RobotSim(Robot):
                     self.curr_node, n
                 ))
                 self.log_cost(self.robot_id, 0, 0, 'INTERRUPTED')  # for monitor
-                self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' % (self.env.now, self.robot_id, n))
+                self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
+                             (self.env.now, self.robot_id, n))
                 yield self.graph.release_node(self.robot_id, n)
                 interrupted = True
                 break
@@ -413,23 +467,30 @@ class RobotSim(Robot):
         :param avoid_nodes: string list, the nodes that won't be considered when planning route
         return: string list, route node names, from current node to target node
         """
+        avo_nodes = deepcopy(avoid_nodes)
         if self.graph.env:
             if target == cur_node:
                 print('  %5.1f: %s is already at target %s' % (self.graph.env.now, self.robot_id, target))
                 return []
             else:
-                if avoid_nodes is None:
+                if avo_nodes is None:
                     route = self.graph.get_route(cur_node, target)
+                elif target in avo_nodes:
+                    # target is occupied at present, but maybe available later, so get the route anyway
+                    # TODO: it will lead to deadlocking if the target is still occupied when the agent is next to
+                    #  the target
+                    avo_nodes.remove(target)
+                    route = self.graph.get_avoiding_route(cur_node, target, avo_nodes)
                 else:
-                    route = self.graph.get_avoiding_route(cur_node, target, avoid_nodes)
+                    route = self.graph.get_avoiding_route(cur_node, target, avo_nodes)
 
-                if route is None:
+                if len(route.source) == 0:
                     return None
                 else:
                     r = route.source[1:]
                     r.append(target)
-                    print('  %5.1f: %s going from node %s to node %s via route %s' % (
-                        self.graph.env.now, self.robot_id, cur_node, target, r))
+                    # print('  %5.1f: %s going from node %s to node %s via route %s' % (
+                    #     self.graph.env.now, self.robot_id, cur_node, target, r))
                     return r
 
     def time_to_dist_cost(self, waiting_time):

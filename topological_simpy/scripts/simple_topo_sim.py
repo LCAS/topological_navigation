@@ -21,7 +21,7 @@ import time
 from random import seed
 from datetime import datetime
 
-RANDOM_SEED = 10
+RANDOM_SEED = 18
 SIM_RT_FACTOR = 0.00001  # simulation speed, 1: real time; 0.01: 100 times faster
 VERBOSE = True
 SHOW_VIS = False  # show visualisation
@@ -34,14 +34,14 @@ numpy.random.seed(RANDOM_SEED)
 
 if __name__ == "__main__":
     # config_file = 'topological_simpy/config/picking_sim_combined.yaml'
-    config_file = '../config/picking_sim_combined.yaml'
+    config_file = '../config/picking_sim.yaml'
     # get the config params
     config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
     # tmap_config_file = 'topological_simpy/maps/tmap.yaml'
-    tmap_config_file = '../maps/tmap.yaml'
+    tmap_config_file = '../maps/riseholme.tmap2'
 
     picker_ids = config_params["picker_ids"]
     robot_ids = config_params["robot_ids"]

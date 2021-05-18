@@ -160,7 +160,9 @@ class TopologicalForkGraph(object):
         self.active_nodes = {}   # keep all the occupied nodes for checking that any two robots requesting each other's nodes
 
         self.req_ret = {}  # integer, request return: mode of the node requested
-        self.jam = []  # the robot that in traffic jam
+        self.deadlocks = {'deadlock_robot_ids': [],
+                          'robot_occupied_nodes': {}}  # robots and their nodes who are in deadlock
+        self.couple_robots = []  # robots who are in deadlock
         self.com_nodes = []  # the nodes that hold completed robots
 
         self.base_stations = base_stations
@@ -339,6 +341,10 @@ class TopologicalForkGraph(object):
                 print('! %5.1f: %s has held longer than expected! Extend the wait time as before' % (
                     self.env.now, node))
                 wait_time = self._hold[node]['hold_time'][-2]  # Reset the wait time
+                # TODO: better estimation of wait_time needed:
+                #  e.g., 1. when the agent reaches base station, what the wait_time should be?
+                #        2. when the agent is in deadlocking or waiting for another agent who is in deadlocking, what
+                #           the wait_time should be?
 
             return wait_time
 
@@ -545,10 +551,10 @@ class TopologicalForkGraph(object):
         return: SimPy put event, put the robot into the node container
         """
         self.add_act_node(robot_name, node)
-        if self.is_in_tra_jam(robot_name):
-            print('> %5.1f: %s is in traffic jam, prepare to change route' % (self.env.now, robot_name))
-            self.pop_free_node(robot_name, node, jam=True)  # pop the node planned to request
-            self.add_robot_to_jam(robot_name, node)
+        if self.is_in_deadlock(robot_name):
+            print('> %5.1f: %s is in deadlock, prepare to change route' % (self.env.now, robot_name))
+            self.pop_free_node(robot_name, node, deadlock=True)  # pop the node planned to request
+            self.add_robot_to_deadlock(robot_name)
             return self.env.timeout(0)
         if self.env:
             return self._node_res[node].put(1)
@@ -591,15 +597,32 @@ class TopologicalForkGraph(object):
         print("  %5.1f:    nodes     %s      are occupied" % (self.env.now, sorted(occupied_nodes)))
         return occupied_nodes
 
-    def add_robot_to_jam(self, robot_name, node):
+    def add_robot_to_deadlock(self, robot_name):
         """
-        Add active nodes to the shared list active_nodes
+        Add robots who are in deadlock to the deadlocks, along with the robots' occupied nodes
         :param robot_name: string, robot name
-        :param node: string, topological node
-        return: string list, the list of robots that currently in traffic jam
         """
-        self.jam.append([robot_name, node])
-        return self.jam
+        if len(self.couple_robots) > 0:
+            for couple in self.couple_robots:
+                if robot_name in couple:
+                    self.deadlocks['deadlock_robot_ids'] = couple
+                    for robot_id in couple:
+                        self.deadlocks['robot_occupied_nodes'][robot_id] = self.active_nodes[robot_id]
+        else:
+            msg = "Error: robot %s not in deadlock, can not be added to deadlocks" % robot_name
+            raise Exception(msg)
+
+    def remove_robot_from_deadlock(self, robot_name):
+        """
+        Remove robot from deadlock list, and empty the deadlocks
+        :param robot_name: string, robot name
+        """
+        if robot_name in self.deadlocks['deadlock_robot_ids']:
+            self.deadlocks = {'deadlock_robot_ids': [],
+                              'robot_occupied_nodes': {}}
+        else:
+            msg = "Error: robot %s not in deadlock, can not be removed from deadlocks" % robot_name
+            raise Exception(msg)
 
     def add_act_node(self, robot_name, node):
         """
@@ -611,17 +634,17 @@ class TopologicalForkGraph(object):
         self.active_nodes[robot_name].append(node)
         return self.active_nodes
 
-    def pop_free_node(self, robot_name, cur_node, jam=False):
+    def pop_free_node(self, robot_name, cur_node, deadlock=False):
         """
         Pop out the node from the active node list when a robot release the node
         :param robot_name: string, robot name
         :param cur_node: string, topological node that the robot release
-        :param jam: bool, True - the robot is in the traffic jam
-                          False - the robot is not in the traffic jam
+        :param deadlock: bool, True - the robot is in the deadlock
+                          False - the robot is not in the deadlock
         return: bool
         """
         if self.active_nodes[robot_name]:
-            if jam and cur_node == self.active_nodes[robot_name].pop(-1):
+            if deadlock and cur_node == self.active_nodes[robot_name].pop(-1):
                 return True
             elif cur_node == self.active_nodes[robot_name].pop(0):
                 return True
@@ -635,34 +658,30 @@ class TopologicalForkGraph(object):
         :param active_nodes: string list, the list of nodes that currently occupied or requested by robots
         return: string list of list, the couples of robots that are requesting each others' nodes
         """
-        couple_nodes = []
+        couple_robots = []
+        self.couple_robots = []
         for a in active_nodes:
             if len(active_nodes[a]) == 2:
                 for b in active_nodes:
                     if len(active_nodes[b]) == 2:
                         if a != b:
                             if active_nodes[a][0] == active_nodes[b][1] and active_nodes[a][1] == active_nodes[b][0]:
-                                couple_nodes.append([a, b])
-            # elif len(active_nodes[a]) > 2:
-            #     print('Robot %s occupies more than 2 nodes!' % a)
-            #     return False
-            # elif len(active_nodes[a]) < 2:
-            #     print('Robot %s occupies only %d node!' % (a, len(active_nodes[a])))
-            #     return False
-        if couple_nodes:
-            return couple_nodes
-        else:
-            return False
+                                if ([a, b] not in couple_robots) and ([b, a] not in couple_robots):
+                                    couple_robots.append([a, b])
 
-    def is_in_tra_jam(self, robot_name):
+        if couple_robots:
+            self.couple_robots = couple_robots
+        return self.couple_robots
+
+    def is_in_deadlock(self, robot_name):
         """
-        Check if the robot is in the traffic jam, waiting for each other
+        Check if the robot is in deadlock, waiting for each other
         :param robot_name: string, robot name
-        return: bool, True - the robot is in the traffic jam
+        return: bool, True - the robot is in deadlock
         """
-        tra_jam = self.get_couples(self.active_nodes)
-        if tra_jam:
-            for c in tra_jam:
+        deadlock = self.get_couples(self.active_nodes)
+        if deadlock:
+            for c in deadlock:
                 for r in c:
                     if robot_name == r:
                         return True
@@ -823,6 +842,14 @@ class TopologicalForkGraph(object):
         # return self.tmap2.nodes[self.node_index[node]]  # old tmap
         return self.tmap2['nodes'][self.node_index[node]]  # new tmap2
 
+    def get_node_edges(self, node_id):
+        """
+        Given node_id, return all connected edges
+        """
+        node = self.get_node(node_id)
+        edges = get_conected_nodes_tmap2(node)
+        return edges
+
     def get_distance_between_adjacent_nodes(self, from_node, to_node):
         """get_distance_between_adjacent_nodes: Given names of two nodes, return the distance of the edge
         between their node objects. A wrapper for the get_distance_to_node function in tmap_utils.
@@ -835,6 +862,46 @@ class TopologicalForkGraph(object):
         from_node_obj = self.get_node(from_node)
         to_node_obj = self.get_node(to_node)
         return get_distance_to_node_tmap2(from_node_obj, to_node_obj)
+
+    def get_route_between_adjacent_nodes(self, from_node, to_node, avoid_nodes=None):
+        """
+        get the route between two adjacent nodes, the route excludes the direct one, i.e., from_node -> to_node
+        Keyword arguments:
+
+        from_node -- name of the starting node
+        to_node -- name of the ending node name
+        """
+
+        if avoid_nodes is not None:
+            dyn_map = self.get_topo_map_no_occupied_rownodes(avoid_nodes)
+        else:
+            dyn_map = copy.deepcopy(self.tmap2)
+
+        from_node_idx = self.node_index[from_node]
+        to_node_idx = self.node_index[to_node]
+
+        for edge_idx, edge in enumerate(dyn_map['nodes'][from_node_idx]['node']['edges']):
+            if edge['node'] == to_node:
+                dyn_map['nodes'][from_node_idx]['node']['edges'].remove(
+                    dyn_map['nodes'][from_node_idx]['node']['edges'][edge_idx])
+                break
+        for edge_idx, edge in enumerate(dyn_map['nodes'][to_node_idx]['node']['edges']):
+            if edge['node'] == from_node:
+                dyn_map['nodes'][to_node_idx]['node']['edges'].remove(
+                    dyn_map['nodes'][to_node_idx]['node']['edges'][edge_idx])
+                break
+
+        route_planner = TopologicalRouteSearch2(dyn_map)
+        route = route_planner.search_route(from_node, to_node)
+        if route is not None:
+            route_nodes = route.source
+            if from_node in route_nodes:
+                route_nodes.remove(from_node)
+            # append goal_node to route_nodes
+            route_nodes.append(to_node)
+            return route_nodes
+        else:
+            return None
 
     def get_edges_between_nodes(self, from_node, to_node):
         """get_edges_between_nodes: Given names of two nodes, return the direct edges

@@ -7,13 +7,14 @@ import json
 import yaml
 import re
 import uuid
-
 import std_msgs.msg
+import os
 
 from strands_navigation_msgs.msg import *
 from strands_navigation_msgs.srv import *
 from mongodb_store.message_store import MessageStoreProxy
-
+from topological_navigation.manager2 import map_manager_2
+from rospy_message_converter import message_converter
 
 
 def node_dist(node1,node2):
@@ -35,6 +36,7 @@ class map_manager(object):
             else:
                 self.nodes, self.tmap = self.load_map_from_file(name)
             self.names = self.create_list_of_nodes()
+            self.tmap_to_tmap2() # convert map to new format
 
             if not load_from_file:
                 rospy.set_param('topological_map_name', self.nodes.pointset)
@@ -92,6 +94,7 @@ class map_manager(object):
     def updateCallback(self, msg) :
 #        if msg.data > self.last_updated :
         self.nodes = self.loadMap(self.name)
+        self.tmap_to_tmap2()
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
         self.names = self.create_list_of_nodes()
@@ -188,7 +191,7 @@ class map_manager(object):
         """
         get tagged nodes callback
         This function is the callback for the get tagged nodes service
-        It returns a list of the nodes that have the tag tag
+        Returns a list of node names that have a specific tag
         """
         mm = self.get_tagged_nodes_from_file(tag) if self.load_from_file else self.get_tagged_nodes_from_mongo(tag)
         return mm
@@ -966,3 +969,38 @@ class map_manager(object):
             names.append(i.name)
         names.sort()
         return names
+    
+    
+    def tmap_to_tmap2(self):
+        
+        filename = ""
+        if self.load_from_file:
+            filename = os.path.splitext(self.name)[0] + ".yaml"
+            
+        manager2 = map_manager_2(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
+        
+        for node in self.nodes.nodes:
+            
+            pose = message_converter.convert_ros_message_to_dictionary(node.pose)
+            verts = [message_converter.convert_ros_message_to_dictionary(vert) for vert in node.verts]
+            
+            properties = {}
+            properties["xy_goal_tolerance"] = node.xy_goal_tolerance
+            properties["yaw_goal_tolerance"] = node.yaw_goal_tolerance
+            
+            req = strands_navigation_msgs.srv.GetNodeTags()
+            req.node_name = node.name
+            tags = self.get_node_tags_cb(req)[1]
+            
+            manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties, tags)
+            
+            for edge in node.edges:
+                
+                config = []
+                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"inflation_radius", "value":edge.inflation_radius})
+                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"top_vel", "value":edge.top_vel})
+                
+                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, config, edge.recovery_behaviours_config)
+                
+        manager2.update()
+###################################################################################################################

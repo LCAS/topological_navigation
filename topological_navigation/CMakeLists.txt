@@ -127,13 +127,14 @@ include_directories(
    scripts/navigation.py
    scripts/visualise_map.py
    scripts/map_manager.py
+   scripts/map_manager2.py
    scripts/travel_time_estimator.py
-   scripts/execute_policy_server.py
    scripts/topological_prediction.py
    scripts/get_simple_policy.py
    scripts/manual_edge_predictions.py
    scripts/speed_based_prediction.py
    scripts/reconf_at_edges_server.py
+   scripts/topological_transform_publisher.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

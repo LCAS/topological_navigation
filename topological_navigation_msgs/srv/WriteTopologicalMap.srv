@@ -1,0 +1,4 @@
+string filename   # map filename (leave empty to overwrite)
+---
+bool success
+string message

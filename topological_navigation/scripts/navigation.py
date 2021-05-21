@@ -129,6 +129,7 @@ class TopologicalNavServer(object):
         rospy.loginfo(" ...done")
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
+        self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", True)
         if self.edge_reconfigure:
             self.edgeReconfigureManager = EdgeReconfigureManager()
 
@@ -552,14 +553,17 @@ class TopologicalNavServer(object):
             dt_text = self.stat.get_start_time_str()
 
             if self.edge_reconfigure:
-                self.edgeReconfigureManager.register_edge(cedg)
-                if self.edgeReconfigureManager.active:
-                    self.edgeReconfigureManager.initialise()
-                    self.edgeReconfigureManager.reconfigure()
+                if not self.srv_edge_reconfigure:
+                    self.edgeReconfigureManager.register_edge(cedg)
+                    if self.edgeReconfigureManager.active:
+                        self.edgeReconfigureManager.initialise()
+                        self.edgeReconfigureManager.reconfigure()
+                else:
+                    self.edgeReconfigureManager.srv_reconfigure(cedg["edge_id"])
 
             nav_ok, inc = self.execute_action(cedg, cnode)
 
-            if self.edge_reconfigure and self.edgeReconfigureManager.active:
+            if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
                 self.edgeReconfigureManager._reset()
                 rospy.sleep(rospy.Duration.from_sec(0.3))
 

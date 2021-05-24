@@ -21,6 +21,7 @@ def node_dist(node1,node2):
     dist = math.sqrt((node1.pose.position.x - node2.pose.position.x)**2 + (node1.pose.position.y - node2.pose.position.y)**2 )
     return dist
 
+
 class map_manager(object):
 
     def __init__(self, name, load=True, load_from_file=False) :
@@ -33,15 +34,13 @@ class map_manager(object):
         if load:
             if not load_from_file:
                 self.nodes = self.loadMap(name)
+                rospy.set_param('topological_map_name', self.nodes.pointset)
             else:
                 self.nodes, self.tmap = self.load_map_from_file(name)
+                rospy.set_param('topological_map_name', name)
             self.names = self.create_list_of_nodes()
             self.tmap_to_tmap2() # convert map to new format
 
-            if not load_from_file:
-                rospy.set_param('topological_map_name', self.nodes.pointset)
-            else:
-                rospy.set_param('topological_map_name', name)
         else:
             self.nodes = strands_navigation_msgs.msg.TopologicalMap()
             self.nodes.name = name
@@ -98,6 +97,7 @@ class map_manager(object):
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
         self.names = self.create_list_of_nodes()
+        rospy.set_param('topological_map_name', self.nodes.pointset)
 
 
     def get_tags_cb(self, req):
@@ -427,6 +427,7 @@ class map_manager(object):
         #nodes.nodes.sort(key=lambda node: node.name)
         self.names = self.create_list_of_nodes()
         self.map_pub.publish(self.nodes)
+        self.tmap_to_tmap2() # convert map to new format
                     
         rospy.set_param('topological_map_name', req.pointset)
         return self.nodes
@@ -995,12 +996,7 @@ class map_manager(object):
             manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties, tags)
             
             for edge in node.edges:
-                
-                config = []
-                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"inflation_radius", "value":edge.inflation_radius})
-                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"top_vel", "value":edge.top_vel})
-                
-                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, config, edge.recovery_behaviours_config)
+                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, [], edge.recovery_behaviours_config)
                 
         manager2.update()
 ###################################################################################################################

@@ -39,6 +39,7 @@ class map_manager(object):
                 rospy.set_param('topological_map_path', os.path.split(name)[0])
                 
             self.names = self.create_list_of_nodes()
+            self.manager2 = map_manager_2()
             self.tmap_to_tmap2() # convert map to new format
         else:
             self.nodes = strands_navigation_msgs.msg.TopologicalMap()
@@ -977,7 +978,7 @@ class map_manager(object):
         if self.load_from_file:
             filename = os.path.splitext(self.name)[0] + ".yaml"
             
-        manager2 = map_manager_2(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
+        self.manager2.initialise(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
         
         for node in self.nodes.nodes:
             
@@ -992,10 +993,10 @@ class map_manager(object):
             req.node_name = node.name
             tags = self.get_node_tags_cb(req)[1]
             
-            manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties, tags)
+            self.manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties, tags)
             
             for edge in node.edges:
-                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, [], edge.recovery_behaviours_config)
+                self.manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, [], edge.recovery_behaviours_config)
                 
-        manager2.update()
+        self.manager2.update()
 ###################################################################################################################

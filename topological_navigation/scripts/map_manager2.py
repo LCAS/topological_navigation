@@ -37,6 +37,7 @@ if __name__ == '__main__' :
             print "Loading Map (%s)" %_map
 
     rospy.init_node("topological_map_manager")
-    ps = map_manager_2(filename=_map, load=load)
+    ps = map_manager_2()
+    ps.initialise(filename=_map, load=load)
     rospy.spin()
 #########################################################################################################

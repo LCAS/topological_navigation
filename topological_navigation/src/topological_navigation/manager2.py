@@ -158,7 +158,8 @@ class map_manager_2(object):
         
         self.map_check()
         
-        rospy.set_param('topological_map_name', self.filename)
+        rospy.set_param('topological_map2_name', self.pointset)
+        rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
         
         rospy.loginfo("Caching the map ...")
         self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
@@ -232,16 +233,14 @@ class map_manager_2(object):
         """
         Changes the topological map
         """
-        self.filename = req.filename
-        self.load_map(req.filename)        
+        path = rospy.get_param('topological_map2_path')
+        self.filename = path + "/" + req.filename
+        
+        self.load_map(self.filename)        
         self.update(False)
         self.broadcast_transform()
-        
-        success = True
-        if not self.tmap2:
-            success = False
-            
-        return success, json.dumps(self.tmap2)
+
+        return True, json.dumps(self.tmap2)
     
     
     def get_tagged_cb(self, req):

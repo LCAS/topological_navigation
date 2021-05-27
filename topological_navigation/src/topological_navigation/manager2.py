@@ -72,7 +72,7 @@ class map_manager_2(object):
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = self.get_time()
             self.tmap2["nodes"] = []            
-            rospy.set_param('topological_map_name', self.name)
+            rospy.set_param('topological_map_name', self.filename)
 
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -113,7 +113,8 @@ class map_manager_2(object):
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
         self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
-        self.update_action_type_srv=rospy.Service('/topological_map_manager2/update_action_type', topological_navigation_msgs.srv.UpdateActionType, self.update_action_type_cb)
+        self.update_edge_action_srv=rospy.Service('/topological_map_manager2/update_edge_action', topological_navigation_msgs.srv.UpdateAction, self.update_edge_action_cb)
+        self.update_action_srv=rospy.Service('/topological_map_manager2/update_action', topological_navigation_msgs.srv.UpdateAction, self.update_action_cb)
 
         
     def get_time(self):
@@ -154,7 +155,7 @@ class map_manager_2(object):
         
         self.map_check()
         
-        rospy.set_param('topological_map_name', self.name)
+        rospy.set_param('topological_map_name', self.filename)
         
         rospy.loginfo("Caching the map ...")
         self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
@@ -803,12 +804,12 @@ class map_manager_2(object):
     
     def update_edge_cb(self, req):
         """
-        Update an edge's action and top_vel 
+        Update an edge's action
         """
-        return self.update_edge(req.edge_id, req.action, req.top_vel)
+        return self.update_edge(req.edge_id, req.action)
       
 
-    def update_edge(self, edge_id, action, top_vel):
+    def update_edge(self, edge_id, action):
         
         node_name = edge_id.split('_')[0]
         num_available, index = self.get_instances_of_node(node_name)
@@ -818,14 +819,6 @@ class map_manager_2(object):
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
                     edge["action"] = action or edge["action"]
-                    
-                    if "config" in edge and "top_vel" in edge["config"]:
-                        edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
-                    elif "config" in edge and "top_vel" not in edge["config"]:
-                        edge["config"]["top_vel"] = top_vel
-                    else:
-                        edge["config"] = {}
-                        edge["config"]["top_vel"] = top_vel
                     
             self.tmap2["nodes"][index] = the_node
             self.update()
@@ -980,20 +973,55 @@ class map_manager_2(object):
             return False, ""
         
         
-    def update_action_type_cb(self, req):
+    def update_edge_action_cb(self, req):
         """
-        Updates an edge's action type (definition) for all edges in the tmap
+        Updates an edge's action, action type and goal
         """
-        return self.update_action_type(req.action_name, req.action_type)
+        return self.update_edge_action(req.edge_id, req.action_name, req.action_type, req.goal)
     
     
-    def update_action_type(self, action_name, action_type):
+    def update_edge_action(self, edge_id, action_name, action_type, goal):
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    if action_name:
+                        edge["action"] = action_name
+                    if action_type:
+                        edge["action_type"] = action_type
+                    if goal:
+                        edge["goal"] = json.loads(goal)
+                    
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+            return True
+        else:
+            rospy.logerr("Cannot update the action of edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False
+                    
+                
+    def update_action_cb(self, req):
+        """
+        Updates the action type and goal for all action_name edges
+        """
+        return self.update_action(req.action_name, req.action_type, req.goal)
+    
+    
+    def update_action(self, action_name, action_type, goal):
         
         success = False
         for node in self.tmap2["nodes"]:
             for edge in node["node"]["edges"]:
                 if edge["action"] == action_name:
-                    edge["action_type"] = action_type
+                    if action_type:
+                        edge["action_type"] = action_type
+                    if goal:
+                        edge["goal"] = json.loads(goal)
                     success = True
         
         if success:            

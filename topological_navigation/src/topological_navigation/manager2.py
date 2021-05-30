@@ -22,8 +22,7 @@ from rospy_message_converter import message_converter
 
 
 def pose_dist(pose1, pose2):
-    dist = math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
-    return dist
+    return math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
 
 
 class map_manager_2(object):
@@ -56,7 +55,6 @@ class map_manager_2(object):
         self.modify_tag_srv=rospy.Service('/topological_map_manager2/modify_node_tags', strands_navigation_msgs.srv.ModifyTag, self.modify_tag_cb)
         self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
         self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
-        self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
@@ -65,7 +63,7 @@ class map_manager_2(object):
         self.update_action_srv=rospy.Service('/topological_map_manager2/update_action', topological_navigation_msgs.srv.UpdateAction, self.update_action_cb)
     
     
-    def initialise(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
+    def init_map(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
         
         self.name = name
         self.metric_map = metric_map
@@ -801,34 +799,6 @@ class map_manager_2(object):
             self.write_topological_map(self.filename)
 
         return succeded, meta_out
-    
-    
-    def update_edge_cb(self, req):
-        """
-        Update an edge's action
-        """
-        return self.update_edge(req.edge_id, req.action)
-      
-
-    def update_edge(self, edge_id, action):
-        
-        node_name = edge_id.split('_')[0]
-        num_available, index = self.get_instances_of_node(node_name)
-        
-        if num_available == 1:
-            the_node = copy.deepcopy(self.tmap2["nodes"][index])
-            for edge in the_node["node"]["edges"]:
-                if edge["edge_id"] == edge_id:
-                    edge["action"] = action or edge["action"]
-                    
-            self.tmap2["nodes"][index] = the_node
-            self.update()
-            self.write_topological_map(self.filename)
-        
-            return True, ""
-        else:
-            rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
-            return False, "no edge found or multiple edges found"
         
         
     def add_param_to_edge_config_cb(self, req):

@@ -978,7 +978,7 @@ class map_manager(object):
         if self.load_from_file:
             filename = os.path.splitext(self.name)[0] + ".yaml"
             
-        self.manager2.initialise(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
+        self.manager2.init_map(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
         
         for node in self.nodes.nodes:
             

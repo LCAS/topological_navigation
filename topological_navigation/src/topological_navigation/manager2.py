@@ -31,6 +31,10 @@ class map_manager_2(object):
     
     def __init__(self):
         
+        self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
+        if not os.path.exists(self.cache_dir):
+            os.mkdir(self.cache_dir)
+        
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
         self.switch_map_srv=rospy.Service('/topological_map_manager2/switch_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.switch_topological_map_cb)
@@ -62,10 +66,6 @@ class map_manager_2(object):
     
     
     def initialise(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
-        
-        self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
-        if not os.path.exists(self.cache_dir):
-            os.mkdir(self.cache_dir)
         
         self.name = name
         self.metric_map = metric_map
@@ -151,13 +151,14 @@ class map_manager_2(object):
             return
         
         self.loaded = True
+        self.map_check()
             
         self.name = self.tmap2["name"]
         self.metric_map = self.tmap2["metric_map"]
         self.pointset = self.tmap2["pointset"]
         self.transformation = self.tmap2["transformation"]
         
-        self.map_check()
+        self.names = self.create_list_of_nodes()
         
         rospy.set_param('topological_map2_name', self.pointset)
         rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
@@ -211,13 +212,10 @@ class map_manager_2(object):
         
     def create_list_of_nodes(self):
         
-        names = []
-        if "nodes" in self.tmap2:
-            names = [node["node"]["name"] for node in self.tmap2["nodes"]]
-            names.sort()
-            
+        names = [node["node"]["name"] for node in self.tmap2["nodes"]]
+        names.sort()
         return names
-        
+            
         
     def get_topological_map_cb(self, req):
         """

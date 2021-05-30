@@ -102,8 +102,7 @@ class map_manager_2(object):
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = self.get_time()
             self.tmap2["nodes"] = []            
-            rospy.set_param('topological_map2_name', self.pointset)
-            rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
+            rospy.set_param('topological_map_name', self.filename)
 
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -113,8 +112,8 @@ class map_manager_2(object):
         self.broadcast_transform()
         
         self.convert_to_legacy = rospy.get_param("~convert_to_legacy", True)
+        self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
         if self.loaded and self.convert_to_legacy:
-            self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
         

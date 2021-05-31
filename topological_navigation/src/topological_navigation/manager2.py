@@ -25,7 +25,7 @@ def pose_dist(pose1, pose2):
     dist = math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
     return dist
 
-
+# test build
 class map_manager_2(object):
     
     

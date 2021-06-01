@@ -189,7 +189,7 @@ class TopologicalNavLoc(object):
                 a["dist"] = dist
                 distances.append(a)
                 
-        if not self.err_msg_sent and bad_edges:
+        if bad_edges and not self.err_msg_sent:
             for item in bad_edges:
                 rospy.logerr("Cannot get distance to edge {}: {}".format(item[0], item[1]))
             self.err_msg_sent = True

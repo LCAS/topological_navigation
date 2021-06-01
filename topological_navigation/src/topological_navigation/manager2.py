@@ -1056,7 +1056,14 @@ class map_manager_2(object):
             if destination not in names:
                 rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
                 self.map_ok = False
-                
+
+        # check if a node has an edge to itself                
+        for node in self.tmap2["nodes"]:
+            for edge in node["node"]["edges"]:
+                if node["node"]["name"] == edge["node"]:
+                    rospy.logwarn("edge with id {} has a destination {} equal to its origin".format(edge["edge_id"], edge["node"]))
+                    self.map_ok = False
+                    
                 
     def tmap2_to_tmap(self):
         

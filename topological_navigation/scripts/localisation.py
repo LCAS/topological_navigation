@@ -175,7 +175,12 @@ class TopologicalNavLoc(object):
             for edge in node["node"]["edges"]:
                 dest_pose = self.node_poses[edge["node"]]
                 end = (dest_pose["position"]["x"], dest_pose["position"]["y"], 0)
-                dist,_ = pnt2line(pnt, start, end)
+                
+                try:
+                    dist,_ = pnt2line(pnt, start, end)
+                except Exception as e:
+                    rospy.logwarn("Error getting distance to {}: {}".format(edge["edge_id"], e))
+                    continue
                 
                 a = {}
                 a["edge_id"] = edge["edge_id"]
@@ -219,7 +224,6 @@ class TopologicalNavLoc(object):
                 currentstr='none'
                 
                 edge_distances = self.get_edge_distances_to_pose(msg)
-                
                 if len(edge_distances) > 1:
                     closest_edges = edge_distances[:2]
                 else:

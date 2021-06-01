@@ -139,6 +139,7 @@ class TopologicalNavLoc(object):
         self.base_frame = rospy.get_param("~base_frame", "base_link")
         
         rospy.loginfo("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
+        self.err_msg_sent = False
         self.listener = tf.TransformListener()
         self.rate = rospy.Rate(10.0)
         self.PoseCallback()
@@ -169,18 +170,30 @@ class TopologicalNavLoc(object):
         pnt = (pose.position.x, pose.position.y, 0)
         distances = []
         
+        bad_edges = []
         for node in self.tmap["nodes"]:
             start = (node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0)
             
             for edge in node["node"]["edges"]:
                 dest_pose = self.node_poses[edge["node"]]
                 end = (dest_pose["position"]["x"], dest_pose["position"]["y"], 0)
-                dist,_ = pnt2line(pnt, start, end)
+                
+                try:
+                    dist,_ = pnt2line(pnt, start, end)
+                except Exception as e:
+                    bad_edges.append([edge["edge_id"], e])
+                    continue
                 
                 a = {}
                 a["edge_id"] = edge["edge_id"]
                 a["dist"] = dist
                 distances.append(a)
+                
+        if bad_edges and not self.err_msg_sent:
+            for item in bad_edges:
+                rospy.logerr("Cannot get distance to edge {}: {}".format(item[0], item[1]))
+            self.err_msg_sent = True
+            
                  
         distances = sorted(distances, key=lambda k: k["dist"])
         return distances
@@ -219,7 +232,6 @@ class TopologicalNavLoc(object):
                 currentstr='none'
                 
                 edge_distances = self.get_edge_distances_to_pose(msg)
-                
                 if len(edge_distances) > 1:
                     closest_edges = edge_distances[:2]
                 else:

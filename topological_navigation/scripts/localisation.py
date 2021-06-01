@@ -105,7 +105,6 @@ class TopologicalNavLoc(object):
         self.closest_edge_ids = []
         self.closest_edge_dists = []
         self.node_poses = {}
-        self.err_msg_sent = False
         
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         self.with_tags = wtags
@@ -323,6 +322,7 @@ class TopologicalNavLoc(object):
         self.names_by_topic=[]
         self.nodes_by_topic=[]
         self.nogos=[]
+        self.err_msg_sent = False
 
         self.tmap = json.loads(msg.data) 
         self.rec_map=True

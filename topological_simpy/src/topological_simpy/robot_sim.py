@@ -310,7 +310,7 @@ class RobotSim(Robot):
                                 # TODO: 1. find avoid route: new_route = self.get_route_nodes(
                                 #                                           self.curr_node, target, avoid_nodes),
                                 #          if new_route is not None, go for new_route; if new_route is None, then?
-                                if new_route is not None:
+                                if new_route is not None:     # TODO: is it possible?
                                     route_nodes = new_route
                                 else:
                                     avoid_nodes = self.graph.get_active_nodes([self.robot_id])
@@ -342,13 +342,15 @@ class RobotSim(Robot):
                                             #       Double check if another deadlocked robot releases the node and
                                             #       the node then be occupied by a third robot: what the
                                             #       current robot should do?
-                                            route_nodes = None
-                                            yield self.env.timeout(self.loop_timeout)
+                                            msg = "%s: @%s No edge to dodge, curr_node_edges: %s" % (
+                                                self.robot_id, self.curr_node, curr_node_edges)
+                                            raise Exception(msg)
+                                            # route_nodes = None
+                                            # yield self.env.timeout(self.loop_timeout)
                                     else:
                                         # todo: impossible, remove the if-else later
-                                        msg = "Error: node %s not in avoid_nodes: %s" % (n, avoid_nodes)
+                                        msg = "%s: %s not in avoid_nodes!" % (self.robot_id, n)
                                         raise Exception(msg)
-                                        print("%s not in avoid_nodes" % n)
 
                                 # prepare to change to the new route_nodes
                                 self.graph.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
@@ -360,7 +362,9 @@ class RobotSim(Robot):
                         if change_route:
                             self.log_cost(self.robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
                             self.graph.remove_robot_from_deadlock(self.robot_id)
-                            # TODO: how to ensure that the deadlock will be resolved?
+                            # TODO: How to ensure that the deadlock will be resolved? --> the dodge route is promised to
+                            #       be working(unless curr_node_edges is None, i.e., deadlock in single track),
+                            #       so the deadlock must be resolved at present.
                             continue  # change to new route
                         else:
                             pass  # travel to the requested node
@@ -477,11 +481,13 @@ class RobotSim(Robot):
                     route = self.graph.get_route(cur_node, target)
                 elif target in avo_nodes:
                     # target is occupied at present, but maybe available later, so get the route anyway
-                    # TODO: it will lead to deadlocking if the target is still occupied when the agent is next to
-                    #  the target
                     avo_nodes.remove(target)
                     route = self.graph.get_avoiding_route(cur_node, target, avo_nodes)
-                else:
+                    # It will lead to deadlocking if the target is still occupied when the agent is next to
+                    # the target
+                    if len(route.source) == 1:  # in deadlock
+                        return None
+                else:  # target not in avo_nodes
                     route = self.graph.get_avoiding_route(cur_node, target, avo_nodes)
 
                 if len(route.source) == 0:

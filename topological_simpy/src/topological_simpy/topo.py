@@ -552,7 +552,7 @@ class TopologicalForkGraph(object):
         """
         self.add_act_node(robot_name, node)
         if self.is_in_deadlock(robot_name):
-            print('> %5.1f: %s is in deadlock, prepare to change route' % (self.env.now, robot_name))
+            self.loginfo('> %5.1f: %s is in deadlock, prepare to change route' % (self.env.now, robot_name))
             self.pop_free_node(robot_name, node, deadlock=True)  # pop the node planned to request
             self.add_robot_to_deadlock(robot_name)
             return self.env.timeout(0)
@@ -687,6 +687,26 @@ class TopologicalForkGraph(object):
                         return True
         else:
             return False
+
+    def get_deadlocks(self, active_nodes):
+        """
+        Get the deadlock loop:
+        Two robots in deadlock: A->B->A
+        Three robots in deadlock: A->B->C->A
+        Four robots in deadlock: A->B->C->D->A
+        ...
+
+        :param active_nodes: dict of list, {robot_id: [curr_node, requested_node]}
+        return:  string list, robot_ids in deadlock
+        """
+        # get all the agents that have two occupied nodes: one for current, one for requested or prepare to request
+        # act_nodes = {a: active_nodes[a] for a in active_nodes if len(active_nodes[a]) == 2}
+        # deadlock_agents = []
+        # agents = []
+        # for agent in active_nodes:
+        #     agents.append(agent)
+        # while len(agents):
+        #     TODO
 
     @property
     def node_log(self):

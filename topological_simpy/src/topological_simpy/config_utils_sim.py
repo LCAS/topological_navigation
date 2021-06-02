@@ -23,9 +23,9 @@ def check_mimic_des_params(config_data):
                   "local_storage_nodes", "use_cold_storage", "cold_storage_node",
                   "base_station_nodes", "wait_nodes",
                   "with_robots", "n_iteration",
-                  "picker_ids", "picker_picking_rate", "picker_transportation_rate",
+                  "picker_picking_rate", "picker_transportation_rate",
                   "picker_max_n_trays", "picker_unloading_time", "tray_capacity",
-                  "robot_ids", "robot_transportation_rate", "robot_max_n_trays", "robot_unloading_time"]
+                  "robot_transportation_rate", "robot_max_n_trays", "robot_unloading_time"]
     missing_params = []
     for param in req_params:
         if param not in config_data:
@@ -86,7 +86,7 @@ def get_row_nodes(row_nodes, n_polytunnels, n_farm_rows):
     return nodes
 
 
-def get_mimic_des_params(config_file):
+def get_mimic_des_params(config_file, n_pickers=None, n_robots=None):
     """get_des_config_parameters: Get the parameters for configuring the discrete event simulation
     from a config_file
     """
@@ -148,8 +148,6 @@ def get_mimic_des_params(config_file):
     config_params["n_iteration"] = config_data["n_iteration"]
 
     # picker info
-    config_params["picker_ids"] = config_data["picker_ids"]
-    n_pickers = len(config_params["picker_ids"])
     config_params["picker_picking_rate"] = config.des_param_list_check("picker_picking_rate",
                                                                        config_data[
                                                                            "picker_picking_rate"][
@@ -186,8 +184,6 @@ def get_mimic_des_params(config_file):
     config_params["tray_capacity"] = config_data["tray_capacity"]
 
     # robot parameters - des parameters
-    config_params["robot_ids"] = config_data["robot_ids"]
-    n_robots = len(config_params["robot_ids"])
     config_params['robot_transportation_rate'] = config.des_param_list_check("robot_transportation_rate",
                                                                              config_data["robot_transportation_rate"],
                                                                              n_robots)

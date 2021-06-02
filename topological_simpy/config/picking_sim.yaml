@@ -126,8 +126,8 @@ n_iteration: 3
 #                           mu and sigma), s
 # tray_capacity: 3000 # capacity of each tray, g
 ##-----------------------------------------------------------------------------
-picker_ids: [picker101, picker102]
-# , picker103]
+#picker_ids: [picker101, picker102]
+## , picker103]
 picker_picking_rate:
   func: gauss
   value: [0.4, 0.02]
@@ -159,7 +159,6 @@ tray_capacity: 1200
 #                                        all pickers, or single value to be
 #                                        copied), s
 ##-----------------------------------------------------------------------------
-robot_ids: [Hurga, Foo, Foo2]
 robot_transportation_rate: [1.0]
 robot_max_n_trays:
   func: copy

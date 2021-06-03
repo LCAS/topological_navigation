@@ -103,6 +103,7 @@ class map_manager_2(object):
             self.tmap2["meta"]["last_updated"] = self.get_time()
             self.tmap2["nodes"] = []            
             rospy.set_param('topological_map2_name', self.pointset)
+            rospy.set_param('topological_map2_filename', os.path.split(self.filename)[1])
             rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
 
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
@@ -159,6 +160,7 @@ class map_manager_2(object):
         self.names = self.create_list_of_nodes()
         
         rospy.set_param('topological_map2_name', self.pointset)
+        rospy.set_param('topological_map2_filename', os.path.split(self.filename)[1])
         rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
         
         rospy.loginfo("Caching the map ...")
@@ -230,6 +232,7 @@ class map_manager_2(object):
         """
         Changes the topological map
         """
+        rospy.set_param('topological_map2_filename', req.filename)
         path = rospy.get_param('topological_map2_path')
         self.filename = path + "/" + req.filename
         

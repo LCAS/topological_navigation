@@ -37,6 +37,7 @@ class map_manager(object):
             else:
                 self.nodes, self.tmap = self.load_map_from_file(name)
                 rospy.set_param('topological_map_path', os.path.split(name)[0])
+                rospy.set_param('topological_map_filename', os.path.split(name)[1])
                 
             self.names = self.create_list_of_nodes()
             self.manager2 = map_manager_2()
@@ -419,6 +420,7 @@ class map_manager(object):
             self.name = req.pointset
             print "Returning Map {}".format(req.pointset)
         else:
+            rospy.set_param('topological_map_filename', req.pointset)
             path = rospy.get_param('topological_map_path')
             f = path + "/" + req.pointset
             self.nodes, self.tmap = self.load_map_from_file(f)

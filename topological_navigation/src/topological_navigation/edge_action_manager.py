@@ -10,7 +10,6 @@ import operator, collections, json
 
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
-
 from actionlib_msgs.msg import GoalStatus
 
 

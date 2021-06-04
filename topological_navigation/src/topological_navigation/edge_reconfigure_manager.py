@@ -39,7 +39,7 @@ class EdgeReconfigureManager(object):
         self.namespaces = list(set(namespaces))
         if self.namespaces:
             self.active = True
-            rospy.loginfo("Edge Reconfigure Manager: Processing edge {} ...".format(edge["edge_id"]))
+            rospy.loginfo("Edge Reconfigure Manager: Processing edge {}".format(edge["edge_id"]))
         
         
     def initialise(self):

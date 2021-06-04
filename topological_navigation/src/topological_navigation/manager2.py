@@ -1064,7 +1064,7 @@ class map_manager_2(object):
         for node in self.tmap2["nodes"]:
             for edge in node["node"]["edges"]:
                 if node["node"]["name"] == edge["node"]:
-                    rospy.logwarn("edge with id {} has a destination {} equal to its origin".format(edge["edge_id"], edge["node"]))
+                    rospy.logwarn("edge with id '{}' has a destination '{}' equal to its origin".format(edge["edge_id"], edge["node"]))
                     self.map_ok = False
                     
                 

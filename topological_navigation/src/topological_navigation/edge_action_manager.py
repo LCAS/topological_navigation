@@ -13,9 +13,9 @@ from rospy_message_converter import message_converter
 from actionlib_msgs.msg import GoalStatus
 
 
-def _import(location, object_name):
-    mod = __import__(location, fromlist=[object_name]) 
-    return getattr(mod, object_name) 
+def _import(location, name):
+    mod = __import__(location, fromlist=[name]) 
+    return getattr(mod, name) 
 
 
 class dict_tools(object):
@@ -69,7 +69,7 @@ class EdgeActionManager(object):
         rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         
         self.action_name = self.edge["action"]
-        if self.action_name != self.current_action and self.current_action is not None:
+        if self.action_name != self.current_action:
             self.preempt()
 
         action_type = self.edge["action_type"]        

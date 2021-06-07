@@ -98,6 +98,7 @@ class TopologicalNavLoc(object):
         
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
+        self.num_closest_nodes = int(rospy.get_param("~NumClosestNodes", 0))
         self.throttle = self.throttle_val
         self.node="Unknown"
         self.wpstr="Unknown"
@@ -162,7 +163,7 @@ class TopologicalNavLoc(object):
         return distances
     
     
-    def get_edge_distances_to_pose(self, pose):
+    def get_edge_distances_to_pose(self, pose, close_nodes):
         """
         This function returns the distance from each edge to a pose in an organised way
         """
@@ -170,10 +171,10 @@ class TopologicalNavLoc(object):
         distances = []
         bad_edges = []
         
-        for node in self.tmap["nodes"]:
-            start = (node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0)
+        for node in close_nodes:
+            start = (node["node"]["node"]["pose"]["position"]["x"], node["node"]["node"]["pose"]["position"]["y"], 0)
             
-            for edge in node["node"]["edges"]:
+            for edge in node["node"]["node"]["edges"]:
                 dest_pose = self.node_poses[edge["node"]]
                 end = (dest_pose["position"]["x"], dest_pose["position"]["y"], 0)
                 
@@ -229,7 +230,12 @@ class TopologicalNavLoc(object):
                 closeststr='none'
                 currentstr='none'
                 
-                edge_distances = self.get_edge_distances_to_pose(msg)
+                if 0 < self.num_closest_nodes < len(self.distances):
+                    closest_edge_nodes = self.distances[:self.num_closest_nodes]
+                else:
+                    closest_edge_nodes = self.distances  
+
+                edge_distances = self.get_edge_distances_to_pose(msg, closest_edge_nodes)
                 if len(edge_distances) > 1:
                     closest_edges = edge_distances[:2]
                 else:
@@ -419,7 +425,7 @@ class TopologicalNavLoc(object):
         except rospy.ServiceException, e:
             rospy.logerr("Service call failed: %s"%e)
 
-        ldis = [x['node'].name for x in self.distances]
+        ldis = [x["node"]["node"]["name"] for x in self.distances]
         for i in ldis:
             if i in tagnodes:
                 tlist.append(i)

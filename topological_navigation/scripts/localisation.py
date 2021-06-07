@@ -98,7 +98,7 @@ class TopologicalNavLoc(object):
         
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
-        self.num_closest_nodes = int(rospy.get_param("~NumClosestNodes", 0))
+        self.num_closest_nodes = int(rospy.get_param("~calc_edge_dist_to_nnodes", 0))
         self.throttle = self.throttle_val
         self.node="Unknown"
         self.wpstr="Unknown"

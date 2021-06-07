@@ -335,9 +335,7 @@ class TopologicalNavServer(object):
         to reach it.
         """
         result = False
-        route_found = False
-
-        while not result and not self.cancelled:
+        if not self.cancelled:
             o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             g_node = get_node_from_tmap2(self.lnodes, target)
 
@@ -349,7 +347,6 @@ class TopologicalNavServer(object):
                 route = self.enforce_navigable_route(route, target)
 
                 if route.source:
-                    route_found = True
                     rospy.loginfo("Navigating Case 1")
                     self.publish_route(route, target)
                     result, inc = self.followRoute(route, target, 0)
@@ -357,6 +354,7 @@ class TopologicalNavServer(object):
                 else:
                     rospy.logerr("There is no route to this node check your edges ...")
                     rospy.loginfo("Navigating Case 1b")
+                    self.cancelled = True
                     result = False
                     inc = 1
                     rospy.loginfo("Navigating Case 1b -> res: %d", inc)
@@ -368,9 +366,6 @@ class TopologicalNavServer(object):
                 inc = 1
                 rospy.loginfo("Navigating Case 3a -> res: %d", inc)
         
-        if not route_found:
-            self.cancelled = True
-
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
             self._feedback.route = target

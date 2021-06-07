@@ -10,13 +10,12 @@ import operator, collections, json
 
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
-
 from actionlib_msgs.msg import GoalStatus
 
 
-def _import(location, object_name):
-    mod = __import__(location, fromlist=[object_name]) 
-    return getattr(mod, object_name) 
+def _import(location, name):
+    mod = __import__(location, fromlist=[name]) 
+    return getattr(mod, name) 
 
 
 class dict_tools(object):
@@ -67,10 +66,10 @@ class EdgeActionManager(object):
         self.edge = eval(json.dumps(edge)) # remove unicode prefix notation u
         self.destination_node = eval(json.dumps(destination_node))
         
-        rospy.loginfo("Edge Action Manager: Processing edge {} ...".format(self.edge["edge_id"]))
+        rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         
         self.action_name = self.edge["action"]
-        if self.action_name != self.current_action and self.current_action is not None:
+        if self.action_name != self.current_action:
             self.preempt()
 
         action_type = self.edge["action_type"]        
@@ -81,7 +80,7 @@ class EdgeActionManager(object):
         rospy.loginfo("Edge Action Manager: Importing {} from {}.msg".format(action_spec, package))
         action = _import(package + ".msg", action_spec)
         
-        rospy.loginfo("Edge Action Manager: Creating a {} client".format(self.action_name))
+        rospy.loginfo("Edge Action Manager: Creating a {} client".format(self.action_name.upper()))
         self.client = actionlib.SimpleActionClient(self.action_name, action)        
         self.client.wait_for_server()
         

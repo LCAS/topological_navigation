@@ -14,14 +14,11 @@ from strands_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
 
 from std_msgs.msg import String
-from geometry_msgs.msg import Pose
+from actionlib_msgs.msg import GoalStatus
 
-from actionlib_msgs.msg import *
-from move_base_msgs.msg import *
-
-from topological_navigation.navigation_stats import *
+from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2
+from topological_navigation.navigation_stats import nav_stats
 from topological_navigation.tmap_utils import *
-from topological_navigation.route_search2 import *
 
 from topological_navigation.edge_action_manager import EdgeActionManager
 from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
@@ -61,12 +58,10 @@ class TopologicalNavServer(object):
         self._target = "None"
         self.current_action = "none"
         self.next_action = "none"
-        self.n_tries = rospy.get_param("~retries", 3)
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
         self.closest_edges = ClosestEdges()
-        self.nfails = 0
         
         self.navigation_activated = False
         self.navigation_lock = Lock()
@@ -339,15 +334,11 @@ class TopologicalNavServer(object):
         This function takes the target node and plans the actions that are required
         to reach it.
         """
-        tries = 0
         result = False
-        route_found = False
-
-        while tries <= self.n_tries and not result and not self.cancelled:
+        if not self.cancelled:
             o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             g_node = get_node_from_tmap2(self.lnodes, target)
 
-            rospy.loginfo("Navigating Take : %d", tries)
             # Everything is Awesome!!!
             # Target and Origin are not None
             if g_node is not None and o_node is not None:
@@ -356,7 +347,6 @@ class TopologicalNavServer(object):
                 route = self.enforce_navigable_route(route, target)
 
                 if route.source:
-                    route_found = True
                     rospy.loginfo("Navigating Case 1")
                     self.publish_route(route, target)
                     result, inc = self.followRoute(route, target, 0)
@@ -364,6 +354,7 @@ class TopologicalNavServer(object):
                 else:
                     rospy.logerr("There is no route to this node check your edges ...")
                     rospy.loginfo("Navigating Case 1b")
+                    self.cancelled = True
                     result = False
                     inc = 1
                     rospy.loginfo("Navigating Case 1b -> res: %d", inc)
@@ -374,13 +365,7 @@ class TopologicalNavServer(object):
                 result = False
                 inc = 1
                 rospy.loginfo("Navigating Case 3a -> res: %d", inc)
-                
-            tries += inc
-            rospy.loginfo("Navigating next try: %d", tries)
         
-        if not route_found:
-            self.cancelled = True
-
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
             self._feedback.route = target
@@ -452,7 +437,6 @@ class TopologicalNavServer(object):
         """
         This function follows the chosen route to reach the goal.
         """
-        
         nnodes = len(route.source)
         Orig = route.source[0]
         Targ = target
@@ -555,9 +539,8 @@ class TopologicalNavServer(object):
             if self.edge_reconfigure:
                 if not self.srv_edge_reconfigure:
                     self.edgeReconfigureManager.register_edge(cedg)
-                    if self.edgeReconfigureManager.active:
-                        self.edgeReconfigureManager.initialise()
-                        self.edgeReconfigureManager.reconfigure()
+                    self.edgeReconfigureManager.initialise()
+                    self.edgeReconfigureManager.reconfigure()
                 else:
                     self.edgeReconfigureManager.srv_reconfigure(cedg["edge_id"])
 

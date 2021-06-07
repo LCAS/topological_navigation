@@ -21,6 +21,7 @@ def node_dist(node1,node2):
     dist = math.sqrt((node1.pose.position.x - node2.pose.position.x)**2 + (node1.pose.position.y - node2.pose.position.y)**2 )
     return dist
 
+
 class map_manager(object):
 
     def __init__(self, name, load=True, load_from_file=False) :
@@ -35,24 +36,19 @@ class map_manager(object):
                 self.nodes = self.loadMap(name)
             else:
                 self.nodes, self.tmap = self.load_map_from_file(name)
+                rospy.set_param('topological_map_path', os.path.split(name)[0])
+                rospy.set_param('topological_map_filename', os.path.split(name)[1])
+                
             self.names = self.create_list_of_nodes()
+            self.manager2 = map_manager_2()
             self.tmap_to_tmap2() # convert map to new format
-
-            if not load_from_file:
-                rospy.set_param('topological_map_name', self.nodes.pointset)
-            else:
-                rospy.set_param('topological_map_name', name)
         else:
             self.nodes = strands_navigation_msgs.msg.TopologicalMap()
             self.nodes.name = name
             self.nodes.pointset = name
             self.names=[]
-            if not load_from_file:
-                rospy.set_param('topological_map_name', self.nodes.pointset)
-            else:
-                rospy.set_param('topological_map_name', name)
 
-
+        rospy.set_param('topological_map_name', self.nodes.pointset)
         self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
@@ -98,6 +94,7 @@ class map_manager(object):
         self.last_updated = rospy.Time.now()
         self.map_pub.publish(self.nodes)
         self.names = self.create_list_of_nodes()
+        rospy.set_param('topological_map_name', self.nodes.pointset)
 
 
     def get_tags_cb(self, req):
@@ -418,17 +415,23 @@ class map_manager(object):
 
     def switch_topological_map_cb(self, req):
         self.nodes=[]
-        self.name = req.pointset
         if not self.load_from_file:
             self.nodes = self.loadMap(req.pointset)
+            self.name = req.pointset
+            print "Returning Map {}".format(req.pointset)
         else:
-            self.nodes, self.tmap = self.load_map_from_file(req.pointset)
-        print "Returning Map %s"%req.pointset
+            rospy.set_param('topological_map_filename', req.pointset)
+            path = rospy.get_param('topological_map_path')
+            f = path + "/" + req.pointset
+            self.nodes, self.tmap = self.load_map_from_file(f)
+            self.name = f
+            print "Returning Map {}".format(f)
         #nodes.nodes.sort(key=lambda node: node.name)
         self.names = self.create_list_of_nodes()
         self.map_pub.publish(self.nodes)
-                    
-        rospy.set_param('topological_map_name', req.pointset)
+        self.tmap_to_tmap2() # convert map to new format
+        
+        rospy.set_param('topological_map_name', self.nodes.pointset)
         return self.nodes
 
 
@@ -977,7 +980,7 @@ class map_manager(object):
         if self.load_from_file:
             filename = os.path.splitext(self.name)[0] + ".yaml"
             
-        manager2 = map_manager_2(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
+        self.manager2.init_map(name=self.nodes.name, metric_map=self.nodes.map, pointset=self.nodes.pointset, filename=filename, load=False)
         
         for node in self.nodes.nodes:
             
@@ -992,15 +995,10 @@ class map_manager(object):
             req.node_name = node.name
             tags = self.get_node_tags_cb(req)[1]
             
-            manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties, tags)
+            self.manager2.add_node(node.name, pose, node.localise_by_topic, verts, properties, tags)
             
             for edge in node.edges:
+                self.manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, [], edge.recovery_behaviours_config)
                 
-                config = []
-                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"inflation_radius", "value":edge.inflation_radius})
-                #config.append({"namespace":"move_base/DWAPlannerROS", "name":"top_vel", "value":edge.top_vel})
-                
-                manager2.add_edge_to_node(node.name, edge.node, edge.action, edge.edge_id, config, edge.recovery_behaviours_config)
-                
-        manager2.update()
+        self.manager2.update()
 ###################################################################################################################

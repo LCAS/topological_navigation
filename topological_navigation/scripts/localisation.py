@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###################################################################################################################
-import sys, json
+import sys, json, numpy as np
 import rospy, rostopic, tf
 import strands_navigation_msgs.srv
 
@@ -98,7 +98,6 @@ class TopologicalNavLoc(object):
         
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
-        self.num_closest_nodes = int(rospy.get_param("~calc_edge_dist_to_nnodes", 0))
         
         self.throttle = self.throttle_val
         self.node="Unknown"
@@ -164,36 +163,16 @@ class TopologicalNavLoc(object):
         return distances
     
     
-    def get_edge_distances_to_pose(self, pose, close_nodes):
+    def get_edge_distances_to_pose(self, pose):
         """
         This function returns the distance from each edge to a pose in an organised way
         """
-        pnt = (pose.position.x, pose.position.y, 0)
-        distances = []
+        pnts = np.array(self.vectors_start.shape[0] * [[pose.position.x, pose.position.y, 0]])
+        distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
+        closest_edge_ids = [self.dist_edge_ids[index] for index in np.argsort(distances)]
         
-        for node in close_nodes:
-            start = (node["node"]["node"]["pose"]["position"]["x"], node["node"]["node"]["pose"]["position"]["y"], 0)
-            
-            for edge in node["node"]["node"]["edges"]:
-                dest_pose = self.node_poses[edge["node"]]
-                end = (dest_pose["position"]["x"], dest_pose["position"]["y"], 0)
-                
-                try:
-                    dist,_ = pnt2line(pnt, start, end)
-                except Exception as e:
-                    if edge["edge_id"] not in self.bad_edges:
-                        rospy.logerr("Cannot get distance to edge {}: {}".format(edge["edge_id"], e))
-                        self.bad_edges.append(edge["edge_id"])
-                    continue
-                
-                a = {}
-                a["edge_id"] = edge["edge_id"]
-                a["dist"] = dist
-                distances.append(a)
-            
-        distances = sorted(distances, key=lambda k: k["dist"])
-        return distances
-
+        return [{"edge_id": edge_id, "dist": float(dist)} for edge_id, dist in zip(closest_edge_ids, np.sort(distances))]
+        
 
     def PoseCallback(self):
         """
@@ -227,12 +206,7 @@ class TopologicalNavLoc(object):
                 closeststr='none'
                 currentstr='none'
                 
-                if 0 < self.num_closest_nodes < len(self.distances):
-                    closest_edge_nodes = self.distances[:self.num_closest_nodes]
-                else:
-                    closest_edge_nodes = self.distances  
-
-                edge_distances = self.get_edge_distances_to_pose(msg, closest_edge_nodes)
+                edge_distances = self.get_edge_distances_to_pose(msg)
                 if len(edge_distances) > 1:
                     closest_edges = edge_distances[:2]
                 else:
@@ -325,17 +299,12 @@ class TopologicalNavLoc(object):
         self.names_by_topic = []
         self.nodes_by_topic = []
         self.nogos = []
-        self.bad_edges = []
 
         self.tmap = json.loads(msg.data) 
         self.rec_map=True
-        
         self.tmap_frame = self.tmap["transformation"]["child"]
         
-        self.node_poses = {}
-        for node in self.tmap["nodes"]:
-            self.node_poses[node["node"]["name"]] = node["node"]["pose"]
-            
+        self.get_edge_vectors()
         self.update_loc_by_topic()
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         if self.with_tags:
@@ -357,6 +326,40 @@ class TopologicalNavLoc(object):
             ))
             # Calling instance of class to start subsribing thread.
             self.subscribers[-1]()
+            
+            
+    def get_edge_vectors(self):
+        
+        node_poses = {}
+        for node in self.tmap["nodes"]:
+            node_poses[node["node"]["name"]] = node["node"]["pose"]
+        
+        bad_edges = []
+        for node in self.tmap["nodes"]:
+            for edge in node["node"]["edges"]:
+                if node["node"]["pose"] == node_poses[edge["node"]]:
+                    rospy.logerr("Cannot get distance to edge {}: Destination is equal to origin".format(edge["edge_id"]))
+                    bad_edges.append(edge["edge_id"])
+            
+        self.dist_edge_ids = []
+        vectors_start = []
+        vectors_end = []
+        
+        for node in self.tmap["nodes"]:
+            start = [node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0]
+            
+            for edge in node["node"]["edges"]:
+                if edge["edge_id"] not in bad_edges:
+                    self.dist_edge_ids.append(edge["edge_id"])
+                    
+                    dest_pose = node_poses[edge["node"]]
+                    end = [dest_pose["position"]["x"], dest_pose["position"]["y"], 0]
+                    
+                    vectors_start.append(start)
+                    vectors_end.append(end)
+        
+        self.vectors_start = np.array(vectors_start)
+        self.vectors_end = np.array(vectors_end)
 
 
     def update_loc_by_topic(self):

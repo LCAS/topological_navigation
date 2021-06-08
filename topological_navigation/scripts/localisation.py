@@ -99,6 +99,7 @@ class TopologicalNavLoc(object):
         self.throttle_val = rospy.get_param("~LocalisationThrottle", 3)
         self.only_latched = rospy.get_param("~OnlyLatched", True)
         self.num_closest_nodes = int(rospy.get_param("~calc_edge_dist_to_nnodes", 0))
+        
         self.throttle = self.throttle_val
         self.node="Unknown"
         self.wpstr="Unknown"
@@ -169,7 +170,6 @@ class TopologicalNavLoc(object):
         """
         pnt = (pose.position.x, pose.position.y, 0)
         distances = []
-        bad_edges = []
         
         for node in close_nodes:
             start = (node["node"]["node"]["pose"]["position"]["x"], node["node"]["node"]["pose"]["position"]["y"], 0)
@@ -181,18 +181,15 @@ class TopologicalNavLoc(object):
                 try:
                     dist,_ = pnt2line(pnt, start, end)
                 except Exception as e:
-                    bad_edges.append([edge["edge_id"], e])
+                    if edge["edge_id"] not in self.bad_edges:
+                        rospy.logerr("Cannot get distance to edge {}: {}".format(edge["edge_id"], e))
+                        self.bad_edges.append(edge["edge_id"])
                     continue
                 
                 a = {}
                 a["edge_id"] = edge["edge_id"]
                 a["dist"] = dist
                 distances.append(a)
-                
-        if bad_edges and not self.err_msg_sent:
-            for item in bad_edges:
-                rospy.logerr("Cannot get distance to edge {}: {}".format(item[0], item[1]))
-            self.err_msg_sent = True
             
         distances = sorted(distances, key=lambda k: k["dist"])
         return distances
@@ -325,10 +322,10 @@ class TopologicalNavLoc(object):
         """
         This function receives the Topological Map
         """
-        self.names_by_topic=[]
-        self.nodes_by_topic=[]
-        self.nogos=[]
-        self.err_msg_sent = False
+        self.names_by_topic = []
+        self.nodes_by_topic = []
+        self.nogos = []
+        self.bad_edges = []
 
         self.tmap = json.loads(msg.data) 
         self.rec_map=True

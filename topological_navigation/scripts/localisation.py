@@ -12,7 +12,6 @@ from topological_navigation.tmap_utils import *
 from topological_navigation.point2line import pnt2line
 
 from threading import Thread
-from numpy import round
 
 
 class LocaliseByTopicSubscriber(object):
@@ -269,7 +268,7 @@ class TopologicalNavLoc(object):
             self.ce_pub.publish(msg)
             
         closest_edge_ids = [edge["edge_id"] for edge in closest_edges]
-        closest_edge_dists = list(round([edge["dist"] for edge in closest_edges], 3))
+        closest_edge_dists = list(np.round([edge["dist"] for edge in closest_edges], 3))
         if len(set(closest_edge_dists)) == 1:
             closest_edge_ids.sort()
         

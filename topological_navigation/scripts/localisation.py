@@ -167,10 +167,10 @@ class TopologicalNavLoc(object):
         This function returns the distance from each edge to a pose in an organised way
         """
         pnts = np.array(self.vectors_start.shape[0] * [[pose.position.x, pose.position.y, 0]])
-        distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
-        closest_edge_ids = [self.dist_edge_ids[index] for index in np.argsort(distances)]
+        distances = np.round(pnt2line(pnts, self.vectors_start, self.vectors_end), 3)
+        closest_edges = [self.dist_edge_ids[index] for index in np.argsort(distances)]
         
-        return [{"edge_id": edge_id, "dist": float(dist)} for edge_id, dist in zip(closest_edge_ids, np.sort(distances))]
+        return closest_edges, list(np.sort(distances))
         
 
     def PoseCallback(self):
@@ -205,11 +205,13 @@ class TopologicalNavLoc(object):
                 closeststr='none'
                 currentstr='none'
                 
-                edge_distances = self.get_edge_distances_to_pose(msg)
-                if len(edge_distances) > 1:
-                    closest_edges = edge_distances[:2]
+                closest_edges, edge_dists = self.get_edge_distances_to_pose(msg)
+                if len(closest_edges) > 1:
+                    closest_edges = closest_edges[:2]
+                    edge_dists = edge_dists[:2]
                 else:
-                    closest_edges = edge_distances * 2
+                    closest_edges = 2 * closest_edges
+                    edge_dists = 2 * edge_dists
                 
                 not_loc=True
                 if self.loc_by_topic:
@@ -251,7 +253,7 @@ class TopologicalNavLoc(object):
                             not_loc=False
                         ind+=1
     
-                self.publishTopics(closeststr, currentstr, closest_edges)
+                self.publishTopics(closeststr, currentstr, closest_edges, edge_dists)
                 self.throttle=1
             else:
                 self.throttle +=1
@@ -259,7 +261,7 @@ class TopologicalNavLoc(object):
             self.rate.sleep()
 
 
-    def publishTopics(self, wpstr, cnstr, closest_edges) :
+    def publishTopics(self, wpstr, cnstr, closest_edge_ids, closest_edge_dists) :
         
         def pub_closest_edges(closest_edge_ids, closest_edge_dists):
             msg = ClosestEdges()
@@ -267,8 +269,6 @@ class TopologicalNavLoc(object):
             msg.distances = closest_edge_dists
             self.ce_pub.publish(msg)
             
-        closest_edge_ids = [edge["edge_id"] for edge in closest_edges]
-        closest_edge_dists = list(np.round([edge["dist"] for edge in closest_edges], 3))
         if len(set(closest_edge_dists)) == 1:
             closest_edge_ids.sort()
         

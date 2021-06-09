@@ -167,7 +167,7 @@ class TopologicalNavLoc(object):
         This function returns the distance from each edge to a pose in an organised way
         """
         pnts = np.array(self.vectors_start.shape[0] * [[pose.position.x, pose.position.y, 0]])
-        distances = np.round(pnt2line(pnts, self.vectors_start, self.vectors_end), 3)
+        distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
         closest_edges = [self.dist_edge_ids[index] for index in np.argsort(distances)]
         
         return closest_edges, list(np.sort(distances))
@@ -253,7 +253,7 @@ class TopologicalNavLoc(object):
                             not_loc=False
                         ind+=1
     
-                self.publishTopics(closeststr, currentstr, closest_edges, edge_dists)
+                self.publishTopics(closeststr, currentstr, closest_edges, list(np.round(edge_dists, 3)))
                 self.throttle=1
             else:
                 self.throttle +=1

@@ -1,7 +1,7 @@
 Topological Navigation
 ======================
 
-**These instructions apply only to the legacy branch of topological navigation. Instructions for the master branch (topolgical navigation 2) are to do.**
+**These instructions apply only to the legacy branch of topological navigation. Instructions for the master branch (topological navigation 2) are to do.**
 This node provides support for topological navigation in the STRANDS system. 
 
 This module requires:

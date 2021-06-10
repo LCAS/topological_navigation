@@ -166,11 +166,16 @@ class TopologicalNavLoc(object):
         """
         This function returns the distance from each edge to a pose in an organised way
         """
-        pnts = np.array(self.vectors_start.shape[0] * [[pose.position.x, pose.position.y, 0]])
-        distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
-        closest_edges = [self.dist_edge_ids[index] for index in np.argsort(distances)]
+        try:
+            pnts = np.array(self.vectors_start.shape[0] * [[pose.position.x, pose.position.y, 0]])
+            distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
+            closest_edges = [self.dist_edge_ids[index] for index in np.argsort(distances)]
+        except Exception as e:
+            rospy.logerr("Error getting distance to edges: {}".format(e))
+            closest_edges = []
+            distances = np.array([])
         
-        return closest_edges, list(np.sort(distances))
+        return closest_edges, np.sort(distances)
         
 
     def PoseCallback(self):
@@ -209,9 +214,6 @@ class TopologicalNavLoc(object):
                 if len(closest_edges) > 1:
                     closest_edges = closest_edges[:2]
                     edge_dists = edge_dists[:2]
-                else:
-                    closest_edges = 2 * closest_edges
-                    edge_dists = 2 * edge_dists
                 
                 not_loc=True
                 if self.loc_by_topic:

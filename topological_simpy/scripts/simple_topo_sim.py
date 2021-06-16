@@ -474,7 +474,9 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
 
         # write the node_log to file
         now = datetime.now()
-        file_name = 'node_log_' + now.isoformat() + '.csv'
+        now_iso = now.isoformat()
+        now_iso = now_iso.replace(":", "_")
+        file_name = 'node_log_' + now_iso + '.csv'
 
         with open(log_dir + file_name, 'w') as csv_file:
             writer = csv.writer(csv_file)
@@ -489,7 +491,8 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
 
 if __name__ == "__main__":
     # config_file = 'topological_simpy/config/picking_sim_combined.yaml'
-    config_file = '../config/picking_sim.yaml'
+    # config_file = '../config/picking_sim_riseholme_simple.yaml'
+    config_file = '../config/picking_sim_riseholme.yaml'
     # get the config params
     # config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 

@@ -47,12 +47,12 @@ class Robot(object):
         self.allocation_finished = False
         self.continue_transporting = True
 
-        # TODO: local storage node of the first row is assumed to be the starting loc
+
         # After reaching another local storage, the robot can wait there
         # self.curr_node = self.graph.local_storage_nodes[self.graph.row_ids[0]]
-        self.curr_node = self.graph.base_stations[self.robot_id]  # robot starting position
+        # self.curr_node = self.graph.base_stations[self.robot_id]  # robot starting position
         # update agent_nodes in topo_graph, robot's initial node
-        self.graph.agent_nodes[self.robot_id] = self.curr_node
+        # self.graph.agent_nodes[self.robot_id] = self.graph.curr_node
 
         self.process_timeout = 0.10
         self.loop_timeout = 0.10
@@ -212,6 +212,7 @@ class Robot(object):
         self.loginfo("C %5.1f: %s can continue transporting to local storage" % (self.env.now, self.robot_id))
         self.continue_transporting = True
 
+    # deprecated
     def go_to_node(self, goal_node):
         """Simpy process to Mimic moving to the goal_node
 

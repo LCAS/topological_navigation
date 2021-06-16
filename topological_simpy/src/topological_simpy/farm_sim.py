@@ -45,7 +45,8 @@ class FarmSim(topological_simpy.farm.Farm):
 
         self.action = self.env.process(self.scheduler_monitor())
 
-    def monitor(self, pickers, robots):
+    @staticmethod
+    def monitor(pickers, robots):
         """
         monitor the position and mode of pickers and robots, if their statuses change,
         then update the visualising figure in the main script
@@ -54,7 +55,7 @@ class FarmSim(topological_simpy.farm.Farm):
         for picker in pickers:
             agent_status[picker.picker_id] = [picker.picker_id, picker.mode, picker.curr_node]
         for robot in robots:
-            agent_status[robot.robot_id] = [robot.robot_id, robot.mode, robot.curr_node]
+            agent_status[robot.robot_id] = [robot.robot_id, robot.mode, robot.graph.curr_node[robot.robot_id]]
 
         return agent_status
 
@@ -311,6 +312,14 @@ class FarmSim(topological_simpy.farm.Farm):
                     # robot modes
                     # 0 - idle, 1 - transporting_to_picker, 2 - waiting for loading,
                     # 3 - waiting for unloading, 4 - transporting to storage, 5- charging
+
+                    # #############Test interrupt#######todo to be removed #################
+                    if robot.graph.dodge[robot_id]['to_dodge'] is True:
+                        print('%.1f: %s is to interrupt' % (self.env.now, robot_id))
+                        robot._goto_process.interrupt()
+
+                    # #######################################################
+
                     if robot.mode == 0:
                         # robot completed the unloading at storage, idle now
                         # remove current assignments and add to idle_robots

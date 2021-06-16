@@ -20,6 +20,7 @@ from topological_navigation.route_search2 import TopologicalRouteSearch2
 from math import hypot
 from functools import partial, wraps
 import simpy
+import collections
 
 
 def patch_resource(resource, pre=None, post=None):
@@ -162,12 +163,42 @@ class TopologicalForkGraph(object):
         self.req_ret = {}  # integer, request return: mode of the node requested
         self.deadlocks = {'deadlock_robot_ids': [],
                           'robot_occupied_nodes': {}}  # robots and their nodes who are in deadlock
-        self.couple_robots = []  # robots who are in deadlock
+        self.dead_locks = []  # robots who are in deadlock
         self.com_nodes = []  # the nodes that hold completed robots
+        self.cold_storage_queue = []  # robots that in the front of queue
 
         self.base_stations = base_stations
         self.wait_nodes = wait_nodes
         self.cold_storage_usage_queue = []   # robots that need to use cold storage for unloading will join the queue
+        self.cold_storage_queue_wait_time = []
+
+        self.targets = {}
+        self.agent_nodes = {}  # agent_id:agent.curr_node - should be updated by the agent
+        self.curr_node = {}
+
+        self.time_spent_requesting = .0  # time that robot spent on waiting when requesting a node
+
+        # agent specific parameters, initialised when initialising agent instance
+        self.transportation_rate = .0  # float, transportation speed
+        self.transportation_rate_std = .0  # float, transportation speed standard deviation
+        self.unloading_time = .0
+        self.assigned_picker_n_trays = .0  # float,
+
+        self.dodge = {}  # agent dodge flags
+        self.other_robot_dodged = False
+
+        self.process_timeout = 0.10
+        self.loop_timeout = 0.10
+
+        self._cost = {'robot_id': [],
+                      'time_now': [],
+                      'time_wait': [],
+                      'dist_cost': [],
+                      'route': [],
+                      'dist_cost_total': [],
+                      'time_wait_total': [],
+                      'time_cost_total': [],
+                      'cost_total': []}
 
         if self.env:
             for n in self._nodes:
@@ -226,36 +257,745 @@ class TopologicalForkGraph(object):
 
         self.update_node_index()
 
-        self.agent_nodes = {}  # agent_id:agent.curr_node - should be updated by the agent
+        # self.agent_nodes = {}  # agent_id:agent.curr_node - should be updated by the agent
+
+        self.dist_cost_to_target = {}
 
         """
         The bellow methods are used for model topological nodes as containers, each container can only hold one robot.
         Pickers don't use this container feature but use the same topological map. 
         """
-    def add_cold_storage_usage_queue(self, robot_id):
+    def init_agent_nodes(self, robot_id, transportation_rate,
+                         transportation_rate_std, unloading_time, assigned_picker_n_trays):
+        """
+        Initialise agent current nodes when initialising agent instance
+        """
+        self.transportation_rate = transportation_rate
+        self.transportation_rate_std = transportation_rate_std
+        self.unloading_time = unloading_time
+        self.assigned_picker_n_trays = assigned_picker_n_trays
+
+        self.curr_node[robot_id] = self.base_stations[robot_id]  # robot starts from base station
+        self.agent_nodes[robot_id] = self.curr_node[robot_id]
+
+        # used for deadlocks
+        self.dodge[robot_id] = {}
+        self.dodge[robot_id]['to_dodge'] = False
+        self.dodge[robot_id]['dodged'] = False
+
+    def log_cost(self, robot_id, time_wait, dist_cost, node_name):
+        """
+        Update the time and distance cost
+        :param robot_id: string, robot name
+        :param time_wait: integer, waiting time before occupy the requested node
+        :param dist_cost: float, the distance from current node to next node
+        :param node_name: string, the node will be traversed
+        return: dictionary, cost info
+        """
+        dist_cost_total = 0
+        time_wait_total = 0
+        dist_cost = float('{:.2f}'.format(dist_cost))
+        self._cost['robot_id'].append(robot_id)
+        self._cost['time_now'].append(round(self.env.now, 1))
+        self._cost['time_wait'].append(round(time_wait, 1))
+        self._cost['dist_cost'].append(dist_cost)
+        self._cost['route'].append(node_name)
+        for n in self._cost['dist_cost']:
+            dist_cost_total = dist_cost_total + n
+        dist_cost_total = float('{:.2f}'.format(dist_cost_total))
+        self._cost['dist_cost_total'].append(dist_cost_total)
+        for n in self._cost['time_wait']:
+            time_wait_total = round(time_wait_total + n, 1)
+        time_cost_total = float('{:.2f}'.format(self.time_to_dist_cost(time_wait_total)))
+        self._cost['time_wait_total'].append(time_wait_total)
+        self._cost['time_cost_total'].append(time_cost_total)
+        cost_total = float('{:.2f}'.format(time_cost_total + dist_cost_total))
+        self._cost['cost_total'].append(cost_total)
+        return self._cost
+
+    def time_to_dist_cost(self, waiting_time):
+        """
+        :param waiting_time: the time robot will be waiting
+        return: float, the distance cost
+        """
+        return (self.transportation_rate + random.gauss(0, self.transportation_rate_std)) * waiting_time
+
+    def get_route_nodes(self, cur_node, target, avoid_nodes=None):
+        """
+        get the topological route nodes from current node to target node, if request_node failed,
+        then get the route nodes from current node to target node and avoid the failed node.
+        :param cur_node: string, the current node traversed
+        :param target: string, the target node that the robot will go to
+        :param avoid_nodes: string list, the nodes that won't be considered when planning route
+        return: string list, route node names, from current node to target node
+        """
+        avo_nodes = copy.deepcopy(avoid_nodes)
+        if self.env:
+            if target == cur_node:
+                print('  %5.1f: robot is already at target %s' % (self.env.now, target))
+                return []
+            else:
+                if avo_nodes is None:
+                    route = self.get_route(cur_node, target)
+                elif target in avo_nodes:
+                    # target is occupied at present, but maybe available later, so get the route anyway
+                    avo_nodes.remove(target)
+                    route = self.get_avoiding_route(cur_node, target, avo_nodes)
+                    # It will lead to deadlocking if the target is still occupied when the agent is next to
+                    # the target
+                    if len(route.source) == 1:  # in deadlock
+                        return None
+                else:  # target not in avo_nodes
+                    route = self.get_avoiding_route(cur_node, target, avo_nodes)
+
+                if len(route.source) == 0:
+                    return None
+                else:
+                    r = route.source[1:]
+                    r.append(target)
+                    # print('  %5.1f: %s going from node %s to node %s via route %s' % (
+                    #     self.graph.env.now, robot_id, cur_node, target, r))
+                    return r
+
+    def deadlock_dodge(self, robot_id, n, target, new_route):
+        """
+        When in deadlock, find a new route.
+        If no new route available, then go to an edge node, then find a new route to the target
+
+        TODO: dodging rules:
+                1. if robot['target'] is storage, robot['priority'] = 100, all other robots dodge.
+                2. if robot['target'] is base, i.e., in the queue of using storage, this robot should always first to
+                    dodge to a rarely used edge node.
+                        2.1 Do not dodge to base station or other highly used nodes! --> which would cause
+                            further congestion
+                        2.2 Do not dodge to other robots' next node (and current route?)
+                3.
+
+        :param n: string, topological node, the next node that the robot should go
+        :param new_route: string, topological node list, a new topological route from current node to the target
+        :param target: string, topological node, the target node that the robot should go
+        :param robot_id: string, robot name
+        :param curr_node: string, robot current node
+
+        return: topological node list, a new route to avoid deadlock
+        """
+        if new_route is not None:  # TODO: is it possible?
+            route_nodes = new_route
+        else:
+            avoid_nodes = self.get_active_nodes([robot_id])
+            curr_node_edges = self.get_node_edges(self.curr_node[robot_id])
+            # get all the edge nodes that could be used for dodging
+            for node in avoid_nodes:
+                if node in curr_node_edges:
+                    curr_node_edges.remove(node)
+            # find the node to dodge:  node_to_dodge
+            if n in avoid_nodes:
+                avoid_nodes.remove(n)
+                route_nodes_to_dodge = self.get_route_between_adjacent_nodes(
+                    self.curr_node[robot_id], n, avoid_nodes)
+                if route_nodes_to_dodge[0] != n and len(route_nodes_to_dodge) != 0:
+                    node_to_dodge = route_nodes_to_dodge[0]
+                    # Without considering avoid_nodes, route_nodes_to_dodge is ensured
+                    # with a valid route_nodes
+                    # TODO: is it better to get route_nodes with avoiding avoid_nodes?
+                    route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+                    route_nodes = [node_to_dodge] + route_nodes_to_dodge
+                elif len(curr_node_edges) != 0:
+                    node_to_dodge = curr_node_edges[0]  # TODO: any better selecting criteria?
+                    route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+                    route_nodes = [node_to_dodge] + route_nodes_to_dodge
+                else:
+                    # no edges for dodging, wait for other agents to move
+                    # TODO: Inform another deadlocked robot to dodge.
+                    #       note: another robot has locked two nodes
+                    #       Double check if another deadlocked robot releases the node and
+                    #       the node then be occupied by a third robot: what the
+                    #       current robot should do?
+                    msg = "%s: @%s No edge to dodge, curr_node_edges: %s" % (
+                        robot_id, self.curr_node[robot_id], curr_node_edges)
+                    raise Exception(msg)
+                    # route_nodes = None
+                    # yield self.env.timeout(self.loop_timeout)
+            else:
+                # todo: impossible, remove the if-else later
+                msg = "%s: %s not in avoid_nodes!" % (robot_id, n)
+                raise Exception(msg)
+
+        return route_nodes
+
+    def deadlock_rank(self, dead_locks=None):
+        """
+        Get all robots' information and considering them as a unity, find out the breakpoint:
+            which robot should make way
+
+        return: ranked robot list from high to low, based on robot's priority
+
+        Robot's information:
+            current node --> next node --> target node
+            requested node, requested moment, wait time(this should be the key point that needs to be re-estimated,
+            usually situations change after )
+
+        Priority rank:
+            Rank robots' priority, the higher priority (bigger value) robot should move first, the lower priority
+            robot should move later
+            100: lowest priority value, should move at last. This is the initial priority value, other robot's
+                priorities increase based on this.
+            110:
+            120:
+            130:
+            The robot who occupies other robot's target node has higher priority to move
+
+        TODO: dodging rules:
+            1. if robot['target'] is storage, robot['priority'] = 0, all other robots dodge.
+            2. if robot['target'] is base, i.e., in the queue of using storage, this robot should always first to
+                dodge to a rarely used edge node.
+                    2.1 Do not dodge to base station or other highly used nodes! --> which would cause
+                        further congestion
+                    2.2 Do not dodge to other robots' next node (and current route?)
+            3.
+        """
+
+        # get all active nodes into a list:
+        active_node_list = []
+        for robot_id in self.active_nodes.keys():
+            active_node_list = active_node_list + self.active_nodes[robot_id]
+
+        all_robots = list(self.targets.keys())
+        to_be_ranked_robots = copy.deepcopy(all_robots)
+
+        for robot_id in all_robots:
+            # there should be only one robot targets at storage at a moment
+            if self.targets[robot_id]['target'] == self.cold_storage_node:
+                self.targets[robot_id]['priority'] = 0  # highest priority, all other robots doge
+                to_be_ranked_robots.remove(robot_id)
+
+                # the robot who blocks highest priority robot should dodge first
+                for robot_dodge in to_be_ranked_robots:
+                    if self.targets[robot_dodge]['curr_node'] == self.targets[robot_id]['next_node']:
+                        self.targets[robot_dodge]['priority'] = 1000
+                        to_be_ranked_robots.remove(robot_dodge)
+                        # todo: this robot should dodge to a rarely used edge node
+                        break
+            # robot initial priority = 100, if target is base, then increase by 1000. Note: the robot's priority could
+            #   be 1000 by now if known as robot_dodge in last step
+            elif self.targets[robot_id]['target'] == self.base_stations[robot_id]:
+                self.targets[robot_id]['priority'] += 1000  # TODO[today]: if robot['target'] is back from storage, priority should still be 0!
+
+            # TODO[future]: optimise priority value. At present, take the target as pickers current node, so the robot
+            #   has priority to get to the picker.
+            elif self.targets[robot_id]['target'] not in active_node_list:
+                self.targets[robot_id]['priority'] -= 10
+
+                # if len(self.active_nodes[robot_id]) == 2:
+                #     # remove robot_id from the put_queue of node self.graph.active_nodes[robot_id][1].
+                #     # After removing, what about other robots in the waiting list? their actual waiting time will
+                #     # shortened, no negative impact.
+                #     # TODO[today]: how to wake up robot from the put_queue? put_queue.pop(indx) could clear the queue,
+                #     #               but robot_01 is not waking up! process.interrupt()
+                #     pass
+
+        # rank the robots based on priority
+        ranked_robots_dict = {}
+        for robot_id in all_robots:
+            ranked_robots_dict[robot_id] = self.targets[robot_id]['priority']
+        ranked_robots = collections.OrderedDict(sorted(ranked_robots_dict.items(), key=lambda x: x[1], reverse=True))
+
+        return ranked_robots
+
+    def deadlock_coordinator(self, dead_locks):
+        """
+        Coordinate the (deadlocking) robots to get free routes
+
+        TODO:   1. Just let the highest priority deadlocking robot to dodge
+                2. Create a for loop, if the previous robot can not solve the deadlocking( deadlock again after dodging),
+                    the second highest priority deadlocking robot to dodge, if still not solved, then the third, etc.
+
+        """
+        ranked_robots_list = self.deadlock_rank()
+        for robot_id in ranked_robots_list:
+            if robot_id in self.dead_locks:
+                self.dodge[robot_id]['to_dodge'] = True
+                self.dodge[robot_id]['dodged'] = False
+                break
+
+    def wait_to_proceed(self, robot_id):
+        """
+        Based on the priority of dodging, deadlocking robots dodge one by one until all robots are free to go
+        """
+
+        # if the robot has highest priority to dodge, then go on to dodge
+        if self.dodge[robot_id]['to_dodge'] is True:
+            yield self.env.timeout(self.loop_timeout)
+        else:
+            # wait for other robot to dodge, todo: complete the deadlock_coordinator function first
+            while self.other_robot_dodged is False:
+                for robot_id_ in self.dead_locks:
+                    if self.dodge[robot_id_]['dodged']:
+                        self.other_robot_dodged = True
+                        break
+                if self.other_robot_dodged is False:
+                    yield self.env.timeout(self.loop_timeout)
+
+    def wait_for_dodging(self, robot_id):
+        """
+        Wait for other robot who has highest priority to dodge. Or the robot himself dodge if highest priority
+        """
+        while True:
+            if self.dodge[robot_id]['to_dodge'] is True:
+                break
+            elif self.other_robot_dodged:
+                break
+            else:
+                yield self.env.timeout(self.loop_timeout)
+
+        yield self.env.timeout(self.loop_timeout)
+
+    def inform_dodged(self, robot_id):
+        """
+        Inform robot dodge status after dodging
+        """
+        self.dodge[robot_id]['dodged'] = True
+        self.dodge[robot_id]['to_dodge'] = False
+
+    def reset_dodge(self, robot_id):
+        """
+        Reset dodge flag if dodged before
+        """
+        if self.dodge[robot_id]['dodged'] is True:
+            self.dodge[robot_id]['dodged'] = False
+        if self.dodge[robot_id]['to_dodge'] is True:
+            self.dodge[robot_id]['to_dodge'] = False
+
+    def _goto_container(self, target, robot_id):
+        """
+        robot goes from current node to target node.
+        The robot always chooses minimum-distance-cost route(original_route) and travels from current node to target.
+        If robot finds the next node is occupied during travelling, the robot will try to find a new_route avoiding the
+        occupied node. But at the same time, the robot also evaluates the waiting time cost if keeps
+        using the original_route. The robot always chooses low cost route between new_route and original_route.
+
+        :param target: string, target node
+        :param robot_id: string, robot name
+        """
+        # self.curr_node[robot_id] = curr_node
+        route_nodes = self.get_route_nodes(self.curr_node[robot_id], target)
+        interrupted = None
+        idx = 0
+        change_route = False
+
+        if len(route_nodes) == 0:
+            print("len(route_nodes)=0, no route from %s to %s" % (self.curr_node[robot_id], target))
+            interrupted = 'no_route'
+
+        while idx < len(route_nodes):
+            n = route_nodes[idx]
+
+            # get the current node, next node and target node, used for resolving deadlocks
+            self.targets_info(robot_id, self.curr_node[robot_id], n, target)
+
+            route_dist_cost = self.route_dist_cost([self.curr_node[robot_id]] + route_nodes[idx:])
+            self.update_dist_cost_to_target(robot_id, self.curr_node[robot_id], target, route_dist_cost)
+
+            d_cur = self.distance(self.curr_node[robot_id], n)
+            time_to_travel = round(d_cur / self.transportation_rate + random.gauss(0, self.transportation_rate_std), 1)
+            if idx + 1 < len(route_nodes):
+                # estimate next distance cost and travelling time
+                d_next = self.distance(n, route_nodes[idx + 1])
+                time_to_travel_next = round(d_next / (2 * (self.transportation_rate +
+                                                           random.gauss(0, self.transportation_rate_std))), 1)
+            else:
+                time_to_travel_next = 0
+
+            # the time that node will hold the robot
+            # if the node is the cold_storage_node, the hold time needs to consider robot unloading trays(self.unloading_time)
+            # TODO: the agent's rotating time should be considered
+            if n == self.cold_storage_node:
+                hold_time = time_to_travel + time_to_travel_next + self.unloading_time * self.assigned_picker_n_trays
+            else:
+                hold_time = time_to_travel + time_to_travel_next
+
+            # self.loginfo('  %5.1f:  %s traversing route from node %s to node %s '
+            #              '(distance: %f, travel time: %5.1f, plan hold time: %5.1f)' %
+            #              (self.graph.env.now, robot_id, self.curr_node[robot_id], n, d_cur, time_to_travel, hold_time))
+
+            try:
+                # The node to be requested may be occupied by other robots, mark the time when requesting
+                start_wait = self.env.now
+                self.set_hold_time(n, hold_time)
+                node_state = self.get_node_state(n)
+                if node_state is 1:
+                    yield self.request_node(robot_id, n)
+                    # self.loginfo('  %5.1f: active nodes connected to robots: %s ' %
+                    #              (self.env.now, self.graph.active_nodes))
+                else:
+                    # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' %
+                    #              (self.env.now, robot_id, n, node_state))
+                    avoid_nodes = [n] + self.get_active_nodes([robot_id])
+                    avoid_nodes = list(dict.fromkeys(avoid_nodes))
+                    new_route = self.get_route_nodes(self.curr_node[robot_id], target, avoid_nodes)  # avoid node n
+                    if new_route is None:
+                        new_route_dc = float("inf")
+                    elif new_route is []:  # robot is at target now
+                        new_route_dc = 0
+                    else:
+                        new_route_dc = self.route_dist_cost([self.curr_node[robot_id]] + new_route)
+                    wait_time = round(self.get_wait_time(n), 1)
+                    time_cost = self.time_to_dist_cost(wait_time)
+                    old_route_cost = route_dist_cost + time_cost
+                    # self.loginfo('$ %5.1f: old_route_cost = %d, new_route_dc = %d' % (
+                    #     self.env.now, old_route_cost, new_route_dc))
+                    if old_route_cost > new_route_dc:
+                        route_nodes = new_route
+                        self.cancel_hold_time(n, hold_time)  # found cheap route, cancel the hold_time just be set
+                        idx = 0
+                        self.loginfo('~ %5.1f: %s go NEW route: %s' % (self.env.now, robot_id, route_nodes))
+                        continue
+                    else:
+                        route_nodes_to_go = [self.curr_node[robot_id]] + route_nodes[idx:]
+                        self.loginfo('* %5.1f: %s wait %5.1f, use old route %s' % (
+                            self.env.now, robot_id, wait_time, route_nodes_to_go))
+                        yield self.request_node(robot_id, n)
+
+                        if robot_id in self.deadlocks['deadlock_robot_ids']:
+                            # for robot_id_dl in self.deadlocks['deadlock_robot_ids']:
+                            self.deadlock_coordinator(self.deadlocks['deadlock_robot_ids'])
+                            # yield self.env.timeout(self.loop_timeout)
+                            #
+                            # yield self.env.process(self.wait_to_proceed(robot_id))
+
+                            if self.dodge[robot_id]['to_dodge'] is True:
+                                self.loginfo('| %5.1f: %s is in deadlock, change route now' %
+                                             (self.env.now, robot_id))
+                                route_nodes = self.deadlock_dodge(robot_id, n, target, new_route)
+                                # TODO: 1. find avoid route: new_route = self.get_route_nodes(
+                                #                                           self.curr_node[robot_id], target, avoid_nodes),
+                                #          if new_route is not None, go for new_route; if new_route is None, then?
+                                # if new_route is not None:  # TODO: is it possible?
+                                #     route_nodes = new_route
+                                # else:
+                                #     avoid_nodes = self.graph.get_active_nodes([robot_id])
+                                #     curr_node_edges = self.graph.get_node_edges(self.curr_node[robot_id])
+                                #     # get all the edge nodes that could be used for dodging
+                                #     for node in avoid_nodes:
+                                #         if node in curr_node_edges:
+                                #             curr_node_edges.remove(node)
+                                #     # find the node to dodge:  node_to_dodge
+                                #     if n in avoid_nodes:
+                                #         avoid_nodes.remove(n)
+                                #         route_nodes_to_dodge = self.graph.get_route_between_adjacent_nodes(
+                                #             self.curr_node[robot_id], n, avoid_nodes)
+                                #         if route_nodes_to_dodge[0] != n and len(route_nodes_to_dodge) != 0:
+                                #             node_to_dodge = route_nodes_to_dodge[0]
+                                #             # Without considering avoid_nodes, route_nodes_to_dodge is ensured
+                                #             # with a valid route_nodes
+                                #             # TODO: is it better to get route_nodes with avoiding avoid_nodes?
+                                #             route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+                                #             route_nodes = [node_to_dodge] + route_nodes_to_dodge
+                                #         elif len(curr_node_edges) != 0:
+                                #             node_to_dodge = curr_node_edges[0]  # TODO: any better selecting criteria?
+                                #             route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+                                #             route_nodes = [node_to_dodge] + route_nodes_to_dodge
+                                #         else:
+                                #             # no edges for dodging, wait for other agents to move
+                                #             # TODO: Inform another deadlocked robot to dodge.
+                                #             #       note: another robot has locked two nodes
+                                #             #       Double check if another deadlocked robot releases the node and
+                                #             #       the node then be occupied by a third robot: what the
+                                #             #       current robot should do?
+                                #             msg = "%s: @%s No edge to dodge, curr_node_edges: %s" % (
+                                #                 robot_id, self.curr_node[robot_id], curr_node_edges)
+                                #             raise Exception(msg)
+                                #             # route_nodes = None
+                                #             # yield self.env.timeout(self.loop_timeout)
+                                #     else:
+                                #         # todo: impossible, remove the if-else later
+                                #         msg = "%s: %s not in avoid_nodes!" % (robot_id, n)
+                                #         raise Exception(msg)
+
+                                # prepare to change to the new route_nodes
+                                self.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
+                                idx = 0
+                                change_route = True
+                                self.loginfo('^ %5.1f: %s go NEW route: %s' %
+                                             (self.env.now, robot_id, route_nodes))
+                                # reset dodge flags todo: duplicate with the inform_dodged, keep later
+                                self.dodge[robot_id]['to_dodge'] = False
+                                self.dodge[robot_id]['dodged'] = True
+                            else:
+                                # back to farm, inform other robots to dodge.
+                                yield self.env.timeout(self.loop_timeout)
+
+                                # then other robots will be interrupted in yield self.request_node(robot_id, n), and go
+                                # to exception. Then [todo[now]: dodge here! in the exception before] process _goto_container again.
+                                # todo: checking the wait_to_proceed, how to do if it's not your turn to dodge
+                                yield self.env.process(self.wait_to_proceed(robot_id))
+
+                        if change_route:
+                            self.log_cost(robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
+                            self.remove_robot_from_deadlock(robot_id)
+
+                            self.inform_dodged(robot_id)  # TODO[today], then reset all dodge? Or reset when robot reaching next node?
+
+                            self.other_robot_dodged = True   #  TODO [to be removed] other robots could read from self.dodge that some robot has dodged
+
+                            # TODO: How to ensure that the deadlock will be resolved? --> the dodge route is promised to
+                            #       be working(unless curr_node_edges is None, i.e., deadlock in single track),
+                            #       so the deadlock must be resolved at present.
+                            continue  # change to new route
+                        else:
+                            pass  # travel to the requested node
+                if self.env.now - start_wait > 0:  # The time that the robot has waited since requesting
+                    self.time_spent_requesting += self.env.now - start_wait
+                    self.loginfo('$ %5.1f:  %s has lock on %s after %5.1f' % (
+                        self.env.now, robot_id, n,
+                        self.env.now - start_wait))
+            except Exception:
+                # Not triggered when requesting an occupied node!
+                # Not triggered when the robot has a goal running and be assigned a new goal
+                self.loginfo('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s'
+                             % (self.env.now, robot_id, self.curr_node[robot_id], n))
+                self.log_cost(robot_id, 0, 0, 'INTERRUPTED')  # for monitor
+                self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
+                             (self.env.now, robot_id, n))
+                yield self.release_node(robot_id, n)
+                if robot_id in self.dead_locks:
+                    interrupted = 'deadlock'    # interrupted by farm.scheduler_monitor: robot._goto_process.interrupt()
+                else:
+                    interrupted = 'waiting'
+                # TODO [next]: reset robot status. send robot back to a safe place? Use a new mode to deal with the
+                #  exception.
+                break
+
+            try:
+                time_to_travel_before_release = round(d_cur / (2 * (self.transportation_rate +
+                                                                    random.gauss(0, self.transportation_rate_std))), 1)
+                yield self.env.timeout(time_to_travel_before_release)
+
+                # robot reaching at half way, if dodged before, reset dodge status todo [testing]: reset earlier?
+                self.reset_dodge(robot_id)
+
+                yield self.release_node(robot_id, self.curr_node[robot_id])
+                # The robot is reaching at the half way between the current node and next node, release current node
+                # self.loginfo('  %5.1f:  %s ---> %s reaching half way ---> %s, releasing %s' % (
+                #     self.graph.env.now, self.curr_node[robot_id], robot_id, n, self.curr_node[robot_id]))
+                self.curr_node[robot_id] = n
+                self.agent_nodes[robot_id] = self.curr_node[robot_id]
+
+                remain_time_to_travel = time_to_travel - time_to_travel_before_release
+                yield self.env.timeout(remain_time_to_travel)
+                self.loginfo('@ %5.1f:  %s reached node %s' % (self.env.now, robot_id, n))
+                self.log_cost(robot_id, self.env.now - start_wait, d_cur, n)  # for monitor
+                yield self.env.timeout(0)
+            except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
+                self.loginfo('  %5.1f: %s INTERRUPTED while travelling from node %s going to node %s' % (
+                    self.env.now, robot_id,
+                    self.curr_node[robot_id], n
+                ))
+                self.log_cost(robot_id, 0, 0, 'INTERRUPTED')  # for monitor
+                self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
+                             (self.env.now, robot_id, n))
+                yield self.release_node(robot_id, n)
+                interrupted = 'travelling'
+                break
+            idx = idx + 1  # go to next while loop
+
+        if interrupted is not None:
+            # When the robot has a goal running and be assigned a new goal node
+            self.loginfo('  %5.1f: %s INTERRUPTED at %s BY %s' % (self.env.now, robot_id, self.curr_node[robot_id], interrupted))
+            self.loginfo('  %5.1f: %s ABORTED at %s' % (self.env.now, robot_id, self.curr_node[robot_id]))
+            self.log_cost(robot_id, 0, 0, 'ABORTED')  # for monitor
+            # self.interrupted = True
+
+            if interrupted == 'deadlock':
+                self.loginfo('C %5.1f: %s continue going to target: %s' % (self.env.now, robot_id, target))
+                # TODO: [future] interrupted reason is still unclear (one reason is the wait_time < 0, but why it causes
+                #  interrupt?)
+                self._goto_process = self.env.process(self._goto_container(target))
+                yield self._goto_process
+                # self.interrupted = False
+            elif interrupted == 'travelling':
+                pass    # todo
+            elif interrupted == 'no_route':
+                pass    # todo
+            elif interrupted == 'waiting':
+                pass    # todo
+
+        else:
+            self.update_dist_cost_to_target(robot_id, self.curr_node[robot_id], target, 0)
+            # TODO [NEXT]: get the node usage frequency, when robot dodging in deadlocks, dodge to node from low
+            #               frequency to high frequency
+            self.loginfo('. %5.1f: %s COMPLETED at %s' % (self.env.now, robot_id, self.curr_node[robot_id]))
+            self.log_cost(robot_id, 0, 0, 'COMPLETED')  # for monitor
+            self.add_com_node(self.curr_node[robot_id])
+
+    def targets_info(self, robot_id, curr_node, next_node, target):
+        """
+        Store robot's target node, used for solving deadlocks.
+        :param robot_id: string, robot name
+        :param curr_node: string, topological current node
+        :param next_node: string, topological next node
+        :param target: string, topological target node
+        """
+        self.targets[robot_id] = {'curr_node': curr_node,
+                                  'next_node': next_node,
+                                  'target': target,
+                                  'priority': 100}
+
+    def update_dist_cost_to_target(self, robot_id, curr_node, target, route_dist_cost):
+        """
+        Update the distance cost from current node to the target node
+        :param robot_id: string, robot name
+        :param curr_node: string, current node
+        :param target: string, target node
+        :param route_dist_cost: float, total distance cost from current node to target
+        """
+        self.dist_cost_to_target[robot_id] = {'curr_node': curr_node,
+                                              'target_node': target,
+                                              'dist_cost': route_dist_cost}
+        return self.dist_cost_to_target
+    
+    def add_cold_storage_usage_queue(self, robot_id, join_queue_time):
         """
         robots that need to use cold storage for unloading will join the queue
         """
-        self.cold_storage_usage_queue.append(robot_id)
+        # self.cold_storage_usage_queue.append([robot_id, join_queue_time])
+        self.cold_storage_usage_queue.append({'robot_id': robot_id,
+                                              'join_queue_time': join_queue_time})
+
+    def start_parking_at_base(self, robot_id, start_parking_time):
+        """
+        Robot starts parking at the base station, record the start parking time.
+        Note: the robot must have been in the cold_storage_usage_queue
+        return: bool, True: robot start parking at base
+                      False: robot is not in cold_storage_usage_queue, i.e., not waiting for using the cold storage node
+        """
+        for idx, robot_info in enumerate(self.cold_storage_usage_queue):
+            if robot_id == robot_info['robot_id']:
+                # if robot has been added in the queue before, remove it
+                if len(robot_info) == 3:
+                    self.cold_storage_usage_queue.remove(robot_info)
+
+                self.cold_storage_usage_queue[idx]['start_parking_time'] = start_parking_time
+                print("  %.1f: %s start parking" % (start_parking_time, robot_id))
+                # return True
+        # return False
 
     def remove_cold_storage_usage_queue(self, robot_id):
         """
         robots that have used cold storage for unloading will be removed from the queue
         """
-        if robot_id in self.cold_storage_usage_queue:
-            self.cold_storage_usage_queue.remove(robot_id)
-        else:
-            msg = "%s not in cold_storage_usage_queue: %s" % (robot_id, self.cold_storage_usage_queue)
+        remove_1 = False
+        remove_2 = False
+        for robot_id_and_time in self.cold_storage_usage_queue:
+            if robot_id == robot_id_and_time['robot_id']:
+                self.cold_storage_usage_queue.remove(robot_id_and_time)
+                remove_1 = True
+
+        for robot_id_and_wait_time in self.cold_storage_queue_wait_time:
+            if robot_id == robot_id_and_wait_time['robot_id']:
+                self.cold_storage_queue_wait_time.remove(robot_id_and_wait_time)
+                remove_2 = True
+        if (not remove_1) or (not remove_2):
+            msg = "%s not in cold_storage_usage_queue: %s\n or cold_storage_queue_wait_time: %s" % (
+                robot_id, self.cold_storage_usage_queue, self.cold_storage_queue_wait_time)
             raise Exception(msg)
 
     def get_cold_storage_usage_queue_head(self):
         """
-        get the first element of the queue
+        get the first element of the queue: [robot_id, join_queue_time]
         """
         if len(self.cold_storage_usage_queue) > 0:
             return self.cold_storage_usage_queue[0]
         else:
             return None
+        
+    # TODO: update hold time here! so the other robots who want to use the occupied base_station knows how 
+    #       long they should wait.
+    #       1. In cold_storage_usage_queue, estimate each robot's waiting time from the queue head to the 
+    #           queue rear. 
+    #           For the queue head robot: 
+    #               wait_time[0] = 0 (in use)
+    #               use_time[0] = from the current moment to the moment when the current using robot return 
+    #                             to his base_station
+    #           For the 2nd queue head robot: 
+    #               wait_time[1] = wait_time[0] + use_time[0]
+    #               use_time[1] = round trip travel time to cold_storage + unloading time
+    #           For the 3rd queue head robot:
+    #               wait_time[2] = wait_time[1] + use_time[1]
+    #               use_time[2] = round trip travel time to cold_storage + unloading time
+    #           For the n_th queue head robot:
+    #               wait_time[n-1] = wait_time[n-2] + use_time[n-2]
+    #               use_time[n-1] = round trip travel time to cold_storage + unloading time
+    
+    def get_cold_storage_queue_wait_time(self, robot_name, robot_curr_node, target, robot_transportation_rate, 
+                                         unloading_time, is_head):
+        """
+        Get the estimated wait time for the robot in the queue before being able to use the cold storage
+        Note: this estimated wait time is the minimum waiting time, as the robot could face delay when going to/ return
+            from the storage node, especially when the system is complicate. So the robot should not strictly stick to 
+            the wait_time when planning a path.
+        distance_cost_to_storage: the head of cold_storage_usage_queue
+        unloading_time: time of robot unloading at the storage station
+        is_head: bool, True: the robot is in the head of self.cold_storage_usage_queue; False: not the head
+        """
+        wait_time = []
+        use_time = []
+
+        storage_node = target
+        # todo: local_storage is not tested
+        if self.use_local_storage:
+            row_id = self.get_row_id_of_row_node(robot_curr_node)
+            storage_node = self.local_storage_nodes[row_id]
+            
+        if is_head:
+            try:
+                assert self.cold_storage_usage_queue[0]['robot_id'] == robot_name
+            except AssertionError:
+                raise Exception("%s is not at the head of cold_storage_usage_queue: %s" % (
+                    robot_name, self.cold_storage_usage_queue))
+
+            wait_time.append(0)
+            curr_distances_to_storage = self.get_total_route_distances(robot_curr_node, storage_node)
+            self.update_dist_cost_to_target(robot_name, robot_curr_node, target, curr_distances_to_storage)
+
+            storage_distances_to_base = self.get_total_route_distances(storage_node, self.base_stations[robot_name])
+            use_t = (curr_distances_to_storage + storage_distances_to_base
+                     ) / robot_transportation_rate + unloading_time
+            use_time.append(round(use_t, 1))
+            self.cold_storage_queue_wait_time.append({'robot_id': robot_name,
+                                                      'join_queue_time': self.cold_storage_usage_queue[0]['join_queue_time'],
+                                                      'wait_time': wait_time[0],
+                                                      'use_time': use_time[0]})
+            return self.cold_storage_queue_wait_time[0]
+        
+        # wait_time[1] = use_time[0]
+        # robot_id = self.cold_storage_usage_queue[1][0]
+        # storage_distances_to_base = self.get_total_route_distances(storage_node, self.base_stations[robot_id])
+        # use_time[1] = storage_distances_to_base * 2 / robot_transportation_rate
+        #
+        # wait_time[2] = wait_time[1] + use_time[1]
+        # robot_id = self.cold_storage_usage_queue[2][0]
+        # storage_distances_to_base = self.get_total_route_distances(storage_node, self.base_stations[robot_id])
+        # use_time[2] = storage_distances_to_base * 2 / robot_transportation_rate
+        else:
+            wait_time.append(self.cold_storage_queue_wait_time[0]['wait_time'])
+            use_time.append(self.cold_storage_queue_wait_time[0]['use_time'])
+            for i in range(1, len(self.cold_storage_usage_queue)):
+                curr_distances_to_base = self.get_total_route_distances(robot_curr_node, self.base_stations[robot_name])
+                
+                wait_time.append(wait_time[i-1] + use_time[i-1] - (
+                        self.env.now - self.cold_storage_queue_wait_time[i-1]['join_queue_time']))
+                if wait_time[i] < 0:
+                    wait_time[i] = wait_time[i-1] + use_time[i-1]  # todo: better solution to be done
+                robot_id = self.cold_storage_usage_queue[i]['robot_id']   # todo: use robot_name directly?
+                storage_distances_to_base = self.get_total_route_distances(storage_node, self.base_stations[robot_id])
+                use_time.append(storage_distances_to_base * 2 / robot_transportation_rate + unloading_time)
+                self.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                                                          'join_queue_time': self.cold_storage_usage_queue[i]['start_parking_time'],
+                                                          'wait_time': wait_time[i],
+                                                          'use_time': use_time[i]})
+
+                return self.cold_storage_queue_wait_time[i]
 
     def get_node_res_level(self, node):
         """
@@ -310,12 +1050,24 @@ class TopologicalForkGraph(object):
         """
         Cancel the hold_time that just be set
         :param n: string, topological node
-        :param hold_t: integer, the time that robot plan to occupy the node
+        :param hold_t: float, the time that robot plan to occupy the node
         return: True, cancel succeed
         """
         if self._hold[n]['hold_time'][-1] == hold_t:
             self._hold[n]['hold_time'].pop()
             return True
+
+    def extend_hold_time(self, node, hold_t):
+        """
+        Extend the hold time of the node
+        :param node: string, topological node
+        :param hold_t: float, the time that robot plan to occupy the node
+        """
+        if self._hold[node]['hold_time'][-1] is not None:
+            self._hold[node]['hold_time'][-1] += hold_t
+            return True
+        else:
+            return False
 
     def get_wait_time(self, node):
         """
@@ -602,12 +1354,11 @@ class TopologicalForkGraph(object):
         Add robots who are in deadlock to the deadlocks, along with the robots' occupied nodes
         :param robot_name: string, robot name
         """
-        if len(self.couple_robots) > 0:
-            for couple in self.couple_robots:
-                if robot_name in couple:
-                    self.deadlocks['deadlock_robot_ids'] = couple
-                    for robot_id in couple:
-                        self.deadlocks['robot_occupied_nodes'][robot_id] = self.active_nodes[robot_id]
+        if len(self.dead_locks) > 0:
+            if robot_name in self.dead_locks:
+                self.deadlocks['deadlock_robot_ids'] = copy.deepcopy(self.dead_locks)
+                for robot_id in self.dead_locks:
+                    self.deadlocks['robot_occupied_nodes'][robot_id] = self.active_nodes[robot_id]
         else:
             msg = "Error: robot %s not in deadlock, can not be added to deadlocks" % robot_name
             raise Exception(msg)
@@ -620,6 +1371,8 @@ class TopologicalForkGraph(object):
         if robot_name in self.deadlocks['deadlock_robot_ids']:
             self.deadlocks = {'deadlock_robot_ids': [],
                               'robot_occupied_nodes': {}}
+            if robot_name in self.dead_locks:
+                self.dead_locks.remove(robot_name)
         else:
             msg = "Error: robot %s not in deadlock, can not be removed from deadlocks" % robot_name
             raise Exception(msg)
@@ -644,34 +1397,59 @@ class TopologicalForkGraph(object):
         return: bool
         """
         if self.active_nodes[robot_name]:
-            if deadlock and cur_node == self.active_nodes[robot_name].pop(-1):
+            if deadlock and cur_node == self.active_nodes[robot_name][1]:
+                self.active_nodes[robot_name].remove(cur_node)
                 return True
-            elif cur_node == self.active_nodes[robot_name].pop(0):
+            elif (not deadlock) and cur_node in self.active_nodes[robot_name]:
+                self.active_nodes[robot_name].remove(cur_node)
                 return True
+            elif cur_node not in self.active_nodes[robot_name]:
+                msg = "%s not in active_nodes: %s" % (cur_node, self.active_nodes[robot_name])
+                raise Exception(msg)
         else:
             print("Robot %s is not hold by any node" % robot_name)
             return False
 
-    def get_couples(self, active_nodes):
+    def get_deadlocks_with_queue(self, active_nodes_):
         """
-        Find two robots that are requesting each other's node, return all the couple nodes
-        :param active_nodes: string list, the list of nodes that currently occupied or requested by robots
-        return: string list of list, the couples of robots that are requesting each others' nodes
-        """
-        couple_robots = []
-        self.couple_robots = []
-        for a in active_nodes:
-            if len(active_nodes[a]) == 2:
-                for b in active_nodes:
-                    if len(active_nodes[b]) == 2:
-                        if a != b:
-                            if active_nodes[a][0] == active_nodes[b][1] and active_nodes[a][1] == active_nodes[b][0]:
-                                if ([a, b] not in couple_robots) and ([b, a] not in couple_robots):
-                                    couple_robots.append([a, b])
+        Find all robots that are requesting each other's node, return all the couple nodes. Considering the storage
+        queue as another form of 'request': when robot_01 is in front of robot_01, it's like robot_01 is requesting
+        robot_00's node.
 
-        if couple_robots:
-            self.couple_robots = couple_robots
-        return self.couple_robots
+        :param active_nodes_: string list, the list of nodes that currently occupied or requested by robots
+        return: string list of list, the robots that are waiting for each others' nodes
+        """
+        active_nodes = copy.deepcopy(active_nodes_)
+        # if the robot started parking at base, get the node that the robot (in the storage queue) is waiting for
+        cold_storage_queue = {}
+        if len(self.cold_storage_usage_queue) > 1:
+            for i in range(1, len(self.cold_storage_usage_queue)):
+                # if the robot started parking, find out which node the robot is waiting for
+                if len(self.cold_storage_usage_queue[i]) > 2:
+                    wait_for_id = self.cold_storage_usage_queue[i - 1]['robot_id']
+                    wait_for_node = self.agent_nodes[wait_for_id]
+                    cold_storage_queue[self.cold_storage_usage_queue[i]['robot_id']] = wait_for_node
+
+            self.cold_storage_queue = cold_storage_queue
+
+            # extend the active_nodes: active_nodes = active_nodes + cold_storage_queue
+            # if there are at least two robots in the queue for storage, adding the waiting node to active_nodes
+            if len(cold_storage_queue) > 0:
+                for robot_id in active_nodes.keys():
+                    node = cold_storage_queue.get(robot_id)
+                    # if the parking robot is waiting for the robot in the front of cold_storage_usage_queue
+                    # update the node(occupied by the robot who is using storage) that the parking robot is waiting for
+                    if node is not None:
+                        if len(active_nodes[robot_id]) < 2:
+                            active_nodes[robot_id].append(node)
+                        elif len(active_nodes[robot_id]) == 2:
+                            active_nodes[robot_id][1] = node
+
+        # find deadlocks in the extended active_nodes
+        deadlocks = self.get_deadlocks(active_nodes)
+        self.dead_locks = deadlocks
+
+        return deadlocks
 
     def is_in_deadlock(self, robot_name):
         """
@@ -679,34 +1457,71 @@ class TopologicalForkGraph(object):
         :param robot_name: string, robot name
         return: bool, True - the robot is in deadlock
         """
-        deadlock = self.get_couples(self.active_nodes)
-        if deadlock:
-            for c in deadlock:
-                for r in c:
-                    if robot_name == r:
-                        return True
+        deadlock = self.get_deadlocks_with_queue(self.active_nodes)
+        if deadlock is not None:
+            for robot_id in deadlock:
+                if robot_name == robot_id:
+                    return True
         else:
             return False
 
-    def get_deadlocks(self, active_nodes):
+    @staticmethod
+    def get_deadlocks(active_nodes):
         """
         Get the deadlock loop:
         Two robots in deadlock: A->B->A
         Three robots in deadlock: A->B->C->A
         Four robots in deadlock: A->B->C->D->A
         ...
+        Example:
+             {'robot_02': ['WayPoint142', 'WayPoint66'],
+              'robot_01': ['WayPoint66', 'WayPoint56'],
+              'robot_00': ['WayPoint56', 'WayPoint142']}
 
         :param active_nodes: dict of list, {robot_id: [curr_node, requested_node]}
         return:  string list, robot_ids in deadlock
+
+        Note: We don't consider the situation that two separate deadlocks happening at the same moment
         """
+
         # get all the agents that have two occupied nodes: one for current, one for requested or prepare to request
-        # act_nodes = {a: active_nodes[a] for a in active_nodes if len(active_nodes[a]) == 2}
-        # deadlock_agents = []
-        # agents = []
-        # for agent in active_nodes:
-        #     agents.append(agent)
-        # while len(agents):
-        #     TODO
+        dead_locks = []
+        dead_lock_found = False
+        act_nodes = {a: active_nodes[a] for a in active_nodes if len(active_nodes[a]) == 2}
+        robot_ids = list(act_nodes)
+        for i in range(len(robot_ids)):
+            dead_locks.append(robot_ids[i])
+            pointer_origin = act_nodes[robot_ids[i]][0]
+            pointer_i = act_nodes[robot_ids[i]][1]
+            j = i + 1
+            while j < len(robot_ids):
+                pointer_j = act_nodes[robot_ids[j]][0]
+                if pointer_j == pointer_i:
+                    dead_locks.append(robot_ids[j])
+                    pointer_i = act_nodes[robot_ids[j]][1]
+
+                    if pointer_i == pointer_origin:
+                        dead_lock_found = True
+                        break
+                    else:
+                        j = i + 1  # reset j
+                else:
+                    j += 1
+                # if all robot_ids have been iterated, break and increase i
+                if len(set(dead_locks)) == len(robot_ids):
+                    dead_locks = []
+                    break
+
+            if dead_lock_found:
+                break
+            else:
+                if robot_ids[i] in dead_locks:
+                    dead_locks.remove(robot_ids[i])
+
+        if dead_lock_found:
+            return dead_locks
+        else:
+            return None
 
     @property
     def node_log(self):
@@ -851,6 +1666,19 @@ class TopologicalForkGraph(object):
                 route_distances.append(self.get_distance_between_adjacent_nodes(route_nodes[i], route_nodes[i + 1]))
 
         return route_nodes, route_edges, route_distances
+
+    def get_total_route_distances(self, start_node, goal_node):
+        """
+        Get the total route distances from tart node to goal node
+        """
+        if start_node == goal_node:
+            return .0
+        else:
+            route_distances_sum = 0.0
+            route_nodes, route_edges, route_distances = self.get_path_details(start_node, goal_node)
+            for route_dist in route_distances:
+                route_distances_sum += route_dist
+            return route_distances_sum
 
     def get_node(self, node):
         """get_node: Given a node name return its node object.

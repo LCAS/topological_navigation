@@ -351,10 +351,12 @@ class TopologicalNavServer(object):
             
             if d1 <= d2:
                 the_edge = edge_1
-                o_node = o_node_1
+                if self.closest_edges.distances[0] <= 4.0:
+                    o_node = o_node_1
             else:
                 the_edge = edge_2
-                o_node = o_node_2
+                if self.closest_edges.distances[1] <= 4.0:
+                    o_node = o_node_2
              
             # Everything is Awesome!!!
             # Target and Origin are not None

@@ -263,7 +263,7 @@ class TopologicalNavServer(object):
             if valid_route:
                 target = route.source[-1]
                 self._target = target
-                #route = self.enforce_navigable_route(route, target)
+                route = self.enforce_navigable_route(route, target)
                 result = self.execute_policy(route, target)
             else:
                 result = False
@@ -364,7 +364,7 @@ class TopologicalNavServer(object):
                 if g_node["node"]["name"] != o_node["node"]["name"]:
                     rsearch = TopologicalRouteSearch2(self.lnodes)
                     route = rsearch.search_route(o_node["node"]["name"], target)
-                    #route = self.enforce_navigable_route(route, target)
+                    route = self.enforce_navigable_route(route, target)
                     if route.source:
                         rospy.loginfo("Navigating Case 1")
                         self.publish_route(route, target)

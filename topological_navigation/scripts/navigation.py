@@ -263,7 +263,7 @@ class TopologicalNavServer(object):
             if valid_route:
                 target = route.source[-1]
                 self._target = target
-                route = self.enforce_navigable_route(route, target)
+                #route = self.enforce_navigable_route(route, target)
                 result = self.execute_policy(route, target)
             else:
                 result = False
@@ -336,28 +336,49 @@ class TopologicalNavServer(object):
         """
         result = False
         if not self.cancelled:
+
             o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             g_node = get_node_from_tmap2(self.lnodes, target)
+            
+            edge_1 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[0].split("_")[0], self.closest_edges.edge_ids[0])
+            edge_2 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[1].split("_")[0], self.closest_edges.edge_ids[1])
 
+            o_node_1 = get_node_from_tmap2(self.lnodes, edge_1["node"])
+            o_node_2 = get_node_from_tmap2(self.lnodes, edge_2["node"])
+
+            d1 = get_distance_to_node_tmap2(g_node, o_node_1)
+            d2 = get_distance_to_node_tmap2(g_node, o_node_2)
+            
+            if d1 <= d2:
+                the_edge = edge_1
+                o_node = o_node_1
+            else:
+                the_edge = edge_2
+                o_node = o_node_2
+             
             # Everything is Awesome!!!
             # Target and Origin are not None
-            if g_node is not None and o_node is not None:
-                rsearch = TopologicalRouteSearch2(self.lnodes)
-                route = rsearch.search_route(o_node["node"]["name"], target)
-                route = self.enforce_navigable_route(route, target)
-
-                if route.source:
-                    rospy.loginfo("Navigating Case 1")
-                    self.publish_route(route, target)
-                    result, inc = self.followRoute(route, target, 0)
-                    rospy.loginfo("Navigating Case 1 -> res: %d", inc)
-                else:
-                    rospy.logerr("There is no route to this node check your edges ...")
-                    rospy.loginfo("Navigating Case 1b")
-                    self.cancelled = True
-                    result = False
-                    inc = 1
-                    rospy.loginfo("Navigating Case 1b -> res: %d", inc)
+            if (g_node is not None) and (o_node is not None):
+                if g_node["node"]["name"] != o_node["node"]["name"]:
+                    rsearch = TopologicalRouteSearch2(self.lnodes)
+                    route = rsearch.search_route(o_node["node"]["name"], target)
+                    #route = self.enforce_navigable_route(route, target)
+                    if route.source:
+                        rospy.loginfo("Navigating Case 1")
+                        self.publish_route(route, target)
+                        result, inc = self.followRoute(route, target, 0)
+                        rospy.loginfo("Navigating Case 1 -> res: %d", inc)
+                    else:
+                        rospy.logerr("There is no route to this node check your edges ...")
+                        rospy.loginfo("Navigating Case 1b")
+                        self.cancelled = True
+                        result = False
+                        inc = 1
+                        rospy.loginfo("Navigating Case 1b -> res: %d", inc)
+                else:      
+                    rospy.loginfo("Target and Origin Nodes are the same")
+                    self.current_target = o_node["node"]["name"]
+                    result, inc = self.execute_action(the_edge, g_node)
             else:
                 rospy.loginfo("Navigating Case 2")
                 rospy.loginfo("Target or Origin Nodes were not found on Map")
@@ -459,7 +480,7 @@ class TopologicalNavServer(object):
         else:
             rospy.logerr("Failed to get edge from id!! Invalid route!!")
             return False, inc
-
+                
         # If the robot is not on a node or the first action is not move base type
         # navigate to closest node waypoint (only when first action is not move base)
         if self.current_node == "none" and a not in self.move_base_actions:

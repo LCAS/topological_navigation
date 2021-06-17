@@ -814,7 +814,7 @@ class RobotSim(Robot):
         stop_using_storage_time = .0
         unloading_time = self.unloading_time * self.assigned_picker_n_trays  # assume all robots use same unloading_time
 
-        # the robot finishes using cold storage, but other robots haven't reached their bases
+        # the previous robot finished using cold storage, but the first robot of the usage queue haven't reached his base
         if len(self.graph.cold_storage_queue_wait_time) == 0:
 
             # robot arriving at base and in the head of the usage queue, go to use directly
@@ -825,7 +825,7 @@ class RobotSim(Robot):
             base_dist_to_cold = self.graph.get_total_route_distances(self.cold_storage_node,
                                                                      self.graph.base_stations[robot_name])
             use_time.append((2*base_dist_to_cold + unloading_time)/self.transportation_rate)
-            wait_time.append(.0)
+            wait_time.append(curr_dist_to_base_time[0])
             self.graph.cold_storage_queue_wait_time.append({'robot_id': robot_name,
                                                             'wait_time': wait_time[0],
                                                             'use_time': use_time[0]})

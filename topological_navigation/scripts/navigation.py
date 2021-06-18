@@ -351,11 +351,11 @@ class TopologicalNavServer(object):
             
             if d1 <= d2:
                 the_edge = edge_1
-                if self.closest_edges.distances[0] <= 4.0:
+                if self.closest_edges.distances[0] <= 4.0 and self.current_node == "none":
                     o_node = o_node_1
             else:
                 the_edge = edge_2
-                if self.closest_edges.distances[1] <= 4.0:
+                if self.closest_edges.distances[1] <= 4.0 and self.current_node == "none":
                     o_node = o_node_2
              
             # Everything is Awesome!!!
@@ -444,15 +444,16 @@ class TopologicalNavServer(object):
         In other words, avoid that the route contains an initial edge that is too far from the robot pose. 
         """
         rospy.loginfo("Current route {} ".format(route))
-        if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
-            first_node = route.source[0] if len(route.source) > 0 else target_node
-            for edge_id in self.closest_edges.edge_ids:
-                if edge_id.endswith(first_node):
-                    route.source.insert(0, edge_id.split("_")[0])
-                    route.edge_id.insert(0, edge_id)
-                    break
-                
-        rospy.loginfo("Modified route {}".format(route))
+        if self.current_node == "none":
+            if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
+                first_node = route.source[0] if len(route.source) > 0 else target_node
+                for edge_id in self.closest_edges.edge_ids:
+                    if edge_id.endswith(first_node):
+                        route.source.insert(0, edge_id.split("_")[0])
+                        route.edge_id.insert(0, edge_id)
+                        break
+                    
+            rospy.loginfo("Modified route {}".format(route))
         return route
 
 

@@ -53,7 +53,7 @@ class RobotSim(Robot):
             self.graph.req_ret[self.graph.curr_node[self.robot_id]] = 1
             self.graph.set_hold_time(self.graph.curr_node[self.robot_id], self.init_hold_t)
             self.graph.active_nodes[self.robot_id] = []
-            self.graph.request_node(self.robot_id, self.graph.curr_node[self.robot_id])
+            self.graph.init_request_node(self.robot_id, self.graph.curr_node[self.robot_id])
             self.log_cost(self.robot_id, 0, 0, self.graph.curr_node[self.robot_id])
 
         self.action = self.env.process(self.normal_operation())

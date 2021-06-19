@@ -186,6 +186,10 @@ class TopologicalForkGraph(object):
 
         self.dodge = {}  # agent dodge flags
         self.other_robot_dodged = False
+        self.interrupted = {}
+
+        self.request_process = None
+        self.graph_goto_process = None
 
         self.node_put_queue = {}
 
@@ -466,8 +470,8 @@ class TopologicalForkGraph(object):
         to_be_ranked_robots = copy.deepcopy(all_robots)
 
         for robot_id in all_robots:
-            # there should be only one robot targets at storage at a moment
-            if self.targets[robot_id]['target'] == self.cold_storage_node:
+            # there should be only one robot targets at storage at a moment, or back from storage
+            if self.targets[robot_id]['target'] == self.cold_storage_node or robot_id == self.cold_storage_usage_queue[0]['robot_id']:
                 self.targets[robot_id]['priority'] = 0  # highest priority, all other robots doge
                 to_be_ranked_robots.remove(robot_id)
 
@@ -513,7 +517,11 @@ class TopologicalForkGraph(object):
                     the second highest priority deadlocking robot to dodge, if still not solved, then the third, etc.
 
         """
-        ranked_robots_list = self.deadlock_rank()
+        try:
+            ranked_robots_list = self.deadlock_rank()
+        except Exception:
+            raise Exception(" deadlock_rank() is not working")
+
         for robot_id in ranked_robots_list:
             if robot_id in self.dead_locks:
                 self.dodge[robot_id]['to_dodge'] = True
@@ -525,18 +533,15 @@ class TopologicalForkGraph(object):
         Based on the priority of dodging, deadlocking robots dodge one by one until all robots are free to go
         """
 
-        # if the robot has highest priority to dodge, then go on to dodge
-        if self.dodge[robot_id]['to_dodge'] is True:
+        # wait for other robot to dodge, todo: complete the deadlock_coordinator function first
+        while True:
             yield self.env.timeout(self.loop_timeout)
-        else:
-            # wait for other robot to dodge, todo: complete the deadlock_coordinator function first
-            while self.other_robot_dodged is False:
-                for robot_id_ in self.dead_locks:
-                    if self.dodge[robot_id_]['dodged']:
-                        self.other_robot_dodged = True
-                        break
-                if self.other_robot_dodged is False:
-                    yield self.env.timeout(self.loop_timeout)
+            for robot_id_ in self.deadlocks['deadlock_robot_ids']:
+                if self.dodge[robot_id_]['dodged']:
+                    self.other_robot_dodged = True
+                    break
+            if self.other_robot_dodged:
+                break
 
     def wait_for_dodging(self, robot_id):
         """
@@ -559,6 +564,27 @@ class TopologicalForkGraph(object):
         self.dodge[robot_id]['dodged'] = True
         self.dodge[robot_id]['to_dodge'] = False
 
+    def inform_interrupted(self, robot_id):
+        """
+        Inform others after finishing interruption
+        """
+        self.interrupted[robot_id]['interrupted'] = True
+        self.interrupted[robot_id]['to_interrupted'] = False
+
+    def inform_to_interrupt(self, robot_id):
+        """
+        Inform robot to interrupt
+        """
+        self.interrupted[robot_id]['interrupted'] = False
+        self.interrupted[robot_id]['to_interrupted'] = True
+
+    def reset_interrupted(self, robot_id):
+        """
+        Reset interrupt flag
+        """
+        self.interrupted[robot_id]['interrupted'] = False
+        self.interrupted[robot_id]['to_interrupted'] = False
+
     def reset_dodge(self, robot_id):
         """
         Reset dodge flag if dodged before
@@ -578,13 +604,13 @@ class TopologicalForkGraph(object):
         :param robot_id: string, robot name
         :param req_node: string, topological node name, the node that requested to occupy
         """
-        # node resource has a non-empty put_queue
-        if len(self._node_res[req_node].put_queue) > 0:
+        # node resource is full, the next robot will join the put_queue. We have to cache the robot's position before
+        # calling self._node_res[node].put(1) as once the robot joined the put_queue, the process will stay there and
+        # will not continue. So we can't get the robot's position in the put_queue immediately.
+        if self._node_res[req_node].capacity == self._node_res[req_node].level:
+            curr_queue_len = len(self._node_res[req_node].put_queue)
             self.node_put_queue[robot_id] = {'req_node': req_node,
-                                             'idx': self._node_res[req_node].put_queue[-1]}
-            return True
-        else:
-            return False
+                                             'idx': curr_queue_len}
 
     # deprecated
     def add_node_put_queue(self, robot_id, req_node):
@@ -614,10 +640,52 @@ class TopologicalForkGraph(object):
         :param robot_id: string, robot name
         :param req_node: string, topological node name, the node that requested to occupy
         """
-        if len(self._node_res[req_node].put_queue) > 0:
+        self.pop_free_node(robot_id, req_node, deadlock=True)
+        if len(self._node_res[req_node].put_queue) > 0 and req_node == self.node_put_queue[robot_id]['req_node']:
+            yield self._node_res[req_node].put_queue.pop(self.node_put_queue[robot_id]['idx'])
+            yield self.env.timeout(0.1)
+        else:
+            yield self.env.timeout(0)
+
+    def release_node_from_put_queue_return(self, robot_id, req_node):
+        """
+        Remove robot from the put_queue of node
+
+        Only use this method when robot is in the put_queue of the node
+        :param robot_id: string, robot name
+        :param req_node: string, topological node name, the node that requested to occupy
+        """
+        self.pop_free_node(robot_id, req_node, deadlock=True)
+        if len(self._node_res[req_node].put_queue) > 0 and req_node == self.node_put_queue[robot_id]['req_node']:
             return self._node_res[req_node].put_queue.pop(self.node_put_queue[robot_id]['idx'])
         else:
             return self.env.timeout(0)
+
+    def release_node_from_put_queue_return_remove(self, robot_id, req_node):
+        """
+        Remove robot from the put_queue of node
+
+        Only use this method when robot is in the put_queue of the node
+        :param robot_id: string, robot name
+        :param req_node: string, topological node name, the node that requested to occupy
+        """
+        self.pop_free_node(robot_id, req_node, deadlock=True)
+        if len(self._node_res[req_node].put_queue) > 0 and req_node == self.node_put_queue[robot_id]['req_node']:
+            for i in range(len(self._node_res[req_node].put_queue)):
+                if i == self.node_put_queue[robot_id]['idx']:
+                    obj = self._node_res[req_node].put_queue[i]
+                    self._node_res[req_node].put_queue.remove(obj)
+                    return self.env.timeout(0)
+                    # TODO[today, now]:
+                    #  target = <ContainerPut() object at 0x7f267fe1e190>
+                    #  callbacks = [<bound method Container._trigger_get of <simpy.resources.container.Container object at 0x7f267fe74990>>]
+                    #  Even though robot removed from the put_queue, the process will died here. As there is no target to proceed? so can't back
+                    #  to callbacks?
+                    # return self._node_res[req_node].put_queue.pop(self.node_put_queue[robot_id]['idx'])
+        else:
+            return self.env.timeout(0)
+
+
 
     def _goto_container(self, target, robot_id):
         """
@@ -641,6 +709,9 @@ class TopologicalForkGraph(object):
             interrupted = 'no_route'
 
         while idx < len(route_nodes):
+
+            self.other_robot_dodged = False  # todo: test after deadlock change route
+
             n = route_nodes[idx]
 
             # get the current node, next node and target node, used for resolving deadlocks
@@ -677,7 +748,7 @@ class TopologicalForkGraph(object):
                 self.set_hold_time(n, hold_time)
                 node_state = self.get_node_state(n)
                 if node_state is 1:
-                    yield self.env.process(self.request_node(robot_id, n))
+                    yield self.request_node(robot_id, n)
                     # self.loginfo('  %5.1f: active nodes connected to robots: %s ' %
                     #              (self.env.now, self.graph.active_nodes))
                 else:
@@ -707,19 +778,13 @@ class TopologicalForkGraph(object):
                         route_nodes_to_go = [self.curr_node[robot_id]] + route_nodes[idx:]
                         self.loginfo('* %5.1f: %s wait %5.1f, use old route %s' % (
                             self.env.now, robot_id, wait_time, route_nodes_to_go))
-                        yield self.env.process(self.request_node(robot_id, n))
+                        yield self.request_node(robot_id, n)
 
                         if robot_id in self.deadlocks['deadlock_robot_ids']:
-                            # if robot is in the put_queue of a node, get the idx in the put_queue
-                            # or, if just occupies a node and quites to request n, ignore
-                            # for robot_id_dl in self.deadlocks['deadlock_robot_ids']:
-                            #     if len(self.active_nodes[robot_id_dl]) == 2:
-                            #         self.add_node_put_queue(robot_id_dl, self.targets[robot_id_dl]['next_node'])
 
-                            self.deadlock_coordinator(self.deadlocks['deadlock_robot_ids'])
-                            # yield self.env.timeout(self.loop_timeout)
-                            #
-                            # yield self.env.process(self.wait_to_proceed(robot_id))
+                            # self.deadlock_coordinator(self.deadlocks['deadlock_robot_ids'])  # todo[next]: use coordinator after splitting out container map
+
+                            self.dodge[robot_id]['to_dodge'] = True
 
                             if self.dodge[robot_id]['to_dodge'] is True:
                                 self.loginfo('| %5.1f: %s is in deadlock, change route now' %
@@ -786,7 +851,10 @@ class TopologicalForkGraph(object):
                                 # then other robots will be interrupted in yield self.request_node(robot_id, n), and go
                                 # to exception. Then [todo[now]: dodge here! in the exception before] process _goto_container again.
                                 # todo: checking the wait_to_proceed, how to do if it's not your turn to dodge
-                                yield self.env.process(self.wait_to_proceed(robot_id))
+                                try:
+                                    yield self.env.process(self.wait_to_proceed(robot_id))
+                                except Exception:
+                                    self.loginfo('$ %5.1f:  %s wait ERROR' % (self.env.now, robot_id))
 
                         if change_route:
                             self.log_cost(robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
@@ -807,6 +875,31 @@ class TopologicalForkGraph(object):
                     self.loginfo('$ %5.1f:  %s has lock on %s after %5.1f' % (
                         self.env.now, robot_id, n,
                         self.env.now - start_wait))
+
+            except simpy.Interrupt:
+                if robot_id in self.dead_locks:
+                    # self.reset_dodge(robot_id)  # reset 'to_dodge'
+                    if self.dodge[robot_id]['to_dodge'] is True:
+                        self.dodge[robot_id]['to_dodge'] = False
+                    if self.dodge[robot_id]['dodged'] is False:
+                        self.dodge[robot_id]['dodged'] = True
+
+                    interrupted = 'deadlock'    # interrupted by farm.scheduler_monitor: robot._goto_process.interrupt()
+                    self.loginfo('  %5.1f: @@@ %s INTERRUPTED when in deadlock, quiting from put_queue of %s' %
+                                 (self.env.now, robot_id, n))
+                    # yield self.env.process(self.release_node_from_put_queue(robot_id, n))
+                    # yield self.release_node_from_put_queue_return(robot_id, n)  # TODO[now]: where is the robot after remove from the put_queue???
+                    yield self.release_node_from_put_queue_return_remove(robot_id, n)
+                break
+
+            except TypeError:
+                self.loginfo('  %5.1f: %s INTERRUPTED:TypeError, from node %s going to node %s'
+                             % (self.env.now, robot_id, self.curr_node[robot_id], n))
+
+            except ValueError:
+                self.loginfo('  %5.1f: %s INTERRUPTED:ValueError, from node %s going to node %s'
+                             % (self.env.now, robot_id, self.curr_node[robot_id], n))
+
             except Exception:
                 # Not triggered when requesting an occupied node!
                 # Not triggered when the robot has a goal running and be assigned a new goal
@@ -815,13 +908,9 @@ class TopologicalForkGraph(object):
                 self.log_cost(robot_id, 0, 0, 'INTERRUPTED')  # for monitor
                 self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
                              (self.env.now, robot_id, n))
-                # yield self.release_node(robot_id, n)  # TODO[important]: many robots in the requested queue, which one to release???
-                if robot_id in self.dead_locks:
-                    interrupted = 'deadlock'    # interrupted by farm.scheduler_monitor: robot._goto_process.interrupt()
-                    yield self.release_node_from_put_queue(robot_id, n)
-                else:
-                    interrupted = 'waiting'
-                    yield self.release_node(robot_id, n)
+
+                interrupted = 'waiting'
+                yield self.release_node(robot_id, n)
                 # TODO [next]: reset robot status. send robot back to a safe place? Use a new mode to deal with the
                 #  exception.
                 break
@@ -832,7 +921,7 @@ class TopologicalForkGraph(object):
                 yield self.env.timeout(time_to_travel_before_release)
 
                 # robot reaching at half way, if dodged before, reset dodge status todo [testing]: reset earlier?
-                self.reset_dodge(robot_id)
+                # self.reset_dodge(robot_id)
 
                 yield self.release_node(robot_id, self.curr_node[robot_id])
                 # The robot is reaching at the half way between the current node and next node, release current node
@@ -870,8 +959,8 @@ class TopologicalForkGraph(object):
                 self.loginfo('C %5.1f: %s continue going to target: %s' % (self.env.now, robot_id, target))
                 # TODO: [future] interrupted reason is still unclear (one reason is the wait_time < 0, but why it causes
                 #  interrupt?)
-                self._goto_process = self.env.process(self._goto_container(target))
-                yield self._goto_process
+                self.graph_goto_process = self.env.process(self._goto_container(target))
+                yield self.graph_goto_process
                 # self.interrupted = False
             elif interrupted == 'travelling':
                 pass    # todo
@@ -1375,12 +1464,19 @@ class TopologicalForkGraph(object):
             self.loginfo('> %5.1f: %s is in deadlock, prepare to change route' % (self.env.now, robot_name))
             self.pop_free_node(robot_name, node, deadlock=True)  # pop the node planned to request
             self.add_robot_to_deadlock(robot_name)
-            yield self.env.timeout(0)
-        if self.env:
-            yield self._node_res[node].put(1)
+            return self.env.timeout(0)
+        elif self.env:
             self.mark_node_put_queue_idx(robot_name, node)
-        else:
-            yield self.env.timeout(0)
+            return self._node_res[node].put(1)
+            # print(len(self._node_res[node].put_queue))
+            # if self._node_res[node].put_queue:
+            #     yield self._node_res[node].put_queue[-1]
+            #     print(len(self._node_res[node].put_queue))
+            #     self.node_put_queue[node] = {'req_node': node,
+            #                                  'idx': idx}
+            #     yield self.env.timeout(0)
+        # else:
+        #     yield self.env.timeout(0)
 
     def release_node(self, robot_name, node):
         """

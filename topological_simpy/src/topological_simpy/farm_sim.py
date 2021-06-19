@@ -313,12 +313,15 @@ class FarmSim(topological_simpy.farm.Farm):
                     # 0 - idle, 1 - transporting_to_picker, 2 - waiting for loading,
                     # 3 - waiting for unloading, 4 - transporting to storage, 5- charging
 
-                    # #############Test interrupt#######todo to be removed #################
-                    if robot.graph.dodge[robot_id]['to_dodge'] is True:
-                        print('%.1f: %s is to interrupt' % (self.env.now, robot_id))
-                        robot._goto_process.interrupt()
-
-                    # #######################################################
+                    # # #############Test interrupt#######todo to be removed #################
+                    # # robot.graph.reset_interrupted(robot_id)
+                    # if robot.graph.dodge[robot_id]['to_dodge'] is True:
+                    #     # robot.graph.inform_to_interrupt(robot_id)
+                    #     print('%.1f: %s is to interrupt' % (self.env.now, robot_id))
+                    #     robot._goto_process.interrupt('In deadlock, quiting from put_queue')
+                    #     # robot.graph.inform_interrupted(robot_id) # todo dodged = true, to_dodge = fase?
+                    #
+                    # # #######################################################
 
                     if robot.mode == 0:
                         # robot completed the unloading at storage, idle now

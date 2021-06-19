@@ -244,224 +244,224 @@ class RobotSim(Robot):
         yield self.env.timeout(self.process_timeout)
 
     # deprecated
-    def _goto(self, target):
-        """
-        robot goes from current node to target node.
-        The robot always chooses minimum-distance-cost route(original_route) and travels from current node to target.
-        If robot finds the next node is occupied during travelling, the robot will try to find a new_route avoiding the
-        occupied node. But at the same time, the robot also evaluates the waiting time cost if keeps
-        using the original_route. The robot always chooses low cost route between new_route and original_route.
-
-        :param target: string, target node
-        """
-        route_nodes = self.get_route_nodes(self.curr_node, target)
-        interrupted = False
-        idx = 0
-        change_route = False
-
-        if len(route_nodes) == 0:
-            print("len(route_nodes)=0, no route from %s to %s" % (self.curr_node, target))
-            interrupted = True
-
-        while idx < len(route_nodes):
-            n = route_nodes[idx]
-
-            # get the current node, next node and target node, used for resolving deadlocks
-            self.graph.targets_info(self.robot_id, self.curr_node, n, target)
-
-            route_dist_cost = self.graph.route_dist_cost([self.curr_node] + route_nodes[idx:])
-            self.graph.update_dist_cost_to_target(self.robot_id, self.curr_node, target, route_dist_cost)
-
-            d_cur = self.graph.distance(self.curr_node, n)
-            time_to_travel = round(d_cur / self.transportation_rate + random.gauss(0, self.transportation_rate_std), 1)
-            if idx + 1 < len(route_nodes):
-                # estimate next distance cost and travelling time
-                d_next = self.graph.distance(n, route_nodes[idx + 1])
-                time_to_travel_next = round(d_next / (2 * (self.transportation_rate +
-                                                           random.gauss(0, self.transportation_rate_std))), 1)
-            else:
-                time_to_travel_next = 0
-
-            # the time that node will hold the robot
-            # if the node is the cold_storage_node, the hold time needs to consider robot unloading trays(unloading_time)
-            # TODO: the agent's rotating time should be considered
-            if n == self.cold_storage_node:
-                hold_time = time_to_travel + time_to_travel_next + self.unloading_time * self.assigned_picker_n_trays
-            else:
-                hold_time = time_to_travel + time_to_travel_next
-
-            # self.loginfo('  %5.1f:  %s traversing route from node %s to node %s '
-            #              '(distance: %f, travel time: %5.1f, plan hold time: %5.1f)' %
-            #              (self.graph.env.now, self.robot_id, self.curr_node, n, d_cur, time_to_travel, hold_time))
-
-            try:
-                # The node to be requested may be occupied by other robots, mark the time when requesting
-                start_wait = self.env.now
-                self.graph.set_hold_time(n, hold_time)
-                node_state = self.graph.get_node_state(n)
-                if node_state is 1:
-                    yield self.graph.request_node(self.robot_id, n)
-                    # self.loginfo('  %5.1f: active nodes connected to robots: %s ' %
-                    #              (self.env.now, self.graph.active_nodes))
-                else:
-                    # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' %
-                    #              (self.env.now, self.robot_id, n, node_state))
-                    avoid_nodes = [n] + self.graph.get_active_nodes([self.robot_id])
-                    avoid_nodes = list(dict.fromkeys(avoid_nodes))
-                    new_route = self.get_route_nodes(self.curr_node, target, avoid_nodes)  # avoid node n
-                    if new_route is None:
-                        new_route_dc = float("inf")
-                    elif new_route is []:  # robot is at target now
-                        new_route_dc = 0
-                    else:
-                        new_route_dc = self.graph.route_dist_cost([self.curr_node] + new_route)
-                    wait_time = round(self.graph.get_wait_time(n), 1)
-                    time_cost = self.time_to_dist_cost(wait_time)
-                    old_route_cost = route_dist_cost + time_cost
-                    # self.loginfo('$ %5.1f: old_route_cost = %d, new_route_dc = %d' % (
-                    #     self.env.now, old_route_cost, new_route_dc))
-                    if old_route_cost > new_route_dc:
-                        route_nodes = new_route
-                        self.graph.cancel_hold_time(n, hold_time)  # found cheap route, cancel the hold_time just be set
-                        idx = 0
-                        self.loginfo('~ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
-                        continue
-                    else:
-                        route_nodes_to_go = [self.curr_node] + route_nodes[idx:]
-                        self.loginfo('* %5.1f: %s wait %5.1f, use old route %s' % (
-                            self.env.now, self.robot_id, wait_time, route_nodes_to_go))
-                        yield self.graph.request_node(self.robot_id, n)
-                        for robot_id in self.graph.deadlocks['deadlock_robot_ids']:
-                            if robot_id == self.robot_id:
-                                self.loginfo('| %5.1f: %s is in deadlock, change route now' %
-                                             (self.env.now, self.robot_id))
-                                self.deadlock_dodge(n, new_route, target)
-                                # TODO: 1. find avoid route: new_route = self.get_route_nodes(
-                                #                                           self.curr_node, target, avoid_nodes),
-                                #          if new_route is not None, go for new_route; if new_route is None, then?
-                                # if new_route is not None:  # TODO: is it possible?
-                                #     route_nodes = new_route
-                                # else:
-                                #     avoid_nodes = self.graph.get_active_nodes([self.robot_id])
-                                #     curr_node_edges = self.graph.get_node_edges(self.curr_node)
-                                #     # get all the edge nodes that could be used for dodging
-                                #     for node in avoid_nodes:
-                                #         if node in curr_node_edges:
-                                #             curr_node_edges.remove(node)
-                                #     # find the node to dodge:  node_to_dodge
-                                #     if n in avoid_nodes:
-                                #         avoid_nodes.remove(n)
-                                #         route_nodes_to_dodge = self.graph.get_route_between_adjacent_nodes(
-                                #             self.curr_node, n, avoid_nodes)
-                                #         if route_nodes_to_dodge[0] != n and len(route_nodes_to_dodge) != 0:
-                                #             node_to_dodge = route_nodes_to_dodge[0]
-                                #             # Without considering avoid_nodes, route_nodes_to_dodge is ensured
-                                #             # with a valid route_nodes
-                                #             # TODO: is it better to get route_nodes with avoiding avoid_nodes?
-                                #             route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
-                                #             route_nodes = [node_to_dodge] + route_nodes_to_dodge
-                                #         elif len(curr_node_edges) != 0:
-                                #             node_to_dodge = curr_node_edges[0]  # TODO: any better selecting criteria?
-                                #             route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
-                                #             route_nodes = [node_to_dodge] + route_nodes_to_dodge
-                                #         else:
-                                #             # no edges for dodging, wait for other agents to move
-                                #             # TODO: Inform another deadlocked robot to dodge.
-                                #             #       note: another robot has locked two nodes
-                                #             #       Double check if another deadlocked robot releases the node and
-                                #             #       the node then be occupied by a third robot: what the
-                                #             #       current robot should do?
-                                #             msg = "%s: @%s No edge to dodge, curr_node_edges: %s" % (
-                                #                 self.robot_id, self.curr_node, curr_node_edges)
-                                #             raise Exception(msg)
-                                #             # route_nodes = None
-                                #             # yield self.env.timeout(self.loop_timeout)
-                                #     else:
-                                #         # todo: impossible, remove the if-else later
-                                #         msg = "%s: %s not in avoid_nodes!" % (self.robot_id, n)
-                                #         raise Exception(msg)
-
-                                # prepare to change to the new route_nodes
-                                self.graph.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
-                                idx = 0
-                                change_route = True
-                                self.loginfo('^ %5.1f: %s go NEW route: %s' %
-                                             (self.env.now, self.robot_id, route_nodes))
-                                break
-                        if change_route:
-                            self.log_cost(self.robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
-                            self.graph.remove_robot_from_deadlock(self.robot_id)
-                            # TODO: How to ensure that the deadlock will be resolved? --> the dodge route is promised to
-                            #       be working(unless curr_node_edges is None, i.e., deadlock in single track),
-                            #       so the deadlock must be resolved at present.
-                            continue  # change to new route
-                        else:
-                            pass  # travel to the requested node
-                if self.env.now - start_wait > 0:  # The time that the robot has waited since requesting
-                    self.time_spent_requesting += self.env.now - start_wait
-                    self.loginfo('$ %5.1f:  %s has lock on %s after %5.1f' % (
-                        self.env.now, self.robot_id, n,
-                        self.env.now - start_wait))
-            except Exception:
-                # Not triggered when requesting an occupied node!
-                # Not triggered when the robot has a goal running and be assigned a new goal
-                self.loginfo('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s'
-                             % (self.graph.env.now, self.robot_id, self.curr_node, n))
-                self.log_cost(self.robot_id, 0, 0, 'INTERRUPTED')  # for monitor
-                self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
-                             (self.env.now, self.robot_id, n))
-                yield self.graph.release_node(self.robot_id, n)
-                interrupted = True
-                # TODO [next]: reset robot status. send robot back to a safe place? Use a new mode to deal with the
-                #  exception.
-                break
-
-            try:
-                time_to_travel_before_release = round(d_cur / (2 * (self.transportation_rate +
-                                                                    random.gauss(0, self.transportation_rate_std))), 1)
-                yield self.graph.env.timeout(time_to_travel_before_release)
-                yield self.graph.release_node(self.robot_id, self.curr_node)
-                # The robot is reaching at the half way between the current node and next node, release current node
-                # self.loginfo('  %5.1f:  %s ---> %s reaching half way ---> %s, releasing %s' % (
-                #     self.graph.env.now, self.curr_node, self.robot_id, n, self.curr_node))
-                self.curr_node = n
-                self.graph.agent_nodes[self.robot_id] = self.curr_node
-
-                remain_time_to_travel = time_to_travel - time_to_travel_before_release
-                yield self.graph.env.timeout(remain_time_to_travel)
-                self.loginfo('@ %5.1f:  %s reached node %s' % (self.graph.env.now, self.robot_id, n))
-                self.log_cost(self.robot_id, self.env.now - start_wait, d_cur, n)  # for monitor
-                yield self.graph.env.timeout(0)
-            except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
-                self.loginfo('  %5.1f: %s INTERRUPTED while travelling from node %s going to node %s' % (
-                    self.graph.env.now, self.robot_id,
-                    self.curr_node, n
-                ))
-                self.log_cost(self.robot_id, 0, 0, 'INTERRUPTED')  # for monitor
-                self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
-                             (self.env.now, self.robot_id, n))
-                yield self.graph.release_node(self.robot_id, n)
-                interrupted = True
-                break
-            idx = idx + 1  # go to next while loop
-
-        if interrupted:
-            # When the robot has a goal running and be assigned a new goal node
-            self.loginfo('  %5.1f: %s ABORTED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
-            self.log_cost(self.robot_id, 0, 0, 'ABORTED')  # for monitor
-            self.interrupted = True
-            self.loginfo('C %5.1f: %s continue going to target: %s' % (self.graph.env.now, self.robot_id, target))
-            # TODO: [future] interrupted reason is still unclear (one reason is the wait_time < 0, but why it causes
-            #  interrupt?)
-            self._goto_process = self.env.process(self._goto(target))
-            yield self._goto_process
-            self.interrupted = False
-
-        else:
-            self.graph.update_dist_cost_to_target(self.robot_id, self.curr_node, target, 0)
-            self.loginfo('. %5.1f: %s COMPLETED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
-            self.log_cost(self.robot_id, 0, 0, 'COMPLETED')  # for monitor
-            self.graph.add_com_node(self.curr_node)
+    # def _goto(self, target):
+    #     """
+    #     robot goes from current node to target node.
+    #     The robot always chooses minimum-distance-cost route(original_route) and travels from current node to target.
+    #     If robot finds the next node is occupied during travelling, the robot will try to find a new_route avoiding the
+    #     occupied node. But at the same time, the robot also evaluates the waiting time cost if keeps
+    #     using the original_route. The robot always chooses low cost route between new_route and original_route.
+    #
+    #     :param target: string, target node
+    #     """
+    #     route_nodes = self.get_route_nodes(self.curr_node, target)
+    #     interrupted = False
+    #     idx = 0
+    #     change_route = False
+    #
+    #     if len(route_nodes) == 0:
+    #         print("len(route_nodes)=0, no route from %s to %s" % (self.curr_node, target))
+    #         interrupted = True
+    #
+    #     while idx < len(route_nodes):
+    #         n = route_nodes[idx]
+    #
+    #         # get the current node, next node and target node, used for resolving deadlocks
+    #         self.graph.targets_info(self.robot_id, self.curr_node, n, target)
+    #
+    #         route_dist_cost = self.graph.route_dist_cost([self.curr_node] + route_nodes[idx:])
+    #         self.graph.update_dist_cost_to_target(self.robot_id, self.curr_node, target, route_dist_cost)
+    #
+    #         d_cur = self.graph.distance(self.curr_node, n)
+    #         time_to_travel = round(d_cur / self.transportation_rate + random.gauss(0, self.transportation_rate_std), 1)
+    #         if idx + 1 < len(route_nodes):
+    #             # estimate next distance cost and travelling time
+    #             d_next = self.graph.distance(n, route_nodes[idx + 1])
+    #             time_to_travel_next = round(d_next / (2 * (self.transportation_rate +
+    #                                                        random.gauss(0, self.transportation_rate_std))), 1)
+    #         else:
+    #             time_to_travel_next = 0
+    #
+    #         # the time that node will hold the robot
+    #         # if the node is the cold_storage_node, the hold time needs to consider robot unloading trays(unloading_time)
+    #         # TODO: the agent's rotating time should be considered
+    #         if n == self.cold_storage_node:
+    #             hold_time = time_to_travel + time_to_travel_next + self.unloading_time * self.assigned_picker_n_trays
+    #         else:
+    #             hold_time = time_to_travel + time_to_travel_next
+    #
+    #         # self.loginfo('  %5.1f:  %s traversing route from node %s to node %s '
+    #         #              '(distance: %f, travel time: %5.1f, plan hold time: %5.1f)' %
+    #         #              (self.graph.env.now, self.robot_id, self.curr_node, n, d_cur, time_to_travel, hold_time))
+    #
+    #         try:
+    #             # The node to be requested may be occupied by other robots, mark the time when requesting
+    #             start_wait = self.env.now
+    #             self.graph.set_hold_time(n, hold_time)
+    #             node_state = self.graph.get_node_state(n)
+    #             if node_state is 1:
+    #                 yield self.graph.request_node(self.robot_id, n)
+    #                 # self.loginfo('  %5.1f: active nodes connected to robots: %s ' %
+    #                 #              (self.env.now, self.graph.active_nodes))
+    #             else:
+    #                 # self.loginfo('  %5.1f: %s: %s is occupied, node state: %d' %
+    #                 #              (self.env.now, self.robot_id, n, node_state))
+    #                 avoid_nodes = [n] + self.graph.get_active_nodes([self.robot_id])
+    #                 avoid_nodes = list(dict.fromkeys(avoid_nodes))
+    #                 new_route = self.get_route_nodes(self.curr_node, target, avoid_nodes)  # avoid node n
+    #                 if new_route is None:
+    #                     new_route_dc = float("inf")
+    #                 elif new_route is []:  # robot is at target now
+    #                     new_route_dc = 0
+    #                 else:
+    #                     new_route_dc = self.graph.route_dist_cost([self.curr_node] + new_route)
+    #                 wait_time = round(self.graph.get_wait_time(n), 1)
+    #                 time_cost = self.time_to_dist_cost(wait_time)
+    #                 old_route_cost = route_dist_cost + time_cost
+    #                 # self.loginfo('$ %5.1f: old_route_cost = %d, new_route_dc = %d' % (
+    #                 #     self.env.now, old_route_cost, new_route_dc))
+    #                 if old_route_cost > new_route_dc:
+    #                     route_nodes = new_route
+    #                     self.graph.cancel_hold_time(n, hold_time)  # found cheap route, cancel the hold_time just be set
+    #                     idx = 0
+    #                     self.loginfo('~ %5.1f: %s go NEW route: %s' % (self.env.now, self.robot_id, route_nodes))
+    #                     continue
+    #                 else:
+    #                     route_nodes_to_go = [self.curr_node] + route_nodes[idx:]
+    #                     self.loginfo('* %5.1f: %s wait %5.1f, use old route %s' % (
+    #                         self.env.now, self.robot_id, wait_time, route_nodes_to_go))
+    #                     yield self.graph.request_node(self.robot_id, n)
+    #                     for robot_id in self.graph.deadlocks['deadlock_robot_ids']:
+    #                         if robot_id == self.robot_id:
+    #                             self.loginfo('| %5.1f: %s is in deadlock, change route now' %
+    #                                          (self.env.now, self.robot_id))
+    #                             self.deadlock_dodge(n, new_route, target)
+    #                             # TODO: 1. find avoid route: new_route = self.get_route_nodes(
+    #                             #                                           self.curr_node, target, avoid_nodes),
+    #                             #          if new_route is not None, go for new_route; if new_route is None, then?
+    #                             # if new_route is not None:  # TODO: is it possible?
+    #                             #     route_nodes = new_route
+    #                             # else:
+    #                             #     avoid_nodes = self.graph.get_active_nodes([self.robot_id])
+    #                             #     curr_node_edges = self.graph.get_node_edges(self.curr_node)
+    #                             #     # get all the edge nodes that could be used for dodging
+    #                             #     for node in avoid_nodes:
+    #                             #         if node in curr_node_edges:
+    #                             #             curr_node_edges.remove(node)
+    #                             #     # find the node to dodge:  node_to_dodge
+    #                             #     if n in avoid_nodes:
+    #                             #         avoid_nodes.remove(n)
+    #                             #         route_nodes_to_dodge = self.graph.get_route_between_adjacent_nodes(
+    #                             #             self.curr_node, n, avoid_nodes)
+    #                             #         if route_nodes_to_dodge[0] != n and len(route_nodes_to_dodge) != 0:
+    #                             #             node_to_dodge = route_nodes_to_dodge[0]
+    #                             #             # Without considering avoid_nodes, route_nodes_to_dodge is ensured
+    #                             #             # with a valid route_nodes
+    #                             #             # TODO: is it better to get route_nodes with avoiding avoid_nodes?
+    #                             #             route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+    #                             #             route_nodes = [node_to_dodge] + route_nodes_to_dodge
+    #                             #         elif len(curr_node_edges) != 0:
+    #                             #             node_to_dodge = curr_node_edges[0]  # TODO: any better selecting criteria?
+    #                             #             route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
+    #                             #             route_nodes = [node_to_dodge] + route_nodes_to_dodge
+    #                             #         else:
+    #                             #             # no edges for dodging, wait for other agents to move
+    #                             #             # TODO: Inform another deadlocked robot to dodge.
+    #                             #             #       note: another robot has locked two nodes
+    #                             #             #       Double check if another deadlocked robot releases the node and
+    #                             #             #       the node then be occupied by a third robot: what the
+    #                             #             #       current robot should do?
+    #                             #             msg = "%s: @%s No edge to dodge, curr_node_edges: %s" % (
+    #                             #                 self.robot_id, self.curr_node, curr_node_edges)
+    #                             #             raise Exception(msg)
+    #                             #             # route_nodes = None
+    #                             #             # yield self.env.timeout(self.loop_timeout)
+    #                             #     else:
+    #                             #         # todo: impossible, remove the if-else later
+    #                             #         msg = "%s: %s not in avoid_nodes!" % (self.robot_id, n)
+    #                             #         raise Exception(msg)
+    #
+    #                             # prepare to change to the new route_nodes
+    #                             self.graph.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
+    #                             idx = 0
+    #                             change_route = True
+    #                             self.loginfo('^ %5.1f: %s go NEW route: %s' %
+    #                                          (self.env.now, self.robot_id, route_nodes))
+    #                             break
+    #                     if change_route:
+    #                         self.log_cost(self.robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
+    #                         self.graph.remove_robot_from_deadlock(self.robot_id)
+    #                         # TODO: How to ensure that the deadlock will be resolved? --> the dodge route is promised to
+    #                         #       be working(unless curr_node_edges is None, i.e., deadlock in single track),
+    #                         #       so the deadlock must be resolved at present.
+    #                         continue  # change to new route
+    #                     else:
+    #                         pass  # travel to the requested node
+    #             if self.env.now - start_wait > 0:  # The time that the robot has waited since requesting
+    #                 self.time_spent_requesting += self.env.now - start_wait
+    #                 self.loginfo('$ %5.1f:  %s has lock on %s after %5.1f' % (
+    #                     self.env.now, self.robot_id, n,
+    #                     self.env.now - start_wait))
+    #         except Exception:
+    #             # Not triggered when requesting an occupied node!
+    #             # Not triggered when the robot has a goal running and be assigned a new goal
+    #             self.loginfo('  %5.1f: %s INTERRUPTED while waiting to gain access to go from node %s going to node %s'
+    #                          % (self.graph.env.now, self.robot_id, self.curr_node, n))
+    #             self.log_cost(self.robot_id, 0, 0, 'INTERRUPTED')  # for monitor
+    #             self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
+    #                          (self.env.now, self.robot_id, n))
+    #             yield self.graph.release_node(self.robot_id, n)
+    #             interrupted = True
+    #             # TODO [next]: reset robot status. send robot back to a safe place? Use a new mode to deal with the
+    #             #  exception.
+    #             break
+    #
+    #         try:
+    #             time_to_travel_before_release = round(d_cur / (2 * (self.transportation_rate +
+    #                                                                 random.gauss(0, self.transportation_rate_std))), 1)
+    #             yield self.graph.env.timeout(time_to_travel_before_release)
+    #             yield self.graph.release_node(self.robot_id, self.curr_node)
+    #             # The robot is reaching at the half way between the current node and next node, release current node
+    #             # self.loginfo('  %5.1f:  %s ---> %s reaching half way ---> %s, releasing %s' % (
+    #             #     self.graph.env.now, self.curr_node, self.robot_id, n, self.curr_node))
+    #             self.curr_node = n
+    #             self.graph.agent_nodes[self.robot_id] = self.curr_node
+    #
+    #             remain_time_to_travel = time_to_travel - time_to_travel_before_release
+    #             yield self.graph.env.timeout(remain_time_to_travel)
+    #             self.loginfo('@ %5.1f:  %s reached node %s' % (self.graph.env.now, self.robot_id, n))
+    #             self.log_cost(self.robot_id, self.env.now - start_wait, d_cur, n)  # for monitor
+    #             yield self.graph.env.timeout(0)
+    #         except simpy.Interrupt:  # When the robot has a running goal but being assigned a new goal
+    #             self.loginfo('  %5.1f: %s INTERRUPTED while travelling from node %s going to node %s' % (
+    #                 self.graph.env.now, self.robot_id,
+    #                 self.curr_node, n
+    #             ))
+    #             self.log_cost(self.robot_id, 0, 0, 'INTERRUPTED')  # for monitor
+    #             self.loginfo('  %5.1f: @@@ %s release previously acquired target node %s' %
+    #                          (self.env.now, self.robot_id, n))
+    #             yield self.graph.release_node(self.robot_id, n)
+    #             interrupted = True
+    #             break
+    #         idx = idx + 1  # go to next while loop
+    #
+    #     if interrupted:
+    #         # When the robot has a goal running and be assigned a new goal node
+    #         self.loginfo('  %5.1f: %s ABORTED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
+    #         self.log_cost(self.robot_id, 0, 0, 'ABORTED')  # for monitor
+    #         self.interrupted = True
+    #         self.loginfo('C %5.1f: %s continue going to target: %s' % (self.graph.env.now, self.robot_id, target))
+    #         # TODO: [future] interrupted reason is still unclear (one reason is the wait_time < 0, but why it causes
+    #         #  interrupt?)
+    #         self._goto_process = self.env.process(self._goto(target))
+    #         yield self._goto_process
+    #         self.interrupted = False
+    #
+    #     else:
+    #         self.graph.update_dist_cost_to_target(self.robot_id, self.curr_node, target, 0)
+    #         self.loginfo('. %5.1f: %s COMPLETED at %s' % (self.graph.env.now, self.robot_id, self.curr_node))
+    #         self.log_cost(self.robot_id, 0, 0, 'COMPLETED')  # for monitor
+    #         self.graph.add_com_node(self.curr_node)
 
     # deprecated
     def deadlock_dodge(self, n, new_route, target):
@@ -520,128 +520,128 @@ class RobotSim(Robot):
         return route_nodes
 
     # deprecated
-    def deadlock_coordinate(self, dead_locks):
-        """
-        Get all robots' information and considering them as a unity, find out the breakpoint:
-            which robot should make way
-        Robot's information:
-            current node --> next node --> target node
-            requested node, requested moment, wait time(this should be the key point that needs to be re-estimated,
-            usually situations change after )
-
-        Priority rank:
-            Rank robots' priority, the higher priority (bigger value) robot should move first, the lower priority
-            robot should move later
-            100: lowest priority value, should move at last. This is the initial priority value, other robot's
-                priorities increase based on this.
-            110:
-            120:
-            130:
-            The robot who occupies other robot's target node has higher priority to move
-        """
-
-        # get all active nodes into a list:
-        active_node_list = []
-        for robot_id in self.graph.active_nodes.keys():
-            active_node_list = active_node_list + self.graph.active_nodes[robot_id]
-
-        for robot_id in self.graph.targets.keys():
-            if self.graph.targets[robot_id]['target'] not in active_node_list:
-                self.graph.targets[robot_id]['priority'] = 1000
-                if len(self.graph.active_nodes[robot_id]) == 2:
-                    # remove robot_id from the put_queue of node self.graph.active_nodes[robot_id][1].
-                    # After removing, what about other robots in the waiting list? their actual waiting time will
-                    # shortened, no negative impact.
-                    # TODO[today]: how to wake up robot from the put_queue? put_queue.pop(indx) could clear the queue,
-                    #               but robot_01 is not waking up!
-                    pass
+    # def deadlock_coordinate(self, dead_locks):
+    #     """
+    #     Get all robots' information and considering them as a unity, find out the breakpoint:
+    #         which robot should make way
+    #     Robot's information:
+    #         current node --> next node --> target node
+    #         requested node, requested moment, wait time(this should be the key point that needs to be re-estimated,
+    #         usually situations change after )
+    #
+    #     Priority rank:
+    #         Rank robots' priority, the higher priority (bigger value) robot should move first, the lower priority
+    #         robot should move later
+    #         100: lowest priority value, should move at last. This is the initial priority value, other robot's
+    #             priorities increase based on this.
+    #         110:
+    #         120:
+    #         130:
+    #         The robot who occupies other robot's target node has higher priority to move
+    #     """
+    #
+    #     # get all active nodes into a list:
+    #     active_node_list = []
+    #     for robot_id in self.graph.active_nodes.keys():
+    #         active_node_list = active_node_list + self.graph.active_nodes[robot_id]
+    #
+    #     for robot_id in self.graph.targets.keys():
+    #         if self.graph.targets[robot_id]['target'] not in active_node_list:
+    #             self.graph.targets[robot_id]['priority'] = 1000
+    #             if len(self.graph.active_nodes[robot_id]) == 2:
+    #                 # remove robot_id from the put_queue of node self.graph.active_nodes[robot_id][1].
+    #                 # After removing, what about other robots in the waiting list? their actual waiting time will
+    #                 # shortened, no negative impact.
+    #                 # TODO[today]: how to wake up robot from the put_queue? put_queue.pop(indx) could clear the queue,
+    #                 #               but robot_01 is not waking up!
+    #                 pass
 
     # deprecated
-    def goto_scheduler(self, target):
-        """
-        Scheduler of assigning target node to the robot based on whether the target is the cold_storage_node and
-        whether the queue of waiting for using cold storage node is free (len(cold_storage_usage_queue) == 0). if
-        the target is not cold_storage_node or the queue is free, then go to the target directly. Or, join the queue
-        and keep waiting until the previous robots have finished using the cold_storage_node before going to the
-        target(cold_storage_node)
-
-        :param target: string, topological node that to be reached
-        """
-
-        # before go to the target, if the target node is not cold_storage_node, go to the target directly
-        if target != self.cold_storage_node:
-            yield self.graph.env.process(self._goto(target))
-        else:
-            try:
-                assert self.mode == 3  # robot go to local_storage_node or cold_storage_node from picker_node
-            except AssertionError:
-                raise Exception("goto_scheduler is trying to assign %s going to %s, but robot is in %d" %
-                                (self.robot_id, target, self.mode))
-
-            # if target is the cold_storage_node, but no robot planning to use cold_storage_node now, then go to use
-            if len(self.graph.cold_storage_usage_queue) == 0:
-                self.graph.add_cold_storage_usage_queue(self.robot_id, self.env.now)
-                unloading_time = self.unloading_time * self.assigned_picker_n_trays
-                self.graph.get_cold_storage_queue_wait_time(self.robot_id,
-                                                            self.curr_node,
-                                                            target,
-                                                            self.transportation_rate,
-                                                            unloading_time,
-                                                            True)
-                self._goto_process = self.env.process(self._goto(target))
-                yield self._goto_process
-            # if any robot is using cold_storage_node, go to base station and wait until the queue is free
-            else:
-                # robot join waiting queue for using cold storage node
-                self.graph.add_cold_storage_usage_queue(self.robot_id, self.env.now)
-                # if robot is not at base station, then go to the base station
-                if self.curr_node != self.graph.base_stations[self.robot_id]:
-                    self._goto_process = self.env.process(self._goto(self.graph.base_stations[self.robot_id]))
-                    yield self._goto_process
-                    self.graph.start_parking_at_base(self.robot_id, self.env.now)
-
-                # keep waiting at the base station until previous robots have finished usage
-                # TODO: update hold time here! so the other robots who want to use the occupied base_station knows how 
-                #       long they should wait.
-                #       1. In cold_storage_usage_queue, estimate each robot's waiting time from the queue head to the 
-                #           queue rear. 
-                #           For the queue head robot: 
-                #               wait_time[0] = 0 (in use)
-                #               use_time[0] = from the current moment to the moment when the current using robot return 
-                #                             to his base_station
-                #           For the 2nd queue head robot: 
-                #               wait_time[1] = wait_time[0] + use_time[0]
-                #               use_time[1] = round trip travel time to cold_storage + unloading time
-                #           For the 3rd queue head robot:
-                #               wait_time[2] = wait_time[1] + use_time[1]
-                #               use_time[2] = round trip travel time to cold_storage + unloading time
-                #           For the n_th queue head robot:
-                #               wait_time[n-1] = wait_time[n-2] + use_time[n-2]
-                #               use_time[n-1] = round trip travel time to cold_storage + unloading time
-
-                start_time = self.env.now
-                # TODO:[future] in the config file, the base(parking) station should be set nearby storage station,
-                #       so the queue for using storage station is still useful
-                unloading_time = self.unloading_time * self.assigned_picker_n_trays
-                robot_wait_info = self.graph.get_cold_storage_queue_wait_time(self.robot_id,
-                                                                              self.curr_node,
-                                                                              target,
-                                                                              self.transportation_rate,
-                                                                              unloading_time,
-                                                                              False)
-                hold_time = robot_wait_info['wait_time']
-                self.graph.extend_hold_time(self.curr_node, hold_time)
-
-                # wait the cold_storage to be free after hold_time, if still not free, wait in the while loop
-                yield self.env.timeout(hold_time)
-                while self.robot_id != self.graph.get_cold_storage_usage_queue_head()['robot_id']:
-                    yield self.env.timeout(self.loop_timeout)
-                self.time_spent_base += self.env.now - start_time
-                wait_time = self.env.now - start_time
-                self.loginfo("F %5.1f: cold_storage_node free, %s going to target node: %s, wait time: %5.1f" %
-                             (self.env.now, self.robot_id, target, wait_time))
-                self._goto_process = self.env.process(self._goto(target))
-                yield self._goto_process
+    # def goto_scheduler(self, target):
+    #     """
+    #     Scheduler of assigning target node to the robot based on whether the target is the cold_storage_node and
+    #     whether the queue of waiting for using cold storage node is free (len(cold_storage_usage_queue) == 0). if
+    #     the target is not cold_storage_node or the queue is free, then go to the target directly. Or, join the queue
+    #     and keep waiting until the previous robots have finished using the cold_storage_node before going to the
+    #     target(cold_storage_node)
+    #
+    #     :param target: string, topological node that to be reached
+    #     """
+    #
+    #     # before go to the target, if the target node is not cold_storage_node, go to the target directly
+    #     if target != self.cold_storage_node:
+    #         yield self.graph.env.process(self._goto(target))
+    #     else:
+    #         try:
+    #             assert self.mode == 3  # robot go to local_storage_node or cold_storage_node from picker_node
+    #         except AssertionError:
+    #             raise Exception("goto_scheduler is trying to assign %s going to %s, but robot is in %d" %
+    #                             (self.robot_id, target, self.mode))
+    #
+    #         # if target is the cold_storage_node, but no robot planning to use cold_storage_node now, then go to use
+    #         if len(self.graph.cold_storage_usage_queue) == 0:
+    #             self.graph.add_cold_storage_usage_queue(self.robot_id, self.env.now)
+    #             unloading_time = self.unloading_time * self.assigned_picker_n_trays
+    #             self.graph.get_cold_storage_queue_wait_time(self.robot_id,
+    #                                                         self.curr_node,
+    #                                                         target,
+    #                                                         self.transportation_rate,
+    #                                                         unloading_time,
+    #                                                         True)
+    #             self._goto_process = self.env.process(self._goto(target))
+    #             yield self._goto_process
+    #         # if any robot is using cold_storage_node, go to base station and wait until the queue is free
+    #         else:
+    #             # robot join waiting queue for using cold storage node
+    #             self.graph.add_cold_storage_usage_queue(self.robot_id, self.env.now)
+    #             # if robot is not at base station, then go to the base station
+    #             if self.curr_node != self.graph.base_stations[self.robot_id]:
+    #                 self._goto_process = self.env.process(self._goto(self.graph.base_stations[self.robot_id]))
+    #                 yield self._goto_process
+    #                 self.graph.start_parking_at_base(self.robot_id, self.env.now)
+    #
+    #             # keep waiting at the base station until previous robots have finished usage
+    #             # TODO: update hold time here! so the other robots who want to use the occupied base_station knows how
+    #             #       long they should wait.
+    #             #       1. In cold_storage_usage_queue, estimate each robot's waiting time from the queue head to the
+    #             #           queue rear.
+    #             #           For the queue head robot:
+    #             #               wait_time[0] = 0 (in use)
+    #             #               use_time[0] = from the current moment to the moment when the current using robot return
+    #             #                             to his base_station
+    #             #           For the 2nd queue head robot:
+    #             #               wait_time[1] = wait_time[0] + use_time[0]
+    #             #               use_time[1] = round trip travel time to cold_storage + unloading time
+    #             #           For the 3rd queue head robot:
+    #             #               wait_time[2] = wait_time[1] + use_time[1]
+    #             #               use_time[2] = round trip travel time to cold_storage + unloading time
+    #             #           For the n_th queue head robot:
+    #             #               wait_time[n-1] = wait_time[n-2] + use_time[n-2]
+    #             #               use_time[n-1] = round trip travel time to cold_storage + unloading time
+    #
+    #             start_time = self.env.now
+    #             # TODO:[future] in the config file, the base(parking) station should be set nearby storage station,
+    #             #       so the queue for using storage station is still useful
+    #             unloading_time = self.unloading_time * self.assigned_picker_n_trays
+    #             robot_wait_info = self.graph.get_cold_storage_queue_wait_time(self.robot_id,
+    #                                                                           self.curr_node,
+    #                                                                           target,
+    #                                                                           self.transportation_rate,
+    #                                                                           unloading_time,
+    #                                                                           False)
+    #             hold_time = robot_wait_info['wait_time']
+    #             self.graph.extend_hold_time(self.curr_node, hold_time)
+    #
+    #             # wait the cold_storage to be free after hold_time, if still not free, wait in the while loop
+    #             yield self.env.timeout(hold_time)
+    #             while self.robot_id != self.graph.get_cold_storage_usage_queue_head()['robot_id']:
+    #                 yield self.env.timeout(self.loop_timeout)
+    #             self.time_spent_base += self.env.now - start_time
+    #             wait_time = self.env.now - start_time
+    #             self.loginfo("F %5.1f: cold_storage_node free, %s going to target node: %s, wait time: %5.1f" %
+    #                          (self.env.now, self.robot_id, target, wait_time))
+    #             self._goto_process = self.env.process(self._goto(target))
+    #             yield self._goto_process
 
     def goto_scheduler_mode(self, target):
         """
@@ -671,29 +671,29 @@ class RobotSim(Robot):
             yield self.env.process(self.go_to_storage_operation(target))
 
     # deprecated
-    def goto_scheduler_mode_park(self, target):
-        """
-        Scheduler of assigning target node to the robot based on whether the target is the cold_storage_node and
-        whether the queue of waiting for using cold storage node is free (len(cold_storage_usage_queue) == 0). if
-        the target is not cold_storage_node or the queue is free, then go to the target directly. Or, join the queue
-        and keep waiting until the previous robots have finished using the cold_storage_node before going to the
-        target(cold_storage_node)
-
-        :param target: string, topological node that to be reached
-        """
-
-        # before go to the target, if the target node is not cold_storage_node, go to the target directly
-        if target != self.cold_storage_node:
-            yield self.graph.env.process(self._goto(target))
-        else:
-            try:
-                assert self.mode == 3  # robot go to local_storage_node or cold_storage_node from picker_node
-            except AssertionError:
-                raise Exception("goto_scheduler is trying to assign %s going to %s, but robot is in %d" %
-                                (self.robot_id, target, self.mode))
-
-            # if target is the cold_storage_node, but no robot planning to use cold_storage_node now, then go to use
-            yield self.env.process(self.go_to_storage_operation(target))
+    # def goto_scheduler_mode_park(self, target):
+    #     """
+    #     Scheduler of assigning target node to the robot based on whether the target is the cold_storage_node and
+    #     whether the queue of waiting for using cold storage node is free (len(cold_storage_usage_queue) == 0). if
+    #     the target is not cold_storage_node or the queue is free, then go to the target directly. Or, join the queue
+    #     and keep waiting until the previous robots have finished using the cold_storage_node before going to the
+    #     target(cold_storage_node)
+    #
+    #     :param target: string, topological node that to be reached
+    #     """
+    #
+    #     # before go to the target, if the target node is not cold_storage_node, go to the target directly
+    #     if target != self.cold_storage_node:
+    #         yield self.graph.env.process(self._goto(target))
+    #     else:
+    #         try:
+    #             assert self.mode == 3  # robot go to local_storage_node or cold_storage_node from picker_node
+    #         except AssertionError:
+    #             raise Exception("goto_scheduler is trying to assign %s going to %s, but robot is in %d" %
+    #                             (self.robot_id, target, self.mode))
+    #
+    #         # if target is the cold_storage_node, but no robot planning to use cold_storage_node now, then go to use
+    #         yield self.env.process(self.go_to_storage_operation(target))
             
     def go_to_storage_operation(self, target):
         """

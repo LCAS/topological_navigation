@@ -340,22 +340,31 @@ class TopologicalNavServer(object):
             o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             g_node = get_node_from_tmap2(self.lnodes, target)
             
-            edge_1 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[0].split("_")[0], self.closest_edges.edge_ids[0])
-            edge_2 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[1].split("_")[0], self.closest_edges.edge_ids[1])
+            # Navigate from the closest edge instead of the closest node? First get the closest edges.
+            closest_edges = self.closest_edges
+            edge_1 = get_edge_from_id_tmap2(self.lnodes, closest_edges.edge_ids[0].split("_")[0], closest_edges.edge_ids[0])
+            edge_2 = get_edge_from_id_tmap2(self.lnodes, closest_edges.edge_ids[1].split("_")[0], closest_edges.edge_ids[1])
 
+            # then get their destination nodes
             o_node_1 = get_node_from_tmap2(self.lnodes, edge_1["node"])
             o_node_2 = get_node_from_tmap2(self.lnodes, edge_2["node"])
 
-            d1 = get_distance_to_node_tmap2(g_node, o_node_1)
-            d2 = get_distance_to_node_tmap2(g_node, o_node_2)
+            # if the closest edges form a bidirectional edge then use the destination node that takes you
+            # closer to the goal
+            if closest_edges.distances[0] == closest_edges.distances[1]:
+                d1 = get_distance_to_node_tmap2(g_node, o_node_1)
+                d2 = get_distance_to_node_tmap2(g_node, o_node_2)
+            else: # use the destination node of the closest edge
+                d1 = 0; d2 = 1
             
+            # but only navigate from the edge if we are near it and not on a node.
             if d1 <= d2:
                 the_edge = edge_1
-                if self.closest_edges.distances[0] <= 4.0 and self.current_node == "none":
+                if closest_edges.distances[0] <= 4.0 and self.current_node == "none":
                     o_node = o_node_1
             else:
                 the_edge = edge_2
-                if self.closest_edges.distances[1] <= 4.0 and self.current_node == "none":
+                if closest_edges.distances[1] <= 4.0 and self.current_node == "none":
                     o_node = o_node_2
              
             # Everything is Awesome!!!

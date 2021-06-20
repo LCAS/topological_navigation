@@ -16,7 +16,7 @@ from topological_navigation_msgs.msg import ClosestEdges
 from std_msgs.msg import String
 from actionlib_msgs.msg import GoalStatus
 
-from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2
+from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2, get_route_distance
 from topological_navigation.navigation_stats import nav_stats
 from topological_navigation.tmap_utils import *
 
@@ -345,19 +345,19 @@ class TopologicalNavServer(object):
             edge_1 = get_edge_from_id_tmap2(self.lnodes, closest_edges.edge_ids[0].split("_")[0], closest_edges.edge_ids[0])
             edge_2 = get_edge_from_id_tmap2(self.lnodes, closest_edges.edge_ids[1].split("_")[0], closest_edges.edge_ids[1])
 
-            # then get their destination nodes
+            # Then get their destination nodes.
             o_node_1 = get_node_from_tmap2(self.lnodes, edge_1["node"])
             o_node_2 = get_node_from_tmap2(self.lnodes, edge_2["node"])
 
-            # if the closest edges form a bidirectional edge then use the destination node that takes you
-            # closer to the goal
+            # If the closest edges are of equal distance (usually a bidirectional edge) 
+            # then use the destination node that results in a shorter route to the goal.
             if closest_edges.distances[0] == closest_edges.distances[1]:
-                d1 = get_distance_to_node_tmap2(g_node, o_node_1)
-                d2 = get_distance_to_node_tmap2(g_node, o_node_2)
-            else: # use the destination node of the closest edge
+                d1 = get_route_distance(self.lnodes, o_node_1, g_node)
+                d2 = get_route_distance(self.lnodes, o_node_2, g_node)
+            else: # Use the destination node of the closest edge.
                 d1 = 0; d2 = 1
             
-            # but only navigate from the edge if we are near it and not on a node.
+            # But only navigate from the edge if we are near it and not on a node.
             if d1 <= d2:
                 the_edge = edge_1
                 if closest_edges.distances[0] <= 4.0 and self.current_node == "none":
@@ -709,7 +709,6 @@ class TopologicalNavServer(object):
                 inc = 0
 
         rospy.sleep(rospy.Duration.from_sec(0.3))
-        
         return result, inc
 ###################################################################################################################
         

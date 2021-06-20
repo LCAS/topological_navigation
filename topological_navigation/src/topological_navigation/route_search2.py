@@ -207,6 +207,9 @@ def get_route_distance(tmap, node_a, node_b):
     if node_a is None or node_b is None:
         return 10e5-1
     
+    if node_a["node"]["name"] == node_b["node"]["name"]:
+        return 0.0
+    
     rsearch = TopologicalRouteSearch2(tmap)
     route = rsearch.search_route(node_a["node"]["name"], node_b["node"]["name"])
     

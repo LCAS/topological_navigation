@@ -190,11 +190,14 @@ class TopologicalForkGraph(object):
 
         self.request_process = None
         self.graph_goto_process = None
+        self._goto_process = None
 
         self.node_put_queue = {}
 
         self.process_timeout = 0.10
         self.loop_timeout = 0.10
+
+        self.t_mode = {}
 
         self._cost = {'robot_id': [],
                       'time_now': [],
@@ -685,7 +688,108 @@ class TopologicalForkGraph(object):
         else:
             return self.env.timeout(0)
 
+    def go_to_storage_operation(self, robot_id, target):
+        """
+        Robot joining the queue for using storage station(node). If the queue is empty then go to storage directly.
+        If not, join in the queue, go to base station and predict the waiting time for using the storage. Keep waiting
+        until the storage is available.
+        Split the process (self.mode == 3) that from picker loading on robot to robot arrives at (cold) storage
+            node into 4 sub modes(t_mode: transportation mode):
+            t_mode 30: robot going to (cold) storage directly from picker;
+                        (mode 3 ->) t_mode 30 -> t_mode 4 (-> mode 4 -> mode 6)
+            t_mode 31: robot going to base station from picker;
+                        (mode 3 ->) t_mode 31 -> t_mode 32
+            t_mode 32: robot parking at base station, waiting in the self.cold_storage_usage_queue;
+                        t_mode 31 -> t_mode 32 -> t_mode 33
+            t_mode 33: robot going to (cold) storage from base station;
+                        t_mode 32 -> t_mode 33 -> t_mode 4 (-> mode 4 -> mode 6)
+        :param target: string, target topological node
+        :param robot_id: string, robot name
+        Note: the function could be extend to use for any other target node that in a single track route
+        """
+        # TODO [future]: to be done...
+        #       1. self.time_spent_waiting_storage needs to be recorded
 
+        # if target is the cold_storage_node, but no robot planning to use cold_storage_node now, then go to use
+        if len(self.cold_storage_usage_queue) == 0:
+            self.t_mode[robot_id] = 30
+        else:
+            self.t_mode[robot_id] = 31
+
+        while self.t_mode[robot_id] != 4:
+            if self.t_mode[robot_id] == 30:
+                self.add_cold_storage_usage_queue(robot_id, self.env.now)
+                self.init_wait_queue(robot_id, target)
+                self._goto_process = self.env.process(self._goto_container(target, robot_id))
+                yield self._goto_process
+                self.t_mode[robot_id] = 4
+
+            elif self.t_mode[robot_id] == 31:
+                self.add_cold_storage_usage_queue(robot_id, self.env.now)
+                if self.curr_node[robot_id] != self.base_stations[robot_id]:
+                    self._goto_process = self.env.process(
+                        self._goto_container(self.base_stations[robot_id],
+                                             robot_id))
+                    yield self._goto_process
+                self.t_mode[robot_id] = 32
+
+            elif self.t_mode[robot_id] == 32:
+                try:
+                    self.start_parking_at_base(robot_id, self.env.now)
+                    wait_info = self.get_queue_wait_time(robot_id)
+                    # if wait_info['wait_time'] < 0:  # TODO: never reaching, to be removed
+                    #     print("wait_info['wait_time']: %f" % wait_info['wait_time'])
+                    self.extend_hold_time(self.curr_node[robot_id],
+                                          wait_info['wait_time'])  # todo: inform other robots who are waiting for this node
+                    # yield self.env.timeout(wait_info['wait_time'])
+                    while robot_id not in self.get_cold_storage_usage_queue_head()['robot_id']:
+                        yield self.env.timeout(self.loop_timeout)
+                    self.t_mode[robot_id] = 33
+                except Exception:
+                    print('parking bug')
+
+            elif self.t_mode[robot_id] == 33:
+                # correct the predict wait_time according to real situation
+                for idx, queue_robot in enumerate(self.cold_storage_queue_wait_time):
+                    if robot_id == queue_robot['robot_id']:
+                        if 'start_parking_time' in queue_robot.keys():
+                            real_wait_time = self.env.now - queue_robot['start_parking_time']
+                        else:
+                            real_wait_time = .0
+                        self.cold_storage_queue_wait_time[idx]['wait_time'] = real_wait_time
+                        self.cold_storage_queue_wait_time[idx]['start_using_storage_time'] = self.env.now
+                        break
+                self._goto_process = self.env.process(self._goto_container(target, robot_id))
+                yield self._goto_process
+                self. t_mode[robot_id] = 4
+
+    def goto_scheduler_mode(self, target, robot_id):
+        """
+        Scheduler of assigning target node to the robot based on whether the target is the cold_storage_node and
+        whether the queue of waiting for using cold storage node is free (len(cold_storage_usage_queue) == 0). if
+        the target is not cold_storage_node or the queue is free, then go to the target directly. Or, join the queue
+        and keep waiting until the previous robots have finished using the cold_storage_node before going to the
+        target(cold_storage_node)
+
+        :param target: string, topological node that to be reached
+        :param robot_id: string, robot name
+        """
+
+        # before go to the target, if the target node is not cold_storage_node, go to the target directly
+        if target != self.cold_storage_node:
+            yield self.env.process(self._goto_container(target,
+                                                        robot_id))
+            # if self.interrupted:
+            #     yield self.graph.env.process(self._goto(target))
+        else:
+            # try:
+            #     assert self.mode == 3  # robot go to local_storage_node or cold_storage_node from picker_node
+            # except AssertionError:
+            #     raise Exception("goto_scheduler is trying to assign %s going to %s, but robot is in %d" %
+            #                     (self.robot_id, target, self.mode))
+
+            # go to storage, robot enters different sub modes based on the storage usage queue
+            yield self.env.process(self.go_to_storage_operation(robot_id, target))
 
     def _goto_container(self, target, robot_id):
         """
@@ -1075,7 +1179,198 @@ class TopologicalForkGraph(object):
     #           For the n_th queue head robot:
     #               wait_time[n-1] = wait_time[n-2] + use_time[n-2]
     #               use_time[n-1] = round trip travel time to cold_storage + unloading time
-    
+
+    def get_queue_wait_time(self, robot_name):
+        """
+        Robot in the queue for using (cold) storage station. Get the waiting time before using.
+        :param robot_name: string, robot name
+        :return: dictionary, {'robot_id': str,
+                              'start_parking_time: None/float,
+                              'wait_time': float,
+                              'use_time': float}
+        Note: in the comment bellow, teh robots in the cold_storage_usage_queue will be referred as:
+                robot[i] -- current robot in the cold_storage_usage_queue
+                robot[i-1] -- previous robot  in the cold_storage_usage_queue
+        """
+        wait_time = []
+        use_time = []
+        base_dist_to_cold = .0
+        curr_dist_to_base = []
+        curr_dist_to_base_time = []
+        start_parking_time = .0
+        stop_using_storage_time = .0
+        unloading_time = self.unloading_time * self.assigned_picker_n_trays  # assume all robots use same unloading_time
+
+        # the previous robot finished using cold storage, but the first robot of the usage queue haven't reached his base
+        if len(self.cold_storage_queue_wait_time) == 0:
+
+            # robot arriving at base and in the head of the usage queue, go to use directly
+            robot_id = self.cold_storage_usage_queue[0]['robot_id']
+            curr_dist_to_base.append(self.get_total_route_distances(self.agent_nodes[robot_id],
+                                                                    self.base_stations[robot_id]))
+            curr_dist_to_base_time.append(curr_dist_to_base[0]/self.transportation_rate)
+            base_dist_to_cold = self.get_total_route_distances(self.cold_storage_node,
+                                                               self.base_stations[robot_name])
+            use_time.append((2*base_dist_to_cold + unloading_time)/self.transportation_rate)
+            wait_time.append(curr_dist_to_base_time[0])
+            self.cold_storage_queue_wait_time.append({'robot_id': robot_name,
+                                                      'wait_time': wait_time[0],
+                                                      'use_time': use_time[0]})
+
+            # robot arriving base and not in the head of the usage queue, wait for previous robots
+            for i in range(1, len(self.cold_storage_usage_queue)):
+                robot_id = self.cold_storage_usage_queue[i]['robot_id']
+                curr_dist_to_base.append(self.get_total_route_distances(self.agent_nodes[robot_id],
+                                                                        self.base_stations[robot_id]))
+                curr_dist_to_base_time.append(curr_dist_to_base[i]/self.transportation_rate)
+                base_dist_to_cold = self.get_total_route_distances(self.cold_storage_node,  # todo:[next] initialise in _init_
+                                                                   self.base_stations[robot_id])
+                use_time.append((2*base_dist_to_cold + unloading_time)/self.transportation_rate)
+                # if i == 1:
+                #     wait_time.append(use_time[0] + max(wait_time[0], curr_dist_to_base_time[0]))
+                # if i == 2:
+                #     wait_time.append(use_time[1] + max(wait_time[1], curr_dist_to_base_time[1]))
+                # if i > 0:
+                wait_time.append(use_time[i-1] + max(wait_time[i-1], curr_dist_to_base_time[i-1]))
+
+                # get the time of start parking at base:
+                # if robot started parking, record parking time
+                if len(self.cold_storage_usage_queue[i]) == 3:
+                    start_parking_time = self.cold_storage_usage_queue[i]['start_parking_time']
+                    self.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                                                              'start_parking_time': start_parking_time,
+                                                              'wait_time': wait_time[i],
+                                                              'use_time': use_time[i]})
+                else:
+                    # robot has not parked, ignore
+                    self.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                                                              'wait_time': wait_time[i],
+                                                              'use_time': use_time[i]})
+
+        else:
+            wait_time.append(self.cold_storage_queue_wait_time[0]['wait_time'])
+            use_time.append(self.cold_storage_queue_wait_time[0]['use_time'])
+            start_using_storage_time = self.cold_storage_queue_wait_time[0]['start_using_storage_time']
+            robot_id = self.cold_storage_usage_queue[0]['robot_id']
+
+            # note: robot transportation_rate and unloading time are simply use the same value for all robots as the wait
+            #       time prediction won't be so precise and it's not worthy to be precise at such level. Because the robot
+            #       may change route during traveling.
+
+            for i in range(1, len(self.cold_storage_usage_queue)):
+                # i = 1
+                # robot_id = self.graph.cold_storage_usage_queue[i]['robot_id']
+                # curr_dist_to_base[1] = self.graph.get_total_route_distances(self.graph.agent_nodes[robot_id],
+                #                                                             self.graph.base_stations[robot_id])
+                # curr_dist_to_base_time[1] = curr_dist_to_base[1]/self.transportation_rate
+                # base_dist_to_cold[1] = self.graph.get_total_route_distances(self.cold_storage_node,
+                #                                                             self.graph.base_stations[robot_id])
+                # wait_time[1] = use_time[0] + self.graph.cold_storage_usage_queue[0]['join_queue_time'] - self.env.now
+                #
+                # use_time[1] = (2*base_dist_to_cold + unloading_time)/self.transportation_rate
+                #
+                # self.graph.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                #                                                 'start_parking_time': self.env.now+curr_dist_to_base_time[1],
+                #                                                 'wait_time': wait_time[1],
+                #                                                 'use_time': use_time[1]})
+                #
+                # i = 2
+                # robot_id = self.graph.cold_storage_usage_queue[i]['robot_id']
+                # curr_dist_to_base[2] = self.graph.get_total_route_distances(self.graph.agent_nodes[robot_id],
+                #                                                             self.graph.base_stations[robot_id])
+                # curr_dist_to_base_time[2] = curr_dist_to_base[2]/self.transportation_rate
+                # base_dist_to_cold[2] = self.graph.get_total_route_distances(self.cold_storage_node,
+                #                                                             self.graph.base_stations[robot_id])
+                # use_time[2] = (2*base_dist_to_cold + unloading_time)/self.transportation_rate
+                # wait_time[2] = max(curr_dist_to_base_time[1], wait_time[1]) + use_time[1]
+                # self.graph.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                #                                                 'start_parking_time': self.env.now+curr_dist_to_base_time[2],
+                #                                                 'wait_time': wait_time[2],
+                #                                                 'use_time': use_time[2]})
+
+                # i = 3
+                robot_id = self.cold_storage_usage_queue[i]['robot_id']
+                curr_dist_to_base.append(self.get_total_route_distances(self.agent_nodes[robot_id],
+                                                                        self.base_stations[robot_id]))
+                curr_dist_to_base_time.append(curr_dist_to_base[i-1]/self.transportation_rate)
+                base_dist_to_cold = self.get_total_route_distances(self.cold_storage_node,
+                                                                   self.base_stations[robot_id])
+
+                use_time.append((2*base_dist_to_cold + unloading_time)/self.transportation_rate)
+
+                # get the time that robot[i] will be waiting
+                if i == 1:
+                    # get the time of robot[i-1] start using storage
+                    # if the robot in the queue head never parked before, start time is the join queue time
+                    if len(self.cold_storage_usage_queue[0]) == 2:
+                        start_using_storage_time = self.cold_storage_usage_queue[0]['join_queue_time']
+                    # if the robot in the queue head has parked in the base before, start time is available in queue wait time
+                    elif len(self.cold_storage_usage_queue[0]) == 3:
+                        start_using_storage_time = self.cold_storage_queue_wait_time[0]['start_using_storage_time']
+                    wait_time.append(abs(use_time[0] + start_using_storage_time - self.env.now))  #  todo: remove abs?
+                else:
+                    # wait_time.append(max(curr_dist_to_base_time[i-1], wait_time[i-1]) + use_time[i-1])
+                    # if robot[i-1] won't start using storage before robot[i] arriving at base
+                    if wait_time[i-1] > curr_dist_to_base_time[i-1]:
+                        wait_time.append(wait_time[i-1] + use_time[i-1])
+                    # if robot[i-1] start using storage, but robot[i] is still on the way to the base
+                    else:
+                        previous_robot_id = self.cold_storage_usage_queue[i-1]['robot_id']
+                        previous_robot_wait_time = .0
+                        previous_robot_use_time = .0
+                        for robot_info in self.cold_storage_queue_wait_time:
+                            if previous_robot_id == robot_info['robot_id']:
+                                previous_robot_wait_time = robot_info['wait_time']
+                                previous_robot_use_time = robot_info['use_time']
+                        # robot[i] takes longer time to get to base, or robot[i-1] takes longer time to finish using storage
+                        wait_time.append(max(curr_dist_to_base_time[i-1], previous_robot_wait_time+previous_robot_use_time))
+
+                # remove old wait time before append latest wait time
+                for queue_robot in self.cold_storage_queue_wait_time:
+                    if robot_id == queue_robot['robot_id']:
+                        self.cold_storage_queue_wait_time.remove(queue_robot)
+
+                # get the time of start parking at base:
+                # if robot started parking
+                if len(self.cold_storage_usage_queue[i]) == 3:
+                    start_parking_time = self.cold_storage_usage_queue[i]['start_parking_time']
+                    self.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                                                              'start_parking_time': start_parking_time,
+                                                              'wait_time': wait_time[i],
+                                                              'use_time': use_time[i]})
+                else:
+                    # robot has not parked, predict the parking time
+                    # start_parking_time = self.env.now + curr_dist_to_base_time[i-1]
+                    # robot has not parked, ignore
+                    self.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                                                              'wait_time': wait_time[i],
+                                                              'use_time': use_time[i]})
+        # return the queried wait time info
+        for queue_robot in self.cold_storage_queue_wait_time:
+            if robot_name == queue_robot['robot_id']:
+                return queue_robot
+
+    def init_wait_queue(self, robot_id, target):
+        """
+        Initialise the wait queue for using (cold) storage station. There is only one robot in the queue and the robot
+        is using the storage.
+        """
+        curr_dist_to_storage = self.get_total_route_distances(self.curr_node[robot_id],
+                                                              self.cold_storage_node)
+        self.update_dist_cost_to_target(robot_id, self.curr_node[robot_id],
+                                        target, curr_dist_to_storage)
+        storage_dist_to_base = self.get_total_route_distances(self.cold_storage_node,
+                                                              self.base_stations[robot_id])
+        unloading_time = self.unloading_time * self.assigned_picker_n_trays
+        use_t = (curr_dist_to_storage + storage_dist_to_base) / self.transportation_rate + unloading_time
+        # stop_using_storage_time = self.env.now + use_t
+        self.cold_storage_queue_wait_time.append({'robot_id': robot_id,
+                                                  'start_parking_time': None,
+                                                  'start_using_storage_time': self.env.now,
+                                                  # 'stop_using_storage_time': stop_using_storage_time,
+                                                  'wait_time': .0,
+                                                  'use_time': use_t})
+
     def get_cold_storage_queue_wait_time(self, robot_name, robot_curr_node, target, robot_transportation_rate, 
                                          unloading_time, is_head):
         """

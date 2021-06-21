@@ -211,3 +211,29 @@ class RouteChecker(object):
         rospy.loginfo("Route is Valid")
         return True
 #########################################################################################################
+
+        
+#########################################################################################################    
+def get_route_distance(tmap, node_a, node_b):
+    
+    if node_a is None or node_b is None:
+        return 10e5-1
+    
+    if node_a["node"]["name"] == node_b["node"]["name"]:
+        return 0.0
+    
+    rsearch = TopologicalRouteSearch2(tmap)
+    route = rsearch.search_route(node_a["node"]["name"], node_b["node"]["name"])
+    
+    if not route.source:
+        return 10e5-1
+    
+    dist = 0
+    for i in range(len(route.source)-1):
+        node_1 = get_node_from_tmap2(tmap, route.source[i])
+        node_2 = get_node_from_tmap2(tmap, route.source[i+1])
+        dist += get_distance_to_node_tmap2(node_1, node_2)
+    
+    dist += get_distance_to_node_tmap2(get_node_from_tmap2(tmap, route.source[-1]), node_b)
+    return dist
+#########################################################################################################

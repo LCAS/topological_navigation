@@ -4,6 +4,10 @@ import rospy
 from topological_navigation.tmap_utils import *
 from strands_navigation_msgs.msg import NavRoute
 
+from cachier import cachier
+import datetime
+
+
 
 class NodeToExpand(object):
     
@@ -31,7 +35,7 @@ class TopologicalRouteSearch2(object):
 
         self.top_map = top_map
 
-
+    @cachier(stale_after=datetime.timedelta(hours=4))
     def search_route(self, origin, target):
         """
         This function searches the route to reach the goal

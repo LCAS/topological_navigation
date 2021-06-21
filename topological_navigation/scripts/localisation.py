@@ -114,10 +114,10 @@ class TopologicalNavLoc(object):
         self.cn_pub = rospy.Publisher('current_node', String, latch=True, queue_size=1)
         self.ce_pub = rospy.Publisher('closest_edges', ClosestEdges, latch=True, queue_size=1)
 
-        self.force_check=True
-        self.rec_map=False
-        self.loc_by_topic=[]
-        self.persist={}
+        self.force_check = True
+        self.rec_map = False
+        self.loc_by_topic = []
+        self.persist = {}
 
         self.current_pose=Pose()
         self.previous_pose=Pose()
@@ -302,7 +302,6 @@ class TopologicalNavLoc(object):
         self.nogos = []
 
         self.tmap = json.loads(msg.data) 
-        self.rec_map=True
         self.tmap_frame = self.tmap["transformation"]["child"]
         
         self.get_edge_vectors()
@@ -327,6 +326,8 @@ class TopologicalNavLoc(object):
             ))
             # Calling instance of class to start subsribing thread.
             self.subscribers[-1]()
+            
+        self.rec_map = True
             
             
     def get_edge_vectors(self):

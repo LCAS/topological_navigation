@@ -9,6 +9,110 @@ import datetime
 
 
 
+@cachier(stale_after=datetime.timedelta(hours=168))
+def search_route_func(top_map, origin, target):
+    """
+    This function searches the route to reach the goal
+    """
+    route = NavRoute()
+
+    if origin == "none" or target == "none" or origin == target:
+        return route
+
+    goal = get_node_from_tmap2(top_map, target)
+    orig = get_node_from_tmap2(top_map, origin)
+    to_expand=[]
+    children=[]
+    expanded=[]
+
+    nte = NodeToExpand(orig["node"]["name"], 'none', 0.0, get_distance_to_node_tmap2(goal, orig)) # Node to Expand
+    expanded.append(nte)
+
+    cen = orig # currently expanded node
+    children = get_conected_nodes_tmap2(cen) # nodes current node is connected to
+
+    not_goal=True
+    route_found=False
+    while not_goal :
+        if target in children:
+            not_goal=False
+            route_found=True
+            cdist = get_distance_to_node_tmap2(cen, goal)
+            cnte = NodeToExpand(goal["node"]["name"], nte.name, nte.current_distance+cdist, 0.0) # Node to Expand
+            expanded.append(cnte)
+        else :
+            for i in children:
+                been_expanded = False
+                to_be_expanded = False
+                for j in expanded: # search in expanded
+                    if i == j.name:
+                        been_expanded = True
+                        old_expand_node = j # found it. skip remaining
+                        break
+                if not been_expanded:
+                    # not in expanded, search in to_expand. can't be in both
+                    for j in to_expand:
+                        if i == j.name:
+                            been_expanded = True
+                            to_be_expanded = True
+                            old_expand_node = j
+                            # found it. skip remaining
+                            break
+
+                if not been_expanded:
+                    nnn = get_node_from_tmap2(top_map, i)
+                    tdist = get_distance_to_node_tmap2(goal, nnn)
+                    cdist = get_distance_to_node_tmap2(cen, nnn)
+                    cnte = NodeToExpand(nnn["node"]["name"], nte.name, nte.current_distance+cdist, tdist) # Node to Expand
+                    to_expand.append(cnte)
+                    to_expand = sorted(to_expand, key=lambda node: node.cost)
+                else:
+                    nnn = get_node_from_tmap2(top_map, i)
+                    tdist = get_distance_to_node_tmap2(goal, nnn)
+                    cdist = get_distance_to_node_tmap2(cen, nnn)
+                    # update existing NTE with new data if a shorter route to it is found
+                    if nte.current_distance+cdist < old_expand_node.current_distance:
+                        old_expand_node.father = nte.name
+                        old_expand_node.current_distance = nte.current_distance+cdist
+                        old_expand_node.dist_to_target = tdist
+                        old_expand_node.cost = old_expand_node.current_distance + old_expand_node.dist_to_target
+                        if to_be_expanded: # re-sort to_expand with new costs
+                            to_expand = sorted(to_expand, key=lambda node: node.cost)
+
+            if len(to_expand)>0:
+                nte = to_expand.pop(0)
+                cen =  get_node_from_tmap2(top_map, nte.name)
+                expanded.append(nte)
+                children = get_conected_nodes_tmap2(cen)
+            else:
+                not_goal=False
+                route_found=False
+
+#        print "===== RESULT ====="
+    if route_found:
+        steps=[]
+        val = len(expanded)-1
+        steps.append(expanded[val])
+        next_node = expanded[val].father
+
+        while next_node != 'none':
+            for i in expanded:
+                if i.name == next_node :
+                    steps.append(i)
+                    next_node = i.father
+                    break
+
+        steps.reverse()
+        val = len(steps)
+        for i in range(1, val):
+            edg=get_edges_between_tmap2(top_map, steps[i].father, steps[i].name)
+            route.source.append(steps[i].father)
+            route.edge_id.append(edg[0]["edge_id"])
+            
+    return route
+
+
+
 class NodeToExpand(object):
     
     
@@ -31,111 +135,15 @@ class NodeToExpand(object):
 class TopologicalRouteSearch2(object):
     
 
-    def __init__(self, top_map) :
-
+    def __init__(self, top_map, ignore_cache=True):
         self.top_map = top_map
+        self.ignore_cache = ignore_cache
+        if ignore_cache:
+            search_route_func.clear_cache()
 
-    @cachier(stale_after=datetime.timedelta(hours=4))
     def search_route(self, origin, target):
-        """
-        This function searches the route to reach the goal
-        """
-        route = NavRoute()
+        return search_route_func(self.top_map, origin, target, ignore_cache= self.ignore_cache)
 
-        if origin == "none" or target == "none" or origin == target:
-            return route
-
-        goal = get_node_from_tmap2(self.top_map, target)
-        orig = get_node_from_tmap2(self.top_map, origin)
-        to_expand=[]
-        children=[]
-        expanded=[]
-
-        nte = NodeToExpand(orig["node"]["name"], 'none', 0.0, get_distance_to_node_tmap2(goal, orig)) # Node to Expand
-        expanded.append(nte)
-
-        cen = orig # currently expanded node
-        children = get_conected_nodes_tmap2(cen) # nodes current node is connected to
-
-        not_goal=True
-        route_found=False
-        while not_goal :
-            if target in children:
-                not_goal=False
-                route_found=True
-                cdist = get_distance_to_node_tmap2(cen, goal)
-                cnte = NodeToExpand(goal["node"]["name"], nte.name, nte.current_distance+cdist, 0.0) # Node to Expand
-                expanded.append(cnte)
-            else :
-                for i in children:
-                    been_expanded = False
-                    to_be_expanded = False
-                    for j in expanded: # search in expanded
-                        if i == j.name:
-                            been_expanded = True
-                            old_expand_node = j # found it. skip remaining
-                            break
-                    if not been_expanded:
-                        # not in expanded, search in to_expand. can't be in both
-                        for j in to_expand:
-                            if i == j.name:
-                                been_expanded = True
-                                to_be_expanded = True
-                                old_expand_node = j
-                                # found it. skip remaining
-                                break
-
-                    if not been_expanded:
-                        nnn = get_node_from_tmap2(self.top_map, i)
-                        tdist = get_distance_to_node_tmap2(goal, nnn)
-                        cdist = get_distance_to_node_tmap2(cen, nnn)
-                        cnte = NodeToExpand(nnn["node"]["name"], nte.name, nte.current_distance+cdist, tdist) # Node to Expand
-                        to_expand.append(cnte)
-                        to_expand = sorted(to_expand, key=lambda node: node.cost)
-                    else:
-                        nnn = get_node_from_tmap2(self.top_map, i)
-                        tdist = get_distance_to_node_tmap2(goal, nnn)
-                        cdist = get_distance_to_node_tmap2(cen, nnn)
-                        # update existing NTE with new data if a shorter route to it is found
-                        if nte.current_distance+cdist < old_expand_node.current_distance:
-                            old_expand_node.father = nte.name
-                            old_expand_node.current_distance = nte.current_distance+cdist
-                            old_expand_node.dist_to_target = tdist
-                            old_expand_node.cost = old_expand_node.current_distance + old_expand_node.dist_to_target
-                            if to_be_expanded: # re-sort to_expand with new costs
-                                to_expand = sorted(to_expand, key=lambda node: node.cost)
-
-                if len(to_expand)>0:
-                    nte = to_expand.pop(0)
-                    cen =  get_node_from_tmap2(self.top_map, nte.name)
-                    expanded.append(nte)
-                    children = get_conected_nodes_tmap2(cen)
-                else:
-                    not_goal=False
-                    route_found=False
-
-#        print "===== RESULT ====="
-        if route_found:
-            steps=[]
-            val = len(expanded)-1
-            steps.append(expanded[val])
-            next_node = expanded[val].father
-
-            while next_node != 'none':
-                for i in expanded:
-                    if i.name == next_node :
-                        steps.append(i)
-                        next_node = i.father
-                        break
-
-            steps.reverse()
-            val = len(steps)
-            for i in range(1, val):
-                edg=get_edges_between_tmap2(self.top_map, steps[i].father, steps[i].name)
-                route.source.append(steps[i].father)
-                route.edge_id.append(edg[0]["edge_id"])
-                
-        return route
 #########################################################################################################
 
 

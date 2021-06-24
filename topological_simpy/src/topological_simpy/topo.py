@@ -190,7 +190,7 @@ class TopologicalForkGraph(object):
 
         self.request_process = None
         self.graph_goto_process = None
-        self._goto_process = None
+        self.goto_process = {}
 
         self.node_put_queue = {}
 
@@ -366,6 +366,18 @@ class TopologicalForkGraph(object):
                     #     self.graph.env.now, robot_id, cur_node, target, r))
                     return r
 
+    def node_edge_number_rank(self, nodes):
+        """
+        Rank the nodes based on the number of their edges
+
+        :param nodes: string list, topological nodes
+        """
+        n_edges = {}
+        for node in nodes:
+            n_edges[node] = self.get_node_edges(node)
+        n_edges_rank = collections.OrderedDict(sorted(n_edges.items(), key=lambda x: x[1], reverse=True))
+        return n_edges_rank
+
     def deadlock_dodge(self, robot_id, n, target, new_route):
         """
         When in deadlock, find a new route.
@@ -409,7 +421,9 @@ class TopologicalForkGraph(object):
                     route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
                     route_nodes = [node_to_dodge] + route_nodes_to_dodge
                 elif len(curr_node_edges) != 0:
-                    node_to_dodge = curr_node_edges[0]  # TODO: any better selecting criteria?
+                    # node_to_dodge = curr_node_edges[0]  # TODO: any better selecting criteria?
+                    node_to_dodge_list = self.node_edge_number_rank(curr_node_edges)
+                    node_to_dodge = node_to_dodge_list[0]
                     route_nodes_to_dodge = self.get_route_nodes(node_to_dodge, target)
                     route_nodes = [node_to_dodge] + route_nodes_to_dodge
                 else:
@@ -719,17 +733,15 @@ class TopologicalForkGraph(object):
             if self.t_mode[robot_id] == 30:
                 self.add_cold_storage_usage_queue(robot_id, self.env.now)
                 self.init_wait_queue(robot_id, target)
-                self._goto_process = self.env.process(self._goto_container(target, robot_id))
-                yield self._goto_process
+                self.goto_process[robot_id] = self.env.process(self._goto_container(target, robot_id))
+                yield self.goto_process[robot_id]
                 self.t_mode[robot_id] = 4
 
             elif self.t_mode[robot_id] == 31:
                 self.add_cold_storage_usage_queue(robot_id, self.env.now)
                 if self.curr_node[robot_id] != self.base_stations[robot_id]:
-                    self._goto_process = self.env.process(
-                        self._goto_container(self.base_stations[robot_id],
-                                             robot_id))
-                    yield self._goto_process
+                    self.goto_process[robot_id] = self.env.process(self._goto_container(self.base_stations[robot_id], robot_id))
+                    yield self.goto_process[robot_id]
                 self.t_mode[robot_id] = 32
 
             elif self.t_mode[robot_id] == 32:
@@ -758,8 +770,8 @@ class TopologicalForkGraph(object):
                         self.cold_storage_queue_wait_time[idx]['wait_time'] = real_wait_time
                         self.cold_storage_queue_wait_time[idx]['start_using_storage_time'] = self.env.now
                         break
-                self._goto_process = self.env.process(self._goto_container(target, robot_id))
-                yield self._goto_process
+                self.goto_process[robot_id] = self.env.process(self._goto_container(target, robot_id))
+                yield self.goto_process[robot_id]
                 self. t_mode[robot_id] = 4
 
     def goto_scheduler_mode(self, target, robot_id):
@@ -776,8 +788,8 @@ class TopologicalForkGraph(object):
 
         # before go to the target, if the target node is not cold_storage_node, go to the target directly
         if target != self.cold_storage_node:
-            yield self.env.process(self._goto_container(target,
-                                                        robot_id))
+            self.goto_process[robot_id] = self.env.process(self._goto_container(target, robot_id))
+            yield self.goto_process[robot_id]
             # if self.interrupted:
             #     yield self.graph.env.process(self._goto(target))
         else:
@@ -885,9 +897,9 @@ class TopologicalForkGraph(object):
 
                         if robot_id in self.deadlocks['deadlock_robot_ids']:
 
-                            # self.deadlock_coordinator(self.deadlocks['deadlock_robot_ids'])  # todo[next]: use coordinator after splitting out container map
+                            self.deadlock_coordinator(self.deadlocks['deadlock_robot_ids'])
 
-                            self.dodge[robot_id]['to_dodge'] = True
+                            # self.dodge[robot_id]['to_dodge'] = True
 
                             if self.dodge[robot_id]['to_dodge'] is True:
                                 self.loginfo('| %5.1f: %s is in deadlock, change route now' %
@@ -935,20 +947,32 @@ class TopologicalForkGraph(object):
                         self.env.now, robot_id, n,
                         self.env.now - start_wait))
 
-            except simpy.Interrupt:
-                if robot_id in self.dead_locks:
+            except simpy.Interrupt as interrupt:
+                # interrupted = interrupt.cause
+                if robot_id in self.dead_locks and interrupt.cause == 'quit_from_put_queue':
                     # self.reset_dodge(robot_id)  # reset 'to_dodge'
-                    if self.dodge[robot_id]['to_dodge'] is True:
-                        self.dodge[robot_id]['to_dodge'] = False
-                    if self.dodge[robot_id]['dodged'] is False:
-                        self.dodge[robot_id]['dodged'] = True
-
-                    interrupted = 'deadlock'    # interrupted by farm.scheduler_monitor: robot._goto_process.interrupt()
+                    # if self.dodge[robot_id]['to_dodge'] is True:
+                    #     self.dodge[robot_id]['to_dodge'] = False
+                    # if self.dodge[robot_id]['dodged'] is False:
+                    #     self.dodge[robot_id]['dodged'] = True
+                    
+                    interrupted = interrupt.cause  # 'deadlock'    # interrupted by farm.scheduler_monitor: robot._goto_process.interrupt()
                     self.loginfo('  %5.1f: @@@ %s INTERRUPTED when in deadlock, quiting from put_queue of %s' %
                                  (self.env.now, robot_id, n))
                     # yield self.env.process(self.release_node_from_put_queue(robot_id, n))
                     # yield self.release_node_from_put_queue_return(robot_id, n)  # TODO[now]: where is the robot after remove from the put_queue???
                     yield self.release_node_from_put_queue_return_remove(robot_id, n)
+
+                    # todo: change route here
+                    route_nodes = self.deadlock_dodge(robot_id, n, target, new_route=None)
+
+                    # prepare to change to the new route_nodes
+                    self.cancel_hold_time(n, hold_time)  # cancel the hold_time just set
+                    self.loginfo('^ %5.1f: %s dodging at NEW route: %s' %
+                                 (self.env.now, robot_id, route_nodes))
+                    # reset dodge flags
+                    self.dodge[robot_id]['to_dodge'] = False
+                    self.dodge[robot_id]['dodged'] = True
                 break
 
             except TypeError:
@@ -1014,12 +1038,12 @@ class TopologicalForkGraph(object):
             self.log_cost(robot_id, 0, 0, 'ABORTED')  # for monitor
             # self.interrupted = True
 
-            if interrupted == 'deadlock':
+            if interrupted == 'quit_from_put_queue':
                 self.loginfo('C %5.1f: %s continue going to target: %s' % (self.env.now, robot_id, target))
                 # TODO: [future] interrupted reason is still unclear (one reason is the wait_time < 0, but why it causes
                 #  interrupt?)
-                self.graph_goto_process = self.env.process(self._goto_container(target, robot_id))
-                yield self.graph_goto_process
+                self.goto_process[robot_id] = self.env.process(self._goto_container(target, robot_id))
+                yield self.goto_process[robot_id]
                 # self.interrupted = False
             elif interrupted == 'travelling':
                 pass    # todo

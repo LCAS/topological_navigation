@@ -314,12 +314,13 @@ class FarmSim(topological_simpy.farm.Farm):
                     # 3 - waiting for unloading, 4 - transporting to storage, 5- charging
 
                     # # #############Test interrupt#######todo to be removed #################
-                    # # robot.graph.reset_interrupted(robot_id)
-                    # if robot.graph.dodge[robot_id]['to_dodge'] is True:
-                    #     # robot.graph.inform_to_interrupt(robot_id)
-                    #     print('%.1f: %s is to interrupt' % (self.env.now, robot_id))
-                    #     robot._goto_process.interrupt('In deadlock, quiting from put_queue')
-                    #     # robot.graph.inform_interrupted(robot_id) # todo dodged = true, to_dodge = fase?
+                    # robot.graph.reset_interrupted(robot_id)
+                    if robot.graph.dodge[robot_id]['to_dodge'] is True:
+                        # robot.graph.inform_to_interrupt(robot_id)
+                        print('%.1f: %s is to interrupt' % (self.env.now, robot_id))
+                        robot.graph.goto_process[robot_id].interrupt('quit_from_put_queue')
+                        # todo: if robot is parking, how to interrupt?
+                        # robot.graph.inform_interrupted(robot_id) # todo dodged = true, to_dodge = false?
                     #
                     # # #######################################################
 

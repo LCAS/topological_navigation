@@ -317,9 +317,24 @@ class FarmSim(topological_simpy.farm.Farm):
                     # robot.graph.reset_interrupted(robot_id)
                     if robot.graph.dodge[robot_id]['to_dodge'] is True:
                         # robot.graph.inform_to_interrupt(robot_id)
-                        print('%.1f: %s is to interrupt' % (self.env.now, robot_id))
-                        robot.graph.goto_process[robot_id].interrupt('quit_from_put_queue')
-                        # todo: if robot is parking, how to interrupt?
+                        self.loginfo('%.1f: %s is to interrupt by %s'
+                                     % (self.env.now, robot_id, robot.graph.dodge[robot_id]['cause']))
+                        if robot.graph.dodge[robot_id]['cause'] == 'deadlock':
+                            try:
+                                robot.graph.goto_process[robot_id].interrupt('quit_from_put_queue')
+                            except Exception as exc:
+                                print(exc)
+                        elif robot.graph.dodge[robot_id]['cause'] == 'parking':
+                            # Another robot gonna park for a long time, inform other robot who are waiting to replan route
+                            try:
+                                robot.graph.goto_process[robot_id].interrupt(robot.graph.dodge[robot_id]['cause'])
+                            except Exception as exc:
+                                print(exc)
+                        else:
+                            self.loginfo("interrupt cause not defined")   # for debug
+                            break
+
+                        # todo: if robot is parking, how to interrupt? avoid interruption by promote the priority
                         # robot.graph.inform_interrupted(robot_id) # todo dodged = true, to_dodge = false?
                     #
                     # # #######################################################

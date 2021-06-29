@@ -509,10 +509,10 @@ class TopologicalNavServer(object):
         else:
             if a not in self.move_base_actions:
                 move_base_act = False
-                for i in o_node.edges:
+                for i in o_node["node"]["edges"]:
                     # Check if there is a move_base action in the edages of this node
                     # if not is dangerous to move
-                    if i.action in self.move_base_actions:
+                    if i["action"] in self.move_base_actions:
                         move_base_act = True
 
                 if not move_base_act:

@@ -23,37 +23,10 @@ def node_dist(node1,node2):
 
 
 class map_manager(object):
-
-    def __init__(self, name, load=True, load_from_file=False) :
-        self.name = name
-        self.load_from_file = load_from_file
-        self.map_ok = True
-        self.yaw_goal_tolerance = 0.1
-        self.xy_goal_tolerance = 0.3
-
-        if load:
-            if not load_from_file:
-                self.nodes = self.loadMap(name)
-            else:
-                self.nodes, self.tmap = self.load_map_from_file(name)
-                rospy.set_param('topological_map_path', os.path.split(name)[0])
-                rospy.set_param('topological_map_filename', os.path.split(name)[1])
-                
-            self.names = self.create_list_of_nodes()
-            self.manager2 = map_manager_2()
-            self.tmap_to_tmap2() # convert map to new format
-        else:
-            self.nodes = strands_navigation_msgs.msg.TopologicalMap()
-            self.nodes.name = name
-            self.nodes.pointset = name
-            self.names=[]
-
-        rospy.set_param('topological_map_name', self.nodes.pointset)
-        self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
-        self.last_updated = rospy.Time.now()
-        self.map_pub.publish(self.nodes)
-
-        rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
+    
+    
+    def __init__(self):
+        
         #This service returns any given map
         self.get_map_srv=rospy.Service('/topological_map_publisher/get_topological_map', strands_navigation_msgs.srv.GetTopologicalMap, self.get_topological_map_cb)
         #This service switches topological map
@@ -85,6 +58,40 @@ class map_manager(object):
         self.add_edges_srv=rospy.Service('/topological_map_manager/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
         self.update_edge_srv=rospy.Service('/topological_map_manager/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         self.remove_edge_srv=rospy.Service('/topological_map_manager/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
+        
+        self.manager2 = map_manager_2()
+        
+
+    def init_map(self, name, load=True, load_from_file=False):
+        
+        self.name = name
+        self.load_from_file = load_from_file
+        self.map_ok = True
+        self.yaw_goal_tolerance = 0.1
+        self.xy_goal_tolerance = 0.3
+
+        if load:
+            if not load_from_file:
+                self.nodes = self.loadMap(name)
+            else:
+                self.nodes, self.tmap = self.load_map_from_file(name)
+                rospy.set_param('topological_map_path', os.path.split(name)[0])
+                rospy.set_param('topological_map_filename', os.path.split(name)[1])
+                
+            self.names = self.create_list_of_nodes()
+            self.tmap_to_tmap2() # convert map to new format
+        else:
+            self.nodes = strands_navigation_msgs.msg.TopologicalMap()
+            self.nodes.name = name
+            self.nodes.pointset = name
+            self.names=[]
+
+        rospy.set_param('topological_map_name', self.nodes.pointset)
+        self.map_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
+        self.last_updated = rospy.Time.now()
+        self.map_pub.publish(self.nodes)
+
+        rospy.Subscriber('/update_map', std_msgs.msg.Time, self.updateCallback)
         
 
     def updateCallback(self, msg) :
@@ -929,7 +936,6 @@ class map_manager(object):
             self.map_ok = False
         
         # check for duplicate node names
-        print "\n"
         names = [node.name for node in nodes.nodes]
         names.sort()
         for name in set(names):
@@ -943,7 +949,6 @@ class map_manager(object):
         edge_ids.sort()
 
         # check for duplicate edges
-        print "\n"
         for e in set(edge_ids):
             edge_nodes = re.match("(.*)" + sep + "(.*)", e).groups()
             origin = edge_nodes[0]
@@ -955,7 +960,6 @@ class map_manager(object):
                 self.map_ok = False
         
         # check that an edge's destination node exists
-        print "\n"         
         for e in set(edge_ids):
             edge_nodes = re.match("(.*)" + sep + "(.*)", e).groups()
             origin = edge_nodes[0]

@@ -3,6 +3,7 @@ import rospy
 import sympy
 import copy
 import json
+import yaml
 import sys
 import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapRequest, RestrictMapResponse
@@ -10,115 +11,16 @@ from topological_navigation.manager2 import map_manager_2
 from strands_navigation_msgs.msg import TopologicalMap
 from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 from std_msgs.msg import String
-from abc import ABCMeta, abstractmethod, abstractproperty
 from sympy.parsing.sympy_parser import parse_expr
 
-## TODO make this publish the planning restricted topological_map under the robot namespace
-## TODO add visualise_map for each robot launchfile to visualise the restricted maps
-
-###############################
-##
-# Here extend the class AbstractRestriction to create a new restriction.
-# Once its defined here it will be automatically imported by the RestrictionsManager.
-##
-class AbstractRestriction():
-    """ Abstract definition of a restriction that can be evaluated in real-time """
-    __metaclass__ = ABCMeta
-
-    robot_state = {}
-
-    @abstractmethod
-    def evaluate(self, node=None, value=None, robot_state={}):
-        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        raise NotImplementedError()
-
-    @abstractproperty
-    def name(self):
-        """ The name must correspond to the restriction variable name in the map definition """
-        raise NotImplementedError()
-
-    @abstractmethod 
-    def ground_to_robot(self, robot_namespace=None):
-        """ Retrieves and saves internally the state of the robot necessary for evaluating the restriction  """
-        raise NotImplementedError()
-
-class RobotType(AbstractRestriction):
-    name = "robot"
-
-    def __init__(self):
-        super(AbstractRestriction, self).__init__()
-
-    def evaluate(self, node, value, robot_state={}):
-        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        evaluation = True
-
-        # default state
-        if len(robot_state) == 0:
-            self.ground_to_robot()
-            robot_state = self.robot_state
-
-        if "robot" in robot_state:
-            evaluation = value.lower() == robot_state["robot"].lower()
-        elif "robot" in self.robot_state:
-            evaluation = value.lower() == self.robot_state["robot"].lower()
-        
-        return evaluation
-
-    def ground_to_robot(self):
-        # if robot_namespace is None:
-        #     # robot namespace under which this script is running
-        #     robot_namespace = rospy.get_namespace()
-        try:
-            topic_name = "type"
-            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
-        except rospy.ROSException:
-            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(self.name, topic_name))
-        else:
-            self.robot_state.update({
-                "robot": robot_type.data
-            })
-
-class TaskName(AbstractRestriction):
-    name = "task"
-
-    def __init__(self):
-        super(AbstractRestriction, self).__init__()
-
-    def evaluate(self, node, value, robot_state={}):
-        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        evaluation = True
-
-        # default state
-        if len(robot_state) == 0:
-            self.ground_to_robot()
-            robot_state = self.robot_state
-
-        if "task" in robot_state:
-            evaluation = value.lower() == robot_state["task"].lower()
-        elif "task" in self.robot_state:
-            evaluation = value.lower() == self.robot_state["task"].lower()
-
-        return evaluation
-
-    def ground_to_robot(self):
-        # if robot_namespace is None:
-        #     # robot namespace under which this script is running
-        #     robot_namespace = rospy.get_namespace()
-        try:
-            topic_name = "task"
-            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
-        except rospy.ROSException:
-            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(
-                self.name, topic_name))
-        else:
-            self.robot_state.update({
-                "task": robot_type.data
-            })
-###############################
+from restrictions_impl import *
 
 
 class RestrictionsManager():
-    def __init__(self):
+    def __init__(self, robots, tasks):
+        self.robots = robots
+        self.tasks = tasks
+
         # here are the conditions that can be evaluiated in the predicates
         self.conditions = {}
 
@@ -186,8 +88,8 @@ class RestrictionsManager():
                 predicate = predicate.simplify()
         return predicate
 
-    def _evaluate_restrictions(self, restrictions, node_name, robot_state):
-        # print("evaluate restrictions `{}` for {} and robot_state {}".format(restrictions, node_name, robot_state))
+    def _evaluate_restrictions(self, restrictions, entity_name, robot_state, for_node=True):
+        # print("evaluate restrictions `{}` for {} and robot_state {}".format(restrictions, entity_name, robot_state))
 
         # get the sympy boolean predicate removing the atoms that cannot be grounded
         restriction_predicate = self._predicate_from_string(restrictions)
@@ -200,17 +102,29 @@ class RestrictionsManager():
             restriction = restriction_predicate.atoms().pop()
             restr_elements = restriction.name.split("_")
             condition = self.conditions[restr_elements[0]]
-            evaluation = condition.evaluate(
-                node = node_name,
-                value = restr_elements[1] if len(
-                    restr_elements) > 1 else None,
-                **robot_state
-            )
+            if for_node:
+                evaluation = condition.evaluate_node(
+                    node = entity_name,
+                    value = restr_elements[1] if len(
+                        restr_elements) > 1 else None,
+                    robot_state=robot_state,
+                    tmap=self.topo_map
+                )
+            else:
+                evaluation = condition.evaluate_edge(
+                    edge = entity_name,
+                    value = restr_elements[1] if len(
+                        restr_elements) > 1 else None,
+                    robot_state=robot_state,
+                    tmap=self.topo_map
+                )
             # print("\tsubstituting {} to {}".format(evaluation, restriction.name))
+
             # ground the restriction and simplify the predicate
             restriction_predicate = restriction_predicate.subs({
                 restriction.name: evaluation
             }).simplify()
+
             # print("\t\t res: {}, {}".format(
             #     restriction_predicate, type(restriction_predicate)))
 
@@ -225,6 +139,9 @@ class RestrictionsManager():
 
         response.restricted_tmap = json.dumps(new_topo_map)
 
+
+        self._publish_updated_restricted_maps(new_topo_map)
+
         return response
     
     def restrict_runtime_map_handle(self, request):
@@ -234,6 +151,8 @@ class RestrictionsManager():
         new_topo_map = self._restrict_map_handle(request, "restrictions_runtime")
 
         response.restricted_tmap = json.dumps(new_topo_map)
+
+        self._publish_updated_restricted_maps(new_topo_map)
 
         return response
    
@@ -253,18 +172,18 @@ class RestrictionsManager():
             for i, node in enumerate(self.topo_map["nodes"]):
                 node_restrictions = str(node["node"][restrictions_arg])
                 
-                is_restricted = self._evaluate_restrictions(node_restrictions, node["meta"]["node"], robot_state)
+                is_restricted = self._evaluate_restrictions(node_restrictions, node["meta"]["node"], robot_state, for_node=True)
 
                 # remove the node if the restriction evaluates as False
                 if is_restricted:
-                    # print("{}\n\tremoving node {}".format(
-                    #     node_restrictions, new_topo_map["nodes"][i]))
+                    print("{}\n\tremoving node {}".format(
+                        node_restrictions, new_topo_map["nodes"][i]["meta"]["node"]))
                     to_remove_nodes.add(i)
 
                     # remove all the back edges
                     for (ni, ei) in self.back_edges_idx[node["meta"]["node"]].items():
-                        # print("\n\t removing edge {}".format(
-                        #     new_topo_map["nodes"][ni]["node"]["edges"][ei]))
+                        print("\n\t removing edge {}".format(
+                            new_topo_map["nodes"][ni]["node"]["edges"][ei]["edge_id"]))
                         if ni in to_remove_edges:
                             to_remove_edges[ni].add(ei)
                         else:
@@ -274,11 +193,11 @@ class RestrictionsManager():
                     for ei, edge in enumerate(node["node"]["edges"]):
                         edge_restrictions = str(edge[restrictions_arg])
 
-                        is_restricted = self._evaluate_restrictions(edge_restrictions, edge["edge_id"], robot_state)
+                        is_restricted = self._evaluate_restrictions(edge_restrictions, edge["edge_id"], robot_state, for_node=False)
 
                         if is_restricted:
-                            # print("{}\n\t removing edge {}".format(node_restrictions,
-                            #     new_topo_map["nodes"][i]["node"]["edges"][ei]))
+                            print("{}\n\t removing edge {}".format(node_restrictions,
+                                new_topo_map["nodes"][i]["node"]["edges"][ei]["edge_id"]))
                             if i in to_remove_edges:
                                 to_remove_edges[i].add(ei)
                             else:
@@ -314,6 +233,9 @@ class RestrictionsManager():
         rospy.loginfo("Creating restricted topomaps")
         restricted_tmap2 = self._restrict_map_handle({}, "restrictions_planning")
 
+        self._publish_updated_restricted_maps(restricted_tmap2)
+
+    def _publish_updated_restricted_maps(self, restricted_tmap2):
         self.restricted_tmap2_pub.publish(json.dumps(restricted_tmap2))
 
         old_restricted_tmap = map_manager_2.convert_tmap2_to_tmap(
@@ -322,16 +244,47 @@ class RestrictionsManager():
         self.restricted_tmap_pub.publish(old_restricted_tmap)
 
 
+def get_admissible_robots(config):
+    robots = []
+    if "admissible_robot_ids" in config:
+        robots = config["admissible_robot_ids"]
+
+    return robots
+
+def get_admissible_tasks(config):
+    tasks = []
+    if "active_tasks" in config:
+        tasks = config["active_tasks"]
+
+    return tasks
+
 if __name__ == '__main__':
     rospy.init_node("topological_restrictions_manager")
 
-    manager = RestrictionsManager()
+    config_file = sys.argv[1]
+
+    _config = {}
+    with open(config_file, "r") as f_handle:
+        _config = yaml.load(f_handle)
+
+    # which robots can stay in the field
+    _robots = get_admissible_robots(_config)
+    # which tasks we can executed in the field
+    _tasks = get_admissible_tasks(_config)
+
+    manager = RestrictionsManager(robots=_robots, tasks=_tasks)
 
     # automatically find and register all the classes of AbstractRestriction type
     clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     for restriction in clsmembers:
         if issubclass(restriction[1], AbstractRestriction) and not inspect.isabstract(restriction[1]):
-            manager.register_restriction(restriction[1]())
+            cls_argnames = inspect.getargspec(restriction[1].__init__).args
+            args = {}
+            if "robots" in cls_argnames:
+                args["robots"] = _robots
+            if "tasks" in cls_argnames:
+                args["tasks"] = _tasks
+            manager.register_restriction(restriction[1](**args))
 
     manager.register_connections()
 

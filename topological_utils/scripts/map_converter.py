@@ -36,7 +36,7 @@ def convert_tmaps(root_dir, ext_old, ext_new):
 if __name__ == '__main__' :
     
     if "-h" in sys.argv or "--help" in sys.argv or len(sys.argv) < 4:
-        print "usage is map_converter.py, root_directory, old_topomap_ext, new_topomap_ext"
+        print "usage is map_converter.py root_directory old_topomap_ext new_topomap_ext"
         sys.exit(1)
     else:
         root_dir = sys.argv[1]

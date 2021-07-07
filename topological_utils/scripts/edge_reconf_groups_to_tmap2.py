@@ -6,18 +6,12 @@ Created on Tue Jul  6 13:07:18 2021
 """
 #########################################################################################################
 import sys, rospy, yaml
-
 from topological_navigation.manager2 import map_manager_2
 
 
 def load_yaml(filename):
     with open(filename,'r') as f:
         return yaml.load(f)
-        
-
-def save_yaml(filename, data, dfs=False):
-    with open(filename,'w') as f:
-        return yaml.dump(data, f, default_flow_style=dfs)
     
     
 def edge_groups_to_tmap2(f_tmap2, groups, group_names):
@@ -26,6 +20,7 @@ def edge_groups_to_tmap2(f_tmap2, groups, group_names):
     mm2.init_map(filename=f_tmap2)
 
     for name in group_names:
+        rospy.loginfo("Adding parameters for edge group {}".format(name))
         group = groups["edge_nav_reconfig_groups"][name]
         
         for edge_id in group["edges"]:
@@ -37,8 +32,8 @@ def edge_groups_to_tmap2(f_tmap2, groups, group_names):
                     value_is_string = True
                     
                 mm2.add_param_to_edge_config(edge_id, param["ns"], param["name"], value, value_is_string, write_map=False)
-                
-    return mm2.tmap2
+    
+    mm2.write_topological_map(f_tmap2)            
 #########################################################################################################
 
 
@@ -59,8 +54,5 @@ if __name__ == '__main__' :
     rospy.init_node("edge_reconf_groups_to_tmap2")
     
     groups = load_yaml(f_groups)
-    tmap2_out = edge_groups_to_tmap2(f_tmap2, groups, group_names)
-
-    rospy.loginfo("Writing map to: {}".format(f_tmap2))
-    save_yaml(f_tmap2, tmap2_out)
+    edge_groups_to_tmap2(f_tmap2, groups, group_names)
 #########################################################################################################

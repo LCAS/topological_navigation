@@ -811,7 +811,7 @@ class map_manager_2(object):
         return self.add_param_to_edge_config(req.edge_id, req.namespace, req.name, req.value, req.value_is_string)
     
     
-    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string):
+    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string, write_map=True):
         
         if not value:
             return False, "no value provided"
@@ -836,7 +836,8 @@ class map_manager_2(object):
             
             self.tmap2["nodes"][index] = the_node
             self.update()
-            self.write_topological_map(self.filename)
+            if write_map:
+                self.write_topological_map(self.filename)
             
             return True, msg
         else:

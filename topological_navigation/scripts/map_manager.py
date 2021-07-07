@@ -46,5 +46,7 @@ if __name__ == '__main__' :
             _map=sys.argv[1]
 
     rospy.init_node("topological_map_manager")
-    ps = map_manager(_map,load,load_from_file)
+    ps = map_manager()
+    ps.init_map(_map,load,load_from_file)
     rospy.spin()
+#########################################################################################################

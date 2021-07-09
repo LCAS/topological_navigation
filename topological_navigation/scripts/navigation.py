@@ -496,35 +496,34 @@ class TopologicalNavServer(object):
         # If the robot is not on a node or the first action is not move base type
         # navigate to closest node waypoint (only when first action is not move base)
         if self.current_node == "none" and a not in self.move_base_actions:
-            if a not in self.move_base_actions:
-                self.next_action = a
-                print "Do %s to %s" % (self.move_base_name, self.closest_node)
+            self.next_action = a
+            print "Do %s to %s" % (a, self.closest_node)
 
-                # 5 degrees tolerance
-                params = {"yaw_goal_tolerance": 0.087266}
-                self.reconfigure_movebase_params(params)
+            # 5 degrees tolerance
+            params = {"yaw_goal_tolerance": 0.087266}
+            self.reconfigure_movebase_params(params)
 
+            self.current_target = Orig
+            nav_ok, inc = self.execute_action(edge_from_id, o_node)
+            
+        elif a not in self.move_base_actions:
+            move_base_act = False
+            for i in o_node["node"]["edges"]:
+                # Check if there is a move_base action in the edges of this node
+                # if not is dangerous to move
+                if i["action"] in self.move_base_actions:
+                    move_base_act = True
+
+            if not move_base_act:
+                rospy.loginfo("Action not taken, outputing success")
+                nav_ok = True
+                inc = 0
+            else:
+                rospy.loginfo("Getting to exact pose")
                 self.current_target = Orig
                 nav_ok, inc = self.execute_action(edge_from_id, o_node)
-        else:
-            if a not in self.move_base_actions:
-                move_base_act = False
-                for i in o_node["node"]["edges"]:
-                    # Check if there is a move_base action in the edages of this node
-                    # if not is dangerous to move
-                    if i["action"] in self.move_base_actions:
-                        move_base_act = True
-
-                if not move_base_act:
-                    rospy.loginfo("Action not taken, outputing success")
-                    nav_ok = True
-                    inc = 0
-                else:
-                    rospy.loginfo("Getting to exact pose")
-                    self.current_target = Orig
-                    nav_ok, inc = self.execute_action(edge_from_id, o_node)
-                    rospy.loginfo("going to waypoint in node resulted in")
-                    print nav_ok
+                rospy.loginfo("going to waypoint in node resulted in")
+                print nav_ok
 
         while rindex < (len(route.edge_id)) and not self.cancelled and nav_ok:
             

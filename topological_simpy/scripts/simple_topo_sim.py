@@ -25,8 +25,9 @@ from datetime import datetime
 RANDOM_SEED = 19
 SIM_RT_FACTOR = 0.00001  # simulation speed, 1: real time; 0.01: 100 times faster
 VERBOSE = True
-SHOW_VIS = False  # show visualisation
+SHOW_VIS = True  # show visualisation
 SAVE_RANDOM = False  # save random figures
+SAVE_FINAL = True  # save final figures
 SAVE_STATS = True
 
 seed(RANDOM_SEED)
@@ -153,11 +154,26 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
                                               configure_params["n_iteration"],
                                               VERBOSE)
 
+    # create log directory if does not exist already
+    if SAVE_STATS:
+        asc_time = time.asctime().split(" ")
+        if asc_time[2] == "":
+            log_dir = os.path.join(os.path.expanduser("~"), "des_simpy_logs", "%s_%s_0%s_%s" % (
+                asc_time[5], asc_time[1], asc_time[3], asc_time[4].replace(":", "_")))
+        else:
+            log_dir = os.path.join(os.path.expanduser("~"), "des_simpy_logs", "%s_%s_%s_%s" % (
+                asc_time[4], asc_time[1], asc_time[2], asc_time[3].replace(":", "_")))
+        if os.path.exists(log_dir):
+            pass
+        else:
+            os.makedirs(log_dir)
+
     if SHOW_VIS:
-        vis = topological_simpy.visualise_sim.VisualiseAgentsSim(topo_graph, robots,
+        vis = topological_simpy.visualise_sim.VisualiseAgentsSim(log_dir, topo_graph, robots,
                                                                  pickers, scheduling_policy,
                                                                  show_cs=True,
                                                                  save_random=SAVE_RANDOM,
+                                                                 save_final=SAVE_FINAL,
                                                                  trial=ith_trial)
 
     # instead of env.run() we should env.step() to have any control (Ctrl+c)
@@ -198,20 +214,6 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
     # print("Saving simulation results:\n "
     #       "num_pickers:%d, num_robots:%d, scheduling_policy:%s, ith_trial:%d, running time(clock):%.3f"
     #       % (num_pickers, num_robots, scheduling_policy, ith_trial, finish_time_real - start_time_real))
-
-    # create log directory if does not exist already
-    if SAVE_STATS:
-        asc_time = time.asctime().split(" ")
-        if asc_time[2] == "":
-            log_dir = os.path.join(os.path.expanduser("~"), "des_simpy_logs", "%s_%s_0%s_%s" % (
-                asc_time[5], asc_time[1], asc_time[3], asc_time[4].replace(":", "_")))
-        else:
-            log_dir = os.path.join(os.path.expanduser("~"), "des_simpy_logs", "%s_%s_%s_%s" % (
-                asc_time[4], asc_time[1], asc_time[2], asc_time[3].replace(":", "_")))
-        if os.path.exists(log_dir):
-            pass
-        else:
-            os.makedirs(log_dir)
 
     if SAVE_STATS:
         time_now = time.time() * 1000000

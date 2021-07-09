@@ -11,6 +11,10 @@ import random
 import os
 from datetime import datetime
 import matplotlib.pyplot
+import numpy
+import pandas
+import seaborn
+import rospy
 
 
 class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
@@ -19,7 +23,7 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
     This extension class updates to match topological map2 format.
     """
 
-    def __init__(self, topo_graph, robots, pickers, policy, show_cs=False, save_random=False, trial=0):
+    def __init__(self, log_dir, topo_graph, robots, pickers, policy, show_cs=False, save_random=False, save_final=False, trial=0):
 
         super(VisualiseAgentsSim, self).__init__(topo_graph, robots, pickers, policy, show_cs=False,
                                                  save_random=False, trial=0)
@@ -27,13 +31,12 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
         self.save_fig = save_random
         self.trial = trial
 
-        try:
-            os.mkdir("../data/fig")
-        except OSError as e:
-            print("fig directory exists")
-        if self.save_fig:
-            self.fig_name_base = "../data/fig" + "/P%d_R%d_S%s_T%d_" % (
-                self.n_pickers, self.n_robots, self.policy, self.trial)
+        self.show_cbar = True
+        self.save_final_fig = save_final
+        self.log_dir = log_dir
+
+        self.fig_name_base = self.log_dir + "/P%d_R%d_S%s_T%d_" % (
+            self.n_pickers, self.n_robots, self.policy, self.trial)
 
     def init_plot(self):
         """Initialise the plot frame"""
@@ -241,10 +244,67 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
         self.fig.canvas.draw()
         if self.save_fig:
-            self.fig.savefig(self.fig_name_base + datetime.now().isoformat() + "_S_%.1f.svg" % self.graph.env.now)
+            self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_S_%.1f.eps" % self.graph.env.now)
 
         return (self.static_lines + self.picker_position_lines +
                 self.picker_status_texts + self.robot_position_lines + self.robot_status_texts)
+
+    def update_plot_bar(self):
+        # plot the node resource usage
+        valid_node_log = dict((k, v) for k, v in self.graph.node_log.iteritems() if v)
+        names = list(valid_node_log.keys())
+        values = [len(value) for value in valid_node_log.values()]
+        self.ax[1].clear()
+        self.ax[1].bar(range(len(names)), values, color='b')
+        self.ax[1].set_xlabel('Topological node')
+        self.ax[1].set_ylabel("Access times")
+        self.ax[1].set_xticks(range(len(names)))
+        self.ax[1].set_xticklabels(names, fontsize=9, rotation=45)
+
+    def update_plot_heatmap(self):
+        """
+        Plot the heatmap of node usage
+        """
+        valid_node_log = dict((k, v) for k, v in self.graph.node_log.iteritems() if v)
+        names = list(valid_node_log.keys())
+        values = [len(value) for value in valid_node_log.values()]
+        node_pose_x_list = []
+        node_pose_y_list = []
+        for node in names:
+            node_obj = self.graph.get_node(node)
+            node_pose_x_list.append(int(round(node_obj['node']['pose']['position']['x'])))  # meter to centimeter
+            node_pose_y_list.append(int(round(node_obj['node']['pose']['position']['y'])))
+
+        node_pose_x = numpy.array(node_pose_x_list)
+        node_pose_y = numpy.array(node_pose_y_list)
+
+        max_x = max(node_pose_x_list)
+        min_x = min(node_pose_x_list)
+        max_y = max(node_pose_y_list)
+        min_y = min(node_pose_y_list)
+        data = numpy.zeros((max_x - min_x,
+                            max_y - min_y))
+
+        for i, x in enumerate(node_pose_x):
+            for j, y in enumerate(node_pose_y):
+                if i == j:
+                    data[x - min_x - 1, y - min_y - 1] = values[i]
+                    break
+
+        df = pandas.DataFrame(data,
+                              index=numpy.linspace(min_x, max_x - 1, max_x - min_x, dtype='int'),
+                              columns=numpy.linspace(min_y, max_y - 1, max_y - min_y, dtype='int'))
+        self.ax[1].clear()
+
+        # only initialise color bar once, then don't update it anymore
+        if self.show_cbar:
+            # get sharp grid back by removing rasterized=True, and save fig as svg format
+            self.ax[1] = seaborn.heatmap(df, cbar=True, rasterized=True)
+            self.show_cbar = False
+        else:
+            # get sharp grid back by removing rasterized=True, and save fig as svg format
+            self.ax[1] = seaborn.heatmap(df, cbar=False, rasterized=True)
+        self.ax[1].set(xlabel='Node pose y', ylabel='Node pose x')
 
     def update_plot(self):
         """update the positions of the dynamic objects"""
@@ -275,15 +335,9 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
             self.robot_status_texts[i].set_position((x + 1.0, y + 0.5))
 
         # plot the node resource usage
-        valid_node_log = dict((k, v) for k, v in self.graph.node_log.iteritems() if v)
-        names = list(valid_node_log.keys())
-        values = [len(value) for value in valid_node_log.values()]
-        self.ax[1].clear()
-        self.ax[1].bar(range(len(names)), values, color='b')
-        self.ax[1].set_xlabel('Topological node')
-        self.ax[1].set_ylabel("Access times")
-        self.ax[1].set_xticks(range(len(names)))
-        self.ax[1].set_xticklabels(names, fontsize=9, rotation=45)
+        # self.update_plot_bar()
+
+        self.update_plot_heatmap()
 
         # display simulation time
         title_text = 'Up: Discrete Event Simulation for Picking and Transporting Task\n' \
@@ -295,7 +349,20 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
         if self.save_fig:
             if random.random() < 0.1:
-                self.fig.savefig(self.fig_name_base + datetime.now().isoformat() + "_S_%.1f.svg" % self.graph.env.now)
+                self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_S_%.1f.eps" % self.graph.env.now)
 
         return (self.static_lines + self.picker_position_lines + self.picker_status_texts +
                 self.robot_position_lines + self.robot_status_texts)
+
+    def close_plot(self):
+        """close plot"""
+        if self.save_final_fig:
+            # save a full fig
+            self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + ".eps")
+
+            # Save just the portion _inside_ the second axis's boundaries
+            extent = self.ax[1].get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+            self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_heatmap.eps",
+                             bbox_inches=extent.expanded(1.2, 1.22))
+
+        matplotlib.pyplot.close(self.fig)

@@ -249,7 +249,7 @@ class FarmSim(topological_simpy.farm.Farm):
                 # ==============================================================================
                 #             # update picker mode in picker predictors
                 # ==============================================================================
-                # TODO: Check whether any mode changes could be missed?
+                # TODO: remove predictors
                 for picker_id in self.picker_ids:
                     goal_node = None
                     picker = self.pickers[picker_id]
@@ -313,7 +313,7 @@ class FarmSim(topological_simpy.farm.Farm):
                     # 0 - idle, 1 - transporting_to_picker, 2 - waiting for loading,
                     # 3 - waiting for unloading, 4 - transporting to storage, 5- charging
 
-                    # # #############Test interrupt#######todo to be removed #################
+                    # # #############Test interrupt#######
                     # robot.graph.reset_interrupted(robot_id)
                     if robot.graph.dodge[robot_id]['to_dodge'] is True:
                         # robot.graph.inform_to_interrupt(robot_id)
@@ -333,11 +333,7 @@ class FarmSim(topological_simpy.farm.Farm):
                         else:
                             self.loginfo("interrupt cause not defined")   # for debug
                             break
-
-                        # todo: if robot is parking, how to interrupt? avoid interruption by promote the priority
-                        # robot.graph.inform_interrupted(robot_id) # todo dodged = true, to_dodge = false?
-                    #
-                    # # #######################################################
+                    # #######################################################
 
                     if robot.mode == 0:
                         # robot completed the unloading at storage, idle now

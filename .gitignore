@@ -66,3 +66,6 @@ coverage.xml
 
 # virtual environment
 venv/
+
+# pycharm config file
+.idea/

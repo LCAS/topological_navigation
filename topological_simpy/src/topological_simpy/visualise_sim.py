@@ -223,8 +223,8 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
         for i in range(self.n_robots):
             robot = self.robots[i]
             robot_id = robot.robot_id
-            if robot.curr_node is not None:
-                curr_node_obj = self.graph.get_node(robot.curr_node)
+            if robot.graph.curr_node[robot_id] is not None:
+                curr_node_obj = self.graph.get_node(robot.graph.curr_node[robot_id])
                 x = curr_node_obj['node']['pose']['position']['x']
                 y = curr_node_obj['node']['pose']['position']['y']
             else:
@@ -263,8 +263,9 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
         for i in range(self.n_robots):
             robot = self.robots[i]
-            if robot.curr_node is not None:
-                curr_node_obj = self.graph.get_node(robot.curr_node)
+            robot_id = robot.robot_id
+            if robot.graph.curr_node[robot_id] is not None:
+                curr_node_obj = self.graph.get_node(robot.graph.curr_node[robot_id])
                 x = curr_node_obj['node']['pose']['position']['x']
                 y = curr_node_obj['node']['pose']['position']['y']
             else:

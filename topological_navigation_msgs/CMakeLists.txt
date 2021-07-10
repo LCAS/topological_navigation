@@ -32,6 +32,8 @@ add_service_files(
   UpdateEdgeConfig.srv
   RestrictMap.srv
   UpdateRestrictions.srv
+  EvaluateNode.srv
+  EvaluateEdge.srv
   UpdateActionType.srv
 )
 

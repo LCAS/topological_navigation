@@ -1,7 +1,8 @@
+import tf
 import rospy
 import numpy as np
 from abc import ABCMeta, abstractmethod, abstractproperty
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Quaternion
 from std_msgs.msg import String
 
 
@@ -37,17 +38,17 @@ class AbstractRestriction():
         """ Retrieves and saves internally the state of the robot necessary for evaluating the restriction  """
         raise NotImplementedError()
 
-## utils
+## utils TODO these utils should go in tmap_utils I believe
 
-def get_node_position(node_name, tmap):
-    position = np.empty((2))
-    position[:] = np.nan
+def get_node_pose(node_name, tmap):
+    pose = Pose()
     for node in tmap["nodes"]:
         if node["meta"]["node"] == node_name:
-            position[:] = [node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"]]
+            # position[:] = [node["node"]["pose"].position.x, node["node"]["pose"].position.y]
+            pose = node["node"]["pose"]
             break
 
-    return position
+    return pose
 
 # return the two nodes positions at both ends of an edge
 def get_edge_positions(edge_name, tmap):
@@ -58,9 +59,9 @@ def get_edge_positions(edge_name, tmap):
 
     for node in tmap["nodes"]:
         if node["meta"]["node"] == edge_name_parts[0]:
-            node1[:] = [node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"]]
+            node1[:] = [node["node"]["pose"].position.x, node["node"]["pose"].position.y]
         elif node["meta"]["node"] == edge_name_parts[1]:
-            node2[:] = [node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"]]
+            node2[:] = [node["node"]["pose"].position.x, node["node"]["pose"].position.y]
     
     return node1, node2
 
@@ -160,6 +161,81 @@ class TaskName(AbstractRestriction):
                 "task": robot_type.data
             })
 
+class ExactPose(AbstractRestriction):
+    name = "exactPose"
+    MAX_DIST = 1e-1 # the maximum distance, in angle/meter, allowed to still be exactPose
+
+    def __init__(self, robots):
+        super(AbstractRestriction, self).__init__()
+        # keeps the position of each robot with timestamp
+        self.robot_positions = {}
+        def _save_robot_pose(msg, robot):
+            self.robot_positions[robot] = {
+                "position": msg.position,
+                "timestamp_secs": rospy.Time.now().to_sec()
+            }
+        for robot in robots:
+            rospy.Subscriber("/{}/robot_pose".format(robot), 
+                Pose, 
+                lambda msg, arg: _save_robot_pose(msg, arg), 
+                callback_args=(robot)
+            )
+
+    def _get_current_position(self, robot, secs_thr=10):
+        position = None
+        if robot in self.robot_positions and \
+                rospy.Time.now().to_sec() - self.robot_positions[robot]["timestamp_secs"] < secs_thr:
+            position = self.robot_positions[robot]["position"]
+        return position
+
+    # value is not used, check if the current robot_pose is very close to the pose of the node
+    def evaluate_node(self, node, value, robot_state={}, tmap=None):
+        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
+        evaluation = self.DEFAULT_EVALUATION
+
+        # default state
+        if len(robot_state) == 0 or "robot_pose" not in robot_state:
+            self.ground_to_robot()
+            robot_state = self.robot_state
+
+        if tmap is not None:
+            _node_pos = get_node_pose(node, tmap)
+            node_pos = np.array([_node_pos["position"]["x"], _node_pos["position"]["y"]])
+            pose_distance = np.sqrt(np.sum(
+                (node_pos - np.array([robot_state["robot_pose"].position.x, robot_state["robot_pose"].position.y])) ** 2
+            ))
+            node_angle_inv = (_node_pos["orientation"]["x"], _node_pos["orientation"]["y"], _node_pos["orientation"]["z"], - _node_pos["orientation"]["w"])
+            robot_angle = (robot_state["robot_pose"].orientation.x, robot_state["robot_pose"].orientation.y, robot_state["robot_pose"].orientation.z, robot_state["robot_pose"].orientation.w)
+            angle_distance = tf.transformations.euler_from_quaternion(
+                tf.transformations.quaternion_multiply(robot_angle, node_angle_inv)
+            )[2] # yaw (z axis)
+            if pose_distance <= self.MAX_DIST and angle_distance <= self.MAX_DIST:
+                evaluation = True
+            else:
+                evaluation = False
+
+        return evaluation
+    
+    # value not used, check if the current robot_pose is very close to the pose of the node at the beginning of edge
+    def evaluate_edge(self, edge, value, robot_state={}, tmap=None):
+        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
+
+        start_node = edge.split("_")[0]
+
+        return self.evaluate_node(start_node, value, robot_state, tmap)
+
+    def ground_to_robot(self):
+        try:
+            topic_name = "robot_pose"
+            robot_pose = rospy.wait_for_message(topic_name, Pose, timeout=2)
+        except rospy.ROSException:
+            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(
+                self.name, topic_name))
+        else:
+            self.robot_state.update({
+                "robot_pose": robot_pose
+            })
+
 class ObstacleFree(AbstractRestriction):
     name = "obstacleFree"
 
@@ -192,7 +268,8 @@ class ObstacleFree(AbstractRestriction):
         evaluation = self.DEFAULT_EVALUATION
 
         if tmap is not None:
-            node_pos = get_node_position(node, tmap) 
+            _node_pos = get_node_pose(node, tmap)
+            node_pos = np.array([_node_pos["position"]["x"], _node_pos["position"]["y"]])  
 
             all_positions = [self._get_current_position(r) for r in self.robot_positions if r != rospy.get_namespace()]
             all_positions = np.array([[p.x, p.y] for p in all_positions if p is not None])

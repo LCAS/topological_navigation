@@ -6,13 +6,13 @@ import json
 import yaml
 import sys
 import inspect
-from topological_navigation_msgs.srv import RestrictMap, RestrictMapRequest, RestrictMapResponse
+from topological_navigation_msgs.srv import RestrictMap, RestrictMapResponse,\
+        EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse
 from topological_navigation.manager2 import map_manager_2
 from strands_navigation_msgs.msg import TopologicalMap
 from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 from std_msgs.msg import String
 from sympy.parsing.sympy_parser import parse_expr
-
 from restrictions_impl import *
 
 
@@ -23,11 +23,15 @@ class RestrictionsManager():
 
         # here are the conditions that can be evaluiated in the predicates
         self.conditions = {}
-
         # get the topological map
         self.topo_map = None
+        # dictionary of nodes indexed by name
+        self.nodes = {}
+        # dictionary of edges indexed by name
+        self.edges = {}
         # for each node contains the indexes of the nodes which have an edge ending in it
         self.back_edges_idx = {}
+
 
         # publishers for restricted tmap
         self.restricted_tmap_pub = rospy.Publisher("topological_map",
@@ -56,6 +60,10 @@ class RestrictionsManager():
                       RestrictMap, self.restrict_planning_map_handle)
         rospy.Service("restrictions_manager/restrict_runtime_map",
                       RestrictMap, self.restrict_runtime_map_handle)
+        rospy.Service("restrictions_manager/evaluate_node",
+                      EvaluateNode, self.evaluate_node_handle)
+        rospy.Service("restrictions_manager/evaluate_edge",
+                      EvaluateEdge, self.evaluate_edge_handle)
 
     # Create a predicate from the restrictions string and returns the conditions to be checked
     def _predicate_from_string(self, restriction_str):
@@ -139,7 +147,6 @@ class RestrictionsManager():
 
         response.restricted_tmap = json.dumps(new_topo_map)
 
-
         self._publish_updated_restricted_maps(new_topo_map)
 
         return response
@@ -155,14 +162,61 @@ class RestrictionsManager():
         self._publish_updated_restricted_maps(new_topo_map)
 
         return response
+
+
+    def evaluate_node_handle(self, request):
+        response = EvaluateNodeResponse()
+        response.success = True
+    
+        try:
+            robot_state = eval(request.state)
+        except:
+            # rospy.logwarn("Robot state data conversion to dictionary not valid, skip message")
+            robot_state = {}
+
+        if request.node not in self.nodes:
+            response.success = False
+            rospy.logwarn("Received node name {} which is not present in the tmap".format(request.node))
+        else:
+            if request.runtime:
+                node_restrictions = self.nodes[request.node]["node"]["restrictions_runtime"]
+            else:
+                node_restrictions = self.nodes[request.node]["node"]["restrictions_planning"]
+
+            response.evaluation = self._evaluate_restrictions(node_restrictions, request.node, robot_state, for_node=True)
+
+        return response
+
+    def evaluate_edge_handle(self, request):
+        response = EvaluateEdgeResponse()
+        response.success = True
+        try:
+            robot_state = eval(request.state)
+        except:
+            # rospy.logwarn("Robot state data conversion to dictionary not valid, skip message")
+            robot_state = {}
+
+        if request.edge not in self.edges:
+            response.success = False
+            rospy.logwarn("Received edge name {} which is not present in the tmap".format(request.edge))
+        else:
+            if request.runtime:
+                edge_restrictions = self.edges[request.edge]["restrictions_runtime"]
+            else:
+                edge_restrictions = self.edges[request.edge]["restrictions_planning"]
+
+            response.evaluation = self._evaluate_restrictions(edge_restrictions, request.edge, robot_state, for_node=False)
    
+        return response
+
     def _restrict_map_handle(self, request, restrictions_arg):
         new_topo_map = copy.deepcopy(self.topo_map)
         robot_state = {}
         try:
             robot_state = eval(request.state)
         except:
-            rospy.logwarn("Robot state data conversion to dictionary not valid, skip message")
+            pass
+            # rospy.logwarn("Robot state data conversion to dictionary not valid, skip message")
             # robot_state = None 
         finally:
             # tmp_topo_map = copy.deepcopy(self.topo_map)
@@ -174,7 +228,7 @@ class RestrictionsManager():
                 
                 is_restricted = self._evaluate_restrictions(node_restrictions, node["meta"]["node"], robot_state, for_node=True)
 
-                # remove the node if the restriction evaluates as False
+                # remove the node if the restriction evaluates as True
                 if is_restricted:
                     print("{}\n\tremoving node {}".format(
                         node_restrictions, new_topo_map["nodes"][i]["meta"]["node"]))
@@ -214,13 +268,15 @@ class RestrictionsManager():
         return new_topo_map
 
     def _topomap_cb(self, msg):
-
         rospy.loginfo("Received updated topomap")
         self.topo_map = json.loads(msg.data)
         # print("got topomap", self.topo_map["nodes"][0])
 
         for ni, node in enumerate(self.topo_map["nodes"]):
+            self.nodes[node["meta"]["node"]] = node # save a dictionary of nodes
+            self.back_edges_idx[node["meta"]["node"]] = {} # it should contain all the nodes even if they don't have edges
             for ei, edge in enumerate(node["node"]["edges"]):
+                self.edges[edge["edge_id"]] = edge # save a disctionary of edges
                 if edge["node"] in self.back_edges_idx:
                     self.back_edges_idx[edge["node"]].update({
                         ni: ei
@@ -242,7 +298,6 @@ class RestrictionsManager():
             restricted_tmap2, restricted_tmap2["pointset"], restricted_tmap2["metric_map"])
 
         self.restricted_tmap_pub.publish(old_restricted_tmap)
-
 
 def get_admissible_robots(config):
     robots = []

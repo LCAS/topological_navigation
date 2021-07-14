@@ -357,9 +357,9 @@ class TopologicalNavServer(object):
             
             # If > 0 nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node
             self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
-            
             self.nav_from_closest_edge = False
-            if self.max_dist_to_closest_edge == 0 or self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+            
+            if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
                 o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             else:
                 o_node, the_edge = self.orig_node_from_closest_edge(g_node)

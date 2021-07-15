@@ -241,10 +241,10 @@ def get_route_distance(tmap, node_a, node_b):
     
     dist = 0
     for i in range(len(route.source)-1):
-        node_1 = get_node_from_tmap2(tmap, route.source[i])
-        node_2 = get_node_from_tmap2(tmap, route.source[i+1])
+        node_1 = rsearch.get_node_from_tmap2(route.source[i])
+        node_2 = rsearch.get_node_from_tmap2(route.source[i+1])
         dist += get_distance_to_node_tmap2(node_1, node_2)
     
-    dist += get_distance_to_node_tmap2(get_node_from_tmap2(tmap, route.source[-1]), node_b)
+    dist += get_distance_to_node_tmap2(rsearch.get_node_from_tmap2(route.source[-1]), node_b)
     return dist
 #########################################################################################################

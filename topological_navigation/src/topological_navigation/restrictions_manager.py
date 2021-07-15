@@ -7,7 +7,8 @@ import yaml
 import sys
 import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapResponse,\
-        EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse
+        EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse,\
+        SatisfyRuntime, SatisfyRuntimeResponse 
 from topological_navigation.manager2 import map_manager_2
 from strands_navigation_msgs.msg import TopologicalMap
 from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
@@ -64,6 +65,8 @@ class RestrictionsManager():
                       EvaluateNode, self.evaluate_node_handle)
         rospy.Service("restrictions_manager/evaluate_edge",
                       EvaluateEdge, self.evaluate_edge_handle)
+        rospy.Service("restrictions_manager/satisfy_runtime_restrictions",
+                      SatisfyRuntime, self.satisfy_runtime_restrictions)
 
     # Create a predicate from the restrictions string and returns the conditions to be checked
     def _predicate_from_string(self, restriction_str):
@@ -163,7 +166,6 @@ class RestrictionsManager():
 
         return response
 
-
     def evaluate_node_handle(self, request):
         response = EvaluateNodeResponse()
         response.success = True
@@ -207,6 +209,29 @@ class RestrictionsManager():
 
             response.evaluation = self._evaluate_restrictions(edge_restrictions, request.edge, robot_state, for_node=False)
    
+        return response
+
+    def satisfy_runtime_restrictions(self, request):
+        response = SatisfyRuntimeResponse()
+        response.success = True
+        response.satisfied = True
+
+        if request.edge not in self.edges:
+            response.success = False
+            rospy.logwarn("Received edge name {} which is not present in the tmap".format(request.edge))
+        else:
+            edge_restrictions = self.edges[request.edge]["restrictions_runtime"]
+
+            predicate = self._predicate_from_string(edge_restrictions)
+            if not isinstance(predicate, bool) and\
+                not predicate is sympy.true and \
+                not predicate is sympy.false:
+                # satisfy the restrictions of each atom for now...but it doesn't make much sense conceptually
+                for atom in predicate.atoms():
+                    restriction_name = atom.name.split("_")[0]
+
+                    response.satisfied = response.satisfied and self.conditions[restriction_name].satisfy_restriction()
+
         return response
 
     def _restrict_map_handle(self, request, restrictions_arg):

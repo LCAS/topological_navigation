@@ -1,0 +1,7 @@
+string state    # the state of the robot, e.g. '{"robot": "tall", "task": "uv"}'
+string edge     # the name of the edge
+
+---
+
+bool success
+bool satisfied     # is the runtime restrictions on the edge are satisfied after executing the service

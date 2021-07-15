@@ -1,9 +1,12 @@
 import tf
 import rospy
+import dynamic_reconfigure.client
 import numpy as np
+
 from abc import ABCMeta, abstractmethod, abstractproperty
 from geometry_msgs.msg import Pose, Quaternion
 from std_msgs.msg import String
+
 
 
 ###############################
@@ -12,7 +15,7 @@ from std_msgs.msg import String
 # Once its defined here it will be automatically imported by the RestrictionsManager.
 ##
 class AbstractRestriction():
-    """ Abstract definition of a restriction that can be evaluated in real-time """
+    """ Abstract definition of a restriction """
     __metaclass__ = ABCMeta
 
     robot_state = {}
@@ -37,6 +40,18 @@ class AbstractRestriction():
     def ground_to_robot(self):
         """ Retrieves and saves internally the state of the robot necessary for evaluating the restriction  """
         raise NotImplementedError()
+
+class RuntimeRestriction(AbstractRestriction):
+    """ Abstract definition of a restriction that can be evaluated in real-time and can execute actions to make sure it is satisfied.
+        This restriction can be evaluated and satisfied when the navigation plan is already done and the robot is executing it."""
+
+    __metaclass__ = ABCMeta
+
+    @classmethod
+    def satisfy_restriction(cls, params):
+        """ This makes sure the restriction will be satisfied, ot be called before it is encountered in the corresponding edge/node """
+        raise NotImplementedError()
+
 
 ## utils TODO these utils should go in tmap_utils I believe
 
@@ -161,32 +176,27 @@ class TaskName(AbstractRestriction):
                 "task": robot_type.data
             })
 
-class ExactPose(AbstractRestriction):
-    name = "exactPose"
-    MAX_DIST = 1e-1 # the maximum distance, in angle/meter, allowed to still be exactPose
+class StartOnNode(AbstractRestriction):
+    """ Start the navigation action on the """
+    name = "startOnNode"
+    XY_TOLERANCE = 0.1 # the maximum distance, in meter, allowed to still be exactPose
+    YAW_TOLERANCE = 0.087266 # the maximum distance, in randians, allowed to still be exactPose
 
     def __init__(self, robots):
         super(AbstractRestriction, self).__init__()
-        # keeps the position of each robot with timestamp
-        self.robot_positions = {}
-        def _save_robot_pose(msg, robot):
-            self.robot_positions[robot] = {
-                "position": msg.position,
-                "timestamp_secs": rospy.Time.now().to_sec()
-            }
-        for robot in robots:
-            rospy.Subscriber("/{}/robot_pose".format(robot), 
-                Pose, 
-                lambda msg, arg: _save_robot_pose(msg, arg), 
-                callback_args=(robot)
-            )
 
-    def _get_current_position(self, robot, secs_thr=10):
-        position = None
-        if robot in self.robot_positions and \
-                rospy.Time.now().to_sec() - self.robot_positions[robot]["timestamp_secs"] < secs_thr:
-            position = self.robot_positions[robot]["position"]
-        return position
+        self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
+        self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
+        self.DYNPARAM_MAPPING = {
+            "DWAPlannerROS": {
+                "yaw_goal_tolerance": "yaw_goal_tolerance",
+                "xy_goal_tolerance": "xy_goal_tolerance",
+            },
+            "TebLocalPlannerROS": {
+                "yaw_goal_tolerance": "yaw_goal_tolerance",
+                "xy_goal_tolerance": "xy_goal_tolerance",
+            },
+        }
 
     # value is not used, check if the current robot_pose is very close to the pose of the node
     def evaluate_node(self, node, value, robot_state={}, tmap=None):
@@ -209,7 +219,7 @@ class ExactPose(AbstractRestriction):
             angle_distance = tf.transformations.euler_from_quaternion(
                 tf.transformations.quaternion_multiply(robot_angle, node_angle_inv)
             )[2] # yaw (z axis)
-            if pose_distance <= self.MAX_DIST and angle_distance <= self.MAX_DIST:
+            if pose_distance <= self.XY_TOLERANCE and angle_distance <= self.YAW_TOLERANCE:
                 evaluation = True
             else:
                 evaluation = False
@@ -235,6 +245,33 @@ class ExactPose(AbstractRestriction):
             self.robot_state.update({
                 "robot_pose": robot_pose
             })
+
+    def satisfy_restriction(self):
+        satisfied = True
+        ##  For movebase ##
+        params = {"yaw_goal_tolerance": self.YAW_TOLERANCE, "xy_goal_tolerance": self.XY_TOLERANCE}
+        # self.init_dynparams = self.rcnfclient.get_configuration()
+        key = self.move_base_planner[self.move_base_planner.rfind("/") + 1 :]
+        translation = self.DYNPARAM_MAPPING[key]
+        
+        translated_params = {}
+        for k, v in params.iteritems():
+            if k in translation:
+                if rospy.has_param(self.move_base_planner + "/" + translation[k]):
+                    translated_params[translation[k]] = v
+                else:
+                    rospy.logwarn("%s has no parameter %s" % (self.move_base_planner, translation[k]))
+            else:
+                rospy.logwarn("%s has no dynparam translation for %s" % (self.move_base_planner, k))
+        try:
+            self.rcnfclient.update_configuration(params)
+        except rospy.ServiceException as exc:
+            rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. Will continue with previous params", exc)
+            satisfied = False
+
+        ## For other actions... TODO ##
+
+        return satisfied
 
 class ObstacleFree(AbstractRestriction):
     name = "obstacleFree"

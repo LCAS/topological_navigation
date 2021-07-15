@@ -1,0 +1,141 @@
+edge_nav_reconfig_groups:
+  irn:
+    edges: []
+    parameters:
+      - &id001
+        name: forward_point_distance
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.48297542551971
+      - &id002
+        name: vth_samples
+        ns: move_base/DWAPlannerROS
+        type: int
+        value: 67.0
+      - &id003
+        name: prune_plan
+        ns: move_base/DWAPlannerROS
+        type: bool
+        value: true
+      - &id004
+        name: goal_distance_bias
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 37.0
+      - &id005
+        name: occdist_scale
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.17095456476021975
+      - &id006
+        name: vx_samples
+        ns: move_base/DWAPlannerROS
+        type: int
+        value: 35.0
+      - &id007
+        name: path_distance_bias
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 28.786107042177363
+      - &id008
+        name: sim_time
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 2.56592652856906
+      - &id009
+        name: max_scaling_factor
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.572649261744206
+      - &id010
+        name: scaling_speed
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.013910991085600694
+      - &id011
+        name: sim_granularity
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.04403610426260697
+      - &id012
+        name: stop_time_buffer
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.18229162576485147
+      - &id013
+        name: oscillation_reset_dist
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.015779064792816565
+  orn:
+    edges: []
+    parameters:
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+      - *id006
+      - *id007
+      - *id008
+      - *id009
+      - *id010
+      - *id011
+      - *id012
+      - *id013
+  utn:
+    edges: []
+    parameters:
+      - name: forward_point_distance
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.1402690117118645
+      - name: vth_samples
+        ns: move_base/DWAPlannerROS
+        type: int
+        value: 73.0
+      - name: prune_plan
+        ns: move_base/DWAPlannerROS
+        type: bool
+        value: false
+      - name: goal_distance_bias
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 55.0
+      - name: occdist_scale
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.5922531975286119
+      - name: vx_samples
+        ns: move_base/DWAPlannerROS
+        type: int
+        value: 50.0
+      - name: path_distance_bias
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 7.0
+      - name: sim_time
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 2.801314735789211
+      - name: max_scaling_factor
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.8779488542935023
+      - name: scaling_speed
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.31177421746048395
+      - name: sim_granularity
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.02537100021859829
+      - name: stop_time_buffer
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 1.0
+      - name: oscillation_reset_dist
+        ns: move_base/DWAPlannerROS
+        type: double
+        value: 0.054441156382406555
+

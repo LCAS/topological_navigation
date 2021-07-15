@@ -14,14 +14,11 @@ from strands_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
 
 from std_msgs.msg import String
-from geometry_msgs.msg import Pose
+from actionlib_msgs.msg import GoalStatus
 
-from actionlib_msgs.msg import *
-from move_base_msgs.msg import *
-
-from topological_navigation.navigation_stats import *
+from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2, get_route_distance
+from topological_navigation.navigation_stats import nav_stats
 from topological_navigation.tmap_utils import *
-from topological_navigation.route_search2 import *
 
 from topological_navigation.edge_action_manager import EdgeActionManager
 from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
@@ -61,12 +58,10 @@ class TopologicalNavServer(object):
         self._target = "None"
         self.current_action = "none"
         self.next_action = "none"
-        self.n_tries = rospy.get_param("~retries", 3)
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
         self.closest_edges = ClosestEdges()
-        self.nfails = 0
         
         self.navigation_activated = False
         self.navigation_lock = Lock()
@@ -100,6 +95,8 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         
+        self.make_move_base_edge()
+        
         self.edge_action_manager = EdgeActionManager()
 
         # Creating Action Server for navigation
@@ -129,11 +126,26 @@ class TopologicalNavServer(object):
         rospy.loginfo(" ...done")
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
+        self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", True)
         if self.edge_reconfigure:
             self.edgeReconfigureManager = EdgeReconfigureManager()
 
         rospy.loginfo("All Done ...")
         rospy.spin()
+        
+        
+    def make_move_base_edge(self):
+        
+        self.move_base_edge = deepcopy(self.lnodes["nodes"][0]["node"]["edges"][0])
+        self.move_base_edge["action"] = self.move_base_name
+        self.move_base_edge["edge_id"] = "move_base_edge"
+        self.move_base_edge["action_type"] = "move_base_msgs/MoveBaseGoal"
+        
+        self.move_base_edge["goal"] = {}
+        self.move_base_edge["goal"]["target_pose"] = {}
+        self.move_base_edge["goal"]["target_pose"]["pose"] = "$node.pose"
+        self.move_base_edge["goal"]["target_pose"]["header"] = {}
+        self.move_base_edge["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
         
 
     def init_reconfigure(self):
@@ -203,6 +215,7 @@ class TopologicalNavServer(object):
         self.lnodes = json.loads(msg.data)
         self.topol_map = self.lnodes["pointset"]
         self.curr_tmap = deepcopy(self.lnodes)
+        self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
 
         for node in self.lnodes["nodes"]:
@@ -338,34 +351,46 @@ class TopologicalNavServer(object):
         This function takes the target node and plans the actions that are required
         to reach it.
         """
-        tries = 0
         result = False
-        route_found = False
+        if not self.cancelled:
 
-        while tries <= self.n_tries and not result and not self.cancelled:
-            o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             g_node = get_node_from_tmap2(self.lnodes, target)
-
-            rospy.loginfo("Navigating Take : %d", tries)
+            
+            # If > 0 nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node
+            self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
+            self.nav_from_closest_edge = False
+            
+            if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+                o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
+            else:
+                o_node, the_edge = self.orig_node_from_closest_edge(g_node)
+                self.nav_from_closest_edge = True
+             
             # Everything is Awesome!!!
             # Target and Origin are not None
-            if g_node is not None and o_node is not None:
-                rsearch = TopologicalRouteSearch2(self.lnodes)
-                route = rsearch.search_route(o_node["node"]["name"], target)
-                route = self.enforce_navigable_route(route, target)
-
-                if route.source:
-                    route_found = True
-                    rospy.loginfo("Navigating Case 1")
-                    self.publish_route(route, target)
-                    result, inc = self.followRoute(route, target, 0)
-                    rospy.loginfo("Navigating Case 1 -> res: %d", inc)
-                else:
-                    rospy.logerr("There is no route to this node check your edges ...")
-                    rospy.loginfo("Navigating Case 1b")
-                    result = False
-                    inc = 1
-                    rospy.loginfo("Navigating Case 1b -> res: %d", inc)
+            if (g_node is not None) and (o_node is not None):
+                if g_node["node"]["name"] != o_node["node"]["name"]:
+                    route = self.rsearch.search_route(o_node["node"]["name"], target)
+                    route = self.enforce_navigable_route(route, target)
+                    if route.source:
+                        rospy.loginfo("Navigating Case 1")
+                        self.publish_route(route, target)
+                        result, inc = self.followRoute(route, target, 0)
+                        rospy.loginfo("Navigating Case 1 -> res: %d", inc)
+                    else:
+                        rospy.logerr("There is no route to this node check your edges ...")
+                        rospy.loginfo("Navigating Case 1b")
+                        self.cancelled = True
+                        result = False
+                        inc = 1
+                        rospy.loginfo("Navigating Case 1b -> res: %d", inc)
+                else:      
+                    rospy.loginfo("Target and Origin Nodes are the same")
+                    self.current_target = g_node["node"]["name"]
+                    if self.nav_from_closest_edge:
+                        result, inc = self.execute_action(the_edge, g_node)
+                    else:
+                        result, inc = self.to_goal_node(g_node)
             else:
                 rospy.loginfo("Navigating Case 2")
                 rospy.loginfo("Target or Origin Nodes were not found on Map")
@@ -373,13 +398,7 @@ class TopologicalNavServer(object):
                 result = False
                 inc = 1
                 rospy.loginfo("Navigating Case 3a -> res: %d", inc)
-                
-            tries += inc
-            rospy.loginfo("Navigating next try: %d", tries)
         
-        if not route_found:
-            self.cancelled = True
-
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
             self._feedback.route = target
@@ -427,6 +446,64 @@ class TopologicalNavServer(object):
         if nav_outcome is not None:
             self._feedback_exec_policy.status = nav_outcome
         self._as_exec_policy.publish_feedback(self._feedback_exec_policy)
+        
+        
+    def orig_node_from_closest_edge(self, g_node):
+        
+        # Navigate from the closest edge instead of the closest node? First get the closest edges.
+        edge_1 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[0].split("_")[0], self.closest_edges.edge_ids[0])
+        edge_2 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[1].split("_")[0], self.closest_edges.edge_ids[1])
+
+        # Then get their destination nodes.
+        o_node_1 = get_node_from_tmap2(self.lnodes, edge_1["node"])
+        o_node_2 = get_node_from_tmap2(self.lnodes, edge_2["node"])
+
+        # If the closest edges are of equal distance (usually a bidirectional edge) 
+        # then use the destination node that results in a shorter route to the goal.
+        if self.closest_edges.distances[0] == self.closest_edges.distances[1]:
+            d1 = get_route_distance(self.lnodes, o_node_1, g_node)
+            d2 = get_route_distance(self.lnodes, o_node_2, g_node)
+        else: # Use the destination node of the closest edge.
+            d1 = 0; d2 = 1
+        
+        if d1 <= d2:
+            return o_node_1, edge_1
+        else:
+            return o_node_2, edge_2
+        
+        
+    def to_goal_node(self, g_node):
+        
+        # Check if there is a move_base action in the edges of this node and choose the earliest one in the 
+        # list of move_base actions. If not is dangerous to move.
+        act_ind = 100
+        the_edge = None
+        for i in g_node["node"]["edges"]:
+            c_action_server = i["action"]
+            if c_action_server in self.move_base_actions:
+                c_ind = self.move_base_actions.index(c_action_server)
+                if c_ind < act_ind:
+                    act_ind = c_ind
+                    the_edge = i
+
+        if the_edge is None:
+            rospy.loginfo("Navigating Case 2")
+            rospy.loginfo("Action not taken, outputing success")
+            result=True
+            inc=0
+            rospy.loginfo("Navigating Case 2 -> res: %d", inc)
+        else:
+            rospy.loginfo("Navigating Case 2a")
+            rospy.loginfo("Getting to exact pose")
+            self.current_target = g_node["node"]["name"]
+            result, inc = self.execute_action(the_edge, g_node)
+            rospy.loginfo("going to waypoint in node resulted in")
+            print result
+            if not result:
+                inc=1
+            rospy.loginfo("Navigating Case 2a -> res: %d", inc)
+            
+        return result, inc
 
 
     def enforce_navigable_route(self, route, target_node):
@@ -435,15 +512,16 @@ class TopologicalNavServer(object):
         In other words, avoid that the route contains an initial edge that is too far from the robot pose. 
         """
         rospy.loginfo("Current route {} ".format(route))
-        if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
-            first_node = route.source[0] if len(route.source) > 0 else target_node
-            for edge_id in self.closest_edges.edge_ids:
-                if edge_id.endswith(first_node):
-                    route.source.insert(0, edge_id.split("_")[0])
-                    route.edge_id.insert(0, edge_id)
-                    break
-                
-        rospy.loginfo("Modified route {}".format(route))
+        if self.nav_from_closest_edge:
+            if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
+                first_node = route.source[0] if len(route.source) > 0 else target_node
+                for edge_id in self.closest_edges.edge_ids:
+                    if edge_id.endswith(first_node):
+                        route.source.insert(0, edge_id.split("_")[0])
+                        route.edge_id.insert(0, edge_id)
+                        break
+                    
+            rospy.loginfo("Modified route {}".format(route))
         return route
 
 
@@ -451,7 +529,6 @@ class TopologicalNavServer(object):
         """
         This function follows the chosen route to reach the goal.
         """
-        
         nnodes = len(route.source)
         Orig = route.source[0]
         Targ = target
@@ -474,29 +551,29 @@ class TopologicalNavServer(object):
         else:
             rospy.logerr("Failed to get edge from id!! Invalid route!!")
             return False, inc
-
-        # If the robot is not on a node or the first action is not move base type
-        # navigate to closest node waypoint (only when first action is not move base)
-        if self.current_node == "none" and a not in self.move_base_actions:
-            if a not in self.move_base_actions:
+        
+        if not self.nav_from_closest_edge:        
+            # If the robot is not on a node or the first action is not move base type
+            # navigate to closest node waypoint (only when first action is not move base)
+            if self.current_node == "none" and a not in self.move_base_actions:
                 self.next_action = a
                 print "Do %s to %s" % (self.move_base_name, self.closest_node)
-
+    
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
                 self.reconfigure_movebase_params(params)
-
+    
                 self.current_target = Orig
-                nav_ok, inc = self.execute_action(edge_from_id, o_node)
-        else:
-            if a not in self.move_base_actions:
+                nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                
+            elif a not in self.move_base_actions:
                 move_base_act = False
-                for i in o_node.edges:
+                for i in o_node["node"]["edges"]:
                     # Check if there is a move_base action in the edages of this node
                     # if not is dangerous to move
-                    if i.action in self.move_base_actions:
+                    if i["action"] in self.move_base_actions:
                         move_base_act = True
-
+    
                 if not move_base_act:
                     rospy.loginfo("Action not taken, outputing success")
                     nav_ok = True
@@ -504,7 +581,7 @@ class TopologicalNavServer(object):
                 else:
                     rospy.loginfo("Getting to exact pose")
                     self.current_target = Orig
-                    nav_ok, inc = self.execute_action(edge_from_id, o_node)
+                    nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
                     rospy.loginfo("going to waypoint in node resulted in")
                     print nav_ok
 
@@ -552,14 +629,16 @@ class TopologicalNavServer(object):
             dt_text = self.stat.get_start_time_str()
 
             if self.edge_reconfigure:
-                self.edgeReconfigureManager.register_edge(cedg)
-                if self.edgeReconfigureManager.active:
+                if not self.srv_edge_reconfigure:
+                    self.edgeReconfigureManager.register_edge(cedg)
                     self.edgeReconfigureManager.initialise()
                     self.edgeReconfigureManager.reconfigure()
+                else:
+                    self.edgeReconfigureManager.srv_reconfigure(cedg["edge_id"])
 
             nav_ok, inc = self.execute_action(cedg, cnode)
 
-            if self.edge_reconfigure and self.edgeReconfigureManager.active:
+            if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
                 self.edgeReconfigureManager._reset()
                 rospy.sleep(rospy.Duration.from_sec(0.3))
 
@@ -689,7 +768,6 @@ class TopologicalNavServer(object):
                 inc = 0
 
         rospy.sleep(rospy.Duration.from_sec(0.3))
-        
         return result, inc
 ###################################################################################################################
         

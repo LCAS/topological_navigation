@@ -2,8 +2,8 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2021-07-15)
+------------------
 * Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
 * Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
   Fix conflicts

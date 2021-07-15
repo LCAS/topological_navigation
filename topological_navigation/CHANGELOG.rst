@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2021-07-15)
+------------------
 * Merge pull request `#95 <https://github.com/LCAS/topological_navigation/issues/95>`_ from adambinch/melodic-devel
   Navigating from the closest edge is now optional.
 * simplification

@@ -2,8 +2,8 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2021-07-15)
+------------------
 * Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
 * Merge pull request `#85 <https://github.com/LCAS/topological_navigation/issues/85>`_ from adambinch/melodic-devel
   Map manager services for updating edge action, type and goal.

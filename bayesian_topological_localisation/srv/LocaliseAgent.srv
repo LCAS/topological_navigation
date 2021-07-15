@@ -1,0 +1,8 @@
+string name
+uint64 n_particles
+bool do_prediction
+float64 prediction_rate
+
+---
+
+bool success

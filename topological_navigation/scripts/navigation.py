@@ -215,6 +215,7 @@ class TopologicalNavServer(object):
         self.lnodes = json.loads(msg.data)
         self.topol_map = self.lnodes["pointset"]
         self.curr_tmap = deepcopy(self.lnodes)
+        self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
 
         for node in self.lnodes["nodes"]:
@@ -369,8 +370,7 @@ class TopologicalNavServer(object):
             # Target and Origin are not None
             if (g_node is not None) and (o_node is not None):
                 if g_node["node"]["name"] != o_node["node"]["name"]:
-                    rsearch = TopologicalRouteSearch2(self.lnodes)
-                    route = rsearch.search_route(o_node["node"]["name"], target)
+                    route = self.rsearch.search_route(o_node["node"]["name"], target)
                     route = self.enforce_navigable_route(route, target)
                     if route.source:
                         rospy.loginfo("Navigating Case 1")

@@ -30,6 +30,37 @@ class TopologicalRouteSearch2(object):
     def __init__(self, top_map) :
 
         self.top_map = top_map
+        self.nodes = {}
+        for node in self.top_map["nodes"]:
+            name = node["node"]["name"]
+            self.nodes[name] = node
+            
+            
+    def get_node_from_tmap2(self, node_name):
+        
+        try:
+            node = self.nodes[node_name]
+        except Exception:
+            node = None
+        return node
+    
+    
+#    def get_conected_nodes_tmap2(node):
+#        
+#        childs = []
+#        for i in node["node"]["edges"]:
+#            childs.append(i["node"])
+#        return childs
+    
+    
+    def get_edges_between_tmap2(self, nodea, nodeb):
+        
+        ab = []
+        noda = self.get_node_from_tmap2(nodea)
+        for j in noda["node"]["edges"]:
+            if j["node"] == nodeb:
+                ab.append(j)
+        return ab
 
 
     def search_route(self, origin, target):
@@ -41,8 +72,8 @@ class TopologicalRouteSearch2(object):
         if origin == "none" or target == "none" or origin == target:
             return route
 
-        goal = get_node_from_tmap2(self.top_map, target)
-        orig = get_node_from_tmap2(self.top_map, origin)
+        goal = self.get_node_from_tmap2(target)
+        orig = self.get_node_from_tmap2(origin)
         to_expand=[]
         children=[]
         expanded=[]
@@ -82,14 +113,14 @@ class TopologicalRouteSearch2(object):
                                 break
 
                     if not been_expanded:
-                        nnn = get_node_from_tmap2(self.top_map, i)
+                        nnn = self.get_node_from_tmap2(i)
                         tdist = get_distance_to_node_tmap2(goal, nnn)
                         cdist = get_distance_to_node_tmap2(cen, nnn)
                         cnte = NodeToExpand(nnn["node"]["name"], nte.name, nte.current_distance+cdist, tdist) # Node to Expand
                         to_expand.append(cnte)
                         to_expand = sorted(to_expand, key=lambda node: node.cost)
                     else:
-                        nnn = get_node_from_tmap2(self.top_map, i)
+                        nnn = self.get_node_from_tmap2(i)
                         tdist = get_distance_to_node_tmap2(goal, nnn)
                         cdist = get_distance_to_node_tmap2(cen, nnn)
                         # update existing NTE with new data if a shorter route to it is found
@@ -103,7 +134,7 @@ class TopologicalRouteSearch2(object):
 
                 if len(to_expand)>0:
                     nte = to_expand.pop(0)
-                    cen =  get_node_from_tmap2(self.top_map, nte.name)
+                    cen =  self.get_node_from_tmap2(nte.name)
                     expanded.append(nte)
                     children = get_conected_nodes_tmap2(cen)
                 else:
@@ -127,7 +158,7 @@ class TopologicalRouteSearch2(object):
             steps.reverse()
             val = len(steps)
             for i in range(1, val):
-                edg=get_edges_between_tmap2(self.top_map, steps[i].father, steps[i].name)
+                edg=self.get_edges_between_tmap2(steps[i].father, steps[i].name)
                 route.source.append(steps[i].father)
                 route.edge_id.append(edg[0]["edge_id"])
                 

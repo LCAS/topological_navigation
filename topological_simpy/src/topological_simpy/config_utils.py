@@ -12,7 +12,8 @@ import yaml
 def get_config_data(config_file):
     """read data from the config yaml file"""
     f_handle = open(config_file, "r")
-    config_data = yaml.load(f_handle, Loader=yaml.FullLoader)
+    # config_data = yaml.load(f_handle, Loader=yaml.FullLoader)
+    config_data = yaml.safe_load(f_handle)
     f_handle.close()
     return config_data
 

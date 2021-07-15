@@ -34,33 +34,6 @@ class TopologicalRouteSearch2(object):
         for node in self.top_map["nodes"]:
             name = node["node"]["name"]
             self.nodes[name] = node
-            
-            
-    def get_node_from_tmap2(self, node_name):
-        
-        try:
-            node = self.nodes[node_name]
-        except Exception:
-            node = None
-        return node
-    
-    
-#    def get_conected_nodes_tmap2(node):
-#        
-#        childs = []
-#        for i in node["node"]["edges"]:
-#            childs.append(i["node"])
-#        return childs
-    
-    
-    def get_edges_between_tmap2(self, nodea, nodeb):
-        
-        ab = []
-        noda = self.get_node_from_tmap2(nodea)
-        for j in noda["node"]["edges"]:
-            if j["node"] == nodeb:
-                ab.append(j)
-        return ab
 
 
     def search_route(self, origin, target):
@@ -163,6 +136,25 @@ class TopologicalRouteSearch2(object):
                 route.edge_id.append(edg[0]["edge_id"])
                 
         return route
+    
+    
+    def get_node_from_tmap2(self, node_name):
+        
+        try:
+            node = self.nodes[node_name]
+        except Exception:
+            node = None
+        return node
+    
+    
+    def get_edges_between_tmap2(self, nodea, nodeb):
+        
+        ab = []
+        noda = self.get_node_from_tmap2(nodea)
+        for j in noda["node"]["edges"]:
+            if j["node"] == nodeb:
+                ab.append(j)
+        return ab
 #########################################################################################################
 
 

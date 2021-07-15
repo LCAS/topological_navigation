@@ -2,6 +2,26 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Contributors: Adam Binch, adambinch
+
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Contributors: Adam Binch, adambinch
+
 2.1.0 (2020-04-20)
 ------------------
 * Merge pull request `#8 <https://github.com/LCAS/topological_navigation/issues/8>`_ from heuristicus/move_topo_rviz_tools

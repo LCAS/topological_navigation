@@ -2,6 +2,656 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#95 <https://github.com/LCAS/topological_navigation/issues/95>`_ from adambinch/melodic-devel
+  Navigating from the closest edge is now optional.
+* simplification
+* Navigating from the closest edge is now optional.
+  Set with param `max_dist_to_closest_edge` (default = 1 meter)
+  Robot will NOT attempt to navigate from the closest edge if ANY of the following are true:
+  a) `max_dist_to_closest_edge` = 0
+  b) the distance to closest edge > `max_dist_to_closest_edge`
+  c) current node != "none"
+  Else the robot will navigate from the closest node in exactly the same way as it has always done.
+* Merge pull request `#94 <https://github.com/LCAS/topological_navigation/issues/94>`_ from adambinch/tmap_to_tmap2
+  Script for converting all tmaps found in repo to tmap2 format and script for populating tmap2s with params from edge reconfigure config files.
+* Script for populating tmap2s with edge reconfigure params from edge reconfigure groups config files.
+* Finished script for converting tmaps.
+  Map manager services registered in the class __init_\_ function and the tmap
+  is loaded in separate init_map function.
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+  # Conflicts:
+  #	topological_navigation/src/topological_navigation/manager.py
+* Merge pull request `#93 <https://github.com/LCAS/topological_navigation/issues/93>`_ from adambinch/melodic-devel
+  fix
+* fix
+* Merge pull request `#91 <https://github.com/LCAS/topological_navigation/issues/91>`_ from adambinch/melodic-devel
+  Nav from closest edge fix
+* fix
+* If the closest edges are of equal distance (usually a bidirectional edge) then use the destination node that results in a shorter route to the goal.
+* Localisation map callback only sets map received when all computation inside the callback has completed.
+  Comments and tidying.
+* another fix
+* fix
+* distance from edge taken into account when deciding to navigate from closest edge
+* toponav generates route between the destination node of the closest edge and the goal node
+* Merge pull request `#89 <https://github.com/LCAS/topological_navigation/issues/89>`_ from adambinch/melodic-devel
+  Efficient computing of closest edges in localisation.
+* minor change
+* New `get_edge_distances_to_pose` functions catches exeception.
+  Code more efficient and tidying.
+  readme.md updated to warn reader that current instructions apply to legacy branch.
+* more efficient
+* more efficient
+* tidying
+* vectorised the toponav version of point2line, such that you can pass it a numpy array of edges (an array of vectors) and get it to return you the distances to every edge in the map at once.
+* Improvement to reporting of errors by `get_edge_distances_to_pose` function in localisation.
+* Better name for new param
+* Efficient computing of closest edges in localisation.
+  Option to get the closest edges only from the N closest nodes to the robot.
+  Useful for very large and dense maps (such as clockhouse vanity transportation map) where you do not want to be
+  computing the distance from every edge in the map to the robot.
+  N set by rosparam `/topological_localisation/NumClosestNodes`.
+  Default is 0, such that that the distance is computed for every edge in the map.
+* Merge pull request `#86 <https://github.com/LCAS/topological_navigation/issues/86>`_ from adambinch/melodic-devel
+  Switch map srv looks for maps in current working directory and also converts from tmap1 to tmap2 and vice-versa.
+* simplification
+* tidying
+* minor change
+* Removed unused `n_tries` param and imports.
+  Tidying.
+* params `/topological_map_filename` and `/topological_map2_filename`
+* fix
+* minor change
+* tidying
+* Merge branch 'master' of github.com:LCAS/topological_navigation into melodic-devel
+* Merge pull request `#88 <https://github.com/LCAS/topological_navigation/issues/88>`_ from adambinch/fix
+  Fix for localisation breaking when edge in map has destination equal to origin
+* only prints error once
+* toponav checks if an edge in the map has a destination equal to its origin
+* testing build
+* testing build
+* removed redundant service
+* tidying
+* minor improvements
+* Starting script for converting all legacy tmaps in a repo to new format
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* corresponding changes to manager 2 switch maps srv
+* Fix for old map manager switch map srv returning a service response error when converting the switched map to new format.
+* switch map srv assumes you are switching maps within the same dir when loading map from file
+* old map manager switch map srv converts updated map to new format
+* Merge pull request `#85 <https://github.com/LCAS/topological_navigation/issues/85>`_ from adambinch/melodic-devel
+  Map manager services for updating edge action, type and goal.
+* Retained ability to do edge reconfigure in the old way (currently default). Example config provided.
+* map manager service for setting the action, action type and goal for an edge
+  map manager service for setting the action type and goal for any edge with a given action
+* Merge pull request `#57 <https://github.com/LCAS/topological_navigation/issues/57>`_ from LCAS/toponav2-devel
+  Topological Navigation version 2 Master Branch
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Merge pull request `#77 <https://github.com/LCAS/topological_navigation/issues/77>`_ from adambinch/melodic-devel
+  Fixes
+* fix for a couple of the utils
+* tidying
+* tidying
+* minor change
+* Route checker checks for empty strings and other improvements
+* fix for route checker not catching an empty exec policy route
+* fixing race conditions when multiple goals arrive at the same time
+* old manager allows switching of topomap when loading from a file
+* fix for go to node action not ending in correct terminal state when preempted by exec policy and vice-versa
+* minor imporvements
+* Merge pull request `#62 <https://github.com/LCAS/topological_navigation/issues/62>`_ from francescodelduchetto/master
+  New features in bayesian_topological_localisation node
+* mnior changes
+* Fix for exec policy action breaking toponav when the goal route is invalid
+* minor changes and tidying
+* improved route checking function
+* Function for checking if an exec policy route is valid
+* Fix for go to node action breaking when the goal exists but there is no route to it.
+* tidying
+* Map manager fixes
+* fix
+* minor change
+* minor changes
+* Improvements to edge action manager
+* Merge pull request `#76 <https://github.com/LCAS/topological_navigation/issues/76>`_ from adambinch/any_edge_action
+  Improvement to edge action manager
+* minor change
+* fixes
+* minor change
+* minor changes
+* Fix for goal preempting breaking nav
+* Merge pull request `#75 <https://github.com/LCAS/topological_navigation/issues/75>`_ from adambinch/any_edge_action
+  Topological navigation can handle any type of goal.
+* minor change
+* possible fix
+* map manger 2 sets default action type as `move_base_msgs/MoveBaseGoal`
+* fix
+* Functions of edge reconf manager called only when there are param to reconfigure.
+* Minor changes
+* Removed monitored navigation
+* Integration of edge action manager into navigation script.
+  Toponav can now use any type of goals.
+* get_node_from_tmap2 utility modified so it returns all of the node inc its meta.
+  consequent changes to other files.
+* New manager 2 srv for updating the action type of each edge in the tmap according to the action name
+* Edge action manager finished hopefully
+* Improvements to the edge action manager
+* Edge action manager: can construct goals and map them to ROS messages flexibly.
+  Updated map manager with new default fields for the goal specified in the topological edge.
+* Working on edge action manager.
+  map manager 2 now sets rosparam `topological_map_name`
+* Merge pull request `#73 <https://github.com/LCAS/topological_navigation/issues/73>`_ from adambinch/switch_topomap
+  switch topological maps srv works when loading tmaps from files
+* switch topological maps srv works when loading tmaps from files
+* minor changes
+* Making new class for handling (any) edge actions
+* Merge branch 'toponav2-devel' of github.com:LCAS/topological_navigation into any_edge_action
+* Merge pull request `#72 <https://github.com/LCAS/topological_navigation/issues/72>`_ from adambinch/toponav2-devel
+  minor change
+* minor change
+* Merge pull request `#71 <https://github.com/LCAS/topological_navigation/issues/71>`_ from adambinch/toponav2-devel
+  Edge reconf manager improvement to exception handling
+* Edge reconf manager improvement to exception handling
+* edge reconf manager improvement to exception handling
+* Merge branch 'toponav2-devel' of github.com:LCAS/topological_navigation into any_edge_action
+* Merge pull request `#70 <https://github.com/LCAS/topological_navigation/issues/70>`_ from adambinch/toponav2-devel
+  Edge Reconfigure Improvements
+* more efficient
+* edge reconfigure manager only resets params that have been reconfigured
+* tidying
+* Tidying
+* Merge pull request `#69 <https://github.com/LCAS/topological_navigation/issues/69>`_ from adambinch/pub_closest_edges
+  Planning considering edges when robot current_node = none and topological localisation publishes closest edges to the robot.
+* Merge pull request `#2 <https://github.com/LCAS/topological_navigation/issues/2>`_ from francescodelduchetto/adambinch-pub_closest_edges
+  Planning considering edges when robot current_node = none
+* warn to info
+* planning ensures that the robot does not goes back to closest node before navigating and that it always navigate from the closest edge when far from any node
+* Function for getting distance to edges is much more efficient
+* Merge branch 'pub_closest_edges' of https://github.com/adambinch/topological_navigation into adambinch-pub_closest_edges
+* tidying
+* tidying
+* tidying
+* tidying
+* Topological Localisation publishes closest edges to the robot.
+  Publishes the two closest edges to the robot on the topic `/closest_edges`
+  with message type `topological_navigation_msgs.msg.ClosestEdges`
+  This message has fields for the edge ids and the distances (to the robot) e.g.
+  ---
+  edge_ids: [WayPoint56_WayPoint66, WayPoint66_WayPoint56]
+  distances: [0.3709999918937683, 0.3709999918937683]
+  ---
+  Often the two edges reported on this topic will form a bi-directional edge.
+* Merge pull request `#63 <https://github.com/LCAS/topological_navigation/issues/63>`_ from ayu135/combine_exec_nav
+  Combine execute policy and nav actions in a single script
+* Added none check for set ended
+* Merge pull request `#2 <https://github.com/LCAS/topological_navigation/issues/2>`_ from francescodelduchetto/ayu135-combine_exec_nav
+  Ayu135 combine exec nav
+* correctly cancelling previous goal and waiting before starting the new one
+* remove some superfluous lines in preempting nav goals
+* Merge branch 'combine_exec_nav' of https://github.com/ayu135/topological_navigation into toponav2-devel
+* Merge pull request `#67 <https://github.com/LCAS/topological_navigation/issues/67>`_ from francescodelduchetto/toponav2-restrictions
+  Toponav2 restrictions implementation
+* Merge branch 'combine_exec_nav' of https://github.com/ayu135/topological_navigation into ayu135-combine_exec_nav
+* 'restrictions_manager' to 'topological_restrictions_manager'
+* adding requirement of sympy>=1.5.1
+* restriction manager works with runtime and planning restrictions; test script for testing
+* WIP restrictions manager
+* Merge pull request `#66 <https://github.com/LCAS/topological_navigation/issues/66>`_ from adambinch/melodic-devel
+  Nodes and edges have two restrictions fields, one for planning restrictions and one for runtime restrictions.
+* if updating node restrictions then apply planning restrictions to edges involving the node.
+  Set this behaviour with new boolean arg `update_edges` in srv for updating a node's restrictions
+* Nodes and edges have two restrictions fields, one for planning restrictions and one for runtime restrictions.
+  Both are boolean sentences (default="True")
+  Update restrictions services modified to account for this.
+* Better integrate nav and exec policy actions
+* Combined execute policy and nav actions in a single script navigation.py
+* Removed tmap1 related functions fron nav.py
+* Merge pull request `#64 <https://github.com/LCAS/topological_navigation/issues/64>`_ from adambinch/melodic-devel
+  Map manager services for updating restrictions
+* Map manager services for updating restrictions
+  Restrictions field for a node or an edge is now a string which is a boolean sentence (default="True").
+  New services `/topological_map_manager2/update_node_restrictions` and `/topological_map_manager2/update_edge_restrictions` added in the map manager 2.
+* Merge pull request `#3 <https://github.com/LCAS/topological_navigation/issues/3>`_ from francescodelduchetto/particles-states
+  Particles states
+* remove modifications to route_search
+* Merge pull request `#60 <https://github.com/LCAS/topological_navigation/issues/60>`_ from adambinch/melodic-devel
+  Base frame used by localisation is no longer hard coded (in toponav 2).
+* file renamed in install targets
+* Merge branch 'melodic-devel' of github.com:adambinch/topological_navigation into melodic-devel
+* pose pub is replaced with a tf broadcaster. renamed file
+* added install target for the new node.
+* New node for publishing the map to topomap transform on the topic `/topological_transform` with msg type `geometry_msgs/TransformStamped`
+* Base frame used by localisation is no longer hard coded.
+  It is set by a rosparam `topological_localisation/base_frame` (default=`base_link`).
+  topo_map frame is retrieved from the topological map.
+  removed unused imports from localisation.
+* Merge pull request `#58 <https://github.com/LCAS/topological_navigation/issues/58>`_ from adambinch/melodic-devel
+  removed `use_tmap2` arg from localisation - localisation uses the new…
+* removed `use_tmap2` arg from localisation - localisation uses the new format map only.
+* Merge pull request `#54 <https://github.com/LCAS/topological_navigation/issues/54>`_ from adambinch/edge_reconf
+  Edge reconfigure integration for the new map type
+* minor improvement to the edge reconfigure manager
+* The edge reconfigure manager is in its own file.
+* Cant add duplicate params when using srv `add_param_to_edge_config`
+* Fixes and improvements to the edge reconfigure manager.
+* Lots of fixes
+* EdgeReconfigureManager class done. Needs testing.
+* Service `update_edge_config` renamed to `add_param_to_edge_config` to better reflect what it does.
+  That service and `rm_param_from_edge_config` modified to account for the changes in the previous commit.
+  Constructing new class `EdgeReconfigureManager` in `navigation.py` to handle everything edge reconfigure related.
+* topo path planning considers blacklisted nodes
+* Edges config is now a list where each item is a dict with the params namespace, name and value.
+  The default config is empty and the tmap to tmap2 conversion sets an empty config.
+* Service for removing params from an edge's config and a fix.
+* service `update_edge_reconf` renamed to `update_edge_config`
+* New service for adding/updating edge reconfigure parameters.
+* fix
+* Function that does the new to old conversion catches exceptions
+* `convert_to_legacy` rosparam sets whther the new to old format map conversion happens or not
+* map manager 2 coverts new format maps (broadcast on the topic `/topological_map_2`) to the old format (broadcast on the topic `/topological_map`).
+  This allows nodes/actions that rely on the old map format to function whilst using/testing features from the new map.
+* The arg `use_tmap2` (used by localisation and navigation) is now a rosparam
+* Merge pull request `#47 <https://github.com/LCAS/topological_navigation/issues/47>`_ from heuristicus/eband-planner
+  Allow use of EBandPlannerROS as local planner
+* Some fixes:
+  The monitored navigation function in `navigation.py` expects a geom msgs Pose object rather than a monitored nav goal object (stops nav breaking when using the old map format).
+  Navigation now reconfigures move base tolerances according to the values specified in the tmap.
+* Merge pull request `#45 <https://github.com/LCAS/topological_navigation/issues/45>`_ from ayu135/toponav2-devel
+  Added tmap2 support for navigation.py and execute_policy
+* added route_search2.py for tmap2 and corresponding changes and fixes
+* Added separate navigate and follow route funtions for tmap2
+* Added command line option for topomap2
+* Some fixes after testing
+* Updated map callback for execute policy
+* adding support for tmap2 and combining execute policy
+* Merge pull request `#44 <https://github.com/LCAS/topological_navigation/issues/44>`_ from adambinch/manager2_srvs
+  All manager services available and working on new map type
+* Improvement to the function that loads the map
+* Correction to srv `/topological_map_manager2/update_edge`
+* add max_vel_lin for eband in dynparam mapping
+* add eband to dynparam mappings
+* When loading a map using the map manager 2, it is cached in `$HOME/.ros/topological_maps`.
+  General improvements.
+* correction
+* reverting accidental change
+* minor improvement
+* Added srvs `/topological_map_manager2/rm_tag_from_node` and `/topological_map_manager2/update_edge`
+* Added srvs `/topological_map_manager2/modify_node_tags` and `/topological_map_manager2/add_tag_to_node`
+* Added srvs `/topological_map_manager2/update_node_pose` and `/topological_map_manager2/update_node_tolerance`.
+  General improvements.
+* Added service `/topological_map_manager2/update_node_name`
+* Added service `/topological_map_manager2/add_content_to_node`
+* Added services `/topological_map_manager2/remove_topological_node` and `/topological_map_manager2/remove_edge`.
+  General improvements.
+* Made map manager 2 node more user friendly
+  Corrected error when generating influence zone vertices
+  removed unnecessary msg definition
+  General improvements
+* Added services `/topological_map_manager2/add_topological_node` and `/topological_map_manager2/add_edges_between_nodes`
+* Made node(`map_manager2.py`) for loading in new format maps using the manager 2 class.
+  Added service `/topological_map_manager2/write_topological_map` for writing new format topological maps to yaml files. If you dont specify the path/name of the map then it will just write to the one given to the manager 2 class.
+  When loading a tmap (`tmap.tmap`) from a file using the original map manager, the converted tmap can now be written to a file (`tmap.yaml`) using the `write_topological_map` service.
+  Added map sanity checking function to the manager 2 class.
+* minor changes
+* Merge branch 'master' of https://github.com/LCAS/topological_navigation into manager2_srvs
+* Created `topological_navigation_msgs` package that will contain the new msg and srv types for the new format topomap.
+  Added services `/topological_map_manager2/switch_topological_map` and `/topological_map_manager2/get_edges_between_nodes`.
+  Added function in map manager 2 that warns if you are trying to use it to load an old-format topomap.
+  Some minor improvements.
+* Edge id field included in new map. Default is `origin_destination`
+* minor change
+* Added manager 2 services:
+  - `get_topological_map `
+  - `get_tagged_nodes`
+  - `get_tags`
+  - `get_node_tags`
+* correction
+* map manager 2 class now publishes the new format topomap, rather than the origin map manager.
+  map manager 2 can now load a new format topomap from a given file path.
+* Merge pull request `#31 <https://github.com/LCAS/topological_navigation/issues/31>`_ from adambinch/loc2
+  All functions in localisation now work with the new map type.
+* correction
+* corrections
+* All functions in localisation can now work with the new map type. This includes its services.
+* rearranging
+* Argument added to switch between using map types in topological localisation.
+  Get nodes with tag service in localisation now works on new map type.
+  Map manager 2 now has service for getting nodes with a tag.
+  Map manager now adds a nodes tags during map conversion.
+* Localisation uses the topo_map to base_link tf transform, rather than the robot pose.
+* prettyfying
+* Map manager broadcasts map->topo_map tf transform.
+* Merge pull request `#29 <https://github.com/LCAS/topological_navigation/issues/29>`_ from adambinch/topomap2
+  Function for converting topological maps into the new format in the
+* New map type is regenerated and republished when current map is updated.
+* bit of tidying
+* Map manager keeps its class attribute copy of the new map as a dictionary, but publishes it as a string.
+* updated package xml
+* minor change
+* Function for converting topological maps into the new format in the map manager.
+  Includes a map manager 2 class for handling topological maps in the new format.
+* Contributors: Adam Binch, Ayush Sharma, Jaime Pulido Fentanes, Michal Staniaszek, adambinch, francescodelduchetto, gpdas
+
+* Merge pull request `#95 <https://github.com/LCAS/topological_navigation/issues/95>`_ from adambinch/melodic-devel
+  Navigating from the closest edge is now optional.
+* simplification
+* Navigating from the closest edge is now optional.
+  Set with param `max_dist_to_closest_edge` (default = 1 meter)
+  Robot will NOT attempt to navigate from the closest edge if ANY of the following are true:
+  a) `max_dist_to_closest_edge` = 0
+  b) the distance to closest edge > `max_dist_to_closest_edge`
+  c) current node != "none"
+  Else the robot will navigate from the closest node in exactly the same way as it has always done.
+* Merge pull request `#94 <https://github.com/LCAS/topological_navigation/issues/94>`_ from adambinch/tmap_to_tmap2
+  Script for converting all tmaps found in repo to tmap2 format and script for populating tmap2s with params from edge reconfigure config files.
+* Script for populating tmap2s with edge reconfigure params from edge reconfigure groups config files.
+* Finished script for converting tmaps.
+  Map manager services registered in the class __init_\_ function and the tmap
+  is loaded in separate init_map function.
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+  # Conflicts:
+  #	topological_navigation/src/topological_navigation/manager.py
+* Merge pull request `#93 <https://github.com/LCAS/topological_navigation/issues/93>`_ from adambinch/melodic-devel
+* Merge pull request `#91 <https://github.com/LCAS/topological_navigation/issues/91>`_ from adambinch/melodic-devel
+  Nav from closest edge fix
+* If the closest edges are of equal distance (usually a bidirectional edge) then use the destination node that results in a shorter route to the goal.
+* Localisation map callback only sets map received when all computation inside the callback has completed.
+  Comments and tidying.
+* another fix
+* distance from edge taken into account when deciding to navigate from closest edge
+* toponav generates route between the destination node of the closest edge and the goal node
+* Merge pull request `#89 <https://github.com/LCAS/topological_navigation/issues/89>`_ from adambinch/melodic-devel
+  Efficient computing of closest edges in localisation.
+* minor change
+* New `get_edge_distances_to_pose` functions catches exeception.
+  Code more efficient and tidying.
+  readme.md updated to warn reader that current instructions apply to legacy branch.
+* more efficient
+* more efficient
+* tidying
+* vectorised the toponav version of point2line, such that you can pass it a numpy array of edges (an array of vectors) and get it to return you the distances to every edge in the map at once.
+* Improvement to reporting of errors by `get_edge_distances_to_pose` function in localisation.
+* Better name for new param
+* Efficient computing of closest edges in localisation.
+  Option to get the closest edges only from the N closest nodes to the robot.
+  Useful for very large and dense maps (such as clockhouse vanity transportation map) where you do not want to be
+  computing the distance from every edge in the map to the robot.
+  N set by rosparam `/topological_localisation/NumClosestNodes`.
+  Default is 0, such that that the distance is computed for every edge in the map.
+* Merge pull request `#86 <https://github.com/LCAS/topological_navigation/issues/86>`_ from adambinch/melodic-devel
+  Switch map srv looks for maps in current working directory and also converts from tmap1 to tmap2 and vice-versa.
+* Merge pull request `#88 <https://github.com/LCAS/topological_navigation/issues/88>`_ from adambinch/fix
+  Fix for localisation breaking when edge in map has destination equal to origin
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* corresponding changes to manager 2 switch maps srv
+* Fix for old map manager switch map srv returning a service response error when converting the switched map to new format.
+* switch map srv assumes you are switching maps within the same dir when loading map from file
+* old map manager switch map srv converts updated map to new format
+* Merge pull request `#85 <https://github.com/LCAS/topological_navigation/issues/85>`_ from adambinch/melodic-devel
+  Map manager services for updating edge action, type and goal.
+* Retained ability to do edge reconfigure in the old way (currently default). Example config provided.
+* map manager service for setting the action, action type and goal for an edge
+  map manager service for setting the action type and goal for any edge with a given action
+* Merge pull request `#57 <https://github.com/LCAS/topological_navigation/issues/57>`_ from LCAS/toponav2-devel
+  Topological Navigation version 2 Master Branch
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Merge pull request `#77 <https://github.com/LCAS/topological_navigation/issues/77>`_ from adambinch/melodic-devel
+  Fixes
+* fix for a couple of the utils
+* tidying
+* tidying
+* minor change
+* Route checker checks for empty strings and other improvements
+* fix for route checker not catching an empty exec policy route
+* fixing race conditions when multiple goals arrive at the same time
+* old manager allows switching of topomap when loading from a file
+* fix for go to node action not ending in correct terminal state when preempted by exec policy and vice-versa
+* minor imporvements
+* Merge pull request `#62 <https://github.com/LCAS/topological_navigation/issues/62>`_ from francescodelduchetto/master
+  New features in bayesian_topological_localisation node
+* mnior changes
+* Fix for exec policy action breaking toponav when the goal route is invalid
+* minor changes and tidying
+* improved route checking function
+* Function for checking if an exec policy route is valid
+* Fix for go to node action breaking when the goal exists but there is no route to it.
+* tidying
+* Map manager fixes
+* fix
+* minor change
+* minor changes
+* Improvements to edge action manager
+* Merge pull request `#76 <https://github.com/LCAS/topological_navigation/issues/76>`_ from adambinch/any_edge_action
+  Improvement to edge action manager
+* minor change
+* fixes
+* minor change
+* minor changes
+* Fix for goal preempting breaking nav
+* Merge pull request `#75 <https://github.com/LCAS/topological_navigation/issues/75>`_ from adambinch/any_edge_action
+  Topological navigation can handle any type of goal.
+* minor change
+* possible fix
+* map manger 2 sets default action type as `move_base_msgs/MoveBaseGoal`
+* fix
+* Functions of edge reconf manager called only when there are param to reconfigure.
+* Minor changes
+* Removed monitored navigation
+* Integration of edge action manager into navigation script.
+  Toponav can now use any type of goals.
+* get_node_from_tmap2 utility modified so it returns all of the node inc its meta.
+  consequent changes to other files.
+* New manager 2 srv for updating the action type of each edge in the tmap according to the action name
+* Edge action manager finished hopefully
+* Improvements to the edge action manager
+* Edge action manager: can construct goals and map them to ROS messages flexibly.
+  Updated map manager with new default fields for the goal specified in the topological edge.
+* Working on edge action manager.
+  map manager 2 now sets rosparam `topological_map_name`
+* Merge pull request `#73 <https://github.com/LCAS/topological_navigation/issues/73>`_ from adambinch/switch_topomap
+  switch topological maps srv works when loading tmaps from files
+* switch topological maps srv works when loading tmaps from files
+* minor changes
+* Making new class for handling (any) edge actions
+* Merge branch 'toponav2-devel' of github.com:LCAS/topological_navigation into any_edge_action
+* Merge pull request `#72 <https://github.com/LCAS/topological_navigation/issues/72>`_ from adambinch/toponav2-devel
+  minor change
+* minor change
+* Merge pull request `#71 <https://github.com/LCAS/topological_navigation/issues/71>`_ from adambinch/toponav2-devel
+  Edge reconf manager improvement to exception handling
+* Edge reconf manager improvement to exception handling
+* edge reconf manager improvement to exception handling
+* Merge branch 'toponav2-devel' of github.com:LCAS/topological_navigation into any_edge_action
+* Merge pull request `#70 <https://github.com/LCAS/topological_navigation/issues/70>`_ from adambinch/toponav2-devel
+  Edge Reconfigure Improvements
+* more efficient
+* edge reconfigure manager only resets params that have been reconfigured
+* tidying
+* Tidying
+* Merge pull request `#69 <https://github.com/LCAS/topological_navigation/issues/69>`_ from adambinch/pub_closest_edges
+  Planning considering edges when robot current_node = none and topological localisation publishes closest edges to the robot.
+* Merge pull request `#2 <https://github.com/LCAS/topological_navigation/issues/2>`_ from francescodelduchetto/adambinch-pub_closest_edges
+  Planning considering edges when robot current_node = none
+* warn to info
+* planning ensures that the robot does not goes back to closest node before navigating and that it always navigate from the closest edge when far from any node
+* Function for getting distance to edges is much more efficient
+* Merge branch 'pub_closest_edges' of https://github.com/adambinch/topological_navigation into adambinch-pub_closest_edges
+* tidying
+* tidying
+* tidying
+* tidying
+* Topological Localisation publishes closest edges to the robot.
+  Publishes the two closest edges to the robot on the topic `/closest_edges`
+  with message type `topological_navigation_msgs.msg.ClosestEdges`
+  This message has fields for the edge ids and the distances (to the robot) e.g.
+  ---
+  edge_ids: [WayPoint56_WayPoint66, WayPoint66_WayPoint56]
+  distances: [0.3709999918937683, 0.3709999918937683]
+  ---
+  Often the two edges reported on this topic will form a bi-directional edge.
+* Merge pull request `#63 <https://github.com/LCAS/topological_navigation/issues/63>`_ from ayu135/combine_exec_nav
+  Combine execute policy and nav actions in a single script
+* Added none check for set ended
+* Merge pull request `#2 <https://github.com/LCAS/topological_navigation/issues/2>`_ from francescodelduchetto/ayu135-combine_exec_nav
+  Ayu135 combine exec nav
+* correctly cancelling previous goal and waiting before starting the new one
+* remove some superfluous lines in preempting nav goals
+* Merge branch 'combine_exec_nav' of https://github.com/ayu135/topological_navigation into toponav2-devel
+* Merge pull request `#67 <https://github.com/LCAS/topological_navigation/issues/67>`_ from francescodelduchetto/toponav2-restrictions
+  Toponav2 restrictions implementation
+* Merge branch 'combine_exec_nav' of https://github.com/ayu135/topological_navigation into ayu135-combine_exec_nav
+* 'restrictions_manager' to 'topological_restrictions_manager'
+* adding requirement of sympy>=1.5.1
+* restriction manager works with runtime and planning restrictions; test script for testing
+* WIP restrictions manager
+* Merge pull request `#66 <https://github.com/LCAS/topological_navigation/issues/66>`_ from adambinch/melodic-devel
+  Nodes and edges have two restrictions fields, one for planning restrictions and one for runtime restrictions.
+* if updating node restrictions then apply planning restrictions to edges involving the node.
+  Set this behaviour with new boolean arg `update_edges` in srv for updating a node's restrictions
+* Nodes and edges have two restrictions fields, one for planning restrictions and one for runtime restrictions.
+  Both are boolean sentences (default="True")
+  Update restrictions services modified to account for this.
+* Better integrate nav and exec policy actions
+* Combined execute policy and nav actions in a single script navigation.py
+* Removed tmap1 related functions fron nav.py
+* Merge pull request `#64 <https://github.com/LCAS/topological_navigation/issues/64>`_ from adambinch/melodic-devel
+  Map manager services for updating restrictions
+* Map manager services for updating restrictions
+  Restrictions field for a node or an edge is now a string which is a boolean sentence (default="True").
+  New services `/topological_map_manager2/update_node_restrictions` and `/topological_map_manager2/update_edge_restrictions` added in the map manager 2.
+* Merge pull request `#3 <https://github.com/LCAS/topological_navigation/issues/3>`_ from francescodelduchetto/particles-states
+  Particles states
+* remove modifications to route_search
+* Merge pull request `#60 <https://github.com/LCAS/topological_navigation/issues/60>`_ from adambinch/melodic-devel
+  Base frame used by localisation is no longer hard coded (in toponav 2).
+* file renamed in install targets
+* Merge branch 'melodic-devel' of github.com:adambinch/topological_navigation into melodic-devel
+* pose pub is replaced with a tf broadcaster. renamed file
+* added install target for the new node.
+* New node for publishing the map to topomap transform on the topic `/topological_transform` with msg type `geometry_msgs/TransformStamped`
+* Base frame used by localisation is no longer hard coded.
+  It is set by a rosparam `topological_localisation/base_frame` (default=`base_link`).
+  topo_map frame is retrieved from the topological map.
+  removed unused imports from localisation.
+* Merge pull request `#58 <https://github.com/LCAS/topological_navigation/issues/58>`_ from adambinch/melodic-devel
+  removed `use_tmap2` arg from localisation - localisation uses the new…
+* removed `use_tmap2` arg from localisation - localisation uses the new format map only.
+* Merge pull request `#54 <https://github.com/LCAS/topological_navigation/issues/54>`_ from adambinch/edge_reconf
+  Edge reconfigure integration for the new map type
+* minor improvement to the edge reconfigure manager
+* The edge reconfigure manager is in its own file.
+* Cant add duplicate params when using srv `add_param_to_edge_config`
+* Fixes and improvements to the edge reconfigure manager.
+* Lots of fixes
+* EdgeReconfigureManager class done. Needs testing.
+* Service `update_edge_config` renamed to `add_param_to_edge_config` to better reflect what it does.
+  That service and `rm_param_from_edge_config` modified to account for the changes in the previous commit.
+  Constructing new class `EdgeReconfigureManager` in `navigation.py` to handle everything edge reconfigure related.
+* topo path planning considers blacklisted nodes
+* Edges config is now a list where each item is a dict with the params namespace, name and value.
+  The default config is empty and the tmap to tmap2 conversion sets an empty config.
+* Service for removing params from an edge's config and a fix.
+* service `update_edge_reconf` renamed to `update_edge_config`
+* New service for adding/updating edge reconfigure parameters.
+* fix
+* Function that does the new to old conversion catches exceptions
+* `convert_to_legacy` rosparam sets whther the new to old format map conversion happens or not
+* map manager 2 coverts new format maps (broadcast on the topic `/topological_map_2`) to the old format (broadcast on the topic `/topological_map`).
+  This allows nodes/actions that rely on the old map format to function whilst using/testing features from the new map.
+* The arg `use_tmap2` (used by localisation and navigation) is now a rosparam
+* Merge pull request `#47 <https://github.com/LCAS/topological_navigation/issues/47>`_ from heuristicus/eband-planner
+  Allow use of EBandPlannerROS as local planner
+* Some fixes:
+  The monitored navigation function in `navigation.py` expects a geom msgs Pose object rather than a monitored nav goal object (stops nav breaking when using the old map format).
+  Navigation now reconfigures move base tolerances according to the values specified in the tmap.
+* Merge pull request `#45 <https://github.com/LCAS/topological_navigation/issues/45>`_ from ayu135/toponav2-devel
+  Added tmap2 support for navigation.py and execute_policy
+* added route_search2.py for tmap2 and corresponding changes and fixes
+* Added separate navigate and follow route funtions for tmap2
+* Added command line option for topomap2
+* Some fixes after testing
+* Updated map callback for execute policy
+* adding support for tmap2 and combining execute policy
+* Merge pull request `#44 <https://github.com/LCAS/topological_navigation/issues/44>`_ from adambinch/manager2_srvs
+  All manager services available and working on new map type
+* Improvement to the function that loads the map
+* Correction to srv `/topological_map_manager2/update_edge`
+* add max_vel_lin for eband in dynparam mapping
+* add eband to dynparam mappings
+* When loading a map using the map manager 2, it is cached in `$HOME/.ros/topological_maps`.
+  General improvements.
+* correction
+* reverting accidental change
+* minor improvement
+* Added srvs `/topological_map_manager2/rm_tag_from_node` and `/topological_map_manager2/update_edge`
+* Added srvs `/topological_map_manager2/modify_node_tags` and `/topological_map_manager2/add_tag_to_node`
+* Added srvs `/topological_map_manager2/update_node_pose` and `/topological_map_manager2/update_node_tolerance`.
+  General improvements.
+* Added service `/topological_map_manager2/update_node_name`
+* Added service `/topological_map_manager2/add_content_to_node`
+* Added services `/topological_map_manager2/remove_topological_node` and `/topological_map_manager2/remove_edge`.
+  General improvements.
+* Made map manager 2 node more user friendly
+  Corrected error when generating influence zone vertices
+  removed unnecessary msg definition
+  General improvements
+* Added services `/topological_map_manager2/add_topological_node` and `/topological_map_manager2/add_edges_between_nodes`
+* Made node(`map_manager2.py`) for loading in new format maps using the manager 2 class.
+  Added service `/topological_map_manager2/write_topological_map` for writing new format topological maps to yaml files. If you dont specify the path/name of the map then it will just write to the one given to the manager 2 class.
+  When loading a tmap (`tmap.tmap`) from a file using the original map manager, the converted tmap can now be written to a file (`tmap.yaml`) using the `write_topological_map` service.
+  Added map sanity checking function to the manager 2 class.
+* minor changes
+* Merge branch 'master' of https://github.com/LCAS/topological_navigation into manager2_srvs
+* Created `topological_navigation_msgs` package that will contain the new msg and srv types for the new format topomap.
+  Added services `/topological_map_manager2/switch_topological_map` and `/topological_map_manager2/get_edges_between_nodes`.
+  Added function in map manager 2 that warns if you are trying to use it to load an old-format topomap.
+  Some minor improvements.
+* Edge id field included in new map. Default is `origin_destination`
+* minor change
+* Added manager 2 services:
+  - `get_topological_map `
+  - `get_tagged_nodes`
+  - `get_tags`
+  - `get_node_tags`
+* correction
+* map manager 2 class now publishes the new format topomap, rather than the origin map manager.
+  map manager 2 can now load a new format topomap from a given file path.
+* Merge pull request `#31 <https://github.com/LCAS/topological_navigation/issues/31>`_ from adambinch/loc2
+  All functions in localisation now work with the new map type.
+* correction
+* corrections
+* All functions in localisation can now work with the new map type. This includes its services.
+* rearranging
+* Argument added to switch between using map types in topological localisation.
+  Get nodes with tag service in localisation now works on new map type.
+  Map manager 2 now has service for getting nodes with a tag.
+  Map manager now adds a nodes tags during map conversion.
+* Localisation uses the topo_map to base_link tf transform, rather than the robot pose.
+* prettyfying
+* Map manager broadcasts map->topo_map tf transform.
+* Merge pull request `#29 <https://github.com/LCAS/topological_navigation/issues/29>`_ from adambinch/topomap2
+  Function for converting topological maps into the new format in the
+* New map type is regenerated and republished when current map is updated.
+* bit of tidying
+* Map manager keeps its class attribute copy of the new map as a dictionary, but publishes it as a string.
+* updated package xml
+* minor change
+* Function for converting topological maps into the new format in the map manager.
+  Includes a map manager 2 class for handling topological maps in the new format.
+* Contributors: Adam Binch, Ayush Sharma, Jaime Pulido Fentanes, Michal Staniaszek, adambinch, francescodelduchetto, gpdas
+
 2.1.0 (2020-04-20)
 ------------------
 * Merge pull request `#7 <https://github.com/LCAS/topological_navigation/issues/7>`_ from heuristicus/improve-manager

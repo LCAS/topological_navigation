@@ -2,6 +2,42 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#94 <https://github.com/LCAS/topological_navigation/issues/94>`_ from adambinch/tmap_to_tmap2
+  Script for converting all tmaps found in repo to tmap2 format and script for populating tmap2s with params from edge reconfigure config files.
+* Code simplification
+* Script for populating tmap2s with edge reconfigure params from edge reconfigure groups config files.
+* Moved map converter to topological_utils package
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Merge pull request `#25 <https://github.com/LCAS/topological_navigation/issues/25>`_ from heuristicus/ms-add-missing-scripts
+  add missing scripts to cmakelists
+* add missing scripts to cmakelists
+* Contributors: Adam Binch, Ayush Sharma, Michal Staniaszek, adambinch
+
+* Merge pull request `#94 <https://github.com/LCAS/topological_navigation/issues/94>`_ from adambinch/tmap_to_tmap2
+  Script for converting all tmaps found in repo to tmap2 format and script for populating tmap2s with params from edge reconfigure config files.
+* Code simplification
+* Script for populating tmap2s with edge reconfigure params from edge reconfigure groups config files.
+* Moved map converter to topological_utils package
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Merge pull request `#25 <https://github.com/LCAS/topological_navigation/issues/25>`_ from heuristicus/ms-add-missing-scripts
+  add missing scripts to cmakelists
+* add missing scripts to cmakelists
+* Contributors: Adam Binch, Ayush Sharma, Michal Staniaszek, adambinch
+
 2.1.0 (2020-04-20)
 ------------------
 

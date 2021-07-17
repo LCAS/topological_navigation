@@ -221,6 +221,10 @@ class RobotSim(Robot):
                 self.loginfo("@ %5.1f: %s reached base station: %s" %
                              (self.env.now, self.robot_id, self.graph.base_stations[self.robot_id]))
 
+                # if picking finished,then no coordinator, so change node hold time to inf:
+                if self.picking_finished:
+                    self.graph.extend_hold_time(self.graph.base_stations[self.robot_id], float("inf"))
+
                 # change mode to idle
                 self.mode = 0
                 idle_start_time = self.env.now

@@ -58,6 +58,7 @@ class TopologicalNavServer(object):
         self._target = "None"
         self.current_action = "none"
         self.next_action = "none"
+        self.nav_from_closest_edge = False
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -247,7 +248,6 @@ class TopologicalNavServer(object):
             
             self._feedback.route = "Starting..."
             self._as.publish_feedback(self._feedback)
-            rospy.loginfo("Navigating From %s to %s", self.closest_node, goal.target)
             self.navigate(goal.target)
 
         else:
@@ -273,14 +273,14 @@ class TopologicalNavServer(object):
 
             self.cancelled = False
             self.preempted = False
+            self.nav_from_closest_edge = False
             
             route = goal.route
             valid_route = self.route_checker.check_route(route)
             
             if valid_route:
-                target = route.source[-1]
-                self._target = target
-                route = self.enforce_navigable_route(route, target)
+                final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
+                target = final_edge["node"]
                 result = self.execute_policy(route, target)
             else:
                 result = False
@@ -356,15 +356,18 @@ class TopologicalNavServer(object):
 
             g_node = get_node_from_tmap2(self.lnodes, target)
             
-            # If > 0 nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node
+            # Nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node
             self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
             self.nav_from_closest_edge = False
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+                rospy.loginfo("Planning from the Closest NODE: {}".format(self.closest_node))
                 o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             else:
                 o_node, the_edge = self.orig_node_from_closest_edge(g_node)
                 self.nav_from_closest_edge = True
+                
+            rospy.loginfo("Navigating From Origin %s to Target %s", o_node["node"]["name"], target)
              
             # Everything is Awesome!!!
             # Target and Origin are not None
@@ -467,9 +470,14 @@ class TopologicalNavServer(object):
             d1 = 0; d2 = 1
         
         if d1 <= d2:
-            return o_node_1, edge_1
+            o_node = o_node_1
+            the_edge = edge_1
         else:
-            return o_node_2, edge_2
+            o_node = o_node_2
+            the_edge = edge_2
+            
+        rospy.loginfo("Planning from the Closest EDGE: {}".format(the_edge["edge_id"]))
+        return o_node, the_edge
         
         
     def to_goal_node(self, g_node):
@@ -511,7 +519,6 @@ class TopologicalNavServer(object):
         Enforces the route to always contain the initial edge that leads the robot to the first node in the given route.
         In other words, avoid that the route contains an initial edge that is too far from the robot pose. 
         """
-        rospy.loginfo("Current route {} ".format(route))
         if self.nav_from_closest_edge:
             if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
                 first_node = route.source[0] if len(route.source) > 0 else target_node
@@ -520,8 +527,9 @@ class TopologicalNavServer(object):
                         route.source.insert(0, edge_id.split("_")[0])
                         route.edge_id.insert(0, edge_id)
                         break
-                    
-            rospy.loginfo("Modified route {}".format(route))
+            
+        route_print = [eval(json.dumps(node)) for node in route.source]
+        rospy.loginfo("Route Source: {}".format(route_print))
         return route
 
 

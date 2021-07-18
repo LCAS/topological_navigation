@@ -417,6 +417,8 @@ class TopologicalNavServer(object):
 
     def execute_policy(self, route, target):
         
+        self.nav_from_closest_edge = False
+        
         succeeded, inc = self.followRoute(route, target, 1)
 
         if succeeded:

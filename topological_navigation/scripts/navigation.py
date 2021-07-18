@@ -360,7 +360,7 @@ class TopologicalNavServer(object):
             self.nav_from_closest_edge = False
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
-                rospy.loginfo("Planning from the closest NODE: {}".format(self.closest_node))
+                rospy.loginfo("Planning from the Closest NODE: {}".format(self.closest_node))
                 o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             else:
                 o_node, the_edge = self.orig_node_from_closest_edge(g_node)
@@ -477,7 +477,7 @@ class TopologicalNavServer(object):
             o_node = o_node_2
             the_edge = edge_2
             
-        rospy.loginfo("Planning from the closest EDGE: {}".format(the_edge["edge_id"]))
+        rospy.loginfo("Planning from the Closest EDGE: {}".format(the_edge["edge_id"]))
         return o_node, the_edge
         
         
@@ -530,10 +530,7 @@ class TopologicalNavServer(object):
                         break
             
         route_print = [eval(json.dumps(node)) for node in route.source]
-        route_print = route_print[1:]
-        route_print.append(target_node)
         rospy.loginfo("Route: {}".format(route_print))
-        
         return route
 
 

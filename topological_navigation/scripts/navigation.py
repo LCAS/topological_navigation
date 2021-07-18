@@ -248,7 +248,6 @@ class TopologicalNavServer(object):
             
             self._feedback.route = "Starting..."
             self._as.publish_feedback(self._feedback)
-            rospy.loginfo("Navigating From %s to %s", self.closest_node, goal.target)
             self.navigate(goal.target)
 
         else:
@@ -361,10 +360,13 @@ class TopologicalNavServer(object):
             self.nav_from_closest_edge = False
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+                rospy.loginfo("Planning from the closest NODE: {}".format(self.closest_node))
                 o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
             else:
                 o_node, the_edge = self.orig_node_from_closest_edge(g_node)
                 self.nav_from_closest_edge = True
+                
+            rospy.loginfo("Navigating From Origin %s to Target %s", o_node["node"]["name"], target)
              
             # Everything is Awesome!!!
             # Target and Origin are not None
@@ -469,9 +471,14 @@ class TopologicalNavServer(object):
             d1 = 0; d2 = 1
         
         if d1 <= d2:
-            return o_node_1, edge_1
+            o_node = o_node_1
+            the_edge = edge_1
         else:
-            return o_node_2, edge_2
+            o_node = o_node_2
+            the_edge = edge_2
+            
+        rospy.loginfo("Planning from the closest EDGE: {}".format(the_edge["edge_id"]))
+        return o_node, the_edge
         
         
     def to_goal_node(self, g_node):
@@ -513,7 +520,6 @@ class TopologicalNavServer(object):
         Enforces the route to always contain the initial edge that leads the robot to the first node in the given route.
         In other words, avoid that the route contains an initial edge that is too far from the robot pose. 
         """
-        rospy.loginfo("Current route {} ".format(route))
         if self.nav_from_closest_edge:
             if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
                 first_node = route.source[0] if len(route.source) > 0 else target_node
@@ -522,8 +528,12 @@ class TopologicalNavServer(object):
                         route.source.insert(0, edge_id.split("_")[0])
                         route.edge_id.insert(0, edge_id)
                         break
-                    
-            rospy.loginfo("Modified route {}".format(route))
+            
+        route_print = [eval(json.dumps(node)) for node in route.source]
+        route_print = route_print[1:]
+        route_print.append(target_node)
+        rospy.loginfo("Route: {}".format(route_print))
+        
         return route
 
 

@@ -273,12 +273,14 @@ class TopologicalNavServer(object):
 
             self.cancelled = False
             self.preempted = False
+            self.nav_from_closest_edge = False
             
             route = goal.route
             valid_route = self.route_checker.check_route(route)
             
             if valid_route:
                 target = route.source[-1]
+                route = self.enforce_navigable_route(route, target)
                 self._target = target
                 result = self.execute_policy(route, target)
             else:
@@ -418,8 +420,6 @@ class TopologicalNavServer(object):
 
 
     def execute_policy(self, route, target):
-        
-        self.nav_from_closest_edge = False
         
         succeeded, inc = self.followRoute(route, target, 1)
 

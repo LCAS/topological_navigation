@@ -279,9 +279,8 @@ class TopologicalNavServer(object):
             valid_route = self.route_checker.check_route(route)
             
             if valid_route:
-                target = route.source[-1]
-                route = self.enforce_navigable_route(route, target)
-                self._target = target
+                final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
+                target = final_edge["node"]
                 result = self.execute_policy(route, target)
             else:
                 result = False

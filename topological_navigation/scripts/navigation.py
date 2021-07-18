@@ -530,7 +530,7 @@ class TopologicalNavServer(object):
                         break
             
         route_print = [eval(json.dumps(node)) for node in route.source]
-        rospy.loginfo("Route: {}".format(route_print))
+        rospy.loginfo("Route Source: {}".format(route_print))
         return route
 
 

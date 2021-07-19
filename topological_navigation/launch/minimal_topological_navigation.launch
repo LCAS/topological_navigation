@@ -5,12 +5,12 @@
   <arg name="tmap_file"/>
   <!-- pointset of the topological map (its name in the mongo database)  -->
   <arg name="pointset"/>
-  <!-- if false load a new format map (.tmap2) using the map manager 2, else load an old format (.tmap) map using the old map manager  -->
+  <!-- if false load a .tmap2 using the map manager 2, else load a .tmap using the legacy map manager  -->
   <arg name="legacy" default="false"/>
-  <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
-  <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
   <!-- What action is being used for move_base -->
   <arg name="move_base_name" default="move_base"/>
+  <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
+  <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
 
   <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="robot_pose_publisher"/>	
 
@@ -24,14 +24,10 @@
   <node pkg="topological_navigation" name="speed_based_prediction" type="speed_based_prediction.py" output="screen" respawn="true"/>
 
   <node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
-    <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
     <param name="move_base_name" type="string" value="$(arg move_base_name)"/>
+    <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg pointset)" respawn="true"/>
-
-  <node pkg="topological_rviz_tools" name="topmap_interface" type="python_topmap_interface.py" output="screen">
-    <param name="map_name" value="$(arg pointset)"/>
-  </node>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true"/>
 
 </launch>

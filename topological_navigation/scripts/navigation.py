@@ -361,11 +361,12 @@ class TopologicalNavServer(object):
             self.nav_from_closest_edge = False
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
-                rospy.loginfo("Planning from the Closest NODE: {}".format(self.closest_node))
                 o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
+                rospy.loginfo("Planning from the Closest NODE: {}".format(self.closest_node))
             else:
-                o_node, the_edge = self.orig_node_from_closest_edge(g_node)
                 self.nav_from_closest_edge = True
+                o_node, the_edge = self.orig_node_from_closest_edge(g_node)
+                rospy.loginfo("Planning from the Closest EDGE: {}".format(the_edge["edge_id"]))
                 
             rospy.loginfo("Navigating From Origin %s to Target %s", o_node["node"]["name"], target)
              
@@ -470,14 +471,9 @@ class TopologicalNavServer(object):
             d1 = 0; d2 = 1
         
         if d1 <= d2:
-            o_node = o_node_1
-            the_edge = edge_1
+            return o_node_1, edge_1
         else:
-            o_node = o_node_2
-            the_edge = edge_2
-            
-        rospy.loginfo("Planning from the Closest EDGE: {}".format(the_edge["edge_id"]))
-        return o_node, the_edge
+            return o_node_2, edge_2
         
         
     def to_goal_node(self, g_node):

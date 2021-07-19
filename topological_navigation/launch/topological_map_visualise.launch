@@ -7,7 +7,7 @@
   <arg name="tmap_file"/>
   <!-- pointset of the topological map (its name in the mongo database)  --> 	 	
   <arg name="pointset"/>
-  <!-- if false load a new format map (.tmap2) using the map manager 2, else load an old format (.tmap) map using the old map manager  -->
+  <!-- if false load a .tmap2 using the map manager 2, else load a .tmap using the legacy map manager  -->
   <arg name="legacy" default="false"/> 
 
   <arg name="machine" default="localhost" />

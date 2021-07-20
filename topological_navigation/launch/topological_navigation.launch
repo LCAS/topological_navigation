@@ -1,27 +1,44 @@
 <?xml version="1.0" ?>
 <launch>
 
+  <!-- ### TOPOLOGICAL MAP ARGS ### -->
   <!-- Filename of the topological map. -->
   <arg name="file" default=""/>
   <!-- Pointset of the topological map (its name in the mongo database). --> 	
   <arg name="pointset" default=""/> 
   <!-- If false load a tmap2 using the map manager 2, else load a tmap using the legacy map manager. -->
   <arg name="legacy" default="false"/> 
-  <!-- If true map manager 2 converts map to legacy format (default is true in map_manager2.py). -->
+  <!-- If true map manager 2 converts map to legacy format. -->
   <arg name="convert_to_legacy" default="true"/> 
-  <!-- Load the map from its file rather than mongodb if using the legacy map manager (default is false in map_manager.py). -->
+  <!-- Load the map from its file rather than mongodb if using the legacy map manager. -->
   <arg name="load_map_from_file" default="false" />
 
   <arg name="machine" default="localhost" />
   <arg name="user" default="" />
 
-  <!-- If true then a node tagged as 'no_go' can be the closest node ONLY when the robot is within it (default is true in localisation.py). -->
+  <!-- ### TOPOLOGICAL LOCALISATION ARGS ### -->
+  <!-- Robot base frame. -->
+  <arg name="base_frame" default="base_link" />
+  <!-- Localisation publishes at 10hz. Listen to every Nth message. -->
+  <arg name="N" default="3" />
+  <!-- If true localisation publishes only when the closest node/edge changes, and when the current node changes. -->
+  <arg name="only_latched" default="true" />
+  <!-- If true then a node tagged as 'no_go' can be the closest node ONLY when the robot is within it. -->
   <arg name="localisation_with_tags" default="true" />
 
+  <!-- ### TOPOLOGICAL NAVIGATION ARGS ### -->
   <!-- The action being used for move_base -->
   <arg name="move_base_name" default="move_base"/>
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
+  <!-- If the action of the first edge in the route is not in this list then the robot must nav to the exact pose of the closest node before following the route. -->
+  <arg name="move_base_actions" default="['move_base']"/>
+  <!-- Nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node. -->
+  <arg name="max_dist_to_closest_edge" default="1.0"/>
+  <!-- If true reconfigure parameters according to the config of the current edge. -->
+  <arg name="reconfigure_edges" default="false"/>
+  <!-- If true do edge reconfigure using the server (as in legacy toponav). -->
+  <arg name="reconfigure_edges_srv" default="false"/>
 
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
@@ -35,19 +52,33 @@
 
   <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
 
-  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true"/>
+  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true" if="$(arg localisation_with_tags)">
+    <param name="base_frame" value="$(arg base_frame)"/>
+    <param name="LocalisationThrottle" value="$(arg N)"/>
+    <param name="OnlyLatched" value="$(arg only_latched)"/>
+  </node>
+
+  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" args="-notags" output="screen" respawn="true" unless="$(arg localisation_with_tags)">
+    <param name="base_frame" value="$(arg base_frame)"/>
+    <param name="LocalisationThrottle" value="$(arg N)"/>
+    <param name="OnlyLatched" value="$(arg only_latched)"/>
+  </node>
 	
   <node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
     <param name="move_base_name" type="str" value="$(arg move_base_name)"/>
     <param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
+    <param name="max_dist_to_closest_edge" value="$(arg max_dist_to_closest_edge)"/>
+    <param name="reconfigure_edges" value="$(arg reconfigure_edges)"/>
+    <param name="reconfigure_edges_srv" value="$(arg reconfigure_edges_srv)"/>
+    <rosparam param="move_base_actions" subst_value="True">$(arg move_base_actions)</rosparam>
   </node>
 
-  <node pkg="topological_navigation" type="navstats_loger.py" name="topological_navstats_logger" respawn="true" unless="$(arg load_map_from_file)"/>
-		
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)" respawn="true" unless="$(arg load_map_from_file)"/>
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map) -n" respawn="true" if="$(arg load_map_from_file)"/>
-	
-  <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true" unless="$(arg load_map_from_file)"/>
-  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true" unless="$(arg load_map_from_file)"/>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-n" respawn="true" unless="$(eval not arg('legacy') or arg('legacy') and arg('load_map_from_file'))"/>
+
+  <node pkg="topological_navigation" name="speed_based_prediction" type="speed_based_prediction.py" output="screen" respawn="true"/>	
+  <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>
+  <node pkg="topological_navigation" type="navstats_loger.py" name="topological_navstats_logger" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
+  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true" unless="$(eval arg('legacy') and arg('load_map_from_file'))"/>
 
 </launch>

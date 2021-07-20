@@ -7,7 +7,7 @@
   <arg name="pointset"/>
   <!-- if false load a .tmap2 using the map manager 2, else load a .tmap using the legacy map manager  -->
   <arg name="legacy" default="false"/>
-  <!-- What action is being used for move_base -->
+  <!-- The action being used for move_base -->
   <arg name="move_base_name" default="move_base"/>
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
@@ -28,6 +28,6 @@
     <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true"/>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-n" respawn="true"/>
 
 </launch>

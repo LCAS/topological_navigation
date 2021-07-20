@@ -3,24 +3,27 @@
 
   <!-- 2D occupancy grid map  -->
   <arg name="map"/>
-  <!-- filename of the topological map  -->
-  <arg name="tmap_file" default=""/>
-  <!-- pointset of the topological map (its name in the mongo database)  --> 	
+  <!-- Filename of the topological map.  -->
+  <arg name="file" default=""/>
+  <!-- Pointset of the topological map (its name in the mongo database). --> 	
   <arg name="pointset" default=""/> 
-  <!-- if false load a .tmap2 using the map manager 2, else load a .tmap using the legacy map manager  -->
+  <!-- If false load a tmap2 using the map manager 2, else load a tmap using the legacy map manager.  -->
   <arg name="legacy" default="false"/> 
-  <!-- load the tmap from its file rather than mongodb if using the legacy map manager.  -->
+  <!-- If true map manager 2 converts map to legacy format (default is true in map_manager2.py). -->
+  <arg name="convert_to_legacy" default="true"/> 
+  <!-- Load the map from its file rather than mongodb if using the legacy map manager (default is false in map_manager.py).  -->
   <arg name="load_map_from_file" default="false" />
 	
-  <!-- launch map server -->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)"/>
-  <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args="1 0 0 0 0 0 1 /map none 100"/>
 
-  <!-- The -f arg tells the legacy map manager to load the tmap directly from its file, rather than mongodb. If loading from mongodb pass the pointset. 
-       Map manager 2 loads the tmap2 from its file only (does not support mongodb). -->
-  <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="-f $(arg tmap_file)" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
+  <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 world map 10"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)"/>
+
+  <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="-f $(arg file)" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
   <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg pointset)" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
-  <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg tmap_file)" respawn="true" unless="$(arg legacy)"/>
+
+  <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg file)" respawn="true" unless="$(arg legacy)">
+    <param name="convert_to_legacy" value="$(arg convert_to_legacy)"/>
+  </node>
 
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true" output="screen"/> 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find topological_utils)/support/map_edition.rviz" /> 
@@ -28,7 +31,5 @@
   <node pkg="topological_rviz_tools" name="topmap_interface" type="python_topmap_interface.py" output="screen" if="$(eval arg('legacy') and not arg('load_map_from_file'))">
     <param name="map_name" value="$(arg pointset)"/>
   </node>
-
-  <node name="map_tf_broadcaster" pkg="tf" type="static_transform_publisher" args="1 0 0 0 0 0 1 map world 100" />
 
 </launch>

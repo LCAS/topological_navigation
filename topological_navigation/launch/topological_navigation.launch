@@ -1,35 +1,45 @@
 <?xml version="1.0" ?>
 <launch>
 
-  <!-- declare arg to be passed in -->
-  <arg name="map" default=""/>
+  <!-- Filename of the topological map. -->
   <arg name="file" default=""/>
-  <arg name="legacy" default="false" />
+  <!-- Pointset of the topological map (its name in the mongo database). --> 	
+  <arg name="pointset" default=""/> 
+  <!-- If false load a tmap2 using the map manager 2, else load a tmap using the legacy map manager. -->
+  <arg name="legacy" default="false"/> 
+  <!-- If true map manager 2 converts map to legacy format (default is true in map_manager2.py). -->
+  <arg name="convert_to_legacy" default="true"/> 
+  <!-- Load the map from its file rather than mongodb if using the legacy map manager (default is false in map_manager.py). -->
   <arg name="load_map_from_file" default="false" />
 
   <arg name="machine" default="localhost" />
   <arg name="user" default="" />
 
+  <!-- If true then a node tagged as 'no_go' can be the closest node ONLY when the robot is within it (default is true in localisation.py). -->
+  <arg name="localisation_with_tags" default="true" />
+
+  <!-- The action being used for move_base -->
+  <arg name="move_base_name" default="move_base"/>
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
-  <!-- What action is being used for move_base -->
-  <arg name="move_base_name" default="move_base"/>
+
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
   <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="-f $(arg file)" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
-  <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
-  <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg file)" respawn="true" unless="$(arg legacy)"/>
+  <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg pointset)" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
 
-  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" unless="$(arg load_map_from_file)"/>
+  <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg file)" respawn="true" unless="$(arg legacy)">
+    <param name="convert_to_legacy" value="$(arg convert_to_legacy)"/>
+  </node>
 
-  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true" unless="$(arg load_map_from_file)"/>
-  <!-- TODO: remove this when tag functionality is MongoDB independant -->
-  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" args="-notags" output="screen" respawn="true" if="$(arg load_map_from_file)"/>
+  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
+
+  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true"/>
 	
   <node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
-    <param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
-    <param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
+    <param name="move_base_name" type="str" value="$(arg move_base_name)"/>
+    <param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
   </node>
 
   <node pkg="topological_navigation" type="navstats_loger.py" name="topological_navstats_logger" respawn="true" unless="$(arg load_map_from_file)"/>

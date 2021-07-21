@@ -306,6 +306,7 @@ class TopologicalNavLoc(object):
         
         self.get_edge_vectors()
         self.update_loc_by_topic()
+        
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         if self.with_tags:
             self.nogos = self.get_no_go_nodes()

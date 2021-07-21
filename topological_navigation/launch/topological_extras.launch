@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<launch>  
+
+  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true"/>
+  <node pkg="topological_navigation" name="speed_based_prediction" type="speed_based_prediction.py" output="screen" respawn="true"/>	
+  <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>
+  <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true"/>
+  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true"/>
+
+</launch>
+

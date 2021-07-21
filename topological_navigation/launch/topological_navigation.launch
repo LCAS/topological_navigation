@@ -80,10 +80,4 @@
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-n" respawn="true" unless="$(eval not arg('legacy') or arg('legacy') and arg('load_map_from_file'))"/>
 
-  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
-  <node pkg="topological_navigation" name="speed_based_prediction" type="speed_based_prediction.py" output="screen" respawn="true"/>	
-  <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>
-  <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
-  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
-
 </launch>

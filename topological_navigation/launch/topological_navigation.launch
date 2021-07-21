@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <launch>
 
+  <arg name="machine" default="localhost" />
+  <arg name="user" default="" />
+
   <!-- ### TOPOLOGICAL MAP ARGS ### -->
   <!-- Filename of the topological map. -->
   <arg name="file" default=""/>
@@ -12,9 +15,6 @@
   <arg name="convert_to_legacy" default="true"/> 
   <!-- Load the map from its file rather than mongodb if using the legacy map manager. -->
   <arg name="load_map_from_file" default="false" />
-
-  <arg name="machine" default="localhost" />
-  <arg name="user" default="" />
 
   <!-- ### TOPOLOGICAL LOCALISATION ARGS ### -->
   <!-- Robot base frame. -->
@@ -33,7 +33,7 @@
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
   <!-- If the action of the first edge in the route is not in this list then the robot must nav to the exact pose of the closest node before following the route. -->
   <arg name="move_base_actions" default="['move_base']"/>
-  <!-- Nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node. -->
+  <!-- Plan from destination node of closest edge if dist from closest edge <= max_dist_to_closest_edge else plan from closest node. -->
   <arg name="max_dist_to_closest_edge" default="1.0"/>
   <!-- If true reconfigure parameters according to the config of the current edge. -->
   <arg name="reconfigure_edges" default="false"/>
@@ -49,8 +49,6 @@
   <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg file)" respawn="true" unless="$(arg legacy)">
     <param name="convert_to_legacy" value="$(arg convert_to_legacy)"/>
   </node>
-
-  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
 
   <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true" if="$(arg localisation_with_tags)">
     <param name="base_frame" value="$(arg base_frame)"/>
@@ -76,9 +74,11 @@
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-n" respawn="true" unless="$(eval not arg('legacy') or arg('legacy') and arg('load_map_from_file'))"/>
 
+  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
+
   <node pkg="topological_navigation" name="speed_based_prediction" type="speed_based_prediction.py" output="screen" respawn="true"/>	
   <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>
   <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
-  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true" unless="$(eval arg('legacy') and arg('load_map_from_file'))"/>
+  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
 
 </launch>

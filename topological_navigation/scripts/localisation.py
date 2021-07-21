@@ -341,7 +341,8 @@ class TopologicalNavLoc(object):
         vectors_end = []
         
         for node in self.tmap["nodes"]:
-            start = [node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0]
+            orig_pose = node_poses[node["node"]["name"]]
+            start = [orig_pose["position"]["x"], orig_pose["position"]["y"], 0]
             
             for edge in node["node"]["edges"]:
                 dest_pose = node_poses[edge["node"]]
@@ -354,7 +355,6 @@ class TopologicalNavLoc(object):
                     vectors_end.append(end)
                 else:
                     rospy.logerr("Cannot get distance to edge {}: Destination is equal to origin".format(edge["edge_id"]))
-                    continue
         
         self.vectors_start = np.array(vectors_start)
         self.vectors_end = np.array(vectors_end)

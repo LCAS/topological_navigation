@@ -9,9 +9,9 @@
   <arg name="pointset" default=""/> 
   <!-- If false load a tmap2 using the map manager 2, else load a tmap using the legacy map manager.  -->
   <arg name="legacy" default="false"/> 
-  <!-- If true map manager 2 converts map to legacy format (default is true in map_manager2.py). -->
+  <!-- If true map manager 2 converts map to legacy format. -->
   <arg name="convert_to_legacy" default="true"/> 
-  <!-- Load the map from its file rather than mongodb if using the legacy map manager (default is false in map_manager.py).  -->
+  <!-- Load the map from its file rather than mongodb if using the legacy map manager.  -->
   <arg name="load_map_from_file" default="false" />
 	
 

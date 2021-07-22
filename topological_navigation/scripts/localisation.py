@@ -171,7 +171,7 @@ class TopologicalNavLoc(object):
             distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
             closest_edges = [self.dist_edge_ids[index] for index in np.argsort(distances)]
         except Exception as e:
-            rospy.logerr("Error getting distance to edges: {}".format(e))
+            rospy.logwarn("Cannot get distance to edges: {}".format(e))
             closest_edges = []
             distances = np.array([])
         

@@ -32,7 +32,7 @@
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
   <!-- If the action of the first edge in the route is not in this list then the robot must nav to the exact pose of the closest node before following the route. -->
-  <arg name="move_base_actions" default="['move_base']"/>
+  <arg name="move_base_actions" default="['move_base','row_change','row_traversal']"/>
   <!-- Plan from destination node of closest edge if dist from closest edge <= max_dist_to_closest_edge else plan from closest node. -->
   <arg name="max_dist_to_closest_edge" default="1.0"/>
   <!-- If true reconfigure parameters according to the config of the current edge. -->
@@ -80,8 +80,7 @@
     <rosparam param="move_base_actions" subst_value="True">$(arg move_base_actions)</rosparam>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-n" respawn="true" unless="$(eval not arg('legacy') or arg('legacy') and arg('load_map_from_file'))"/>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true"/>
 
   <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(arg log_nav_stats)"/>
 

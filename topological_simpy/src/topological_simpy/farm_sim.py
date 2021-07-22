@@ -246,62 +246,62 @@ class FarmSim(topological_simpy.farm.Farm):
                     if self.pickers[picker_id].mode == 0:
                         self.idle_pickers.append(picker_id)
 
-                # ==============================================================================
-                #             # update picker mode in picker predictors
-                # ==============================================================================
-                # TODO: remove predictors
-                for picker_id in self.picker_ids:
-                    goal_node = None
-                    picker = self.pickers[picker_id]
-                    # update mode and pose in predictor
-                    if picker.mode == 1:
-                        goal_node = picker.goal_node
-                    elif picker.mode == 3:
-                        # if local storage, it will be set according to picker.curr_row
-                        goal_node = picker.local_storage_node if self.graph.use_local_storage else picker.cold_storage_node
-                    elif picker.mode == 6:
-                        goal_node = picker.local_storage_node
-
-                    self.predictor.update_mode_and_pose(picker_id, picker.mode, picker.curr_node,
-                                                        picker.picking_dir, goal_node)
-                    # make predictions - only once from a node and only when in picking mode
-                    # if ((picker.mode == 2) and
-                    #         ((predicted_from[picker_id] is None) or (predicted_from[picker_id] != picker.curr_node))):
-                    #     # predict individual picker's tray_full events -> no global view and next row may be wrong
-                    #     pred_row, pred_node, pred_dir, pred_time = self.predictor.predictors[
-                    #         picker_id].predict_current_tray_full()
-                    #     new_prediction = ("%s, %s, %s, %0.1f, from %s %s %0.1f" % (
-                    #         pred_row, pred_node, pred_dir, pred_time, picker.curr_node, picker.picking_dir, time_now))
-                    #     self.predictions[picker_id][self.tray_counts[picker_id]].append(new_prediction)
-                    #     predicted_from[picker_id] = picker.curr_node
-
-                # predict tray_full events with a global view
-                # has any picker, not in previous predictions, started a new tray?
-                new_tray_started = False
-                for picker_id in self.picker_ids:
-                    if picker_id not in predictions and self.predictor.predictors[picker_id].has_started_a_tray():
-                        new_tray_started = True
-                        break
-                # has any picker in previous predictions changed his node?
-                node_changed = False
-                for picker_id in predictions:
-                    if predicted_from[picker_id] != self.pickers[picker_id].curr_node:
-                        node_changed = True
-                        break
-                # predict only if (to reduce redundant predictions)
-                #   any picker, not in previous predictions, started a new tray, or
-                #   any picker in previous predictions changed the node
-                if new_tray_started or node_changed:
-                    # predictions are made only for the pickers who has started picking and did not fill the current tray
-                    predictions = self.predictor.predict_tray_full()
-
-                    for picker_id in predictions:
-                        pred_row, pred_node, pred_dir, pred_time = predictions[picker_id][1:5]
-                        picker = self.pickers[picker_id]
-                        new_prediction = ("%s, %s, %s, %0.1f, from %s %s %0.1f" % (
-                            pred_row, pred_node, pred_dir, pred_time, picker.curr_node, picker.picking_dir, time_now))
-                        self.predictions[picker_id][self.tray_counts[picker_id]].append(new_prediction)
-                        predicted_from[picker_id] = picker.curr_node
+                # # ==============================================================================
+                # #             # update picker mode in picker predictors
+                # # ==============================================================================
+                # # TODO: remove predictors
+                # for picker_id in self.picker_ids:
+                #     goal_node = None
+                #     picker = self.pickers[picker_id]
+                #     # update mode and pose in predictor
+                #     if picker.mode == 1:
+                #         goal_node = picker.goal_node
+                #     elif picker.mode == 3:
+                #         # if local storage, it will be set according to picker.curr_row
+                #         goal_node = picker.local_storage_node if self.graph.use_local_storage else picker.cold_storage_node
+                #     elif picker.mode == 6:
+                #         goal_node = picker.local_storage_node
+                #
+                #     self.predictor.update_mode_and_pose(picker_id, picker.mode, picker.curr_node,
+                #                                         picker.picking_dir, goal_node)
+                #     # make predictions - only once from a node and only when in picking mode
+                #     # if ((picker.mode == 2) and
+                #     #         ((predicted_from[picker_id] is None) or (predicted_from[picker_id] != picker.curr_node))):
+                #     #     # predict individual picker's tray_full events -> no global view and next row may be wrong
+                #     #     pred_row, pred_node, pred_dir, pred_time = self.predictor.predictors[
+                #     #         picker_id].predict_current_tray_full()
+                #     #     new_prediction = ("%s, %s, %s, %0.1f, from %s %s %0.1f" % (
+                #     #         pred_row, pred_node, pred_dir, pred_time, picker.curr_node, picker.picking_dir, time_now))
+                #     #     self.predictions[picker_id][self.tray_counts[picker_id]].append(new_prediction)
+                #     #     predicted_from[picker_id] = picker.curr_node
+                #
+                # # predict tray_full events with a global view
+                # # has any picker, not in previous predictions, started a new tray?
+                # new_tray_started = False
+                # for picker_id in self.picker_ids:
+                #     if picker_id not in predictions and self.predictor.predictors[picker_id].has_started_a_tray():
+                #         new_tray_started = True
+                #         break
+                # # has any picker in previous predictions changed his node?
+                # node_changed = False
+                # for picker_id in predictions:
+                #     if predicted_from[picker_id] != self.pickers[picker_id].curr_node:
+                #         node_changed = True
+                #         break
+                # # predict only if (to reduce redundant predictions)
+                # #   any picker, not in previous predictions, started a new tray, or
+                # #   any picker in previous predictions changed the node
+                # if new_tray_started or node_changed:
+                #     # predictions are made only for the pickers who has started picking and did not fill the current tray
+                #     predictions = self.predictor.predict_tray_full()
+                #
+                #     for picker_id in predictions:
+                #         pred_row, pred_node, pred_dir, pred_time = predictions[picker_id][1:5]
+                #         picker = self.pickers[picker_id]
+                #         new_prediction = ("%s, %s, %s, %0.1f, from %s %s %0.1f" % (
+                #             pred_row, pred_node, pred_dir, pred_time, picker.curr_node, picker.picking_dir, time_now))
+                #         self.predictions[picker_id][self.tray_counts[picker_id]].append(new_prediction)
+                #         predicted_from[picker_id] = picker.curr_node
 
                 # ==============================================================================
                 #             # update modes of all assigned robots

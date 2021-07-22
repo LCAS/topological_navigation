@@ -42,6 +42,9 @@
   <!-- Edge reconfigure groups config file used if reconfigure_edges_srv is true. -->
   <arg name="edge_reconfigure_config" default="$(find topological_navigation/config/sample_edge_reconfig_groups.yaml"/>
 
+  <!-- Needs mongodb. -->
+  <arg name="log_nav_stats" default="false"/>
+
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
@@ -80,6 +83,6 @@
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-n" respawn="true" unless="$(eval not arg('legacy') or arg('legacy') and arg('load_map_from_file'))"/>
 
-  <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true"/>
+  <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(arg log_nav_stats)"/>
 
 </launch>

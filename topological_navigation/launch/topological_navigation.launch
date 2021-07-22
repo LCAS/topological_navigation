@@ -19,7 +19,7 @@
   <!-- ### TOPOLOGICAL LOCALISATION ARGS ### -->
   <!-- Robot base frame. -->
   <arg name="base_frame" default="base_link" />
-  <!-- Localisation publishes at 10hz. Listen to every Nth message. -->
+  <!-- Localisation publishes at max 10 hz. Lower the rate to every Nth message. -->
   <arg name="N" default="3" />
   <!-- If true localisation publishes only when the closest node/edge changes, and when the current node changes. -->
   <arg name="only_latched" default="true" />

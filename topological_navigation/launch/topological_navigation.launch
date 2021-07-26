@@ -42,8 +42,7 @@
   <!-- Edge reconfigure groups config file used if reconfigure_edges_srv is true. -->
   <arg name="edge_reconfigure_config" default="$(find topological_navigation/config/sample_edge_reconfig_groups.yaml"/>
 
-  <!-- Needs mongodb. -->
-  <arg name="log_nav_stats" default="false"/>
+  <arg name="launch_extras" default="false" />
 
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
@@ -82,6 +81,10 @@
 
   <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true"/>
 
-  <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(arg log_nav_stats)"/>
+  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(arg launch_extras)"/>
+  <node pkg="topological_navigation" type="speed_based_prediction.py" name="speed_based_prediction" output="screen" if="$(arg launch_extras)"/>	
+  <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true" if="$(arg launch_extras)"/>
+  <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(arg launch_extras)"/>
+  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" if="$(arg launch_extras)"/>
 
 </launch>

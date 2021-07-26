@@ -1,5 +1,5 @@
 edge_nav_reconfig_groups:
-  irn:
+  group_A:
     edges: []
     parameters:
       - &id001
@@ -67,7 +67,7 @@ edge_nav_reconfig_groups:
         ns: move_base/DWAPlannerROS
         type: double
         value: 0.015779064792816565
-  orn:
+  group_B:
     edges: []
     parameters:
       - *id001
@@ -83,7 +83,7 @@ edge_nav_reconfig_groups:
       - *id011
       - *id012
       - *id013
-  utn:
+  group_C:
     edges: []
     parameters:
       - name: forward_point_distance

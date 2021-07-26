@@ -1,19 +1,19 @@
+<?xml version="1.0" ?>
 <launch>
-	<arg name="map"/> 	<!-- 2D Occupancy Grid Map -->
-	<arg name="pointset"/>
-	<arg name="machine" default="localhost" />
-	<arg name="user" default="" />
 
-	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
+  <arg name="map"/> 	<!-- 2D Occupancy Grid Map -->
+  <arg name="pointset"/>
+  <arg name="machine" default="localhost" />
+  <arg name="user" default="" />
 
-	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map)" output="screen"/>
-	<node pkg="tf" type="static_transform_publisher" name="static_transform_publisher" args="1 0 0 0 0 0 1 /map none 100" output="screen"/>
-	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg pointset)" output="screen"/>
-	<node pkg="fremenserver" type="fremenserver" name="fremenserver" output="screen"/>
-	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg pointset) -e"/>
+  <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
-	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)" output="screen"/>
+  <node pkg="tf" type="static_transform_publisher" name="static_transform_publisher" args="1 0 0 0 0 0 1 /map none 100" output="screen"/>
+  <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg pointset)" output="screen"/>
+  <node pkg="fremenserver" type="fremenserver" name="fremenserver" output="screen"/>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg pointset) -e"/>
 
-
+  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen"/>
 
 </launch>

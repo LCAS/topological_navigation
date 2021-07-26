@@ -212,8 +212,10 @@ class map_manager_2(object):
         
     def create_list_of_nodes(self):
         
-        names = [node["node"]["name"] for node in self.tmap2["nodes"]]
-        names.sort()
+        names = []
+        if "nodes" in self.tmap2:
+            names = [node["node"]["name"] for node in self.tmap2["nodes"]]
+            names.sort()
         return names
             
         

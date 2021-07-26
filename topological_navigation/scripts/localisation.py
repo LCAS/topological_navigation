@@ -171,7 +171,7 @@ class TopologicalNavLoc(object):
             distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
             closest_edges = [self.dist_edge_ids[index] for index in np.argsort(distances)]
         except Exception as e:
-            rospy.logerr("Error getting distance to edges: {}".format(e))
+            rospy.logwarn("Cannot get distance to edges: {}".format(e))
             closest_edges = []
             distances = np.array([])
         
@@ -306,6 +306,7 @@ class TopologicalNavLoc(object):
         
         self.get_edge_vectors()
         self.update_loc_by_topic()
+        
         # TODO: remove Temporary arg until tags functionality is MongoDB independent
         if self.with_tags:
             self.nogos = self.get_no_go_nodes()
@@ -336,29 +337,25 @@ class TopologicalNavLoc(object):
         for node in self.tmap["nodes"]:
             node_poses[node["node"]["name"]] = node["node"]["pose"]
         
-        bad_edges = []
-        for node in self.tmap["nodes"]:
-            for edge in node["node"]["edges"]:
-                if node["node"]["pose"] == node_poses[edge["node"]]:
-                    rospy.logerr("Cannot get distance to edge {}: Destination is equal to origin".format(edge["edge_id"]))
-                    bad_edges.append(edge["edge_id"])
-            
         self.dist_edge_ids = []
         vectors_start = []
         vectors_end = []
         
         for node in self.tmap["nodes"]:
-            start = [node["node"]["pose"]["position"]["x"], node["node"]["pose"]["position"]["y"], 0]
+            orig_pose = node_poses[node["node"]["name"]]
+            start = [orig_pose["position"]["x"], orig_pose["position"]["y"], 0]
             
             for edge in node["node"]["edges"]:
-                if edge["edge_id"] not in bad_edges:
+                dest_pose = node_poses[edge["node"]]
+                
+                if orig_pose != dest_pose:
                     self.dist_edge_ids.append(edge["edge_id"])
-                    
-                    dest_pose = node_poses[edge["node"]]
                     end = [dest_pose["position"]["x"], dest_pose["position"]["y"], 0]
                     
                     vectors_start.append(start)
                     vectors_end.append(end)
+                else:
+                    rospy.logerr("Cannot get distance to edge {}: Destination is equal to origin".format(edge["edge_id"]))
         
         self.vectors_start = np.array(vectors_start)
         self.vectors_end = np.array(vectors_end)

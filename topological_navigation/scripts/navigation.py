@@ -419,15 +419,6 @@ class TopologicalNavServer(object):
         
         self._feedback.status = self.get_status()
         self._as.publish_feedback(self._feedback)
-        
-        
-    def get_status(self):
-        
-        status = 0
-        if self.edge_action_manager.client is not None:
-            status = self.edge_action_manager.client.get_state()
-            
-        return status
 
 
     def execute_policy(self, route, target):
@@ -795,6 +786,15 @@ class TopologicalNavServer(object):
 
         rospy.sleep(rospy.Duration.from_sec(0.3))
         return result, inc
+    
+    
+    def get_status(self):
+        
+        status = 0
+        if self.edge_action_manager.client is not None:
+            status = self.edge_action_manager.client.get_state()
+            
+        return status
 ###################################################################################################################
         
 

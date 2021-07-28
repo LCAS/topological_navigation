@@ -511,7 +511,7 @@ class TopologicalForkGraph(object):
             # robot is parking, do not move; self.targets[robot]['curr_node'] is not the latest current node,
             # so use self.curr_node[robot_id]
             elif self.curr_node[robot_id] == self.targets[robot_id]['target'] == self.base_stations[robot_id]:
-                self.targets[robot_id]['priority'] = 20
+                self.targets[robot_id]['priority'] = -20
             # robot initial priority = 100, if target is base, then increase by 1000. Note: the robot's priority could
             #   be 1000 by now if known as robot_dodge in last step
             elif self.targets[robot_id]['target'] == self.base_stations[robot_id]:

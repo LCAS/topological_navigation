@@ -97,7 +97,6 @@ class TopologicalNavServer(object):
         rospy.loginfo(" ...done")
         
         self.make_move_base_edge()
-        
         self.edge_action_manager = EdgeActionManager()
 
         # Creating Action Server for navigation
@@ -247,6 +246,7 @@ class TopologicalNavServer(object):
             print "NO ORIENTATION (%s)" % self.no_orientation
             
             self._feedback.route = "Starting..."
+            self._feedback.status = 0
             self._as.publish_feedback(self._feedback)
             self.navigate(goal.target)
 
@@ -406,17 +406,28 @@ class TopologicalNavServer(object):
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
             self._feedback.route = target
-            self._as.publish_feedback(self._feedback)
             self._as.set_succeeded(self._result)
         else:
             if not self.preempted:
                 self._result.success = result
                 self._feedback.route = self.current_node
-                self._as.publish_feedback(self._feedback)
                 self._as.set_aborted(self._result)
             else:
                 self._result.success = False
+                self._feedback.route = self.current_node
                 self._as.set_preempted(self._result)
+        
+        self._feedback.status = self.get_status()
+        self._as.publish_feedback(self._feedback)
+        
+        
+    def get_status(self):
+        
+        status = 0
+        if self.edge_action_manager.client is not None:
+            status = self.edge_action_manager.client.get_state()
+            
+        return status
 
 
     def execute_policy(self, route, target):
@@ -611,6 +622,7 @@ class TopologicalNavServer(object):
 
             if not exec_policy:
                 self._feedback.route = "%s to %s using %s" % (route.source[rindex], cedg["node"], a)
+                self._feedback.status = 0
                 self._as.publish_feedback(self._feedback)
             else:
                 self.publish_feedback_exec_policy()
@@ -739,22 +751,32 @@ class TopologicalNavServer(object):
 
     def execute_action(self, edge, destination_node):
         
+        def pub_status(status):
+            if status != self.prev_status:
+                self._feedback.status = status
+                self._as.publish_feedback(self._feedback)
+            self.prev_status = status
+        
         inc = 0
         result = True
         self.goal_reached = False
+        self.prev_status = 0
         
         self.edge_action_manager.initialise(edge, destination_node)
         self.edge_action_manager.execute()
         
-        status = self.edge_action_manager.client.get_state()
+        status = self.get_status()
+        pub_status(status)
         while (
             (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
             and not self.cancelled
             and not self.goal_reached
         ):
-            status = self.edge_action_manager.client.get_state()
+            status = self.get_status()
+            pub_status(status)
             rospy.sleep(rospy.Duration.from_sec(0.01))
 
+        pub_status(status)
         res = self.edge_action_manager.client.get_result()
 
         if status != GoalStatus.SUCCEEDED:

@@ -1,0 +1,177 @@
+## info: this config parameters are from
+#  RASberry/rasberry_bringup/config/site_files/riseholme/polytunnel/transportation/picking_des.yaml
+# and
+# /home/zuyuan/rasberry_ws/src/RASberry/rasberry_des/config/des_config.yaml
+# -----------------------------------------------------------------------------
+# create date: 07-Apr-2021
+##-----------------------------------------------------------------------------
+# map related parameters
+# ----------------------
+# map_name: name of the topological map
+# n_polytunnels: integer>0, 1 - open farm, n (>0) - n polytunnels
+# n_farm_rows:
+#   func: none/copy, function to populate values for all rows
+#   value: array of integers, number of rows in the farm (n_polytunnels == 0)
+#                             or in a polytunnel (n_polytunnels >= 1). list
+#                             with one value for open farm, one (func = 'copy')
+#                             or n_polytunnels (func = 'none') values for
+#                             polytunnels
+# second_head_lane: true/false, a secondary head lane at the other end.
+#                               edges connecting adjacent rows can be considered
+#                               only if there is continuity across all rows
+# pri_head_nodes:
+#   polytunnel_01: [], array of primary head nodes of rows in order
+#   polytunnel_02: [], array of primary head nodes of rows in order
+#   ...
+# sec_head_nodes:   , ignored if second_had_lane is false
+#   polytunnel_01: [], array of secondary head nodes of rows in order
+#   polytunnel_02: [], array of secondary head nodes of rows in order
+#   ...
+# row_nodes:
+#   polytunnel_01:
+#     row_01: [], array of nodes of first topo-nav row of first polytunnel in order
+#     row_02: [], array of nodes of second topo-nav row of first polytunnel in order
+#   polytunnel_02:
+#     row_01: [], array of nodes of first topo-nav row of second polytunnel in order
+#     row_02: [], array of nodes of second topo-nav row of second polytunnel in order
+#   ...
+# end_row_nodes:
+#   polytunnel_01: [], array of end nodes of rows in order
+#   polytunnel_02: [], array of end nodes of rows in order
+#   ...
+# yield_per_node:
+#   func: none/copy/gauss, function to populate values for all rows
+#   value: array of floats, yield at a topo_nav node (from the node to the
+#                           next), per row (values for all rows
+#                           (n_polytunnels = 0) or all polytunnels, or mu and
+#                           sigma), g
+# local_storage_nodes: string, nodes corresponding to the local storages. the
+#                              closest one will be assigned to each row. will be
+#                              used only as starting place for pickers when
+#                              cold storage is used
+# use_cold_storage: true/false, unload at cold storage / local storage
+# cold_storage_node: string, name of the cold storage node in topo map
+# single_track_route: the route nodes to cold_storage_node, only one way leading to these nodes.
+#                     When one robot is on this route to or back from cold_storage_node,
+#                     the other robots should wait until this route is free
+##-----------------------------------------------------------------------------
+map_name: riseholme_sim
+n_polytunnels: 2
+n_farm_rows:
+  func: copy
+  value: [5]
+second_head_lane: false
+pri_head_nodes:
+  polytunnel_01: [WayPoint65, WayPoint64, WayPoint60, WayPoint59, WayPoint58, WayPoint57]
+#  polytunnel_01: [WayPoint64, WayPoint60, WayPoint59, WayPoint58]
+#  polytunnel_01: [WayPoint138, WayPoint134, WayPoint133, WayPoint132]
+  polytunnel_02: [WayPoint139, WayPoint138, WayPoint134, WayPoint133, WayPoint132, WayPoint131]
+sec_head_nodes:
+  polytunnel_01: []
+  polytunnel_02: []
+row_nodes:
+  polytunnel_01:
+    row_01: [WayPoint6, WayPoint2, WayPoint1, WayPoint5, WayPoint4, WayPoint3, WayPoint7, WayPoint8]
+    row_02: [WayPoint18, WayPoint17, WayPoint16, WayPoint15, WayPoint14, WayPoint13, WayPoint12, WayPoint11]
+    row_03: [WayPoint19, WayPoint20, WayPoint21, WayPoint22, WayPoint23, WayPoint24, WayPoint25, WayPoint26]
+    row_04: [WayPoint28, WayPoint29, WayPoint30, WayPoint31, WayPoint32, WayPoint33, WayPoint34, WayPoint35]
+    row_05: [WayPoint37, WayPoint38, WayPoint39, WayPoint40, WayPoint41, WayPoint42, WayPoint43, WayPoint44]
+    row_06: [WayPoint54, WayPoint53, WayPoint52, WayPoint51, WayPoint50, WayPoint49, WayPoint48, WayPoint47]
+  polytunnel_02:
+    row_01: [WayPoint80, WayPoint76, WayPoint75, WayPoint79, WayPoint78, WayPoint77, WayPoint81, WayPoint82]
+    row_02: [WayPoint92, WayPoint91, WayPoint90, WayPoint89, WayPoint88, WayPoint87, WayPoint86, WayPoint85]
+    row_03: [WayPoint93, WayPoint94, WayPoint95, WayPoint96, WayPoint97, WayPoint98, WayPoint99, WayPoint100]
+    row_04: [WayPoint102, WayPoint103, WayPoint104, WayPoint105, WayPoint106, WayPoint107, WayPoint108, WayPoint109]
+    row_05: [WayPoint111, WayPoint112, WayPoint113, WayPoint114, WayPoint115, WayPoint116, WayPoint117, WayPoint118]
+    row_06: [WayPoint128, WayPoint127, WayPoint126, WayPoint125, WayPoint124, WayPoint123, WayPoint122, WayPoint121]
+yield_per_node:
+  func: gauss
+  value: [200.0, 5.0]
+
+local_storage_nodes: [WayPoint66, WayPoint74]
+#, WayPoint74]
+use_cold_storage: true
+cold_storage_node: WayPoint69
+
+
+##-----------------------------------------------------------------------------
+# des related parameters
+# ----------------------
+# with_robots: true/false, whether service robots are available or not.
+#                          if available, they are controlled from coordinator
+# n_iteration: integer, number of times whole picking has to be repeated
+##-----------------------------------------------------------------------------
+with_robots: true
+n_iteration: 1
+
+##-----------------------------------------------------------------------------
+# picker related parameters
+# ----------------------
+# n_pickers: integer > 0, number of pickers
+# picker_picking_rate:
+#   func: none/copy/gauss, function to populate values for all pickers
+#   value: array of floats, speed of pickers while picking (values for all
+#                           pickers, or mu and sigma), m/s
+# picker_transportation_rate:
+#   func: none/copy/gauss, function to populate values for all pickers
+#   value: array of floats, transportation speed of pickers (values for all
+#                           pickers, or mu and sigma), m/s
+# picker_max_n_trays:
+#   func: none/copy, function to populate values for all pickers
+#   value: array of integers, maximum number of trays that can be carried by
+#                             each pickers (values for all pickers, or single
+#                             value to be copied)
+# picker_unloading_time:
+#   func: none/copy/gauss, function to populate values for all pickers
+#   value: array of floats, time required by each picker to unload a tray at
+#                           local storage / robot (values for all pickers, or
+#                           mu and sigma), s
+# tray_capacity: 3000 # capacity of each tray, g
+##-----------------------------------------------------------------------------
+#picker_ids: [picker101, picker102]
+## , picker103]
+picker_picking_rate:
+  func: gauss
+  value: [0.4, 0.02]
+picker_transportation_rate:
+  func: gauss
+  value: [1.0, 0.04]
+picker_max_n_trays:
+  func: copy
+  value: [1]
+picker_unloading_time:
+  func: gauss
+  value: [10.0, 0.2]
+tray_capacity: 1200
+
+##-----------------------------------------------------------------------------
+# robot related parameters
+# ----------------------
+# robot_ids: robot names
+# robot_transportation_rate: array of floats, speed of a robot (values for all
+#                                             robots, or single value to be
+#                                             copied), m/s
+# robot_max_n_trays:
+#   func: none/copy, function to populate values for all robots
+#   value: array of integers, maximum number of trays that can be carried by
+#                             the robot (values for all robots, or single
+#                             value to be copied)
+# robot_unloading_time: array of floats, time required by the robot to unload
+#                                        a tray at local storage (values for
+#                                        all pickers, or single value to be
+#                                        copied), s
+##-----------------------------------------------------------------------------
+robot_transportation_rate: [1.0]
+robot_max_n_trays:
+  func: copy
+  value: [4]
+robot_unloading_time: [10.0]
+
+# base station used as robot home and waiting place when the cold storage node is busy
+# number of base stations should equal to number of robots
+base_station_nodes: &id_base_stations
+  - WayPoint140
+  - WayPoint141
+  - WayPoint142
+  - WayPoint144
+wait_nodes: *id_base_stations

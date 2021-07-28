@@ -27,8 +27,8 @@ SIM_RT_FACTOR = 0.00001  # simulation speed, 1: real time; 0.01: 100 times faste
 VERBOSE = True
 SHOW_VIS = False  # show visualisation
 SAVE_RANDOM = False  # save random figures
-SAVE_FINAL = True  # save final figures
-SAVE_STATS = True
+SAVE_FINAL = False  # save final figures
+SAVE_STATS = False
 
 seed(RANDOM_SEED)
 numpy.random.seed(RANDOM_SEED)
@@ -494,22 +494,22 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
 if __name__ == "__main__":
     # config_file = 'topological_simpy/config/picking_sim_combined.yaml'
     # config_file = '../config/picking_sim_riseholme_simple.yaml'
-    config_file = '../config/picking_sim_riseholme.yaml'
+    config_file = '../config/picking_sim_riseholme_4_bases.yaml'
     # get the config params
     # config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
     # tmap_config_file = 'topological_simpy/maps/tmap.yaml'
-    tmap_config_file = '../maps/riseholme.tmap2'   # default
+    tmap_config_file = '../maps/riseholme_4_bases.tmap2'   # default
     # tmap_config_file = '../maps/edited_riseholme_3.tmap2'  # default
     # tmap_config_file = '../maps/clockhouse.tmap'
 
     # parameters for running the simulation
     n_trials = 1
-    min_n_pickers = 3
-    max_n_pickers = 4
-    min_n_robots = 3
+    min_n_pickers = 4
+    max_n_pickers = 5
+    min_n_robots = 4
     max_n_robots = max_n_pickers
     policies = ["uniform_utilisation"]   # ["lexicographical", "shortest_distance", "uniform_utilisation"]
 

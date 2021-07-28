@@ -414,7 +414,6 @@ class TopologicalNavServer(object):
                 self._as.set_aborted(self._result)
             else:
                 self._result.success = False
-                self._feedback.route = self.current_node
                 self._as.set_preempted(self._result)
         
         self._feedback.status = self.get_status()

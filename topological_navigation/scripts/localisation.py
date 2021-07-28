@@ -5,7 +5,7 @@ import rospy, rostopic, tf
 import strands_navigation_msgs.srv
 
 from geometry_msgs.msg import Pose
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32
 from topological_navigation_msgs.msg import ClosestEdges
 
 from topological_navigation.tmap_utils import *
@@ -101,6 +101,7 @@ class TopologicalNavLoc(object):
         self.throttle = self.throttle_val
         self.node="Unknown"
         self.wpstr="Unknown"
+        self.closest_dist = 10e5-1
         self.cnstr="Unknown"
         self.closest_edge_ids = []
         self.closest_edge_dists = []
@@ -111,6 +112,7 @@ class TopologicalNavLoc(object):
 
         self.subscribers=[]
         self.wp_pub = rospy.Publisher('closest_node', String, latch=True, queue_size=1)
+        self.wd_pub = rospy.Publisher('closest_node_distance', Float32, latch=True, queue_size=1)
         self.cn_pub = rospy.Publisher('current_node', String, latch=True, queue_size=1)
         self.ce_pub = rospy.Publisher('closest_edges', ClosestEdges, latch=True, queue_size=1)
 
@@ -254,8 +256,8 @@ class TopologicalNavLoc(object):
                             closeststr=str(name)
                             not_loc=False
                         ind+=1
-    
-                self.publishTopics(closeststr, currentstr, closest_edges, list(np.round(edge_dists, 3)))
+                
+                self.publishTopics(closeststr, self.distances[0]["dist"], currentstr, closest_edges, list(np.round(edge_dists, 3)))
                 self.throttle=1
             else:
                 self.throttle +=1
@@ -263,7 +265,7 @@ class TopologicalNavLoc(object):
             self.rate.sleep()
 
 
-    def publishTopics(self, wpstr, cnstr, closest_edge_ids, closest_edge_dists) :
+    def publishTopics(self, wpstr, closest_dist, cnstr, closest_edge_ids, closest_edge_dists) :
         
         def pub_closest_edges(closest_edge_ids, closest_edge_dists):
             msg = ClosestEdges()
@@ -277,6 +279,8 @@ class TopologicalNavLoc(object):
         if self.only_latched :
             if self.wpstr != wpstr:
                 self.wp_pub.publish(wpstr)
+            if self.closest_dist != closest_dist:
+                self.wd_pub.publish(closest_dist)
             if self.cnstr != cnstr:
                 self.cn_pub.publish(cnstr)
             if self.closest_edge_ids != closest_edge_ids \
@@ -284,11 +288,13 @@ class TopologicalNavLoc(object):
                 pub_closest_edges(closest_edge_ids, closest_edge_dists)
         else:
             self.wp_pub.publish(wpstr)
+            self.wd_pub.publish(closest_dist)
             self.cn_pub.publish(cnstr)
             pub_closest_edges(closest_edge_ids, closest_edge_dists)
             
-        self.wpstr=wpstr
-        self.cnstr=cnstr
+        self.wpstr = wpstr
+        self.closest_dist = closest_dist
+        self.cnstr = cnstr
         self.closest_edge_ids = closest_edge_ids
         self.closest_edge_dists = closest_edge_dists
         

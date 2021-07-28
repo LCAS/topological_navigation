@@ -503,13 +503,14 @@ class TopologicalForkGraph(object):
 
                 # the robot who blocks highest priority robot should dodge first
                 for robot_dodge in to_be_ranked_robots:
-                    if self.targets[robot_dodge]['curr_node'] == self.targets[robot_id]['next_node']:
+                    if self.curr_node[robot_dodge] == self.targets[robot_id]['next_node']:
                         self.targets[robot_dodge]['priority'] = 1000
                         to_be_ranked_robots.remove(robot_dodge)
                         # todo: this robot should dodge to a rarely used edge node
                         break
-            # robot is parking, do not move
-            elif self.targets[robot_id]['curr_node'] == self.targets[robot_id]['target'] == self.base_stations[robot_id]:
+            # robot is parking, do not move; self.targets[robot]['curr_node'] is not the latest current node,
+            # so use self.curr_node[robot_id]
+            elif self.curr_node[robot_id] == self.targets[robot_id]['target'] == self.base_stations[robot_id]:
                 self.targets[robot_id]['priority'] = 20
             # robot initial priority = 100, if target is base, then increase by 1000. Note: the robot's priority could
             #   be 1000 by now if known as robot_dodge in last step

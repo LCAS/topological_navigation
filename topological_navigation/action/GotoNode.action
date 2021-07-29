@@ -1,10 +1,10 @@
 #goal definition
 string target
-bool   no_orientation	#Do not care about the final orientation
+bool   no_orientation	# Do not care about the final orientation
 ---
 #result definition
 bool success
 ---
 #feedback
 string route
-uint8 status
+string status           # Status of the current edge action (active, preemted, aborted etc)

@@ -38,6 +38,19 @@ DYNPARAM_MAPPING = {
         "xy_goal_tolerance": "xy_goal_tolerance",
     },
 }
+    
+status_mapping = {}
+status_mapping[-1] = "NONE"
+status_mapping[0] = "PENDING"
+status_mapping[1] = "ACTIVE"
+status_mapping[2] = "PREEMPTED"
+status_mapping[3] = "SUCCEEDED"
+status_mapping[4] = "ABORTED"
+status_mapping[5] = "REJECTED"
+status_mapping[6] = "PREEMPTING"
+status_mapping[7] = "RECALLING"
+status_mapping[8] = "RECALLED"
+status_mapping[9] = "LOST"
 
 
 class TopologicalNavServer(object):
@@ -146,7 +159,7 @@ class TopologicalNavServer(object):
         self.move_base_edge["goal"]["target_pose"]["pose"] = "$node.pose"
         self.move_base_edge["goal"]["target_pose"]["header"] = {}
         self.move_base_edge["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
-        
+    
 
     def init_reconfigure(self):
         
@@ -246,7 +259,7 @@ class TopologicalNavServer(object):
             print "NO ORIENTATION (%s)" % self.no_orientation
             
             self._feedback.route = "Starting..."
-            self._feedback.status = 0
+            self._feedback.status = self.make_status_msg(status_mapping[-1], "NONE")
             self._as.publish_feedback(self._feedback)
             self.navigate(goal.target)
 
@@ -406,7 +419,10 @@ class TopologicalNavServer(object):
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
             self._feedback.route = target
-            self._as.set_succeeded(self._result)
+            if result:
+                self._as.set_succeeded(self._result)
+            else:
+                self._as.set_aborted(self._result)
         else:
             if not self.preempted:
                 self._result.success = result
@@ -416,7 +432,7 @@ class TopologicalNavServer(object):
                 self._result.success = False
                 self._as.set_preempted(self._result)
         
-        self._feedback.status = self.get_status()
+        self._feedback.status = self.make_status_msg(status_mapping[-1], "NONE")
         self._as.publish_feedback(self._feedback)
 
 
@@ -612,7 +628,7 @@ class TopologicalNavServer(object):
 
             if not exec_policy:
                 self._feedback.route = "%s to %s using %s" % (route.source[rindex], cedg["node"], a)
-                self._feedback.status = 0
+                self._feedback.status = self.make_status_msg(status_mapping[-1], "NONE")
                 self._as.publish_feedback(self._feedback)
             else:
                 self.publish_feedback_exec_policy()
@@ -733,7 +749,6 @@ class TopologicalNavServer(object):
         pubst.operation_time = self.stat.operation_time
         pubst.date_started = self.stat.get_start_time_str()
         pubst.date_at_node = self.stat.date_at_node.strftime("%A, %B %d %Y, at %H:%M:%S hours")
-        
         pubst.date_finished = self.stat.get_finish_time_str()
         self.stats_pub.publish(pubst)
         self.stat = None
@@ -743,14 +758,14 @@ class TopologicalNavServer(object):
         
         def pub_status(status):
             if status != self.prev_status:
-                self._feedback.status = status
+                self._feedback.status = self.make_status_msg(status_mapping[status])
                 self._as.publish_feedback(self._feedback)
             self.prev_status = status
         
         inc = 0
         result = True
         self.goal_reached = False
-        self.prev_status = 0
+        self.prev_status = None
         
         self.edge_action_manager.initialise(edge, destination_node)
         self.edge_action_manager.execute()
@@ -765,10 +780,9 @@ class TopologicalNavServer(object):
             status = self.get_status()
             pub_status(status)
             rospy.sleep(rospy.Duration.from_sec(0.01))
-
-        pub_status(status)
+            
         res = self.edge_action_manager.client.get_result()
-
+        
         if status != GoalStatus.SUCCEEDED:
             if not self.goal_reached:
                 result = False
@@ -784,6 +798,7 @@ class TopologicalNavServer(object):
                 inc = 0
 
         rospy.sleep(rospy.Duration.from_sec(0.3))
+        pub_status(status)
         return result, inc
     
     
@@ -794,6 +809,12 @@ class TopologicalNavServer(object):
             status = self.edge_action_manager.client.get_state()
             
         return status
+    
+    
+    def make_status_msg(self, status_str, move_action=""):
+        if not move_action:
+            move_action = self.edge_action_manager.current_action
+        return "move action: {}, status: {}".format(move_action.upper(), status_str)
 ###################################################################################################################
         
 

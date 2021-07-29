@@ -57,7 +57,7 @@ class EdgeActionManager(object):
     def __init__(self):
         
         self.client = None        
-        self.current_action = None
+        self.current_action = "none"
         self.dt = dict_tools()
         
     

@@ -586,7 +586,7 @@ class TopologicalNavServer(object):
                 self.reconfigure_movebase_params(params)
     
                 self.current_target = Orig
-                nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                nav_ok, inc = self.execute_action(self.move_base_edge, o_node, exec_policy)
                 
             elif a not in self.move_base_actions:
                 move_base_act = False
@@ -603,7 +603,7 @@ class TopologicalNavServer(object):
                 else:
                     rospy.loginfo("Getting to exact pose")
                     self.current_target = Orig
-                    nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                    nav_ok, inc = self.execute_action(self.move_base_edge, o_node, exec_policy)
                     rospy.loginfo("going to waypoint in node resulted in")
                     print nav_ok
 
@@ -659,7 +659,7 @@ class TopologicalNavServer(object):
                 else:
                     self.edgeReconfigureManager.srv_reconfigure(cedg["edge_id"])
 
-            nav_ok, inc = self.execute_action(cedg, cnode)
+            nav_ok, inc = self.execute_action(cedg, cnode, exec_policy)
 
             if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
                 self.edgeReconfigureManager._reset()
@@ -755,10 +755,10 @@ class TopologicalNavServer(object):
         self.stat = None
         
 
-    def execute_action(self, edge, destination_node):
+    def execute_action(self, edge, destination_node, exec_policy=False):
         
-        def pub_status(status):
-            if status != self.prev_status:
+        def pub_status(status, exec_policy):
+            if status != self.prev_status and not exec_policy:
                 self._feedback.status = self.make_status_msg(status_mapping[status])
                 self._as.publish_feedback(self._feedback)
             self.prev_status = status
@@ -772,14 +772,14 @@ class TopologicalNavServer(object):
         self.edge_action_manager.execute()
         
         status = self.get_status()
-        pub_status(status)
+        pub_status(status, exec_policy)
         while (
             (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
             and not self.cancelled
             and not self.goal_reached
         ):
             status = self.get_status()
-            pub_status(status)
+            pub_status(status, exec_policy)
             rospy.sleep(rospy.Duration.from_sec(0.01))
             
         res = self.edge_action_manager.client.get_result()
@@ -800,7 +800,7 @@ class TopologicalNavServer(object):
 
         rospy.sleep(rospy.Duration.from_sec(0.5))
         status = self.get_status()
-        pub_status(status)
+        pub_status(status, exec_policy)
         
         return result, inc
     

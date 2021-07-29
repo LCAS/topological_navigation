@@ -815,9 +815,12 @@ class TopologicalNavServer(object):
     
     
     def make_status_msg(self, status_str, move_action=""):
+        
         if not move_action:
             move_action = self.edge_action_manager.current_action
-        return "move action: {}, status: {}".format(move_action.upper(), status_str)
+            
+        d = {"move_action": move_action.upper(), "status": status_str}
+        return json.dumps(d)
 ###################################################################################################################
         
 

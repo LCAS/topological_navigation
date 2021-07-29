@@ -797,8 +797,10 @@ class TopologicalNavServer(object):
             else:
                 inc = 0
 
-        rospy.sleep(rospy.Duration.from_sec(0.3))
+        rospy.sleep(rospy.Duration.from_sec(0.5))
+        status = self.get_status()
         pub_status(status)
+        
         return result, inc
     
     

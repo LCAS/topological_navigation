@@ -418,10 +418,11 @@ class TopologicalNavServer(object):
         
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
-            self._feedback.route = target
             if result:
+                self._feedback.route = target
                 self._as.set_succeeded(self._result)
             else:
+                self._feedback.route = self.current_node
                 self._as.set_aborted(self._result)
         else:
             if not self.preempted:

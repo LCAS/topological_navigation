@@ -185,7 +185,7 @@ class TopologicalNavServer(object):
 
         params = {"yaw_goal_tolerance": cytol, "xy_goal_tolerance": cxygtol}
         rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_name, params))
-        rospy.loginfo("Intermediate: {}".format(intermediate))
+        print("Intermediate: {}".format(intermediate))
         self.reconfigure_movebase_params(params)
         
 
@@ -245,7 +245,7 @@ class TopologicalNavServer(object):
         This Functions is called when the topo nav Action Server is called
         """
         print("\n")
-        rospy.loginfo("Processing GO-TO-NODE goal (NO ORIENTATION = {}) ...".format(goal.no_orientation))
+        rospy.loginfo("Processing GO-TO-NODE goal (NO ORIENTATION = {})".format(goal.no_orientation))
         can_start = False
 
         with self.navigation_lock:
@@ -276,7 +276,7 @@ class TopologicalNavServer(object):
         This Function is called when the execute policy Action Server is called
         """
         print("\n")
-        rospy.loginfo("Processing EXECUTE POLICY MODE goal ...")
+        rospy.loginfo("Processing EXECUTE POLICY MODE goal")
         can_start = False
 
         with self.navigation_lock:
@@ -357,7 +357,7 @@ class TopologicalNavServer(object):
                         and self.next_action in self.move_base_actions
                         and self.current_action in self.move_base_actions
                     ):
-                        rospy.loginfo("Intermediate node reached %s", self.current_node)
+                        rospy.loginfo("Intermediate node reached: %s", self.current_node)
                         self.goal_reached = True
 
 
@@ -568,9 +568,9 @@ class TopologicalNavServer(object):
         edge_from_id = get_edge_from_id_tmap2(self.lnodes, route.source[0], route.edge_id[0])
         if edge_from_id:
             a = edge_from_id["action"]
-            rospy.loginfo("First action %s" % a)
+            rospy.loginfo("First action: %s" % a)
         else:
-            rospy.logerr("Failed to get edge from id!! Invalid route!!")
+            rospy.logerr("Failed to get edge from id! Invalid route!")
             return False, inc
         
         if not self.nav_from_closest_edge:        

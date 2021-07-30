@@ -7,4 +7,3 @@ bool success
 ---
 #feedback
 string route
-string status           # Status of the current edge action (active, preemted, aborted etc)

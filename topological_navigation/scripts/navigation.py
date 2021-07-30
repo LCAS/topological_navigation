@@ -11,7 +11,9 @@ import dynamic_reconfigure.client
 
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
+
 from topological_navigation_msgs.msg import ClosestEdges
+from topological_navigation_msgs.msg import MoveActionStatus
 
 from std_msgs.msg import String
 from actionlib_msgs.msg import GoalStatus
@@ -100,6 +102,7 @@ class TopologicalNavServer(object):
         self.edge_pub = rospy.Publisher("topological_navigation/Edge", CurrentEdge)
         self.route_pub = rospy.Publisher("topological_navigation/Route", strands_navigation_msgs.msg.TopologicalRoute)
         self.cur_edge = rospy.Publisher("current_edge", String)
+        self.move_act_pub = rospy.Publisher("topological_navigation/move_action_status", MoveActionStatus, latch=True, queue_size=1)
 
         self._map_received = False
         rospy.Subscriber("/topological_map_2", String, self.MapCallback)
@@ -109,7 +112,6 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         
-        self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
         # Creating Action Server for navigation
@@ -230,6 +232,7 @@ class TopologicalNavServer(object):
         self.curr_tmap = deepcopy(self.lnodes)
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
+        self.make_move_base_edge()
 
         for node in self.lnodes["nodes"]:
             for edge in node["node"]["edges"]:
@@ -259,7 +262,6 @@ class TopologicalNavServer(object):
             print "NO ORIENTATION (%s)" % self.no_orientation
             
             self._feedback.route = "Starting..."
-            self._feedback.status = self.make_status_msg(status_mapping[-1], "NONE")
             self._as.publish_feedback(self._feedback)
             self.navigate(goal.target)
 
@@ -298,7 +300,7 @@ class TopologicalNavServer(object):
             else:
                 result = False
                 self.cancelled = True
-                rospy.logwarn("Empty or invalid route in exec policy goal!")
+                rospy.logwarn("Invalid route in exec policy goal!")
 
             if not self.cancelled and not self.preempted:
                 self._result_exec_policy.success = result
@@ -312,8 +314,7 @@ class TopologicalNavServer(object):
                     self._as_exec_policy.set_preempted(self._result_exec_policy)
 
         else: 
-            rospy.logwarn(
-                "Could not cancel current navigation action, EXEC_POLICY goal action aborted!")
+            rospy.logwarn("Could not cancel current navigation action, EXEC_POLICY goal action aborted!")
             self._as_exec_policy.set_aborted()
 
         self.navigation_activated = False
@@ -344,7 +345,7 @@ class TopologicalNavServer(object):
         if self.current_node != msg.data:  # is there any change on this topic?
             self.current_node = msg.data  # we are at this new node
             if msg.data != "none":  # are we at a node?
-                rospy.loginfo("new node reached: {}".format(self.current_node))
+                rospy.loginfo("New node reached: {}".format(self.current_node))
                 if self.navigation_activated:  # is the action server active?
                     if self.stat:
                         self.stat.set_at_node()
@@ -355,7 +356,7 @@ class TopologicalNavServer(object):
                         and self.next_action in self.move_base_actions
                         and self.current_action in self.move_base_actions
                     ):
-                        rospy.loginfo("intermediate node reached %s", self.current_node)
+                        rospy.loginfo("Intermediate node reached %s", self.current_node)
                         self.goal_reached = True
 
 
@@ -420,21 +421,21 @@ class TopologicalNavServer(object):
             self._result.success = result
             if result:
                 self._feedback.route = target
+                self._as.publish_feedback(self._feedback)
                 self._as.set_succeeded(self._result)
             else:
                 self._feedback.route = self.current_node
+                self._as.publish_feedback(self._feedback)
                 self._as.set_aborted(self._result)
         else:
             if not self.preempted:
-                self._result.success = result
                 self._feedback.route = self.current_node
+                self._as.publish_feedback(self._feedback)
+                self._result.success = result
                 self._as.set_aborted(self._result)
             else:
                 self._result.success = False
                 self._as.set_preempted(self._result)
-        
-        self._feedback.status = self.make_status_msg(status_mapping[-1], "NONE")
-        self._as.publish_feedback(self._feedback)
 
 
     def execute_policy(self, route, target):
@@ -455,7 +456,7 @@ class TopologicalNavServer(object):
         return succeeded
     
 
-    def publish_feedback_exec_policy(self, nav_outcome=None):
+    def publish_feedback_exec_policy(self, nav_outcome=None, status="default"):            
         
         if self.current_node == "none":  # Happens due to lag in fetch system
             rospy.sleep(0.5)
@@ -465,8 +466,14 @@ class TopologicalNavServer(object):
                 self._feedback_exec_policy.current_wp = self.current_node
         else:
             self._feedback_exec_policy.current_wp = self.current_node
+            
         if nav_outcome is not None:
             self._feedback_exec_policy.status = nav_outcome
+            
+#        if status == "default":
+#            status = self.make_status_msg(status_mapping[-1], "NONE")
+#        self._feedback_exec_policy.move_action_status = status
+            
         self._as_exec_policy.publish_feedback(self._feedback_exec_policy)
         
         
@@ -629,7 +636,6 @@ class TopologicalNavServer(object):
 
             if not exec_policy:
                 self._feedback.route = "%s to %s using %s" % (route.source[rindex], cedg["node"], a)
-                self._feedback.status = self.make_status_msg(status_mapping[-1], "NONE")
                 self._as.publish_feedback(self._feedback)
             else:
                 self.publish_feedback_exec_policy()
@@ -759,8 +765,9 @@ class TopologicalNavServer(object):
         
         def pub_status(status, exec_policy):
             if status != self.prev_status and not exec_policy:
-                self._feedback.status = self.make_status_msg(status_mapping[status])
-                self._as.publish_feedback(self._feedback)
+                mas = MoveActionStatus()
+                mas.go_to_node = self.make_status_msg(status_mapping[status])
+                self.move_act_pub.publish(mas)
             self.prev_status = status
         
         inc = 0
@@ -771,14 +778,14 @@ class TopologicalNavServer(object):
         self.edge_action_manager.initialise(edge, destination_node)
         self.edge_action_manager.execute()
         
-        status = self.get_status()
+        status = self.edge_action_manager.client.get_state()
         pub_status(status, exec_policy)
         while (
             (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
             and not self.cancelled
             and not self.goal_reached
         ):
-            status = self.get_status()
+            status = self.edge_action_manager.client.get_state()
             pub_status(status, exec_policy)
             rospy.sleep(rospy.Duration.from_sec(0.01))
             
@@ -799,19 +806,10 @@ class TopologicalNavServer(object):
                 inc = 0
 
         rospy.sleep(rospy.Duration.from_sec(0.5))
-        status = self.get_status()
+        status = self.edge_action_manager.client.get_state()
         pub_status(status, exec_policy)
         
         return result, inc
-    
-    
-    def get_status(self):
-        
-        status = 0
-        if self.edge_action_manager.client is not None:
-            status = self.edge_action_manager.client.get_state()
-            
-        return status
     
     
     def make_status_msg(self, status_str, move_action=""):

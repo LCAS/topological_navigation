@@ -257,7 +257,9 @@ class TopologicalNavLoc(object):
                             not_loc=False
                         ind+=1
                 
-                self.publishTopics(closeststr, self.distances[0]["dist"], currentstr, closest_edges, list(np.round(edge_dists, 3)))
+                # distance to physically closest node.
+                closest_dist = np.round(self.distances[0]["dist"], 3)
+                self.publishTopics(closeststr, closest_dist, currentstr, closest_edges, list(np.round(edge_dists, 3)))
                 self.throttle=1
             else:
                 self.throttle +=1

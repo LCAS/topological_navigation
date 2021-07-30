@@ -328,7 +328,7 @@ class TopologicalNavServer(object):
 
 
     def preemptCallbackexecpolicy(self):
-        rospy.logwarn("Preempting EXECUTE_POLICY_MODE goal")
+        rospy.logwarn("Preempting EXECUTE POLICY MODE goal")
         self.preempted = True
         self.cancel_current_action(timeout_secs=2)
 

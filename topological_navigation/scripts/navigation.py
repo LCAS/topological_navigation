@@ -40,7 +40,6 @@ DYNPARAM_MAPPING = {
 }
     
 status_mapping = {}
-status_mapping[-1] = "NONE"
 status_mapping[0] = "PENDING"
 status_mapping[1] = "ACTIVE"
 status_mapping[2] = "PREEMPTED"
@@ -51,8 +50,10 @@ status_mapping[6] = "PREEMPTING"
 status_mapping[7] = "RECALLING"
 status_mapping[8] = "RECALLED"
 status_mapping[9] = "LOST"
+###################################################################################################################
 
 
+###################################################################################################################
 class TopologicalNavServer(object):
     
     _feedback = topological_navigation.msg.GotoNodeFeedback()
@@ -149,7 +150,7 @@ class TopologicalNavServer(object):
         
     def make_move_base_edge(self):
         
-        self.move_base_edge = deepcopy(self.lnodes["nodes"][0]["node"]["edges"][0])
+        self.move_base_edge = {}
         self.move_base_edge["action"] = self.move_base_name
         self.move_base_edge["edge_id"] = "move_base_edge"
         self.move_base_edge["action_type"] = "move_base_msgs/MoveBaseGoal"
@@ -265,7 +266,7 @@ class TopologicalNavServer(object):
             self.navigate(goal.target)
 
         else:
-            rospy.logwarn("Could not cancel current navigation action, TOPONAV goal action aborted!")
+            rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted!")
             self._as.set_aborted()
 
         self.navigation_activated = False
@@ -301,11 +302,14 @@ class TopologicalNavServer(object):
             else:
                 result = False
                 self.cancelled = True
-                rospy.logwarn("Invalid route in exec policy goal!")
+                rospy.logerr("Invalid route in execute policy mode goal!")
 
             if not self.cancelled and not self.preempted:
                 self._result_exec_policy.success = result
-                self._as_exec_policy.set_succeeded(self._result_exec_policy)
+                if result:
+                    self._as_exec_policy.set_succeeded(self._result_exec_policy)
+                else:
+                    self._as_exec_policy.set_aborted(self._result_exec_policy)
             else:
                 if not self.preempted:
                     self._result_exec_policy.success = result
@@ -315,7 +319,7 @@ class TopologicalNavServer(object):
                     self._as_exec_policy.set_preempted(self._result_exec_policy)
 
         else: 
-            rospy.logwarn("Could not cancel current navigation action, EXEC_POLICY goal action aborted!")
+            rospy.logwarn("Could not cancel current navigation action, EXECUTE POLICY MODE goal aborted!")
             self._as_exec_policy.set_aborted()
 
         self.navigation_activated = False
@@ -392,14 +396,14 @@ class TopologicalNavServer(object):
                     route = self.rsearch.search_route(o_node["node"]["name"], target)
                     route = self.enforce_navigable_route(route, target)
                     if route.source:
-                        rospy.loginfo("Route found")
                         rospy.loginfo("Navigating Case 1")
+                        rospy.loginfo("Following route")
                         self.publish_route(route, target)
                         result, inc = self.followRoute(route, target, 0)
                         rospy.loginfo("Navigating Case 1 -> res: %d", inc)
                     else:
-                        rospy.logerr("There is no route from {} to {}. Check your edges.".format(o_node["node"]["name"], target))
                         rospy.loginfo("Navigating Case 1a")
+                        rospy.logerr("There is no route from {} to {}. Check your edges.".format(o_node["node"]["name"], target))
                         self.cancelled = True
                         result = False
                         inc = 1
@@ -411,7 +415,7 @@ class TopologicalNavServer(object):
                         result, inc = self.to_goal_node(g_node)
             else:
                 rospy.loginfo("Navigating Case 3")
-                rospy.loginfo("Target or Origin Nodes were not found on Map")
+                rospy.logerr("Target or Origin Nodes were not found on Map")
                 self.cancelled = True
                 result = False
                 inc = 1
@@ -514,17 +518,21 @@ class TopologicalNavServer(object):
 
         if the_edge is None:
             rospy.loginfo("Navigating Case 2")
-            rospy.loginfo("Action not taken, outputing success")
+            rospy.logwarn("Could not find a move base action in the edges of target {}. Unsafe to move".format(g_node["node"]["name"]))
+            rospy.loginfo("Action not taken, outputting success")
             result=True
             inc=0
             rospy.loginfo("Navigating Case 2 -> res: %d", inc)
         else:
             rospy.loginfo("Navigating Case 2a")
-            rospy.loginfo("Getting to exact pose")
+            rospy.loginfo("Getting to the exact pose of target {}".format(g_node["node"]["name"]))
             self.current_target = g_node["node"]["name"]
             result, inc = self.execute_action(the_edge, g_node)
             if not result:
+                rospy.logwarn("Navigation Failed")
                 inc=1
+            else:
+                rospy.loginfo("Navigation Finished Successfully")
             rospy.loginfo("Navigating Case 2a -> res: %d", inc)
             
         return result, inc
@@ -570,15 +578,19 @@ class TopologicalNavServer(object):
             a = edge_from_id["action"]
             rospy.loginfo("First action: %s" % a)
         else:
-            rospy.logerr("Failed to get edge from id! Invalid route!")
+            rospy.logerr("Failed to get edge from id {}! Invalid route!".format(route.edge_id[0]))
             return False, inc
         
         if not self.nav_from_closest_edge:        
             # If the robot is not on a node or the first action is not move base type
             # navigate to closest node waypoint (only when first action is not move base)
+            if a not in self.move_base_actions:
+                rospy.logwarn("The action of the first edge in the route is not a move base action. Moving to origin {}".format(self.closest_node))
+                rospy.loginfo("Current node is {}".format(self.current_node))
+                
             if self.current_node == "none" and a not in self.move_base_actions:
                 self.next_action = a
-                print "Do %s to %s" % (self.move_base_name, self.closest_node)
+                rospy.loginfo("Do %s to %s" % (self.move_base_name, self.closest_node))
     
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
@@ -586,6 +598,11 @@ class TopologicalNavServer(object):
     
                 self.current_target = Orig
                 nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                
+                if nav_ok:
+                    rospy.loginfo("Navigation Finished Successfully")
+                else:
+                    rospy.logwarn("Navigation Failed")
                 
             elif a not in self.move_base_actions:
                 move_base_act = False
@@ -596,13 +613,20 @@ class TopologicalNavServer(object):
                         move_base_act = True
     
                 if not move_base_act:
+                    rospy.logwarn("Could not find a move base action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
                     rospy.loginfo("Action not taken, outputing success")
                     nav_ok = True
                     inc = 0
                 else:
-                    rospy.loginfo("Getting to exact pose")
+                    rospy.loginfo("Getting to exact pose of origin {}".format(o_node["node"]["name"]))
                     self.current_target = Orig
                     nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                    
+                    if nav_ok:
+                        rospy.loginfo("Navigation Finished Successfully")
+                    else:
+                        rospy.logwarn("Navigation Failed")
+                
 
         while rindex < (len(route.edge_id)) and not self.cancelled and nav_ok:
             
@@ -681,10 +705,10 @@ class TopologicalNavServer(object):
                 rospy.loginfo("Navigation Finished on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
             else:
                 if not_fatal:
-                    rospy.loginfo("Navigation Failed on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
+                    rospy.logwarn("Navigation Failed on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
                     self.stat.status = "failed"
                 else:
-                    rospy.loginfo("Fatal Fail on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
+                    rospy.logwarn("Fatal Fail on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
                     self.stat.status = "fatal"
 
             self.publish_stats()

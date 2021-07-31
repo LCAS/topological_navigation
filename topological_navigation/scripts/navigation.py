@@ -111,6 +111,7 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo(" ...done")
         
+        self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
         # Creating Action Server for navigation
@@ -231,7 +232,6 @@ class TopologicalNavServer(object):
         self.curr_tmap = deepcopy(self.lnodes)
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
-        self.make_move_base_edge()
 
         for node in self.lnodes["nodes"]:
             for edge in node["node"]["edges"]:

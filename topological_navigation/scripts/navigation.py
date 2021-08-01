@@ -585,12 +585,12 @@ class TopologicalNavServer(object):
             # If the robot is not on a node or the first action is not move base type
             # navigate to closest node waypoint (only when first action is not move base)
             if a not in self.move_base_actions:
-                rospy.logwarn("The action of the first edge in the route is not a move base action. Moving to origin {}".format(self.closest_node))
+                rospy.loginfo("The action of the first edge in the route is not a move base action")
                 rospy.loginfo("Current node is {}".format(self.current_node))
                 
             if self.current_node == "none" and a not in self.move_base_actions:
                 self.next_action = a
-                rospy.loginfo("Do %s to %s" % (self.move_base_name, self.closest_node))
+                rospy.loginfo("Do %s to origin %s" % (self.move_base_name, o_node["node"]["name"]))
     
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
@@ -618,7 +618,7 @@ class TopologicalNavServer(object):
                     nav_ok = True
                     inc = 0
                 else:
-                    rospy.loginfo("Getting to exact pose of origin {}".format(o_node["node"]["name"]))
+                    rospy.loginfo("Getting to the exact pose of origin {}".format(o_node["node"]["name"]))
                     self.current_target = Orig
                     nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
                     

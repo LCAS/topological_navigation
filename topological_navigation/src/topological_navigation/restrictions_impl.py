@@ -176,17 +176,17 @@ class TaskName(AbstractRestriction):
                 "task": robot_type.data
             })
 
-class StartOnNode(AbstractRestriction):
+class StartOnNode(RuntimeRestriction):
     """ Start the navigation action on the """
     name = "startOnNode"
-    XY_TOLERANCE = 0.1 # the maximum distance, in meter, allowed to still be exactPose
-    YAW_TOLERANCE = 0.087266 # the maximum distance, in randians, allowed to still be exactPose
+    XY_TOLERANCE = 0.01 # the maximum distance, in meter, allowed to still be exactPose
+    YAW_TOLERANCE = 0.0087266 # the maximum distance, in randians, allowed to still be exactPose
 
     def __init__(self, robots):
-        super(AbstractRestriction, self).__init__()
+        super(RuntimeRestriction, self).__init__()
 
-        self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
         self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
+        self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
         self.DYNPARAM_MAPPING = {
             "DWAPlannerROS": {
                 "yaw_goal_tolerance": "yaw_goal_tolerance",
@@ -247,13 +247,13 @@ class StartOnNode(AbstractRestriction):
             })
 
     def satisfy_restriction(self):
+        rospy.loginfo("Satisfying restriction startOnNode...")
         satisfied = True
         ##  For movebase ##
         params = {"yaw_goal_tolerance": self.YAW_TOLERANCE, "xy_goal_tolerance": self.XY_TOLERANCE}
         # self.init_dynparams = self.rcnfclient.get_configuration()
         key = self.move_base_planner[self.move_base_planner.rfind("/") + 1 :]
-        translation = self.DYNPARAM_MAPPING[key]
-        
+        translation = self.DYNPARAM_MAPPING[key]     
         translated_params = {}
         for k, v in params.iteritems():
             if k in translation:
@@ -270,6 +270,8 @@ class StartOnNode(AbstractRestriction):
             satisfied = False
 
         ## For other actions... TODO ##
+
+        rospy.loginfo("DONE, satisfied: {}".format(satisfied))
 
         return satisfied
 

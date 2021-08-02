@@ -2,7 +2,7 @@
 
 import rospy
 import actionlib
-import json
+import yaml
 
 import topological_navigation.msg
 import strands_navigation_msgs.msg
@@ -12,6 +12,7 @@ import dynamic_reconfigure.client
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
+from topological_navigation_msgs.srv import SatisfyRuntime, SatisfyRuntimeRequest, SatisfyRuntimeResponse
 
 from std_msgs.msg import String
 from geometry_msgs.msg import Pose
@@ -61,6 +62,7 @@ class TopologicalNavServer(object):
         self.current_action = "none"
         self.next_action = "none"
         self.n_tries = rospy.get_param("~retries", 3)
+        self.fluid_navigation = True
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -126,6 +128,9 @@ class TopologicalNavServer(object):
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
+
+        self.satisfy_runtime_srv = rospy.ServiceProxy(
+            'restrictions_manager/satisfy_runtime_restrictions', SatisfyRuntime)
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         if self.edge_reconfigure:
@@ -199,7 +204,7 @@ class TopologicalNavServer(object):
         """
          This Function updates the Topological Map everytime it is called
         """
-        self.lnodes = json.loads(msg.data)
+        self.lnodes = yaml.safe_load(msg.data)
         self.topol_map = self.lnodes["pointset"]
         self.curr_tmap = deepcopy(self.lnodes)
 
@@ -289,6 +294,7 @@ class TopologicalNavServer(object):
                         and self._target != self.current_target
                         and self.next_action in self.move_base_actions
                         and self.current_action in self.move_base_actions
+                        and self.fluid_navigation
                     ):
                         rospy.loginfo("intermediate node reached %s", self.current_node)
                         self.goal_reached = True
@@ -429,6 +435,7 @@ class TopologicalNavServer(object):
         rindex = 0
         nav_ok = True
         route_len = len(route.edge_id)
+        self.fluid_navigation = True
 
         o_node = get_node_from_tmap2(self.lnodes, Orig)
         edge_from_id = get_edge_from_id_tmap2(self.lnodes, route.source[0], route.edge_id[0])
@@ -480,8 +487,11 @@ class TopologicalNavServer(object):
             if rindex < (route_len - 1):
                 nedge = get_edge_from_id_tmap2(self.lnodes, route.source[rindex + 1], route.edge_id[rindex + 1])
                 a1 = nedge["action"]
+                self.fluid_navigation = nedge["fluid_navigation"]
             else:
+                nedge = None
                 a1 = "none"
+                self.fluid_navigation = False
 
             self.current_action = a
             self.next_action = a1
@@ -500,7 +510,8 @@ class TopologicalNavServer(object):
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND
             # the current and following action are move_base or human_aware_navigation
-            if rindex < route_len - 1 and a1 in self.move_base_actions and a in self.move_base_actions:
+            # and when the fuild_navigation is true
+            if rindex < route_len - 1 and a1 in self.move_base_actions and a in self.move_base_actions and self.fluid_navigation:
                 self.reconf_movebase(cedg, cnode, True)
             else:
                 if self.no_orientation:
@@ -519,7 +530,18 @@ class TopologicalNavServer(object):
                     self.edgeReconfigureManager.initialise()
                     self.edgeReconfigureManager.reconfigure()
 
+            ### satisfy the restrictions for the next edge to travel after reaching the goal
+            # if nedge is not None:
+            #     rospy.loginfo(
+            #         "Satisfying runtime restrictions for edge {}...".format(nedge["edge_id"]))
+            #     sat_msg = SatisfyRuntimeRequest()
+            #     sat_msg.edge = nedge["edge_id"]
+            #     sat_resp = self.satisfy_runtime_srv(sat_msg)
+            #     rospy.loginfo("DONE, result {}".format(sat_resp))
+
             nav_ok, inc = self.execute_action(cedg, cnode)
+
+            rospy.logwarn("!!!action executed")
 
             if self.edge_reconfigure and self.edgeReconfigureManager.active:
                 self.edgeReconfigureManager._reset()

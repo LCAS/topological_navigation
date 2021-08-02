@@ -34,6 +34,7 @@ add_service_files(
   UpdateRestrictions.srv
   EvaluateNode.srv
   EvaluateEdge.srv
+  SatisfyRuntime.srv
   UpdateActionType.srv
 )
 

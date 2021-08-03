@@ -29,6 +29,8 @@ def convert_tmaps(root_dir, ext_old, ext_new):
             mm.manager2.write_topological_map(os.path.splitext(f)[0] + ext_new)
         except Exception:
             rospy.logerr("Unable to convert {}\n{}".format(f, traceback.format_exc()))
+            
+        rospy.sleep(1.0)
 #########################################################################################################
              
              

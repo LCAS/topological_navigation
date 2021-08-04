@@ -32,7 +32,7 @@
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
   <!-- If the action of the current or next edge in the route is not in this list then the robot must get to the exact pose of the current edge's destination node. -->
-  <arg name="move_base_actions" default="['move_base']"/>
+  <arg name="move_base_actions" default="['move_base', 'human_aware_navigation','han_adapt_speed','han_vc_corridor','han_vc_junction']"/>
   <!-- Plan from destination node of closest edge if dist from closest edge <= max_dist_to_closest_edge else plan from closest node. -->
   <arg name="max_dist_to_closest_edge" default="1.0"/>
   <!-- If true reconfigure parameters according to the config of the current edge. -->

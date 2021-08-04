@@ -57,7 +57,7 @@ class EdgeActionManager(object):
     def __init__(self):
         
         self.client = None        
-        self.current_action = None
+        self.current_action = "none"
         self.dt = dict_tools()
         
     
@@ -78,7 +78,7 @@ class EdgeActionManager(object):
         action_spec = items[1][:-4] + "Action"
         
         rospy.loginfo("Edge Action Manager: Importing {} from {}.msg".format(action_spec, package))
-        action = _import(package + ".msg", action_spec)
+        action = _import(package+".msg", action_spec)
         
         rospy.loginfo("Edge Action Manager: Creating a {} client".format(self.action_name.upper()))
         self.client = actionlib.SimpleActionClient(self.action_name, action)        

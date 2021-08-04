@@ -42,15 +42,10 @@ class AbstractRestriction():
         raise NotImplementedError()
 
 class RuntimeRestriction(AbstractRestriction):
-    """ Abstract definition of a restriction that can be evaluated in real-time and can execute actions to make sure it is satisfied.
-        This restriction can be evaluated and satisfied when the navigation plan is already done and the robot is executing it."""
+    """ Abstract definition of a restriction that can be evaluated in real-time."""
 
     __metaclass__ = ABCMeta
 
-    @classmethod
-    def satisfy_restriction(cls, params):
-        """ This makes sure the restriction will be satisfied, ot be called before it is encountered in the corresponding edge/node """
-        raise NotImplementedError()
 
 
 ## utils TODO these utils should go in tmap_utils I believe
@@ -176,110 +171,11 @@ class TaskName(AbstractRestriction):
                 "task": robot_type.data
             })
 
-class StartOnNode(RuntimeRestriction):
-    """ Start the navigation action on the """
-    name = "startOnNode"
-    XY_TOLERANCE = 0.01 # the maximum distance, in meter, allowed to still be exactPose
-    YAW_TOLERANCE = 0.0087266 # the maximum distance, in randians, allowed to still be exactPose
-
-    def __init__(self, robots):
-        super(RuntimeRestriction, self).__init__()
-
-        self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
-        self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
-        self.DYNPARAM_MAPPING = {
-            "DWAPlannerROS": {
-                "yaw_goal_tolerance": "yaw_goal_tolerance",
-                "xy_goal_tolerance": "xy_goal_tolerance",
-            },
-            "TebLocalPlannerROS": {
-                "yaw_goal_tolerance": "yaw_goal_tolerance",
-                "xy_goal_tolerance": "xy_goal_tolerance",
-            },
-        }
-
-    # value is not used, check if the current robot_pose is very close to the pose of the node
-    def evaluate_node(self, node, value, robot_state={}, tmap=None):
-        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-        evaluation = self.DEFAULT_EVALUATION
-
-        # default state
-        if len(robot_state) == 0 or "robot_pose" not in robot_state:
-            self.ground_to_robot()
-            robot_state = self.robot_state
-
-        if tmap is not None:
-            _node_pos = get_node_pose(node, tmap)
-            node_pos = np.array([_node_pos["position"]["x"], _node_pos["position"]["y"]])
-            pose_distance = np.sqrt(np.sum(
-                (node_pos - np.array([robot_state["robot_pose"].position.x, robot_state["robot_pose"].position.y])) ** 2
-            ))
-            node_angle_inv = (_node_pos["orientation"]["x"], _node_pos["orientation"]["y"], _node_pos["orientation"]["z"], - _node_pos["orientation"]["w"])
-            robot_angle = (robot_state["robot_pose"].orientation.x, robot_state["robot_pose"].orientation.y, robot_state["robot_pose"].orientation.z, robot_state["robot_pose"].orientation.w)
-            angle_distance = tf.transformations.euler_from_quaternion(
-                tf.transformations.quaternion_multiply(robot_angle, node_angle_inv)
-            )[2] # yaw (z axis)
-            if pose_distance <= self.XY_TOLERANCE and angle_distance <= self.YAW_TOLERANCE:
-                evaluation = True
-            else:
-                evaluation = False
-
-        return evaluation
-    
-    # value not used, check if the current robot_pose is very close to the pose of the node at the beginning of edge
-    def evaluate_edge(self, edge, value, robot_state={}, tmap=None):
-        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
-
-        start_node = edge.split("_")[0]
-
-        return self.evaluate_node(start_node, value, robot_state, tmap)
-
-    def ground_to_robot(self):
-        try:
-            topic_name = "robot_pose"
-            robot_pose = rospy.wait_for_message(topic_name, Pose, timeout=2)
-        except rospy.ROSException:
-            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(
-                self.name, topic_name))
-        else:
-            self.robot_state.update({
-                "robot_pose": robot_pose
-            })
-
-    def satisfy_restriction(self):
-        rospy.loginfo("Satisfying restriction startOnNode...")
-        satisfied = True
-        ##  For movebase ##
-        params = {"yaw_goal_tolerance": self.YAW_TOLERANCE, "xy_goal_tolerance": self.XY_TOLERANCE}
-        # self.init_dynparams = self.rcnfclient.get_configuration()
-        key = self.move_base_planner[self.move_base_planner.rfind("/") + 1 :]
-        translation = self.DYNPARAM_MAPPING[key]     
-        translated_params = {}
-        for k, v in params.iteritems():
-            if k in translation:
-                if rospy.has_param(self.move_base_planner + "/" + translation[k]):
-                    translated_params[translation[k]] = v
-                else:
-                    rospy.logwarn("%s has no parameter %s" % (self.move_base_planner, translation[k]))
-            else:
-                rospy.logwarn("%s has no dynparam translation for %s" % (self.move_base_planner, k))
-        try:
-            self.rcnfclient.update_configuration(params)
-        except rospy.ServiceException as exc:
-            rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. Will continue with previous params", exc)
-            satisfied = False
-
-        ## For other actions... TODO ##
-
-        rospy.loginfo("DONE, satisfied: {}".format(satisfied))
-
-        return satisfied
-
-class ObstacleFree(AbstractRestriction):
+class ObstacleFree(RuntimeRestriction):
     name = "obstacleFree"
 
     def __init__(self, robots):
-        super(AbstractRestriction, self).__init__()
+        super(RuntimeRestriction, self).__init__()
         # keeps the position of each robot with timestamp
         self.robot_positions = {}
         def _save_robot_pose(msg, robot):
@@ -303,7 +199,7 @@ class ObstacleFree(AbstractRestriction):
 
     # value is the min distance [m] from the obstacles that the robot must have for the node to be obstacleFree
     def evaluate_node(self, node, value, robot_state={}, tmap=None):
-        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
+        """ Returns the evaluation of the restriction associated with the given entity, must return a boolean value  """
         evaluation = self.DEFAULT_EVALUATION
 
         if tmap is not None:

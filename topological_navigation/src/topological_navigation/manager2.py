@@ -476,9 +476,9 @@ class map_manager_2(object):
             return False
         
         
-    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[], 
+    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[],
                          recovery_behaviours_config="", action_type="move_base_msgs/MoveBaseGoal", goal="default", fail_policy="fail", 
-                         restrictions_planning="True", restrictions_runtime="True"):
+                         restrictions_planning="True", restrictions_runtime="True", fluid_navigation=True):
         
         edge = {}
         edge["action"] = action
@@ -509,6 +509,7 @@ class map_manager_2(object):
         edge["fail_policy"] = fail_policy
         edge["restrictions_planning"] = restrictions_planning
         edge["restrictions_runtime"] = restrictions_runtime
+        edge["fluid_navigation"] = fluid_navigation
         
         for node in self.tmap2["nodes"]:
             if node["node"]["name"] == origin:

@@ -5,6 +5,7 @@ import numpy as np
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 from geometry_msgs.msg import Pose, Quaternion
+from topological_navigation.point2line import pnt2line
 from std_msgs.msg import String
 
 
@@ -118,7 +119,7 @@ class RobotType(AbstractRestriction):
     def ground_to_robot(self):
         # if robot_namespace is None:
         #     # robot namespace under which this script is running
-        #     robot_namespace = rospy.get_namespace()
+        #     robot_namespace = rospy.get_namespace().strip("/")
         try:
             topic_name = "type"
             robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
@@ -159,7 +160,7 @@ class TaskName(AbstractRestriction):
     def ground_to_robot(self):
         # if robot_namespace is None:
         #     # robot namespace under which this script is running
-        #     robot_namespace = rospy.get_namespace()
+        #     robot_namespace = rospy.get_namespace().strip("/")
         try:
             topic_name = "task"
             robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
@@ -177,25 +178,25 @@ class ObstacleFree(RuntimeRestriction):
     def __init__(self, robots):
         super(RuntimeRestriction, self).__init__()
         # keeps the position of each robot with timestamp
-        self.robot_positions = {}
-        def _save_robot_pose(msg, robot):
-            self.robot_positions[robot] = {
-                "position": msg.position,
+        self.robot_nodes = {}
+        def _save_robot_nodes(msg, robot):
+            self.robot_nodes[robot] = {
+                "node": msg.data,
                 "timestamp_secs": rospy.Time.now().to_sec()
             }
         for robot in robots:
-            rospy.Subscriber("/{}/robot_pose".format(robot), 
-                Pose, 
-                lambda msg, arg: _save_robot_pose(msg, arg), 
+            rospy.Subscriber("/{}/closest_node".format(robot), 
+                String, 
+                lambda msg, arg: _save_robot_nodes(msg, arg), 
                 callback_args=(robot)
             )
 
-    def _get_current_position(self, robot, secs_thr=10):
-        position = None
-        if robot in self.robot_positions and \
-                rospy.Time.now().to_sec() - self.robot_positions[robot]["timestamp_secs"] < secs_thr:
-            position = self.robot_positions[robot]["position"]
-        return position
+    def _get_closest_node(self, robot, secs_thr=np.inf):
+        node = []
+        if robot in self.robot_nodes and \
+                rospy.Time.now().to_sec() - self.robot_nodes[robot]["timestamp_secs"] < secs_thr:
+            node = self.robot_nodes[robot]["node"]
+        return node
 
     # value is the min distance [m] from the obstacles that the robot must have for the node to be obstacleFree
     def evaluate_node(self, node, value, robot_state={}, tmap=None):
@@ -206,13 +207,16 @@ class ObstacleFree(RuntimeRestriction):
             _node_pos = get_node_pose(node, tmap)
             node_pos = np.array([_node_pos["position"]["x"], _node_pos["position"]["y"]])  
 
-            all_positions = [self._get_current_position(r) for r in self.robot_positions if r != rospy.get_namespace()]
-            all_positions = np.array([[p.x, p.y] for p in all_positions if p is not None])
+            all_nodes = [self._get_closest_node(r) for r in self.robot_nodes if r != rospy.get_namespace().strip("/")]
+            distances = []
+            for node_a in all_nodes:
+                _node_pos_a = get_node_pose(node_a, tmap)
+                node_pos_a = np.array([_node_pos_a["position"]["x"], _node_pos_a["position"]["y"]])
 
-            min_distance = np.min(np.sqrt(np.sum(
-                (node_pos - all_positions) ** 2
-            )))
-            evaluation = min_distance > float(value)
+                distances.append(
+                    np.sqrt(np.sum(np.power(node_pos - node_pos_a, 2)))
+                )
+            evaluation = np.min(distances) > float(value)
 
         return evaluation
     
@@ -221,12 +225,26 @@ class ObstacleFree(RuntimeRestriction):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
         evaluation = self.DEFAULT_EVALUATION
         
+        print(self.robot_nodes, rospy.get_namespace().strip("/"))
         if tmap is not None:
-            all_positions = [self._get_current_position(r) for r in self.robot_positions if r != rospy.get_namespace()]
-            all_positions = np.array([[p.x, p.y] for p in all_positions if p is not None])
+            distances = []
 
-            min_distance = np.min(distance_positions_edge(all_positions, edge, tmap))
-            evaluation = min_distance > float(value)
+            _edge_pos_a = get_node_pose(edge.split("_")[0], tmap)
+            edge_pos_a = (_edge_pos_a["position"]["x"], _edge_pos_a["position"]["y"], 0.) 
+            _edge_pos_b = get_node_pose(edge.split("_")[1], tmap)
+            edge_pos_b = (_edge_pos_b["position"]["x"], _edge_pos_b["position"]["y"], 0.)
+
+            all_nodes = [self._get_closest_node(r) for r in self.robot_nodes if r != rospy.get_namespace().strip("/")]
+
+            for node_a in all_nodes:
+                _node_pos = get_node_pose(node_a, tmap)
+                node_pos =(_node_pos["position"]["x"], _node_pos["position"]["y"], 0.)
+
+                distance, _ = pnt2line(node_pos, edge_pos_a, edge_pos_b)
+
+                distances.append(distance)
+
+            evaluation = np.min(distances) > float(value)
 
         return evaluation
 

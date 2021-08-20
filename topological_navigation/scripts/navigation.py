@@ -12,7 +12,7 @@ import dynamic_reconfigure.client
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
-from topological_navigation_msgs.srv import SatisfyRuntime, SatisfyRuntimeRequest, SatisfyRuntimeResponse
+from topological_navigation_msgs.srv import EvaluateEdge, EvaluateEdgeRequest, EvaluateEdgeResponse, EvaluateNode, EvaluateNodeRequest, EvaluateNodeResponse
 
 from std_msgs.msg import String
 from geometry_msgs.msg import Pose
@@ -129,8 +129,10 @@ class TopologicalNavServer(object):
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
 
-        self.satisfy_runtime_srv = rospy.ServiceProxy(
-            'restrictions_manager/satisfy_runtime_restrictions', SatisfyRuntime)
+        self.evaluate_edge_srv = rospy.ServiceProxy(
+            'restrictions_manager/evaluate_edge', EvaluateEdge)
+        self.evaluate_node_srv = rospy.ServiceProxy(
+            'restrictions_manager/evaluate_node', EvaluateNode)
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         if self.edge_reconfigure:
@@ -404,7 +406,8 @@ class TopologicalNavServer(object):
         In other words, avoid that the route contains an initial edge that is too far from the robot pose. 
         """
         rospy.loginfo("Current route {} ".format(route))
-        if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
+        if (not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id))\
+                and self.current_node.lower() == "none":
             first_node = route.source[0] if len(route.source) > 0 else target_node
             for edge_id in self.closest_edges.edge_ids:
                 if edge_id.endswith(first_node):
@@ -643,11 +646,37 @@ class TopologicalNavServer(object):
         
 
     def execute_action(self, edge, destination_node):
-        
+
         inc = 0
         result = True
         self.goal_reached = False
+
+        ## check restrictions for the edge
+        print(">>>>>> Evaluate edge {}".format(edge["edge_id"]))
+        ev_edge_msg = EvaluateEdgeRequest()
+        ev_edge_msg.edge = edge["edge_id"]
+        ev_edge_msg.runtime = True
+        resp = self.evaluate_edge_srv.call(ev_edge_msg)
+        if resp.success and resp.evaluation:
+            #the edge is restricted
+            result = False
+            inc = 1
+            return result, inc
+
+        ## check restrictions for the node
+        print(">>>>>> Evaluate node {}".format(destination_node["node"]["name"]))
+        ev_node_msg = EvaluateNodeRequest()
+        ev_node_msg.node = destination_node["node"]["name"]
+        ev_node_msg.runtime = True
+        resp = self.evaluate_node_srv.call(ev_node_msg)
+        if resp.success and resp.evaluation:
+            #the node is restricted
+            result = False
+            inc = 1
+            return result, inc
+
         
+        # execute the action        
         self.edge_action_manager = EdgeActionManager(edge, destination_node)
         self.edge_action_manager.execute()
         

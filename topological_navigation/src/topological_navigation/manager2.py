@@ -22,18 +22,48 @@ from rospy_message_converter import message_converter
 
 
 def pose_dist(pose1, pose2):
-    dist = math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
-    return dist
+    return math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
 
 
 class map_manager_2(object):
     
     
-    def __init__(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
+    def __init__(self):
         
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
+        
+        # Services that retrieve information from the map
+        self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
+        self.switch_map_srv=rospy.Service('/topological_map_manager2/switch_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.switch_topological_map_cb)
+        self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
+        self.get_tag_srv=rospy.Service('/topological_map_manager2/get_tags', strands_navigation_msgs.srv.GetTags, self.get_tags_cb)
+        self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', strands_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
+        self.get_node_edges_srv=rospy.Service('/topological_map_manager2/get_edges_between_nodes', strands_navigation_msgs.srv.GetEdgesBetweenNodes, self.get_edges_between_cb)
+
+        # Services that modify the map
+        self.write_map_srv=rospy.Service('/topological_map_manager2/write_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.write_topological_map_cb)
+        self.add_node_srv=rospy.Service('/topological_map_manager2/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
+        self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
+        self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
+        self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
+        self.add_content_to_node_srv=rospy.Service('/topological_map_manager2/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
+        self.update_node_name_srv = rospy.Service("/topological_map_manager2/update_node_name", strands_navigation_msgs.srv.UpdateNodeName, self.update_node_name_cb)
+        self.update_node_waypoint_srv = rospy.Service("/topological_map_manager2/update_node_pose", strands_navigation_msgs.srv.AddNode, self.update_node_waypoint_cb)
+        self.update_node_tolerance_srv = rospy.Service("/topological_map_manager2/update_node_tolerance", strands_navigation_msgs.srv.UpdateNodeTolerance, self.update_node_tolerance_cb)
+        self.modify_tag_srv=rospy.Service('/topological_map_manager2/modify_node_tags', strands_navigation_msgs.srv.ModifyTag, self.modify_tag_cb)
+        self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
+        self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
+        self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
+        self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
+        self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
+        self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
+        self.update_edge_action_srv=rospy.Service('/topological_map_manager2/update_edge_action', topological_navigation_msgs.srv.UpdateAction, self.update_edge_action_cb)
+        self.update_action_srv=rospy.Service('/topological_map_manager2/update_action', topological_navigation_msgs.srv.UpdateAction, self.update_action_cb)
+    
+    
+    def init_map(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
         
         self.name = name
         self.metric_map = metric_map
@@ -72,7 +102,9 @@ class map_manager_2(object):
             self.tmap2["meta"] = {}
             self.tmap2["meta"]["last_updated"] = self.get_time()
             self.tmap2["nodes"] = []            
-            rospy.set_param('topological_map_name', self.name)
+            rospy.set_param('topological_map2_name', self.pointset)
+            rospy.set_param('topological_map2_filename', os.path.split(self.filename)[1])
+            rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
 
         self.map_pub = rospy.Publisher('/topological_map_2', std_msgs.msg.String, latch=True, queue_size=1) 
         self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
@@ -82,39 +114,11 @@ class map_manager_2(object):
         self.broadcast_transform()
         
         self.convert_to_legacy = rospy.get_param("~convert_to_legacy", True)
-        self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
         if self.loaded and self.convert_to_legacy:
+            self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
         
-        # Services that retrieve information from the map
-        self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
-        self.switch_map_srv=rospy.Service('/topological_map_manager2/switch_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.switch_topological_map_cb)
-        self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
-        self.get_tag_srv=rospy.Service('/topological_map_manager2/get_tags', strands_navigation_msgs.srv.GetTags, self.get_tags_cb)
-        self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', strands_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
-        self.get_node_edges_srv=rospy.Service('/topological_map_manager2/get_edges_between_nodes', strands_navigation_msgs.srv.GetEdgesBetweenNodes, self.get_edges_between_cb)
-
-        # Services that modify the map
-        self.write_map_srv=rospy.Service('/topological_map_manager2/write_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.write_topological_map_cb)
-        self.add_node_srv=rospy.Service('/topological_map_manager2/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
-        self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
-        self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
-        self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
-        self.add_content_to_node_srv=rospy.Service('/topological_map_manager2/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
-        self.update_node_name_srv = rospy.Service("/topological_map_manager2/update_node_name", strands_navigation_msgs.srv.UpdateNodeName, self.update_node_name_cb)
-        self.update_node_waypoint_srv = rospy.Service("/topological_map_manager2/update_node_pose", strands_navigation_msgs.srv.AddNode, self.update_node_waypoint_cb)
-        self.update_node_tolerance_srv = rospy.Service("/topological_map_manager2/update_node_tolerance", strands_navigation_msgs.srv.UpdateNodeTolerance, self.update_node_tolerance_cb)
-        self.modify_tag_srv=rospy.Service('/topological_map_manager2/modify_node_tags', strands_navigation_msgs.srv.ModifyTag, self.modify_tag_cb)
-        self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
-        self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
-        self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', strands_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
-        self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
-        self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
-        self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
-        self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
-        self.update_action_type_srv=rospy.Service('/topological_map_manager2/update_action_type', topological_navigation_msgs.srv.UpdateActionType, self.update_action_type_cb)
-
         
     def get_time(self):
         return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -146,15 +150,18 @@ class map_manager_2(object):
             return
         
         self.loaded = True
+        self.map_check()
             
         self.name = self.tmap2["name"]
         self.metric_map = self.tmap2["metric_map"]
         self.pointset = self.tmap2["pointset"]
         self.transformation = self.tmap2["transformation"]
         
-        self.map_check()
+        self.names = self.create_list_of_nodes()
         
-        rospy.set_param('topological_map_name', self.name)
+        rospy.set_param('topological_map2_name', self.pointset)
+        rospy.set_param('topological_map2_filename', os.path.split(self.filename)[1])
+        rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
         
         rospy.loginfo("Caching the map ...")
         self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
@@ -209,9 +216,8 @@ class map_manager_2(object):
         if "nodes" in self.tmap2:
             names = [node["node"]["name"] for node in self.tmap2["nodes"]]
             names.sort()
-            
         return names
-        
+            
         
     def get_topological_map_cb(self, req):
         """
@@ -228,16 +234,15 @@ class map_manager_2(object):
         """
         Changes the topological map
         """
-        self.filename = req.filename
-        self.load_map(req.filename)        
+        rospy.set_param('topological_map2_filename', req.filename)
+        path = rospy.get_param('topological_map2_path')
+        self.filename = path + "/" + req.filename
+        
+        self.load_map(self.filename)        
         self.update(False)
         self.broadcast_transform()
-        
-        success = True
-        if not self.tmap2:
-            success = False
-            
-        return success, json.dumps(self.tmap2)
+
+        return True, json.dumps(self.tmap2)
     
     
     def get_tagged_cb(self, req):
@@ -800,42 +805,6 @@ class map_manager_2(object):
             self.write_topological_map(self.filename)
 
         return succeded, meta_out
-    
-    
-    def update_edge_cb(self, req):
-        """
-        Update an edge's action and top_vel 
-        """
-        return self.update_edge(req.edge_id, req.action, req.top_vel)
-      
-
-    def update_edge(self, edge_id, action, top_vel):
-        
-        node_name = edge_id.split('_')[0]
-        num_available, index = self.get_instances_of_node(node_name)
-        
-        if num_available == 1:
-            the_node = copy.deepcopy(self.tmap2["nodes"][index])
-            for edge in the_node["node"]["edges"]:
-                if edge["edge_id"] == edge_id:
-                    edge["action"] = action or edge["action"]
-                    
-                    if "config" in edge and "top_vel" in edge["config"]:
-                        edge["config"]["top_vel"] = top_vel or edge["config"]["top_vel"]
-                    elif "config" in edge and "top_vel" not in edge["config"]:
-                        edge["config"]["top_vel"] = top_vel
-                    else:
-                        edge["config"] = {}
-                        edge["config"]["top_vel"] = top_vel
-                    
-            self.tmap2["nodes"][index] = the_node
-            self.update()
-            self.write_topological_map(self.filename)
-        
-            return True, ""
-        else:
-            rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
-            return False, "no edge found or multiple edges found"
         
         
     def add_param_to_edge_config_cb(self, req):
@@ -845,7 +814,7 @@ class map_manager_2(object):
         return self.add_param_to_edge_config(req.edge_id, req.namespace, req.name, req.value, req.value_is_string)
     
     
-    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string):
+    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string, write_map=True):
         
         if not value:
             return False, "no value provided"
@@ -870,7 +839,8 @@ class map_manager_2(object):
             
             self.tmap2["nodes"][index] = the_node
             self.update()
-            self.write_topological_map(self.filename)
+            if write_map:
+                self.write_topological_map(self.filename)
             
             return True, msg
         else:
@@ -981,20 +951,55 @@ class map_manager_2(object):
             return False, ""
         
         
-    def update_action_type_cb(self, req):
+    def update_edge_action_cb(self, req):
         """
-        Updates an edge's action type (definition) for all edges in the tmap
+        Updates an edge's action, action type and goal
         """
-        return self.update_action_type(req.action_name, req.action_type)
+        return self.update_edge_action(req.edge_id, req.action_name, req.action_type, req.goal)
     
     
-    def update_action_type(self, action_name, action_type):
+    def update_edge_action(self, edge_id, action_name, action_type, goal):
+        
+        node_name = edge_id.split('_')[0]
+        num_available, index = self.get_instances_of_node(node_name)
+        
+        if num_available == 1:
+            the_node = copy.deepcopy(self.tmap2["nodes"][index])
+            for edge in the_node["node"]["edges"]:
+                if edge["edge_id"] == edge_id:
+                    if action_name:
+                        edge["action"] = action_name
+                    if action_type:
+                        edge["action_type"] = action_type
+                    if goal:
+                        edge["goal"] = json.loads(goal)
+                    
+            self.tmap2["nodes"][index] = the_node
+            self.update()
+            self.write_topological_map(self.filename)
+            return True
+        else:
+            rospy.logerr("Cannot update the action of edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
+            return False
+                    
+                
+    def update_action_cb(self, req):
+        """
+        Updates the action type and goal for all action_name edges
+        """
+        return self.update_action(req.action_name, req.action_type, req.goal)
+    
+    
+    def update_action(self, action_name, action_type, goal):
         
         success = False
         for node in self.tmap2["nodes"]:
             for edge in node["node"]["edges"]:
                 if edge["action"] == action_name:
-                    edge["action_type"] = action_type
+                    if action_type:
+                        edge["action_type"] = action_type
+                    if goal:
+                        edge["goal"] = json.loads(goal)
                     success = True
         
         if success:            
@@ -1058,7 +1063,14 @@ class map_manager_2(object):
             if destination not in names:
                 rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
                 self.map_ok = False
-                
+
+        # check if a node has an edge to itself                
+        for node in self.tmap2["nodes"]:
+            for edge in node["node"]["edges"]:
+                if node["node"]["name"] == edge["node"]:
+                    rospy.logwarn("edge with id '{}' has a destination '{}' equal to its origin".format(edge["edge_id"], edge["node"]))
+                    self.map_ok = False
+                    
                 
     def tmap2_to_tmap(self):
         

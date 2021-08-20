@@ -30,12 +30,11 @@ add_service_files(
   FILES
   WriteTopologicalMap.srv
   UpdateEdgeConfig.srv
-  RestrictMap.srv
   UpdateRestrictions.srv
+  UpdateAction.srv
+  RestrictMap.srv
   EvaluateNode.srv
   EvaluateEdge.srv
-  SatisfyRuntime.srv
-  UpdateActionType.srv
 )
 
 

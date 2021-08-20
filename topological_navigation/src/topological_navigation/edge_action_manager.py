@@ -10,11 +10,12 @@ import operator, collections
 
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
+from actionlib_msgs.msg import GoalStatus
 
 
-def _import(location, object_name):
-    mod = __import__(location, fromlist=[object_name]) 
-    return getattr(mod, object_name) 
+def _import(location, name):
+    mod = __import__(location, fromlist=[name]) 
+    return getattr(mod, name) 
 
 
 class dict_tools(object):
@@ -53,54 +54,66 @@ class dict_tools(object):
 class EdgeActionManager(object):
     
     
-    def __init__(self, edge, destination_node):
+    def __init__(self):
         
-        self.client_created = False
+        self.client = None        
+        self.current_action = "none"
+        self.dt = dict_tools()
+        
+    
+    def initialise(self, edge, destination_node):
         
         self.edge = edge # remove unicode prefix notation u
         self.destination_node = destination_node
         
-        rospy.loginfo("Edge Action Manager: Processing edge {} ...".format(self.edge["edge_id"]))
+        rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         
-        action_type = self.edge["action_type"]
-        action_name = self.edge["action"]
-        
+        self.action_name = self.edge["action"]
+        if self.action_name != self.current_action:
+            self.preempt()
+
+        action_type = self.edge["action_type"]        
         items = action_type.split("/")
         package = items[0]
         action_spec = items[1][:-4] + "Action"
         
         rospy.loginfo("Edge Action Manager: Importing {} from {}.msg".format(action_spec, package))
-        action = _import(package + ".msg", action_spec)
+        action = _import(package+".msg", action_spec)
         
-        rospy.loginfo("Edge Action Manager: Creating a {} client".format(action_name))
-        self.client = actionlib.SimpleActionClient(action_name, action)        
+        rospy.loginfo("Edge Action Manager: Creating a {} client".format(self.action_name.upper()))
+        self.client = actionlib.SimpleActionClient(self.action_name, action)        
         self.client.wait_for_server()
-        self.client_created = True
         
         rospy.loginfo("Edge Action Manager: Constructing the goal")
         self.construct_goal(action_type, self.edge["goal"])
         
         
+    def preempt(self):
+        
+        if self.client is not None:
+            status = self.client.get_state()
+            if status == GoalStatus.PENDING or status == GoalStatus.ACTIVE:
+                self.client.cancel_all_goals()
+        
+        
     def construct_goal(self, action_type, goal_args):
         
-        dt = dict_tools()
-        paths = dt.get_paths_from_nested_dict(goal_args)
+        paths = self.dt.get_paths_from_nested_dict(goal_args)
         
         for item in paths:
-            keys = item["keys"]
             value = item["value"]
-        
+            
             if isinstance(value, str) and value.startswith("$"):
-                _property = dt.getFromDict(self.destination_node, value[1:].split("."))
-                goal_args = dt.setInDict(goal_args, keys, _property)
+                _property = self.dt.getFromDict(self.destination_node, value[1:].split("."))
+                goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
         
-        
+ 
     def execute(self):
         
         rospy.loginfo("Edge Action Manager: Executing the action")
         self.client.send_goal(self.goal)
-        
+        self.current_action = self.action_name
         rospy.loginfo("Edge Action Manager: Waiting for the result ...")
 #########################################################################################################

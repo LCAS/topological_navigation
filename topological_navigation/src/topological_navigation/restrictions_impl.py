@@ -230,17 +230,17 @@ class ObstacleFree(RuntimeRestriction):
             distances = []
 
             _edge_pos_a = get_node_pose(edge.split("_")[0], tmap)
-            edge_pos_a = (_edge_pos_a["position"]["x"], _edge_pos_a["position"]["y"], 0.) 
+            edge_pos_a = np.array([[_edge_pos_a["position"]["x"], _edge_pos_a["position"]["y"], 0.]])
             _edge_pos_b = get_node_pose(edge.split("_")[1], tmap)
-            edge_pos_b = (_edge_pos_b["position"]["x"], _edge_pos_b["position"]["y"], 0.)
+            edge_pos_b = np.array([[_edge_pos_b["position"]["x"], _edge_pos_b["position"]["y"], 0.]])
 
             all_nodes = [self._get_closest_node(r) for r in self.robot_nodes if r != rospy.get_namespace().strip("/")]
 
             for node_a in all_nodes:
                 _node_pos = get_node_pose(node_a, tmap)
-                node_pos =(_node_pos["position"]["x"], _node_pos["position"]["y"], 0.)
+                node_pos = np.array([[_node_pos["position"]["x"], _node_pos["position"]["y"], 0.]])
 
-                distance, _ = pnt2line(node_pos, edge_pos_a, edge_pos_b)
+                distance = pnt2line(node_pos, edge_pos_a, edge_pos_b)
 
                 distances.append(distance)
 

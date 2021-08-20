@@ -7,8 +7,7 @@ import yaml
 import sys
 import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapResponse,\
-        EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse,\
-        SatisfyRuntime, SatisfyRuntimeResponse 
+        EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse
 from topological_navigation.manager2 import map_manager_2
 from strands_navigation_msgs.msg import TopologicalMap
 from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
@@ -65,8 +64,6 @@ class RestrictionsManager():
                       EvaluateNode, self.evaluate_node_handle)
         rospy.Service("restrictions_manager/evaluate_edge",
                       EvaluateEdge, self.evaluate_edge_handle)
-        rospy.Service("restrictions_manager/satisfy_runtime_restrictions",
-                      SatisfyRuntime, self.satisfy_runtime_restrictions)
 
     # Create a predicate from the restrictions string and returns the conditions to be checked
     def _predicate_from_string(self, restriction_str):
@@ -255,14 +252,14 @@ class RestrictionsManager():
 
                 # remove the node if the restriction evaluates as True
                 if is_restricted:
-                    print("{}\n\tremoving node {}".format(
-                        node_restrictions, new_topo_map["nodes"][i]["meta"]["node"]))
+                    # print("{}\n\tremoving node {}".format(
+                    #     node_restrictions, new_topo_map["nodes"][i]["meta"]["node"]))
                     to_remove_nodes.add(i)
 
                     # remove all the back edges
                     for (ni, ei) in self.back_edges_idx[node["meta"]["node"]].items():
-                        print("\n\t removing edge {}".format(
-                            new_topo_map["nodes"][ni]["node"]["edges"][ei]["edge_id"]))
+                        # print("\n\t removing edge {}".format(
+                        #     new_topo_map["nodes"][ni]["node"]["edges"][ei]["edge_id"]))
                         if ni in to_remove_edges:
                             to_remove_edges[ni].add(ei)
                         else:
@@ -275,8 +272,8 @@ class RestrictionsManager():
                         is_restricted = self._evaluate_restrictions(edge_restrictions, edge["edge_id"], robot_state, for_node=False)
 
                         if is_restricted:
-                            print("{}\n\t removing edge {}".format(node_restrictions,
-                                new_topo_map["nodes"][i]["node"]["edges"][ei]["edge_id"]))
+                            # print("{}\n\t removing edge {}".format(node_restrictions,
+                            #     new_topo_map["nodes"][i]["node"]["edges"][ei]["edge_id"]))
                             if i in to_remove_edges:
                                 to_remove_edges[i].add(ei)
                             else:
@@ -315,6 +312,7 @@ class RestrictionsManager():
         restricted_tmap2 = self._restrict_map_handle({}, "restrictions_planning")
 
         self._publish_updated_restricted_maps(restricted_tmap2)
+        rospy.loginfo("Restricted map updated and published")
 
     def _publish_updated_restricted_maps(self, restricted_tmap2):
         self.restricted_tmap2_pub.publish(json.dumps(restricted_tmap2))

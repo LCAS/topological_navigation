@@ -507,9 +507,9 @@ if __name__ == "__main__":
 
     # parameters for running the simulation
     n_trials = 1
-    min_n_pickers = 3
-    max_n_pickers = 4
-    min_n_robots = 3
+    min_n_pickers = 4
+    max_n_pickers = 5
+    min_n_robots = 4
     max_n_robots = max_n_pickers
     policies = ["uniform_utilisation"]   # ["lexicographical", "shortest_distance", "uniform_utilisation"]
 

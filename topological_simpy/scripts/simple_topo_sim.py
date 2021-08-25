@@ -24,11 +24,11 @@ from datetime import datetime
 
 RANDOM_SEED = 19
 SIM_RT_FACTOR = 0.00001  # simulation speed, 1: real time; 0.01: 100 times faster
-VERBOSE = True
-SHOW_VIS = False  # show visualisation
-SAVE_RANDOM = False  # save random figures
-SAVE_FINAL = False  # save final figures
-SAVE_STATS = False
+VERBOSE = False
+SHOW_VIS = True  # show visualisation
+SAVE_RANDOM = True  # save random figures
+SAVE_FINAL = True  # save final figures
+SAVE_STATS = True
 
 seed(RANDOM_SEED)
 numpy.random.seed(RANDOM_SEED)
@@ -501,15 +501,15 @@ if __name__ == "__main__":
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
     # tmap_config_file = 'topological_simpy/maps/tmap.yaml'
-    tmap_config_file = '../maps/riseholme_4_bases.tmap2'   # default
+    tmap_config_file = '../maps/riseholme_4_bases_large.tmap2'   # default
     # tmap_config_file = '../maps/edited_riseholme_3.tmap2'  # default
     # tmap_config_file = '../maps/clockhouse.tmap'
 
     # parameters for running the simulation
     n_trials = 1
-    min_n_pickers = 4
-    max_n_pickers = 5
-    min_n_robots = 4
+    min_n_pickers = 3
+    max_n_pickers = 4
+    min_n_robots = 3
     max_n_robots = max_n_pickers
     policies = ["uniform_utilisation"]   # ["lexicographical", "shortest_distance", "uniform_utilisation"]
 

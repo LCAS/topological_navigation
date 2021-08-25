@@ -242,6 +242,9 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                                                            "R_%s:%d" % (robot_id, robot.mode),
                                                            fontdict=self.font))
 
+        self.ax[0].tick_params(axis='x', labelsize=18)
+        self.ax[0].tick_params(axis='y', labelsize=18)
+
         self.fig.canvas.draw()
         if self.save_fig:
             self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_S_%.1f.eps" % self.graph.env.now)
@@ -296,6 +299,8 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                               columns=numpy.linspace(min_y, max_y - 1, max_y - min_y, dtype='int'))
         self.ax[1].clear()
 
+        seaborn.set(font_scale=1.6)
+
         # only initialise color bar once, then don't update it anymore
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
@@ -304,7 +309,10 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             self.ax[1] = seaborn.heatmap(df, cbar=False, rasterized=True)
-        self.ax[1].set(xlabel='Node pose y', ylabel='Node pose x')
+        # matplotlib.rcParams.update({'font.size': 22})
+        # self.ax[1].set(xlabel='Node pose y', ylabel='Node pose x')
+        self.ax[1].set_xlabel('Node pose y', fontsize=20)
+        self.ax[1].set_ylabel('Node pose x', fontsize=20)
 
     def update_plot(self):
         """update the positions of the dynamic objects"""
@@ -363,6 +371,6 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
             # Save just the portion _inside_ the second axis's boundaries
             extent = self.ax[1].get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
             self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_heatmap.eps",
-                             bbox_inches=extent.expanded(1.2, 1.22))
+                             bbox_inches=extent.expanded(1.22, 1.24))
 
         matplotlib.pyplot.close(self.fig)

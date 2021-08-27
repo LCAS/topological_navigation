@@ -42,13 +42,6 @@ class AbstractRestriction():
         """ Retrieves and saves internally the state of the robot necessary for evaluating the restriction  """
         raise NotImplementedError()
 
-class RuntimeRestriction(AbstractRestriction):
-    """ Abstract definition of a restriction that can be evaluated in real-time."""
-
-    __metaclass__ = ABCMeta
-
-
-
 ## utils TODO these utils should go in tmap_utils I believe
 
 def get_node_pose(node_name, tmap):
@@ -96,15 +89,28 @@ class RobotType(AbstractRestriction):
     def __init__(self):
         super(AbstractRestriction, self).__init__()
 
+        # subscribe to task topic
+        def _save_robot_type(msg):
+            self.robot_state.update({
+                "type": msg.data
+            })
+
+        rospy.Subscriber("type", 
+            String, 
+            lambda msg: _save_robot_type(msg)
+        )
+
     def _evaluate(self, value, robot_state):
         evaluation = self.DEFAULT_EVALUATION
 
-        if len(robot_state) == 0 or "robot" not in robot_state:
-            self.ground_to_robot()
+        # default state
+        if "type" not in robot_state:
+            if "type" not in self.robot_state:
+                self.ground_to_robot()
             robot_state = self.robot_state
 
-        if "robot" in robot_state:
-            evaluation = value.lower() == robot_state["robot"].lower()
+        if "type" in robot_state:
+            evaluation = value.lower() == robot_state["type"].lower()
         
         return evaluation
     
@@ -124,10 +130,10 @@ class RobotType(AbstractRestriction):
             topic_name = "type"
             robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
         except rospy.ROSException:
-            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(self.name, topic_name))
+            rospy.logwarn("Grounding of restriction {} failed, topic {} not published".format(self.name, topic_name))
         else:
             self.robot_state.update({
-                "robot": robot_type.data
+                "type": robot_type.data
             })
 
 class TaskName(AbstractRestriction):
@@ -136,12 +142,24 @@ class TaskName(AbstractRestriction):
     def __init__(self):
         super(AbstractRestriction, self).__init__()
 
+        # subscribe to task topic
+        def _save_robot_task(msg):
+            self.robot_state.update({
+                "task": msg.data
+            })
+
+        rospy.Subscriber("task", 
+            String, 
+            lambda msg: _save_robot_task(msg)
+        )
+
     def _evaluate(self, value, robot_state):
         evaluation = self.DEFAULT_EVALUATION
 
         # default state
-        if len(robot_state) == 0 or "task" not in robot_state:
-            self.ground_to_robot()
+        if "task" not in robot_state:
+            if "task" not in self.robot_state:
+                self.ground_to_robot()
             robot_state = self.robot_state
 
         if "task" in robot_state:
@@ -165,18 +183,18 @@ class TaskName(AbstractRestriction):
             topic_name = "task"
             robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
         except rospy.ROSException:
-            rospy.logwarn("Grounding of restrcition {} failed, topic {} not published".format(
+            rospy.logwarn("Grounding of restriction {} failed, topic {} not published".format(
                 self.name, topic_name))
         else:
             self.robot_state.update({
                 "task": robot_type.data
             })
 
-class ObstacleFree(RuntimeRestriction):
+class ObstacleFree(AbstractRestriction):
     name = "obstacleFree"
 
     def __init__(self, robots):
-        super(RuntimeRestriction, self).__init__()
+        super(AbstractRestriction, self).__init__()
         # keeps the position of each robot with timestamp
         self.robot_nodes = {}
         if len(robots) == 0:

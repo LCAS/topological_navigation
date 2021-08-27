@@ -105,8 +105,6 @@ class RobotType(AbstractRestriction):
 
         # default state
         if "type" not in robot_state:
-            if "type" not in self.robot_state:
-                self.ground_to_robot()
             robot_state = self.robot_state
 
         if "type" in robot_state:
@@ -123,18 +121,7 @@ class RobotType(AbstractRestriction):
         return self._evaluate(value, robot_state)
 
     def ground_to_robot(self):
-        # if robot_namespace is None:
-        #     # robot namespace under which this script is running
-        #     robot_namespace = rospy.get_namespace().strip("/")
-        try:
-            topic_name = "type"
-            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
-        except rospy.ROSException:
-            rospy.logwarn("Grounding of restriction {} failed, topic {} not published".format(self.name, topic_name))
-        else:
-            self.robot_state.update({
-                "type": robot_type.data
-            })
+        pass
 
 class TaskName(AbstractRestriction):
     name = "task"
@@ -158,8 +145,6 @@ class TaskName(AbstractRestriction):
 
         # default state
         if "task" not in robot_state:
-            if "task" not in self.robot_state:
-                self.ground_to_robot()
             robot_state = self.robot_state
 
         if "task" in robot_state:
@@ -176,19 +161,7 @@ class TaskName(AbstractRestriction):
         return self._evaluate(value, robot_state)
 
     def ground_to_robot(self):
-        # if robot_namespace is None:
-        #     # robot namespace under which this script is running
-        #     robot_namespace = rospy.get_namespace().strip("/")
-        try:
-            topic_name = "task"
-            robot_type = rospy.wait_for_message(topic_name, String, timeout=2)
-        except rospy.ROSException:
-            rospy.logwarn("Grounding of restriction {} failed, topic {} not published".format(
-                self.name, topic_name))
-        else:
-            self.robot_state.update({
-                "task": robot_type.data
-            })
+        pass
 
 class ObstacleFree(AbstractRestriction):
     name = "obstacleFree"
@@ -197,8 +170,10 @@ class ObstacleFree(AbstractRestriction):
         super(AbstractRestriction, self).__init__()
         # keeps the position of each robot with timestamp
         self.robot_nodes = {}
+        self.active = True
         if len(robots) == 0:
             rospy.logwarn("No robots provided for obstacleFree restriction.")
+            self.active = False
 
         def _save_robot_nodes(msg, robot):
             self.robot_nodes[robot] = {
@@ -224,7 +199,7 @@ class ObstacleFree(AbstractRestriction):
         """ Returns the evaluation of the restriction associated with the given entity, must return a boolean value  """
         evaluation = self.DEFAULT_EVALUATION
 
-        if tmap is not None:
+        if tmap is not None and self.active:
             _node_pos = get_node_pose(node, tmap)
             node_pos = np.array([_node_pos["position"]["x"], _node_pos["position"]["y"]])  
 
@@ -248,9 +223,9 @@ class ObstacleFree(AbstractRestriction):
         evaluation = self.DEFAULT_EVALUATION
         
         # print(self.robot_nodes, rospy.get_namespace().strip("/"))
-        if tmap is not None:
+        if tmap is not None and self.active:
             distances = []
-
+            
             _edge_pos_a = get_node_pose(edge.split("_")[0], tmap)
             edge_pos_a = np.array([[_edge_pos_a["position"]["x"], _edge_pos_a["position"]["y"], 0.]])
             _edge_pos_b = get_node_pose(edge.split("_")[1], tmap)

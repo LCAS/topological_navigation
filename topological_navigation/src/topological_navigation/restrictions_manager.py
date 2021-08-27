@@ -5,6 +5,7 @@ import copy
 import json
 import yaml
 import sys
+import os
 import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapResponse,\
         EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse
@@ -339,16 +340,26 @@ def get_admissible_tasks(config):
 if __name__ == '__main__':
     rospy.init_node("topological_restrictions_manager")
 
-    config_file = sys.argv[1]
+    _tasks = []
+    _robots = []
+    if len(sys.argv) > 1:
+        # this is the coordinator config file
+        config_file = sys.argv[1]
+        
+        if os.path.isfile(config_file):
+            _config = {}
+            with open(config_file, "r") as f_handle:
+                _config = yaml.load(f_handle)
 
-    _config = {}
-    with open(config_file, "r") as f_handle:
-        _config = yaml.load(f_handle)
+            # which robots can stay in the field
+            _robots = get_admissible_robots(_config)
+            # which tasks we can executed in the field
+            _tasks = get_admissible_tasks(_config)
 
-    # which robots can stay in the field
-    _robots = get_admissible_robots(_config)
-    # which tasks we can executed in the field
-    _tasks = get_admissible_tasks(_config)
+    if len(_tasks) == 0:
+        rospy.logwarn("No admissible tasks read from config file.")
+    if len(_robots) == 0:
+        rospy.logwarn("No admissible robot read in config file.")
 
     manager = RestrictionsManager(robots=_robots, tasks=_tasks)
 

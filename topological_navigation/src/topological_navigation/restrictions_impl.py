@@ -179,6 +179,9 @@ class ObstacleFree(RuntimeRestriction):
         super(RuntimeRestriction, self).__init__()
         # keeps the position of each robot with timestamp
         self.robot_nodes = {}
+        if len(robots) == 0:
+            rospy.logwarn("No robots provided for obstacleFree restriction.")
+
         def _save_robot_nodes(msg, robot):
             self.robot_nodes[robot] = {
                 "node": msg.data,
@@ -216,7 +219,8 @@ class ObstacleFree(RuntimeRestriction):
                 distances.append(
                     np.sqrt(np.sum(np.power(node_pos - node_pos_a, 2)))
                 )
-            evaluation = np.min(distances) > float(value)
+            if len(distances) > 0:
+                evaluation = np.min(distances) > float(value)
 
         return evaluation
     
@@ -225,7 +229,7 @@ class ObstacleFree(RuntimeRestriction):
         """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
         evaluation = self.DEFAULT_EVALUATION
         
-        print(self.robot_nodes, rospy.get_namespace().strip("/"))
+        # print(self.robot_nodes, rospy.get_namespace().strip("/"))
         if tmap is not None:
             distances = []
 
@@ -244,7 +248,8 @@ class ObstacleFree(RuntimeRestriction):
 
                 distances.append(distance)
 
-            evaluation = np.min(distances) > float(value)
+            if len(distances) > 0:
+                evaluation = np.min(distances) > float(value)
 
         return evaluation
 

@@ -811,25 +811,27 @@ class TopologicalNavServer(object):
 
         if self.using_restrictions:
             ## check restrictions for the edge
-            print(">>>>>> Evaluate edge {}".format(edge["edge_id"]))
+            rospy.loginfo("Evaluate edge {}".format(edge["edge_id"]))
             ev_edge_msg = EvaluateEdgeRequest()
             ev_edge_msg.edge = edge["edge_id"]
             ev_edge_msg.runtime = True
             resp = self.evaluate_edge_srv.call(ev_edge_msg)
             if resp.success and resp.evaluation:
                 #the edge is restricted
+                rospy.logwarn("The edge is restricted, stopping navigation")
                 result = False
                 inc = 1
                 return result, inc
     
             ## check restrictions for the node
-            print(">>>>>> Evaluate node {}".format(destination_node["node"]["name"]))
+            rospy.loginfo("Evaluate node {}".format(destination_node["node"]["name"]))
             ev_node_msg = EvaluateNodeRequest()
             ev_node_msg.node = destination_node["node"]["name"]
             ev_node_msg.runtime = True
             resp = self.evaluate_node_srv.call(ev_node_msg)
             if resp.success and resp.evaluation:
                 #the node is restricted
+                rospy.logwarn("The node is restricted, stopping navigation")
                 result = False
                 inc = 1
                 return result, inc

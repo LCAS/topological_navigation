@@ -142,11 +142,19 @@ class TopologicalNavServer(object):
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
-
-        self.evaluate_edge_srv = rospy.ServiceProxy(
-            'restrictions_manager/evaluate_edge', EvaluateEdge)
-        self.evaluate_node_srv = rospy.ServiceProxy(
-            'restrictions_manager/evaluate_node', EvaluateNode)
+        
+        try:
+            rospy.wait_for_service('restrictions_manager/evaluate_edge', timeout=3.0)
+            
+            self.evaluate_edge_srv = rospy.ServiceProxy(
+                'restrictions_manager/evaluate_edge', EvaluateEdge)
+            self.evaluate_node_srv = rospy.ServiceProxy(
+                'restrictions_manager/evaluate_node', EvaluateNode)
+            
+            self.using_restrictions = True
+        except:
+            rospy.logwarn("Restrictions Unavailable")
+            self.using_restrictions = False
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
@@ -801,29 +809,32 @@ class TopologicalNavServer(object):
         self.goal_reached = False
         self.prev_status = None
 
-        ## check restrictions for the edge
-        print(">>>>>> Evaluate edge {}".format(edge["edge_id"]))
-        ev_edge_msg = EvaluateEdgeRequest()
-        ev_edge_msg.edge = edge["edge_id"]
-        ev_edge_msg.runtime = True
-        resp = self.evaluate_edge_srv.call(ev_edge_msg)
-        if resp.success and resp.evaluation:
-            #the edge is restricted
-            result = False
-            inc = 1
-            return result, inc
-
-        ## check restrictions for the node
-        print(">>>>>> Evaluate node {}".format(destination_node["node"]["name"]))
-        ev_node_msg = EvaluateNodeRequest()
-        ev_node_msg.node = destination_node["node"]["name"]
-        ev_node_msg.runtime = True
-        resp = self.evaluate_node_srv.call(ev_node_msg)
-        if resp.success and resp.evaluation:
-            #the node is restricted
-            result = False
-            inc = 1
-            return result, inc
+        if self.using_restrictions:
+            ## check restrictions for the edge
+            rospy.loginfo("Evaluate edge {}".format(edge["edge_id"]))
+            ev_edge_msg = EvaluateEdgeRequest()
+            ev_edge_msg.edge = edge["edge_id"]
+            ev_edge_msg.runtime = True
+            resp = self.evaluate_edge_srv.call(ev_edge_msg)
+            if resp.success and resp.evaluation:
+                #the edge is restricted
+                rospy.logwarn("The edge is restricted, stopping navigation")
+                result = False
+                inc = 1
+                return result, inc
+    
+            ## check restrictions for the node
+            rospy.loginfo("Evaluate node {}".format(destination_node["node"]["name"]))
+            ev_node_msg = EvaluateNodeRequest()
+            ev_node_msg.node = destination_node["node"]["name"]
+            ev_node_msg.runtime = True
+            resp = self.evaluate_node_srv.call(ev_node_msg)
+            if resp.success and resp.evaluation:
+                #the node is restricted
+                rospy.logwarn("The node is restricted, stopping navigation")
+                result = False
+                inc = 1
+                return result, inc
 
         
         self.edge_action_manager.initialise(edge, destination_node)

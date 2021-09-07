@@ -648,17 +648,19 @@ class map_manager_2(object):
         num_available, index = self.get_instances_of_node(node_name)
                 
         if num_available == 1:
+            # update all the edges which involve the renamed node
+            for node in self.tmap2["nodes"]:
+                for edge in node["node"]["edges"]:
+                    if node["node"]["name"] == node_name:
+                        edge["edge_id"] = new_name + "_" + edge["node"]
+                    if edge["node"] == node_name:
+                        edge["node"] = new_name
+                        edge["edge_id"] = node["node"]["name"] + "_" + new_name
+            
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
             the_node["meta"]["node"] = new_name
             the_node["node"]["name"] = new_name
             self.tmap2["nodes"][index] = the_node
-            
-            # update all the edges which involve the renamed node
-            for node in self.tmap2["nodes"]:
-                for edge in node["node"]["edges"]:
-                    if edge["node"] == node_name:
-                        edge["node"] = new_name
-                        edge["edge_id"] = edge["edge_id"].replace(node_name, new_name)
              
             self.update()
             self.write_topological_map(self.filename)

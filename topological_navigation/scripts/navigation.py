@@ -478,8 +478,11 @@ class TopologicalNavServer(object):
     def orig_node_from_closest_edge(self, g_node):
         
         # Navigate from the closest edge instead of the closest node? First get the closest edges.
-        edge_1 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[0].split("_")[0], self.closest_edges.edge_ids[0])
-        edge_2 = get_edge_from_id_tmap2(self.lnodes, self.closest_edges.edge_ids[1].split("_")[0], self.closest_edges.edge_ids[1])
+        name_1, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[0])
+        name_2, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[1])
+        
+        edge_1 = get_edge_from_id_tmap2(self.lnodes, name_1, self.closest_edges.edge_ids[0])
+        edge_2 = get_edge_from_id_tmap2(self.lnodes, name_2, self.closest_edges.edge_ids[1])
 
         # Then get their destination nodes.
         o_node_1 = get_node_from_tmap2(self.lnodes, edge_1["node"])
@@ -546,9 +549,12 @@ class TopologicalNavServer(object):
         if self.nav_from_closest_edge:
             if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
                 first_node = route.source[0] if len(route.source) > 0 else target_node
+                
                 for edge_id in self.closest_edges.edge_ids:
-                    if edge_id.endswith(first_node):
-                        route.source.insert(0, edge_id.split("_")[0])
+                    origin, destination = get_node_names_from_edge_id_2(self.lnodes, edge_id)
+                    
+                    if destination == first_node:
+                        route.source.insert(0, origin)
                         route.edge_id.insert(0, edge_id)
                         break
         return route

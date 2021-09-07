@@ -15,6 +15,7 @@ from strands_navigation_msgs.srv import *
 from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.manager2 import map_manager_2
 from rospy_message_converter import message_converter
+from topological_navigation.tmap_utils import get_node_names_from_edge_id
 
 
 def node_dist(node1,node2):
@@ -767,7 +768,8 @@ class map_manager(object):
     def update_edge(self, edge_id, action, top_vel):
         msg_store = MessageStoreProxy(collection='topological_maps')
         # The query retrieves the node name with the given name from the given pointset.
-        query = {"name": edge_id.split('_')[0], "pointset": self.name}
+        node_name, _ = get_node_names_from_edge_id(self.nodes, edge_id)
+        query = {"name": node_name, "pointset": self.name}
         # The meta-information is some additional information about the specific
         # map that we are interested in (?)
         query_meta = {}
@@ -849,6 +851,7 @@ class map_manager(object):
 
         points.map = points.nodes[0].map
         self.map_check(points)
+        
         return points
     
     

@@ -19,6 +19,7 @@ from std_srvs.srv import Trigger, TriggerResponse
 from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
 
 from rospy_message_converter import message_converter
+from topological_navigation.tmap_utils import get_node_names_from_edge_id_2
 
 
 def pose_dist(pose1, pose2):
@@ -821,7 +822,7 @@ class map_manager_2(object):
         if not value_is_string:
             value = eval(value)
         
-        node_name = edge_id.split('_')[0]
+        node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
         
         new_param = {"namespace":namespace, "name":name, "value":value}
@@ -856,7 +857,7 @@ class map_manager_2(object):
     
     def rm_param_from_edge_config(self, edge_id, namespace, name):
         
-        node_name = edge_id.split('_')[0]
+        node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
         
         if num_available == 1:
@@ -927,7 +928,7 @@ class map_manager_2(object):
     
     def update_edge_restrictions(self, edge_id, restrictions_planning, restrictions_runtime, update=True):
         
-        node_name = edge_id.split('_')[0]
+        node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
         
         if num_available == 1:
@@ -959,7 +960,7 @@ class map_manager_2(object):
     
     def update_edge_action(self, edge_id, action_name, action_type, goal):
         
-        node_name = edge_id.split('_')[0]
+        node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
         
         if num_available == 1:

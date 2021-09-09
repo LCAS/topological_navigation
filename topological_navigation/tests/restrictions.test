@@ -1,0 +1,36 @@
+<launch>
+
+  <arg name="tmap_file" default="$(find topological_navigation)/tests/conf/tmap.yaml"/>
+
+
+    <!-- <include file="$(find mongodb_store)/launch/mongodb_store.launch">
+        <arg name="test_mode" value="true"/>
+    </include> -->
+
+    <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg tmap_file)" respawn="true"/>
+    <!-- <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-e" respawn="false"/> -->
+
+    <node pkg="topological_navigation" type="restrictions_manager.py" name="restrictions_manager" respawn="true">
+        <!-- <param name="config_file" type="str" value="$(arg config_file)"/> -->
+        <!-- <param name="out_topic" type="str" value="topological_map"/> -->
+    </node>
+
+    <!-- Check that the restricted maps are being published -->
+    <test name="publishtest"
+            test-name="publishtest"
+            pkg="rostest" type="publishtest">
+        <rosparam>
+          topics:
+            - name: /restricted_topological_map
+              timeout: 20
+              negative: False
+            - name: /restricted_topological_map_2
+              timeout: 20
+              negative: False
+        </rosparam>
+    </test>
+
+
+    <test pkg="topological_navigation" type="restrictions_tester.py" test-name="restrictions_tester" />
+
+</launch>

@@ -168,6 +168,8 @@ if (CATKIN_ENABLE_TESTING)
 
   add_rostest(tests/travel_time_estimator.test)
 
+  add_rostest(tests/restrictions.test)
+
 #  temporarily disabling Morse based tests
 #  add_rostest(tests/navigation_scenarios.test)
 

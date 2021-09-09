@@ -809,7 +809,7 @@ class TopologicalNavServer(object):
         self.goal_reached = False
         self.prev_status = None
 
-        if self.using_restrictions:
+        if self.using_restrictions and edge["edge_id"] != "move_base_edge":
             ## check restrictions for the edge
             rospy.loginfo("Evaluate edge {}".format(edge["edge_id"]))
             ev_edge_msg = EvaluateEdgeRequest()

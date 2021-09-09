@@ -1,0 +1,7 @@
+string state    # the state of the robot, e.g. '{"robot": "tall", "task": "uv"}'
+string edge     # the name of the edge
+bool runtime # if True, evaluates runtime restrictions otherwise, planning restrictions
+---
+
+bool success
+bool evaluation     # the result of the evaluation of restrictions for the edge (or eventually the and-concatenation)

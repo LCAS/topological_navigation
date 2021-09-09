@@ -33,6 +33,8 @@ add_service_files(
   UpdateRestrictions.srv
   UpdateAction.srv
   RestrictMap.srv
+  EvaluateNode.srv
+  EvaluateEdge.srv
 )
 
 

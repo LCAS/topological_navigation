@@ -18,7 +18,7 @@ from restrictions_impl import *
 
 
 class RestrictionsManager():
-    def __init__(self, robots, tasks):
+    def __init__(self, robots, tasks, out_topic):
         self.robots = robots
         self.tasks = tasks
 
@@ -35,10 +35,10 @@ class RestrictionsManager():
 
 
         # publishers for restricted tmap
-        self.restricted_tmap_pub = rospy.Publisher("topological_map",
+        self.restricted_tmap_pub = rospy.Publisher(out_topic,
                          TopologicalMap, queue_size=10, latch=True)
         self.restricted_tmap2_pub = rospy.Publisher(
-                         "topological_map_2", String, queue_size=10,
+                         "{}_2".format(out_topic), String, queue_size=10,
                          latch=True)
     
     def register_restriction(self, condition_obj):
@@ -342,10 +342,16 @@ if __name__ == '__main__':
 
     _tasks = []
     _robots = []
-    if len(sys.argv) > 1:
-        # this is the coordinator config file
-        config_file = sys.argv[1]
-        
+
+    restricted_map_topic = rospy.get_param("~out_topic", "restricted_topological_map")
+
+    try:
+        config_file = rospy.get_param("~config_file")
+    except KeyError:
+        rospy.logwarn("Config file not provided.")
+        pass
+    else:
+        # this is the coordinator config file        
         if os.path.isfile(config_file):
             _config = {}
             with open(config_file, "r") as f_handle:
@@ -361,7 +367,7 @@ if __name__ == '__main__':
     if len(_robots) == 0:
         rospy.logwarn("No admissible robot read in config file.")
 
-    manager = RestrictionsManager(robots=_robots, tasks=_tasks)
+    manager = RestrictionsManager(robots=_robots, tasks=_tasks, out_topic=restricted_map_topic)
 
     # automatically find and register all the classes of AbstractRestriction type
     clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)

@@ -52,7 +52,7 @@
   <test_depend>strands_morse</test_depend>
   <test_depend>scitos_teleop</test_depend>
   <test_depend>tf</test_depend>
-  <test_depend>python-sympy</test_depend>
+  <!-- <test_depend>python-sympy</test_depend> -->
 
 
   <!-- The export tag contains other, unspecified, tags -->

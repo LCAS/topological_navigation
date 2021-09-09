@@ -2,7 +2,7 @@
 
 import rospy
 import actionlib
-import json
+import yaml, json
 
 import topological_navigation.msg
 import strands_navigation_msgs.msg
@@ -12,6 +12,7 @@ import dynamic_reconfigure.client
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
+from topological_navigation_msgs.srv import EvaluateEdge, EvaluateEdgeRequest, EvaluateEdgeResponse, EvaluateNode, EvaluateNodeRequest, EvaluateNodeResponse
 
 from std_msgs.msg import String
 from actionlib_msgs.msg import GoalStatus
@@ -73,10 +74,12 @@ class TopologicalNavServer(object):
         self.current_action = "none"
         self.next_action = "none"
         self.nav_from_closest_edge = False
+        self.fluid_navigation = True
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
         self.closest_edges = ClosestEdges()
+        self.nfails = 0
         
         self.navigation_activated = False
         self.navigation_lock = Lock()
@@ -139,6 +142,19 @@ class TopologicalNavServer(object):
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
         rospy.loginfo(" ...done")
+        
+        try:
+            rospy.wait_for_service('restrictions_manager/evaluate_edge', timeout=3.0)
+            
+            self.evaluate_edge_srv = rospy.ServiceProxy(
+                'restrictions_manager/evaluate_edge', EvaluateEdge)
+            self.evaluate_node_srv = rospy.ServiceProxy(
+                'restrictions_manager/evaluate_node', EvaluateNode)
+            
+            self.using_restrictions = True
+        except:
+            rospy.logwarn("Restrictions Unavailable")
+            self.using_restrictions = False
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
         self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
@@ -227,7 +243,7 @@ class TopologicalNavServer(object):
         """
          This Function updates the Topological Map everytime it is called
         """
-        self.lnodes = json.loads(msg.data)
+        self.lnodes = yaml.safe_load(msg.data)
         self.topol_map = self.lnodes["pointset"]
         self.curr_tmap = deepcopy(self.lnodes)
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
@@ -360,6 +376,7 @@ class TopologicalNavServer(object):
                         and self._target != self.current_target
                         and self.next_action in self.move_base_actions
                         and self.current_action in self.move_base_actions
+                        and self.fluid_navigation
                     ):
                         rospy.loginfo("Intermediate node reached: %s", self.current_node)
                         self.goal_reached = True
@@ -440,7 +457,7 @@ class TopologicalNavServer(object):
             else:
                 self._result.success = False
                 self._as.set_preempted(self._result)
-
+ 
 
     def execute_policy(self, route, target):
         
@@ -564,6 +581,8 @@ class TopologicalNavServer(object):
         """
         This function follows the chosen route to reach the goal.
         """
+        self.navigation_activated = True
+        
         nnodes = len(route.source)
         Orig = route.source[0]
         Targ = target
@@ -577,6 +596,7 @@ class TopologicalNavServer(object):
         rindex = 0
         nav_ok = True
         route_len = len(route.edge_id)
+        self.fluid_navigation = True
 
         o_node = get_node_from_tmap2(self.lnodes, Orig)
         edge_from_id = get_edge_from_id_tmap2(self.lnodes, route.source[0], route.edge_id[0])
@@ -601,7 +621,7 @@ class TopologicalNavServer(object):
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
                 self.reconfigure_movebase_params(params)
-    
+
                 self.current_target = Orig
                 nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
                 
@@ -617,7 +637,7 @@ class TopologicalNavServer(object):
                     # if not is dangerous to move
                     if i["action"] in self.move_base_actions:
                         move_base_act = True
-    
+
                 if not move_base_act:
                     rospy.logwarn("Could not find a move base action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
                     rospy.loginfo("Action not taken, outputing success")
@@ -642,8 +662,11 @@ class TopologicalNavServer(object):
             if rindex < (route_len - 1):
                 nedge = get_edge_from_id_tmap2(self.lnodes, route.source[rindex + 1], route.edge_id[rindex + 1])
                 a1 = nedge["action"]
+                self.fluid_navigation = nedge["fluid_navigation"]
             else:
+                nedge = None
                 a1 = "none"
+                self.fluid_navigation = False
 
             self.current_action = a
             self.next_action = a1
@@ -664,7 +687,8 @@ class TopologicalNavServer(object):
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND
             # the current and following action are move_base or human_aware_navigation
-            if rindex < route_len - 1 and a1 in self.move_base_actions and a in self.move_base_actions:
+            # and when the fuild_navigation is true
+            if rindex < route_len - 1 and a1 in self.move_base_actions and a in self.move_base_actions and self.fluid_navigation:
                 self.reconf_movebase(cedg, cnode, True)
             else:
                 if self.no_orientation:
@@ -728,6 +752,8 @@ class TopologicalNavServer(object):
 
         self.reset_reconf()
 
+        self.navigation_activated = False
+
         result = nav_ok
         return result, inc
 
@@ -776,6 +802,7 @@ class TopologicalNavServer(object):
         pubst.operation_time = self.stat.operation_time
         pubst.date_started = self.stat.get_start_time_str()
         pubst.date_at_node = self.stat.date_at_node.strftime("%A, %B %d %Y, at %H:%M:%S hours")
+        
         pubst.date_finished = self.stat.get_finish_time_str()
         self.stats_pub.publish(pubst)
         self.stat = None
@@ -787,6 +814,34 @@ class TopologicalNavServer(object):
         result = True
         self.goal_reached = False
         self.prev_status = None
+
+        if self.using_restrictions and edge["edge_id"] != "move_base_edge":
+            ## check restrictions for the edge
+            rospy.loginfo("Evaluate edge {}".format(edge["edge_id"]))
+            ev_edge_msg = EvaluateEdgeRequest()
+            ev_edge_msg.edge = edge["edge_id"]
+            ev_edge_msg.runtime = True
+            resp = self.evaluate_edge_srv.call(ev_edge_msg)
+            if resp.success and resp.evaluation:
+                #the edge is restricted
+                rospy.logwarn("The edge is restricted, stopping navigation")
+                result = False
+                inc = 1
+                return result, inc
+    
+            ## check restrictions for the node
+            rospy.loginfo("Evaluate node {}".format(destination_node["node"]["name"]))
+            ev_node_msg = EvaluateNodeRequest()
+            ev_node_msg.node = destination_node["node"]["name"]
+            ev_node_msg.runtime = True
+            resp = self.evaluate_node_srv.call(ev_node_msg)
+            if resp.success and resp.evaluation:
+                #the node is restricted
+                rospy.logwarn("The node is restricted, stopping navigation")
+                result = False
+                inc = 1
+                return result, inc
+
         
         self.edge_action_manager.initialise(edge, destination_node)
         self.edge_action_manager.execute()
@@ -801,9 +856,9 @@ class TopologicalNavServer(object):
             status = self.edge_action_manager.client.get_state()
             self.pub_status(status)
             rospy.sleep(rospy.Duration.from_sec(0.01))
-            
+
         res = self.edge_action_manager.client.get_result()
-        
+
         if status != GoalStatus.SUCCEEDED:
             if not self.goal_reached:
                 result = False

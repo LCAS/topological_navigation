@@ -6,7 +6,7 @@ Created on Tue Apr 13 22:02:24 2021
 """
 #########################################################################################################
 import rospy, actionlib
-import operator, collections, json
+import operator, collections
 
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
@@ -63,8 +63,8 @@ class EdgeActionManager(object):
     
     def initialise(self, edge, destination_node):
         
-        self.edge = eval(json.dumps(edge)) # remove unicode prefix notation u
-        self.destination_node = eval(json.dumps(destination_node))
+        self.edge = edge # remove unicode prefix notation u
+        self.destination_node = destination_node
         
         rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         

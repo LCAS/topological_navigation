@@ -31,6 +31,7 @@ add_service_files(
   WriteTopologicalMap.srv
   UpdateEdgeConfig.srv
   UpdateRestrictions.srv
+  UpdateEdge.srv
   UpdateAction.srv
   RestrictMap.srv
   EvaluateNode.srv

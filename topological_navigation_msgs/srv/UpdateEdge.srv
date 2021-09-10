@@ -1,0 +1,7 @@
+string edge_id
+string action_name
+string action_type    # e.g. move_base_msgs/MoveBaseGoal
+string goal           # json string setting the args of the goal
+bool not_fluid        # if true then the robot must get to the exact pose of the edge's destination node even if it is an intermediate node
+---
+bool success

@@ -35,6 +35,7 @@ add_service_files(
   RestrictMap.srv
   EvaluateNode.srv
   EvaluateEdge.srv
+  AddDatum.srv
 )
 
 

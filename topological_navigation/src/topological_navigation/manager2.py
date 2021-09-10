@@ -62,6 +62,7 @@ class map_manager_2(object):
         self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
         self.update_edge_action_srv=rospy.Service('/topological_map_manager2/update_edge_action', topological_navigation_msgs.srv.UpdateAction, self.update_edge_action_cb)
         self.update_action_srv=rospy.Service('/topological_map_manager2/update_action', topological_navigation_msgs.srv.UpdateAction, self.update_action_cb)
+        self.add_datum_srv=rospy.Service('/topological_map_manager2/add_datum', topological_navigation_msgs.srv.AddDatum, self.add_datum_cb)
     
     
     def init_map(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
@@ -1010,6 +1011,27 @@ class map_manager_2(object):
             self.write_topological_map(self.filename)
     
         return success
+    
+    
+    def add_datum_cb(self, req):
+        """
+        Adds GNSS latitude/longitude to the topological map's top-level meta info
+        """  
+        return self.add_datum(req.latitude, req.longitude)
+    
+    
+    def add_datum(self, latitude, longitude):
+        
+        try:
+            self.tmap2["meta"]["datum_latitude"] = latitude
+            self.tmap2["meta"]["datum_longitude"] = longitude
+            self.update()
+            self.write_topological_map(self.filename)
+            return True
+        
+        except Exception as e:
+            rospy.logerr(e)
+            return False
         
         
     def get_instances_of_node(self, node_name):

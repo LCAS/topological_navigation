@@ -683,7 +683,8 @@ class TopologicalNavServer(object):
             else:
                 self.publish_feedback_exec_policy()
 
-            cnode = get_node_from_tmap2(self.lnodes, cedg["node"])
+            cnode = self.rsearch.get_node_from_tmap2(cedg["node"])
+            onode = self.rsearch.get_node_from_tmap2(route.source[rindex])
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND
             # the current and following action are move_base or human_aware_navigation
@@ -709,7 +710,7 @@ class TopologicalNavServer(object):
                 else:
                     self.edgeReconfigureManager.srv_reconfigure(cedg["edge_id"])
 
-            nav_ok, inc = self.execute_action(cedg, cnode)
+            nav_ok, inc = self.execute_action(cedg, cnode, onode)
 
             if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
                 self.edgeReconfigureManager._reset()
@@ -808,7 +809,7 @@ class TopologicalNavServer(object):
         self.stat = None
         
 
-    def execute_action(self, edge, destination_node):
+    def execute_action(self, edge, destination_node, origin_node=None):
         
         inc = 0
         result = True
@@ -843,7 +844,7 @@ class TopologicalNavServer(object):
                 return result, inc
 
         
-        self.edge_action_manager.initialise(edge, destination_node)
+        self.edge_action_manager.initialise(edge, destination_node, origin_node)
         self.edge_action_manager.execute()
         
         status = self.edge_action_manager.client.get_state()

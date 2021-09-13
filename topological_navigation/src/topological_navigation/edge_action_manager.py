@@ -63,7 +63,7 @@ class EdgeActionManager(object):
     
     def initialise(self, edge, destination_node, origin_node=None):
         
-        self.edge = edge # remove unicode prefix notation u
+        self.edge = edge
         self.destination_node = destination_node
         self.origin_node = origin_node
         
@@ -119,8 +119,7 @@ class EdgeActionManager(object):
  
     def execute(self):
         
-        rospy.loginfo("Edge Action Manager: Executing the action")
+        rospy.loginfo("Edge Action Manager: Executing the action ...")
         self.client.send_goal(self.goal)
         self.current_action = self.action_name
-        rospy.loginfo("Edge Action Manager: Waiting for the result ...")
 #########################################################################################################

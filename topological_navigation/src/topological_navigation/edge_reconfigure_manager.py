@@ -14,8 +14,6 @@ class EdgeReconfigureManager(object):
     
     def __init__(self):
         
-        rospy.logwarn("Edge Reconfigure Manager: USING EDGE RECONFIGURE ...")
-        
         self.active = False
         
         self.edge = {}

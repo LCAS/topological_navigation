@@ -160,6 +160,8 @@ class TopologicalNavServer(object):
         self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
         if self.edge_reconfigure:
             self.edgeReconfigureManager = EdgeReconfigureManager()
+        else:
+            rospy.logwarn("Edge Reconfigure Unavailable")
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -392,11 +394,10 @@ class TopologicalNavServer(object):
 
             g_node = self.rsearch.get_node_from_tmap2(target)
             
-            # Nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node
             self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
-            self.nav_from_closest_edge = False
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+                self.nav_from_closest_edge = False
                 o_node = self.rsearch.get_node_from_tmap2(self.closest_node)
                 rospy.loginfo("Planning from the closest NODE: {}".format(self.closest_node))
             else:
@@ -494,10 +495,10 @@ class TopologicalNavServer(object):
         
     def orig_node_from_closest_edge(self, g_node):
         
-        # Navigate from the closest edge instead of the closest node. First get the closest edges.
         name_1, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[0])
         name_2, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[1])
         
+        # Navigate from the closest edge instead of the closest node. First get the closest edges.
         edge_1 = get_edge_from_id_tmap2(self.lnodes, name_1, self.closest_edges.edge_ids[0])
         edge_2 = get_edge_from_id_tmap2(self.lnodes, name_2, self.closest_edges.edge_ids[1])
 
@@ -625,11 +626,7 @@ class TopologicalNavServer(object):
 
                 self.current_target = Orig
                 nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
-                
-                if nav_ok:
-                    rospy.loginfo("Navigation Finished Successfully")
-                else:
-                    rospy.logwarn("Navigation Failed")
+                rospy.loginfo("Navigation Finished Successfully") if nav_ok else rospy.logwarn("Navigation Failed")
                 
             elif a not in self.move_base_actions:
                 move_base_act = False
@@ -648,11 +645,7 @@ class TopologicalNavServer(object):
                     rospy.loginfo("Getting to the exact pose of origin {}".format(o_node["node"]["name"]))
                     self.current_target = Orig
                     nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
-                    
-                    if nav_ok:
-                        rospy.loginfo("Navigation Finished Successfully")
-                    else:
-                        rospy.logwarn("Navigation Failed")
+                    rospy.loginfo("Navigation Finished Successfully") if nav_ok else rospy.logwarn("Navigation Failed")
                 
 
         while rindex < (len(route.edge_id)) and not self.cancelled and nav_ok:
@@ -778,7 +771,7 @@ class TopologicalNavServer(object):
                     break
                 rospy.sleep(0.2)
 
-        rospy.loginfo("DONE: " + str(self.navigation_activated))
+        rospy.loginfo("Cancelled current navigation goal: " + str(self.navigation_activated))
         return not self.navigation_activated
 
 
@@ -819,7 +812,7 @@ class TopologicalNavServer(object):
 
         if self.using_restrictions and edge["edge_id"] != "move_base_edge":
             ## check restrictions for the edge
-            rospy.loginfo("Evaluate edge {}".format(edge["edge_id"]))
+            rospy.loginfo("Evaluating restrictions on edge {}".format(edge["edge_id"]))
             ev_edge_msg = EvaluateEdgeRequest()
             ev_edge_msg.edge = edge["edge_id"]
             ev_edge_msg.runtime = True
@@ -832,7 +825,7 @@ class TopologicalNavServer(object):
                 return result, inc
     
             ## check restrictions for the node
-            rospy.loginfo("Evaluate node {}".format(destination_node["node"]["name"]))
+            rospy.loginfo("Evaluating restrictions on node {}".format(destination_node["node"]["name"]))
             ev_node_msg = EvaluateNodeRequest()
             ev_node_msg.node = destination_node["node"]["name"]
             ev_node_msg.runtime = True

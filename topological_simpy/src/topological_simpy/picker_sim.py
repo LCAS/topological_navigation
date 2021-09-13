@@ -3,10 +3,9 @@
 import math
 import numpy
 import random
-from geometry_msgs_sim import Pose
 
 
-class PickerSim(Pose):
+class PickerSim(object):
     def __init__(self, picker_id, tray_capacity, max_n_trays, picking_rate, transportation_rate, unloading_time, env,
                  topo_graph, robots, with_robots, verbose):
         """
@@ -22,11 +21,9 @@ class PickerSim(Pose):
         robots -- list of robot agents
         """
 
-        # Pose.__init__(self)   # TODO: check Pose is working?
         self.with_robots = with_robots
         self.closest_node = []
         self.current_node = []
-        # self.pose = Pose()
 
         self.picker_state = "INIT"   # picker state, "INIT", "CALLED", "WAIT", "LOADED"
         self.curr_iteration = None

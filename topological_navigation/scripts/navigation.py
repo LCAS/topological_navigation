@@ -390,14 +390,14 @@ class TopologicalNavServer(object):
         result = False
         if not self.cancelled:
 
-            g_node = get_node_from_tmap2(self.lnodes, target)
+            g_node = self.rsearch.get_node_from_tmap2(target)
             
             # Nav from closest edge if dist from edge <= max_dist_to_closest_edge else nav from closest node
             self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
             self.nav_from_closest_edge = False
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
-                o_node = get_node_from_tmap2(self.lnodes, self.closest_node)
+                o_node = self.rsearch.get_node_from_tmap2(self.closest_node)
                 rospy.loginfo("Planning from the closest NODE: {}".format(self.closest_node))
             else:
                 self.nav_from_closest_edge = True
@@ -494,7 +494,7 @@ class TopologicalNavServer(object):
         
     def orig_node_from_closest_edge(self, g_node):
         
-        # Navigate from the closest edge instead of the closest node? First get the closest edges.
+        # Navigate from the closest edge instead of the closest node. First get the closest edges.
         name_1, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[0])
         name_2, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[1])
         
@@ -502,8 +502,8 @@ class TopologicalNavServer(object):
         edge_2 = get_edge_from_id_tmap2(self.lnodes, name_2, self.closest_edges.edge_ids[1])
 
         # Then get their destination nodes.
-        o_node_1 = get_node_from_tmap2(self.lnodes, edge_1["node"])
-        o_node_2 = get_node_from_tmap2(self.lnodes, edge_2["node"])
+        o_node_1 = self.rsearch.get_node_from_tmap2(edge_1["node"])
+        o_node_2 = self.rsearch.get_node_from_tmap2(edge_2["node"])
 
         # If the closest edges are of equal distance (usually a bidirectional edge) 
         # then use the destination node that results in a shorter route to the goal.
@@ -547,7 +547,8 @@ class TopologicalNavServer(object):
             rospy.loginfo("Navigating Case 2a")
             rospy.loginfo("Getting to the exact pose of target {}".format(g_node["node"]["name"]))
             self.current_target = g_node["node"]["name"]
-            result, inc = self.execute_action(the_edge, g_node)
+            origin_node,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge)
+            result, inc = self.execute_action(the_edge, g_node, origin_node)
             if not result:
                 rospy.logwarn("Navigation Failed")
                 inc=1
@@ -598,7 +599,7 @@ class TopologicalNavServer(object):
         route_len = len(route.edge_id)
         self.fluid_navigation = True
 
-        o_node = get_node_from_tmap2(self.lnodes, Orig)
+        o_node = self.rsearch.get_node_from_tmap2(Orig)
         edge_from_id = get_edge_from_id_tmap2(self.lnodes, route.source[0], route.edge_id[0])
         if edge_from_id:
             a = edge_from_id["action"]

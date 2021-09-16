@@ -156,7 +156,7 @@ class TopologicalNavServer(object):
             rospy.logwarn("Restrictions Unavailable")
             self.using_restrictions = False
 
-        self.edge_reconfigure = rospy.get_param("~reconfigure_edges", False)
+        self.edge_reconfigure = rospy.get_param("~reconfigure_edges", True)
         self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
         if self.edge_reconfigure:
             self.edgeReconfigureManager = EdgeReconfigureManager()

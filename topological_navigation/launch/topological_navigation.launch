@@ -41,7 +41,7 @@
   <arg name="reconfigure_edges_srv" default="false"/>
   <!-- Edge reconfigure groups config file used if reconfigure_edges_srv is true. -->
   <arg name="edge_reconfigure_config" default="$(find topological_navigation/config/sample_edge_reconfig_groups.yaml"/>
-  <!-- If we are working on the restricted tmap rather than the normal tmap -->
+  <!-- If we are navigating using the restricted tmap rather than the normal tmap. Must first publish the robot type: rostopic pub /type std_msgs/String "data: $RES_ROBOT_TYPE" -->
   <arg name="use_restrictions" default="false"/>
 
   <arg name="launch_extras" default="false" />
@@ -55,6 +55,8 @@
   <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg file)" respawn="true" unless="$(arg legacy)">
     <param name="convert_to_legacy" value="$(arg convert_to_legacy)"/>
   </node>
+
+  <node pkg="topological_navigation" name="restrictions_manager" type="restrictions_manager.py" output="screen" respawn="true" if="$(arg use_restrictions)"/>
 
   <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true" if="$(arg localisation_with_tags)">
     <param name="base_frame" value="$(arg base_frame)"/>

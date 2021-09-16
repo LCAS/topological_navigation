@@ -6,7 +6,10 @@ import numpy as np
 from abc import ABCMeta, abstractmethod, abstractproperty
 from geometry_msgs.msg import Pose, Quaternion
 from topological_navigation.point2line import pnt2line
+from topological_navigation.tmap_utils import *
 from std_msgs.msg import String
+
+
 
 
 
@@ -41,47 +44,6 @@ class AbstractRestriction():
     def ground_to_robot(self):
         """ Retrieves and saves internally the state of the robot necessary for evaluating the restriction  """
         raise NotImplementedError()
-
-## utils TODO these utils should go in tmap_utils I believe
-
-def get_node_pose(node_name, tmap):
-    pose = Pose()
-    for node in tmap["nodes"]:
-        if node["meta"]["node"] == node_name:
-            # position[:] = [node["node"]["pose"].position.x, node["node"]["pose"].position.y]
-            pose = node["node"]["pose"]
-            break
-
-    return pose
-
-# return the two nodes positions at both ends of an edge
-def get_edge_positions(edge_name, tmap):
-    edge_name_parts = edge_name.split("_")
-    node1, node2 = np.empty((2)), np.empty((2))
-    node1[:] = np.nan
-    node2[:] = np.nan
-
-    for node in tmap["nodes"]:
-        if node["meta"]["node"] == edge_name_parts[0]:
-            node1[:] = [node["node"]["pose"].position.x, node["node"]["pose"].position.y]
-        elif node["meta"]["node"] == edge_name_parts[1]:
-            node2[:] = [node["node"]["pose"].position.x, node["node"]["pose"].position.y]
-    
-    return node1, node2
-
-# position must be a np array with x and y coordinates
-def distance_position_edge(position, edge_name, tmap):
-    enode1, enode2 = get_edge_positions(edge_name, tmap)
-
-    return np.abs(np.cross(enode2-enode1, enode1-position))/np.linalg.norm(enode2-enode1)
-
-# positions must be a 2d np array with x and y coordinates with shape (n, 2)
-def distance_positions_edge(positions, edge_name, tmap):
-    enode1, enode2 = get_edge_positions(edge_name, tmap)
-
-    return np.abs(np.cross(enode2-enode1, enode1-positions))/np.linalg.norm(enode2-enode1)
-
-##
 
 class RobotType(AbstractRestriction):
     name = "robot"
@@ -200,13 +162,13 @@ class ObstacleFree(AbstractRestriction):
         evaluation = self.DEFAULT_EVALUATION
 
         if tmap is not None and self.active:
-            _node_pos = get_node_pose(node, tmap)
+            _node_pos = get_node_from_tmap2(tmap, node)["node"]["pose"]
             node_pos = np.array([_node_pos["position"]["x"], _node_pos["position"]["y"]])  
 
             all_nodes = [self._get_closest_node(r) for r in self.robot_nodes if r != rospy.get_namespace().strip("/")]
             distances = []
             for node_a in all_nodes:
-                _node_pos_a = get_node_pose(node_a, tmap)
+                _node_pos_a = get_node_from_tmap2(tmap, node_a)["node"]["pose"]
                 node_pos_a = np.array([_node_pos_a["position"]["x"], _node_pos_a["position"]["y"]])
 
                 distances.append(
@@ -226,15 +188,16 @@ class ObstacleFree(AbstractRestriction):
         if tmap is not None and self.active:
             distances = []
             
-            _edge_pos_a = get_node_pose(edge.split("_")[0], tmap)
+            orig, dest = get_node_names_from_edge_id_2(tmap, edge)
+            _edge_pos_a = get_node_from_tmap2(tmap, orig)["node"]["pose"]
             edge_pos_a = np.array([[_edge_pos_a["position"]["x"], _edge_pos_a["position"]["y"], 0.]])
-            _edge_pos_b = get_node_pose(edge.split("_")[1], tmap)
+            _edge_pos_b = get_node_from_tmap2(tmap, dest)["node"]["pose"]
             edge_pos_b = np.array([[_edge_pos_b["position"]["x"], _edge_pos_b["position"]["y"], 0.]])
 
             all_nodes = [self._get_closest_node(r) for r in self.robot_nodes if r != rospy.get_namespace().strip("/")]
 
             for node_a in all_nodes:
-                _node_pos = get_node_pose(node_a, tmap)
+                _node_pos = get_node_from_tmap2(tmap, node_a)["node"]["pose"]
                 node_pos = np.array([[_node_pos["position"]["x"], _node_pos["position"]["y"], 0.]])
 
                 distance = pnt2line(node_pos, edge_pos_a, edge_pos_b)

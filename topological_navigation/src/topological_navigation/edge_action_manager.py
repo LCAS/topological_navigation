@@ -61,10 +61,11 @@ class EdgeActionManager(object):
         self.dt = dict_tools()
         
     
-    def initialise(self, edge, destination_node):
+    def initialise(self, edge, destination_node, origin_node=None):
         
-        self.edge = edge # remove unicode prefix notation u
+        self.edge = edge
         self.destination_node = destination_node
+        self.origin_node = origin_node
         
         rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         
@@ -103,17 +104,22 @@ class EdgeActionManager(object):
         for item in paths:
             value = item["value"]
             
-            if isinstance(value, str) and value.startswith("$"):
-                _property = self.dt.getFromDict(self.destination_node, value[1:].split("."))
-                goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
+            if isinstance(value, str):
+                
+                if value.startswith("$"):
+                    _property = self.dt.getFromDict(self.destination_node, value[1:].split("."))
+                    goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
+                    
+                elif value.startswith("+") and self.origin_node is not None:
+                    _property = self.dt.getFromDict(self.origin_node, value[1:].split("."))
+                    goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
         
  
     def execute(self):
         
-        rospy.loginfo("Edge Action Manager: Executing the action")
+        rospy.loginfo("Edge Action Manager: Executing the action ...")
         self.client.send_goal(self.goal)
         self.current_action = self.action_name
-        rospy.loginfo("Edge Action Manager: Waiting for the result ...")
 #########################################################################################################

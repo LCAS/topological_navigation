@@ -41,7 +41,7 @@
   <arg name="reconfigure_edges_srv" default="false"/>
   <!-- Edge reconfigure groups config file used if reconfigure_edges_srv is true. -->
   <arg name="edge_reconfigure_config" default="$(find topological_navigation/config/sample_edge_reconfig_groups.yaml"/>
-  <!-- If we are navigating using the restricted tmap rather than the normal tmap. Must first publish the robot type: rostopic pub /type std_msgs/String "data: $RES_ROBOT_TYPE" -->
+  <!-- If we are using the restricted tmap rather than the normal tmap. Must first publish the robot type: rostopic pub /type std_msgs/String "data: $ROBOT_TYPE" -->
   <arg name="use_restrictions" default="false"/>
 
   <arg name="launch_extras" default="false" />
@@ -85,7 +85,10 @@
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true"/>
+  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true">
+    <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
+    <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
+  </node>
 
   <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(arg launch_extras)"/>
   <node pkg="topological_navigation" type="speed_based_prediction.py" name="speed_based_prediction" output="screen" if="$(arg launch_extras)"/>	

@@ -1,20 +1,19 @@
 <?xml version="1.0" ?>
 <launch>
-  <!-- declare arg to be passed in -->
+
   <arg name="robot_name" />
   <arg name="machine" default="localhost" />
   <arg name="user" default="" />
-  <arg name="config_file" default=""/>
+  <arg name="config_file" default=""/>   <!-- multirobot coordinator config -->
 
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
   <group ns="$(arg robot_name)">
-
     <node pkg="topological_navigation" name="restrictions_manager" type="restrictions_manager.py" output="screen" respawn="true">
       <param name="config_file" type="str" value="$(arg config_file)"/>
       <param name="out_topic" type="str" value="topological_map"/>
     </node>
+  </group>
 
- </group>
 </launch>

@@ -89,7 +89,7 @@ class map_manager_2(object):
             
         self.filename = filename
         if not self.filename:
-            self.filename = os.path.join(self.cache_dir, self.name + ".yaml")
+            self.filename = os.path.join(self.cache_dir, self.name + ".tmap2")
         
         self.loaded = False
         self.load = load            

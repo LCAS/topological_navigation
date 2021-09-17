@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
 <launch>
-  <!-- declare arg to be passed in -->
+
   <arg name="robot_name" />
   <arg name="machine" default="localhost" />
   <arg name="user" default="" />
-  <arg name="config_file" default=""/>
+  <arg name="config_file" default=""/>   <!-- multirobot coordinator config -->
 
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>

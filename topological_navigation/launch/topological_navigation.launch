@@ -81,6 +81,7 @@
     <param name="reconfigure_edges" value="$(arg reconfigure_edges)"/>
     <param name="reconfigure_edges_srv" value="$(arg reconfigure_edges_srv)"/>
     <rosparam param="move_base_actions" subst_value="True">$(arg move_base_actions)</rosparam>
+
     <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>

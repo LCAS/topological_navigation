@@ -10,7 +10,6 @@ import rospy, tf2_ros, math
 import yaml, datetime, json
 import re, uuid, copy, os
 
-import strands_navigation_msgs.srv
 from strands_navigation_msgs.msg import *
 import topological_navigation_msgs.srv
 import std_msgs.msg
@@ -45,17 +44,17 @@ class map_manager_2(object):
         # Services that modify the map
         self.write_map_srv=rospy.Service('/topological_map_manager2/write_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.write_topological_map_cb)
         self.switch_map_srv=rospy.Service('/topological_map_manager2/switch_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.switch_topological_map_cb)
-        self.add_node_srv=rospy.Service('/topological_map_manager2/add_topological_node', strands_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
-        self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', strands_navigation_msgs.srv.RmvNode, self.remove_node_cb)
-        self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', strands_navigation_msgs.srv.AddEdge, self.add_edge_cb)
-        self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', strands_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
-        self.add_content_to_node_srv=rospy.Service('/topological_map_manager2/add_content_to_node', strands_navigation_msgs.srv.AddContent, self.add_content_cb)
-        self.update_node_name_srv = rospy.Service("/topological_map_manager2/update_node_name", strands_navigation_msgs.srv.UpdateNodeName, self.update_node_name_cb)
-        self.update_node_waypoint_srv = rospy.Service("/topological_map_manager2/update_node_pose", strands_navigation_msgs.srv.AddNode, self.update_node_waypoint_cb)
-        self.update_node_tolerance_srv = rospy.Service("/topological_map_manager2/update_node_tolerance", strands_navigation_msgs.srv.UpdateNodeTolerance, self.update_node_tolerance_cb)
-        self.modify_tag_srv=rospy.Service('/topological_map_manager2/modify_node_tags', strands_navigation_msgs.srv.ModifyTag, self.modify_tag_cb)
-        self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', strands_navigation_msgs.srv.AddTag, self.add_tag_cb)
-        self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', strands_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
+        self.add_node_srv=rospy.Service('/topological_map_manager2/add_topological_node', topological_navigation_msgs.srv.AddNode, self.add_topological_node_cb)
+        self.remove_node_srv=rospy.Service('/topological_map_manager2/remove_topological_node', topological_navigation_msgs.srv.RmvNode, self.remove_node_cb)
+        self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes', topological_navigation_msgs.srv.AddEdge, self.add_edge_cb)
+        self.remove_edge_srv=rospy.Service('/topological_map_manager2/remove_edge', topological_navigation_msgs.srv.AddEdge, self.remove_edge_cb)
+        self.add_content_to_node_srv=rospy.Service('/topological_map_manager2/add_content_to_node', topological_navigation_msgs.srv.AddContent, self.add_content_cb)
+        self.update_node_name_srv = rospy.Service("/topological_map_manager2/update_node_name", topological_navigation_msgs.srv.UpdateNodeName, self.update_node_name_cb)
+        self.update_node_waypoint_srv = rospy.Service("/topological_map_manager2/update_node_pose", topological_navigation_msgs.srv.AddNode, self.update_node_waypoint_cb)
+        self.update_node_tolerance_srv = rospy.Service("/topological_map_manager2/update_node_tolerance", topological_navigation_msgs.srv.UpdateNodeTolerance, self.update_node_tolerance_cb)
+        self.modify_tag_srv=rospy.Service('/topological_map_manager2/modify_node_tags', topological_navigation_msgs.srv.ModifyTag, self.modify_tag_cb)
+        self.add_tag_srv=rospy.Service('/topological_map_manager2/add_tag_to_node', topological_navigation_msgs.srv.AddTag, self.add_tag_cb)
+        self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', topological_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
         self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)

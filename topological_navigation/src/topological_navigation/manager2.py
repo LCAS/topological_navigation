@@ -37,10 +37,10 @@ class map_manager_2(object):
         
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
-        self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
-        self.get_tag_srv=rospy.Service('/topological_map_manager2/get_tags', strands_navigation_msgs.srv.GetTags, self.get_tags_cb)
-        self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', strands_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
-        self.get_node_edges_srv=rospy.Service('/topological_map_manager2/get_edges_between_nodes', strands_navigation_msgs.srv.GetEdgesBetweenNodes, self.get_edges_between_cb)
+        self.get_tagged_srv=rospy.Service('/topological_map_manager2/get_tagged_nodes', topological_navigation_msgs.srv.GetTaggedNodes, self.get_tagged_cb)       
+        self.get_tag_srv=rospy.Service('/topological_map_manager2/get_tags', topological_navigation_msgs.srv.GetTags, self.get_tags_cb)
+        self.get_node_tag_srv=rospy.Service('/topological_map_manager2/get_node_tags', topological_navigation_msgs.srv.GetNodeTags, self.get_node_tags_cb)
+        self.get_node_edges_srv=rospy.Service('/topological_map_manager2/get_edges_between_nodes', topological_navigation_msgs.srv.GetEdgesBetweenNodes, self.get_edges_between_cb)
 
         # Services that modify the map
         self.write_map_srv=rospy.Service('/topological_map_manager2/write_topological_map', topological_navigation_msgs.srv.WriteTopologicalMap, self.write_topological_map_cb)
@@ -959,10 +959,10 @@ class map_manager_2(object):
         """
         Updates an edge's args (action, action type, goal etc)
         """
-        return self.update_edge_action(req.edge_id, req.action_name, req.action_type, req.goal, req.not_fluid)
+        return self.update_edge(req.edge_id, req.action_name, req.action_type, req.goal, req.not_fluid)
     
     
-    def update_edge_action(self, edge_id, action_name, action_type, goal, not_fluid):
+    def update_edge(self, edge_id, action_name, action_type, goal, not_fluid):
         
         node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
@@ -1102,8 +1102,8 @@ class map_manager_2(object):
                     
                 
     def tmap2_to_tmap(self):
-        
         self.points = map_manager_2.convert_tmap2_to_tmap(self.tmap2, self.pointset, self.metric_map)
+        
 
     @classmethod
     def convert_tmap2_to_tmap(cls, tmap2, pointset, metric_map):

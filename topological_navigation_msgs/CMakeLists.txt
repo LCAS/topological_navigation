@@ -37,6 +37,10 @@ add_service_files(
   EvaluateNode.srv
   EvaluateEdge.srv
   AddDatum.srv
+  GetTaggedNodes.srv
+  GetTags.srv
+  GetNodeTags.srv
+  GetEdgesBetweenNodes.srv
 )
 
 

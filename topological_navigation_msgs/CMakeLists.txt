@@ -23,6 +23,10 @@ find_package(catkin REQUIRED COMPONENTS message_generation std_msgs geometry_msg
 add_message_files(
   FILES
   ClosestEdges.msg
+  TopologicalMap.msg
+  TopologicalNode.msg
+  Vertex.msg
+  Edge.msg
 )
 
 #Generate services in the 'srv' folder

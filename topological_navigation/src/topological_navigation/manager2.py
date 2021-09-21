@@ -10,7 +10,7 @@ import rospy, tf2_ros, math
 import yaml, datetime, json
 import re, uuid, copy, os
 
-from strands_navigation_msgs.msg import *
+from topological_navigation_msgs.msg import *
 import topological_navigation_msgs.srv
 import std_msgs.msg
 
@@ -116,7 +116,7 @@ class map_manager_2(object):
         
         self.convert_to_legacy = rospy.get_param("~convert_to_legacy", True)
         if self.loaded and self.convert_to_legacy:
-            self.points_pub = rospy.Publisher('/topological_map', strands_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
+            self.points_pub = rospy.Publisher('/topological_map', topological_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
         
@@ -1106,7 +1106,7 @@ class map_manager_2(object):
 
     @classmethod
     def convert_tmap2_to_tmap(cls, tmap2, pointset, metric_map):
-        points = strands_navigation_msgs.msg.TopologicalMap()
+        points = topological_navigation_msgs.msg.TopologicalMap()
 
         try:
             point_set = pointset
@@ -1115,7 +1115,7 @@ class map_manager_2(object):
             points.map = metric_map
 
             for node in tmap2["nodes"]:
-                msg = strands_navigation_msgs.msg.TopologicalNode()
+                msg = topological_navigation_msgs.msg.TopologicalNode()
                 msg.name = node["node"]["name"]
                 msg.map = metric_map
                 msg.pointset = point_set
@@ -1128,7 +1128,7 @@ class map_manager_2(object):
 
                 msgs_verts = []
                 for v in node["node"]["verts"]:
-                    msg_v = strands_navigation_msgs.msg.Vertex()
+                    msg_v = topological_navigation_msgs.msg.Vertex()
                     msg_v.x = v["x"]
                     msg_v.y = v["y"]
                     msgs_verts.append(msg_v)
@@ -1136,7 +1136,7 @@ class map_manager_2(object):
 
                 msgs_edges = []
                 for e in node["node"]["edges"]:
-                    msg_e = strands_navigation_msgs.msg.Edge()
+                    msg_e = topological_navigation_msgs.msg.Edge()
                     msg_e.edge_id = e["edge_id"]
                     msg_e.node = e["node"]
                     msg_e.action = e["action"]
@@ -1153,7 +1153,7 @@ class map_manager_2(object):
         except Exception as e:
             rospy.logerr(
                 "Cannot convert map to the old format. The conversion requires all fields of the old format map to be set.")
-            points = strands_navigation_msgs.msg.TopologicalMap()
+            points = topological_navigation_msgs.msg.TopologicalMap()
 
         return points
 #########################################################################################################

@@ -9,7 +9,7 @@ import rospy
 import yaml
 import mongodb_store.util as dc_util
 from mongodb_store.message_store import MessageStoreProxy
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import topological_map
 import os
 

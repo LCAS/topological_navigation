@@ -53,6 +53,8 @@ add_service_files(
   UpdateNodeTolerance.srv
   ModifyTag.srv
   AddTag.srv
+  GetTopologicalMap.srv
+  UpdateEdgeLegacy.srv
 )
 
 

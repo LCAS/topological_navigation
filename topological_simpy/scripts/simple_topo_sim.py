@@ -501,9 +501,9 @@ if __name__ == "__main__":
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
     # tmap_config_file = 'topological_simpy/maps/tmap.yaml'
-    tmap_config_file = '../maps/riseholme_4_bases_large.tmap2'   # default
+    # tmap_config_file = '../maps/riseholme_4_bases_large.tmap2'   # default
     # tmap_config_file = '../maps/edited_riseholme_3.tmap2'  # default
-    # tmap_config_file = '../maps/clockhouse.tmap'
+    tmap_config_file = '../maps/clockhouse.tmap'
 
     # parameters for running the simulation
     n_trials = 1

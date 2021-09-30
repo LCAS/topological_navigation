@@ -24,7 +24,7 @@ from datetime import datetime
 
 RANDOM_SEED = 19
 SIM_RT_FACTOR = 0.00001  # simulation speed, 1: real time; 0.01: 100 times faster
-VERBOSE = False
+VERBOSE = True
 SHOW_VIS = True  # show visualisation
 SAVE_RANDOM = True  # save random figures
 SAVE_FINAL = True  # save final figures
@@ -494,6 +494,7 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
 if __name__ == "__main__":
     # config_file = 'topological_simpy/config/picking_sim_combined.yaml'
     # config_file = '../config/picking_sim_riseholme_simple.yaml'
+    # config_file = '../config/picking_sim_riseholme_4_bases_2_parellel.yaml'
     config_file = '../config/picking_sim_riseholme_4_bases.yaml'
     # get the config params
     # config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
@@ -501,9 +502,10 @@ if __name__ == "__main__":
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
     # tmap_config_file = 'topological_simpy/maps/tmap.yaml'
-    # tmap_config_file = '../maps/riseholme_4_bases_large.tmap2'   # default
+    tmap_config_file = '../maps/riseholme_4_bases_large.tmap2'   # default
     # tmap_config_file = '../maps/edited_riseholme_3.tmap2'  # default
-    tmap_config_file = '../maps/clockhouse.tmap'
+    # tmap_config_file = '../maps/clockhouse.tmap'
+    # tmap_config_file = '../maps/riseholme_4_bases_2_parallel_3.tmap2'   # default
 
     # parameters for running the simulation
     n_trials = 1

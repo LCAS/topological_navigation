@@ -819,7 +819,7 @@ nodes:
           pose: $node.pose
       node: WayPoint73
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: 'robot_tall'
       restrictions_runtime: 'obstacleFree_1'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
@@ -6726,21 +6726,6 @@ nodes:
       action_type: move_base_msgs/MoveBaseGoal
       fluid_navigation: True
       config: []
-      edge_id: small-t1-r1-c0_WayPoint73
-      fail_policy: fail
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint73
-      recovery_behaviours_config: ''
-      restrictions_planning: 'robot_short'
-      restrictions_runtime: 'obstacleFree_1'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      fluid_navigation: True
-      config: []
       edge_id: small-t1-r1-c0_WayPoint67
       fail_policy: fail
       goal:
@@ -7432,21 +7417,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: 'robot_short'
       restrictions_runtime: 'obstacleFree_1'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      fluid_navigation: True
-      config: []
-      edge_id: small-t1-r2-c0_WayPoint73
-      fail_policy: fail
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint73
-      recovery_behaviours_config: ''
-      restrictions_planning: 'robot_short'
-      restrictions_runtime: 'obstacleFree_1'
     localise_by_topic: ''
     name: small-t1-r2-c0
     parent_frame: map
@@ -8124,21 +8094,6 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: small-t1-r3-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: 'robot_short'
-      restrictions_runtime: 'obstacleFree_1'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      fluid_navigation: True
-      config: []
-      edge_id: small-t1-r3-c0_WayPoint73
-      fail_policy: fail
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint73
       recovery_behaviours_config: ''
       restrictions_planning: 'robot_short'
       restrictions_runtime: 'obstacleFree_1'
@@ -8834,21 +8789,6 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: WayPoint74
-      recovery_behaviours_config: ''
-      restrictions_planning: 'robot_short'
-      restrictions_runtime: 'obstacleFree_1'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      fluid_navigation: True
-      config: []
-      edge_id: small-t1-r4-c0_WayPoint73
-      fail_policy: fail
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint73
       recovery_behaviours_config: ''
       restrictions_planning: 'robot_short'
       restrictions_runtime: 'obstacleFree_1'
@@ -12799,3 +12739,4 @@ transformation:
     x: 0.0
     y: 0.0
     z: 0.0
+

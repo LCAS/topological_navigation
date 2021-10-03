@@ -148,8 +148,6 @@ class RestrictionsManager():
 
         response.restricted_tmap = json.dumps(new_topo_map)
 
-        self._publish_updated_restricted_maps(new_topo_map)
-
         return response
     
     def restrict_runtime_map_handle(self, request):
@@ -159,8 +157,6 @@ class RestrictionsManager():
         new_topo_map = self._restrict_map_handle(request, "restrictions_runtime")
 
         response.restricted_tmap = json.dumps(new_topo_map)
-
-        self._publish_updated_restricted_maps(new_topo_map)
 
         return response
 

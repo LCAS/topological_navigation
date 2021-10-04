@@ -57,6 +57,7 @@ def distance(p0, p1):
 #          [xn, yn, zn]]    
 
 if __name__ == '__main__':
+    
     pnt = np.array([[5, 4, 0],
                     [5, 4, 0]])
         

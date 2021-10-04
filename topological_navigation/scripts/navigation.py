@@ -259,7 +259,7 @@ class TopologicalNavServer(object):
         """
         This Functions is called when the topo nav Action Server is called
         """
-        print("\n")
+        print("\n####################################################################################################")
         rospy.loginfo("Processing GO-TO-NODE goal (NO ORIENTATION = {})".format(goal.no_orientation))
         can_start = False
 
@@ -290,7 +290,7 @@ class TopologicalNavServer(object):
         """
         This Function is called when the execute policy Action Server is called
         """
-        print("\n")
+        print("\n####################################################################################################")
         rospy.loginfo("Processing EXECUTE POLICY MODE goal")
         can_start = False
 
@@ -410,14 +410,12 @@ class TopologicalNavServer(object):
                     route = self.rsearch.search_route(o_node["node"]["name"], target)
                     route = self.enforce_navigable_route(route, target)
                     if route.source:
-                        rospy.loginfo("Navigating Case 1")
-                        rospy.loginfo("Following route")
+                        rospy.loginfo("Navigating Case 1: Following route")
                         self.publish_route(route, target)
                         result, inc = self.followRoute(route, target, 0)
                         rospy.loginfo("Navigating Case 1 -> res: %d", inc)
                     else:
-                        rospy.loginfo("Navigating Case 1a")
-                        rospy.logerr("There is no route from {} to {}. Check your edges.".format(o_node["node"]["name"], target))
+                        rospy.logwarn("Navigating Case 1a: There is no route from {} to {}. Check your edges.".format(o_node["node"]["name"], target))
                         self.cancelled = True
                         result = False
                         inc = 1
@@ -428,8 +426,7 @@ class TopologicalNavServer(object):
                     else:
                         result, inc = self.to_goal_node(g_node)
             else:
-                rospy.loginfo("Navigating Case 3")
-                rospy.logerr("Target or Origin Nodes were not found on Map")
+                rospy.logwarn("Navigating Case 3: Target or Origin Nodes were not found on Map")
                 self.cancelled = True
                 result = False
                 inc = 1
@@ -534,15 +531,13 @@ class TopologicalNavServer(object):
                         the_edge = i
 
         if the_edge is None:
-            rospy.loginfo("Navigating Case 2")
-            rospy.logwarn("Could not find a move base action in the edges of target {}. Unsafe to move".format(g_node["node"]["name"]))
+            rospy.logwarn("Navigating Case 2: Could not find a move base action in the edges of target {}. Unsafe to move".format(g_node["node"]["name"]))
             rospy.loginfo("Action not taken, outputting success")
             result=True
             inc=0
             rospy.loginfo("Navigating Case 2 -> res: %d", inc)
         else:
-            rospy.loginfo("Navigating Case 2a")
-            rospy.loginfo("Getting to the exact pose of target {}".format(g_node["node"]["name"]))
+            rospy.loginfo("Navigating Case 2a: Getting to the exact pose of target {}".format(g_node["node"]["name"]))
             self.current_target = g_node["node"]["name"]
             origin_node,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge)
             result, inc = self.execute_action(the_edge, g_node, origin_node)

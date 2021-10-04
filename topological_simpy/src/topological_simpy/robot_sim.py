@@ -103,6 +103,7 @@ class RobotSim(Robot):
         while True:
             if self.picking_finished and (self.mode == 0 or self.mode == 5):
                 self.loginfo("X %5.1f: all rows picked. %s exiting" % (self.env.now, self.robot_id))
+                self.graph.extend_hold_time(self.graph.agent_nodes[self.robot_id], float("inf"))
                 self.env.exit("all rows picked and idle")
                 break
 

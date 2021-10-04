@@ -26,7 +26,7 @@ class PoliciesVis(object):
         #self.update_needed=False
         
         rospy.loginfo("Creating Publishers ...")
-        self.policies_pub = rospy.Publisher('topological_edges_policies', MarkerArray)
+        self.policies_pub = rospy.Publisher('topological_edges_policies', MarkerArray, queue_size=10)
         rospy.loginfo("Done ...")
         
         

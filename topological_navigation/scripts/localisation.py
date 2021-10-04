@@ -131,12 +131,10 @@ class TopologicalNavLoc(object):
 
         rospy.Subscriber('topological_map_2', String, self.MapCallback)
             
-        rospy.loginfo("Waiting for Topological map ...")
+        rospy.loginfo("Localisation waiting for the Topological Map ...")
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
-        
-        rospy.loginfo("NODES BY TOPIC: %s" %self.names_by_topic)
-        rospy.loginfo("NO GO NODES: %s" %self.nogos)
+        rospy.loginfo("Localisation received the Topological Map.")
         
         self.base_frame = rospy.get_param("~base_frame", "base_link")
         
@@ -321,7 +319,7 @@ class TopologicalNavLoc(object):
         else:
             self.nogos=[]
 
-        rospy.loginfo("Subscribing to localise topics")
+        rospy.loginfo("Making localise by topic subscribers ...")
 
         for i in self.subscribers:
             del i
@@ -335,7 +333,9 @@ class TopologicalNavLoc(object):
             ))
             # Calling instance of class to start subsribing thread.
             self.subscribers[-1]()
-            
+        
+        rospy.loginfo("NODES BY TOPIC: %s" %self.names_by_topic)
+        rospy.loginfo("NO GO NODES: %s" %self.nogos)
         self.rec_map = True
             
             
@@ -383,7 +383,6 @@ class TopologicalNavLoc(object):
                     a['persistency']=10
                 self.nodes_by_topic.append(a)
                 self.names_by_topic.append(a['name'])
-        print self.nodes_by_topic
 
 
     def Callback(self, msg, item):

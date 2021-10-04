@@ -32,7 +32,7 @@ class node_manager(object):
         #map_name = rospy.get_param('topological_map_name', 'top_map')
         self._node_server = InteractiveMarkerServer("/topological_map_add_rm_node")
         rospy.loginfo(" ... Init done")
-        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time, queue_size=10)
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
 

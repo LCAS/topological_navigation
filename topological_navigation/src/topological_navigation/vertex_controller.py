@@ -22,7 +22,7 @@ class VertexControllers(object):
         #map_name = rospy.get_param('/topological_map_name', 'top_map')
         self.timer = Timer(1.0, self.timer_callback)
         self._vertex_server = InteractiveMarkerServer("topological_map_zones")
-        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time, queue_size=10)
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
 

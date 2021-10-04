@@ -100,48 +100,44 @@ class TopologicalNavServer(object):
         if not self.move_base_name in self.move_base_actions:
             self.move_base_actions.append(self.move_base_name)
         
-        self.stats_pub = rospy.Publisher("topological_navigation/Statistics", NavStatistics)
-        self.edge_pub = rospy.Publisher("topological_navigation/Edge", CurrentEdge)
-        self.route_pub = rospy.Publisher("topological_navigation/Route", strands_navigation_msgs.msg.TopologicalRoute)
-        self.cur_edge = rospy.Publisher("current_edge", String)
+        self.stats_pub = rospy.Publisher("topological_navigation/Statistics", NavStatistics, queue_size=10)
+        self.edge_pub = rospy.Publisher("topological_navigation/Edge", CurrentEdge, queue_size=10)
+        self.route_pub = rospy.Publisher("topological_navigation/Route", strands_navigation_msgs.msg.TopologicalRoute, queue_size=10)
+        self.cur_edge = rospy.Publisher("current_edge", String, queue_size=10)
         self.move_act_pub = rospy.Publisher("topological_navigation/move_action_status", String, latch=True, queue_size=1)
 
         self._map_received = False
         rospy.Subscriber("/topological_map_2", String, self.MapCallback)
-        rospy.loginfo("Waiting for Topological map ...")
+        rospy.loginfo("Navigation waiting for the Topological Map ...")
 
         while not self._map_received:
             rospy.sleep(rospy.Duration.from_sec(0.05))
-        rospy.loginfo(" ...done")
+        rospy.loginfo("Navigation received the Topological Map.")
         
         self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
         # Creating Action Server for navigation
-        rospy.loginfo("Creating action server.")
+        rospy.loginfo("Creating GO-TO-NODE action server ...")
         self._as = actionlib.SimpleActionServer(name, topological_navigation.msg.GotoNodeAction,
                                                 execute_cb=self.executeCallback, auto_start=False)
         self._as.register_preempt_callback(self.preemptCallback)
-        rospy.loginfo(" ...starting")
         self._as.start()
-        rospy.loginfo(" ...done")
+        rospy.loginfo("...done")
 
         # Creating Action Server for execute policy
-        rospy.loginfo("Creating execute action server.")
+        rospy.loginfo("Creating EXECUTE_POLICY_MODE action server ...")
         self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", strands_navigation_msgs.msg.ExecutePolicyModeAction, 
                                                             execute_cb=self.executeCallbackexecpolicy, auto_start=False)
         self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
-        rospy.loginfo(" ...starting")
         self._as_exec_policy.start()
-        rospy.loginfo(" ...done")
+        rospy.loginfo("...done")
 
-        rospy.loginfo("EPM All Done ...")
-
-        rospy.loginfo("Subscribing to Localisation Topics.")
+        rospy.loginfo("Subscribing to Localisation Topics ...")
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
-        rospy.loginfo(" ...done")
+        rospy.loginfo("...done")
         
         try:
             rospy.wait_for_service('restrictions_manager/evaluate_edge', timeout=3.0)
@@ -163,7 +159,7 @@ class TopologicalNavServer(object):
         else:
             rospy.logwarn("Edge Reconfigure Unavailable")
 
-        rospy.loginfo("All Done ...")
+        rospy.loginfo("All Done.")
         rospy.spin()
         
         

@@ -2,7 +2,7 @@
 ###################################################################################################################
 import sys, json, numpy as np
 import rospy, rostopic, tf
-import strands_navigation_msgs.srv
+import topological_navigation_msgs.srv
 
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String, Float32
@@ -126,8 +126,8 @@ class TopologicalNavLoc(object):
         self.previous_pose.position.x=1000 #just give a random big value so this is tested
 
         #This service returns a list of nodes that have a given tag
-        self.get_tagged_srv=rospy.Service('topological_localisation/get_nodes_with_tag', strands_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
-        self.loc_pos_srv=rospy.Service('topological_localisation/localise_pose', strands_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
+        self.get_tagged_srv=rospy.Service('topological_localisation/get_nodes_with_tag', topological_navigation_msgs.srv.GetTaggedNodes, self.get_nodes_wtag_cb)
+        self.loc_pos_srv=rospy.Service('topological_localisation/localise_pose', topological_navigation_msgs.srv.LocalisePose, self.localise_pose_cb)
 
         rospy.Subscriber('topological_map_2', String, self.MapCallback)
             
@@ -424,7 +424,7 @@ class TopologicalNavLoc(object):
 
         try:
             rospy.wait_for_service('/topological_map_manager2/get_tagged_nodes', timeout=3)
-            cont = rospy.ServiceProxy('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            cont = rospy.ServiceProxy('/topological_map_manager2/get_tagged_nodes', topological_navigation_msgs.srv.GetTaggedNodes)
                 
             resp1 = cont(req.tag)
             tagnodes = resp1.nodes
@@ -477,7 +477,7 @@ class TopologicalNavLoc(object):
         """
         try:
             rospy.wait_for_service('/topological_map_manager2/get_tagged_nodes', timeout=3)
-            get_prediction = rospy.ServiceProxy('/topological_map_manager2/get_tagged_nodes', strands_navigation_msgs.srv.GetTaggedNodes)
+            get_prediction = rospy.ServiceProxy('/topological_map_manager2/get_tagged_nodes', topological_navigation_msgs.srv.GetTaggedNodes)
                 
             resp1 = get_prediction('no_go')
             return resp1.nodes

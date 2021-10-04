@@ -55,6 +55,7 @@ add_service_files(
   AddTag.srv
   GetTopologicalMap.srv
   UpdateEdgeLegacy.srv
+  LocalisePose.srv
 )
 
 

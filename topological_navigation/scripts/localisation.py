@@ -319,7 +319,7 @@ class TopologicalNavLoc(object):
         else:
             self.nogos=[]
 
-        rospy.loginfo("Making localise by topic subscribers ...")
+        rospy.loginfo("Creating localise by topic subscribers ...")
 
         for i in self.subscribers:
             del i

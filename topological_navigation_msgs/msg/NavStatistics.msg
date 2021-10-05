@@ -1,0 +1,11 @@
+string edge_id
+string status
+string origin
+string target
+string final_node
+string date_started
+string date_at_node
+string date_finished
+float64 time_to_waypoint
+float64 operation_time
+string topological_map

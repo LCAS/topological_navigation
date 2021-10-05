@@ -10,8 +10,8 @@ import strands_navigation_msgs.msg
 
 import dynamic_reconfigure.client
 
-from strands_navigation_msgs.msg import NavStatistics
-from strands_navigation_msgs.msg import CurrentEdge
+from topological_navigation_msgs.msg import NavStatistics
+from topological_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
 from topological_navigation_msgs.srv import EvaluateEdge, EvaluateEdgeRequest, EvaluateNode, EvaluateNodeRequest
 

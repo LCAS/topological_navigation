@@ -33,6 +33,8 @@ add_message_files(
   Vertex.msg
   Edge.msg
   NavRoute.msg
+  CurrentEdge.msg
+  NavStatistics.msg
 )
 
 #Generate services in the 'srv' folder

@@ -4,7 +4,12 @@ project(topological_navigation_msgs)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS message_generation std_msgs geometry_msgs)
+find_package(catkin REQUIRED COMPONENTS 
+  message_generation 
+  std_msgs 
+  geometry_msgs
+  actionlib_msgs
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -27,6 +32,7 @@ add_message_files(
   TopologicalNode.msg
   Vertex.msg
   Edge.msg
+  NavRoute.msg
 )
 
 #Generate services in the 'srv' folder
@@ -60,12 +66,13 @@ add_service_files(
 
 
 
-#find_package(catkin REQUIRED genmsg actionlib_msgs)
-#add_action_files(
-#	DIRECTORY action 
-#	FILES 
-#	SomeAction.action
-#)
+find_package(catkin REQUIRED genmsg actionlib_msgs)
+add_action_files(
+	DIRECTORY action 
+	FILES 
+	GotoNode.action
+        ExecutePolicyMode.action
+)
 
 
 ## Generate added messages and services with any dependencies listed here
@@ -73,8 +80,7 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   geometry_msgs
-#  sensor_msgs
-#  actionlib_msgs 
+  actionlib_msgs 
 )
 
 ###################################

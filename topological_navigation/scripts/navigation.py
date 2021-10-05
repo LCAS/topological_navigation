@@ -5,6 +5,7 @@ import actionlib
 import yaml, json
 
 import topological_navigation.msg
+import topological_navigation_msgs.msg
 import strands_navigation_msgs.msg
 
 import dynamic_reconfigure.client
@@ -12,7 +13,7 @@ import dynamic_reconfigure.client
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
-from topological_navigation_msgs.srv import EvaluateEdge, EvaluateEdgeRequest, EvaluateEdgeResponse, EvaluateNode, EvaluateNodeRequest, EvaluateNodeResponse
+from topological_navigation_msgs.srv import EvaluateEdge, EvaluateEdgeRequest, EvaluateNode, EvaluateNodeRequest
 
 from std_msgs.msg import String
 from actionlib_msgs.msg import GoalStatus
@@ -57,11 +58,11 @@ status_mapping[9] = "LOST"
 ###################################################################################################################
 class TopologicalNavServer(object):
     
-    _feedback = topological_navigation.msg.GotoNodeFeedback()
-    _result = topological_navigation.msg.GotoNodeResult()
+    _feedback = topological_navigation_msgs.msg.GotoNodeFeedback()
+    _result = topological_navigation_msgs.msg.GotoNodeResult()
 
-    _feedback_exec_policy = strands_navigation_msgs.msg.ExecutePolicyModeFeedback()
-    _result_exec_policy = strands_navigation_msgs.msg.ExecutePolicyModeResult()
+    _feedback_exec_policy = topological_navigation_msgs.msg.ExecutePolicyModeFeedback()
+    _result_exec_policy = topological_navigation_msgs.msg.ExecutePolicyModeResult()
 
     def __init__(self, name, mode):
         
@@ -119,7 +120,7 @@ class TopologicalNavServer(object):
 
         # Creating Action Server for navigation
         rospy.loginfo("Creating GO-TO-NODE action server ...")
-        self._as = actionlib.SimpleActionServer(name, topological_navigation.msg.GotoNodeAction,
+        self._as = actionlib.SimpleActionServer(name, topological_navigation_msgs.msg.GotoNodeAction,
                                                 execute_cb=self.executeCallback, auto_start=False)
         self._as.register_preempt_callback(self.preemptCallback)
         self._as.start()
@@ -127,7 +128,7 @@ class TopologicalNavServer(object):
 
         # Creating Action Server for execute policy
         rospy.loginfo("Creating EXECUTE_POLICY_MODE action server ...")
-        self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", strands_navigation_msgs.msg.ExecutePolicyModeAction, 
+        self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", topological_navigation_msgs.msg.ExecutePolicyModeAction, 
                                                             execute_cb=self.executeCallbackexecpolicy, auto_start=False)
         self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
         self._as_exec_policy.start()

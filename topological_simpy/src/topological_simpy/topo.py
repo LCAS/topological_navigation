@@ -2015,7 +2015,10 @@ class TopologicalForkGraph(object):
                         dead_lock_found = True
                         break
                     else:
-                        j = i + 1  # reset j
+                        if j == len(robot_ids) - 1:
+                            break
+                        else:
+                            j = i + 1  # reset j
                 else:
                     j += 1
                 # if all robot_ids have been iterated, break and increase i
@@ -2027,7 +2030,7 @@ class TopologicalForkGraph(object):
                 break
             else:
                 if robot_ids[i] in dead_locks:
-                    dead_locks.remove(robot_ids[i])
+                    dead_locks = []
 
         if dead_lock_found:
             return dead_locks

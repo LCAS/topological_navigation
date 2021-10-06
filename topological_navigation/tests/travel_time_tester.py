@@ -8,7 +8,7 @@ import math
 from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.publisher import map_publisher
 from topological_navigation.publisher import map_publisher
-from strands_navigation_msgs.srv import EstimateTravelTime
+from topological_navigation_msgs.srv import EstimateTravelTime
 
 
 class TestTravelTimeEstimator(unittest.TestCase):

@@ -10,8 +10,8 @@ import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapResponse,\
         EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse
 from topological_navigation.manager2 import map_manager_2
-from strands_navigation_msgs.msg import TopologicalMap
-from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
+from topological_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 from std_msgs.msg import String
 from sympy.parsing.sympy_parser import parse_expr
 from restrictions_impl import *

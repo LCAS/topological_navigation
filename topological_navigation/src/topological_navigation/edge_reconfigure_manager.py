@@ -6,7 +6,7 @@ Created on Wed Feb 10 15:58:34 2021
 """
 #############################################################################################################
 import rospy, dynamic_reconfigure.client
-from strands_navigation_msgs.srv import ReconfAtEdges
+from topological_navigation_msgs.srv import ReconfAtEdges
 
 
 class EdgeReconfigureManager(object):

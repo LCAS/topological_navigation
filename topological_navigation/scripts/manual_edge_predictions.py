@@ -7,8 +7,8 @@ import yaml
 import actionlib
 from actionlib_msgs.msg import *
 
-from strands_navigation_msgs.srv import *
-from strands_navigation_msgs.msg import *
+from topological_navigation_msgs.srv import *
+from topological_navigation_msgs.msg import *
 
 
 def usage():

@@ -4,7 +4,7 @@ import rospy
 
 from visualization_msgs.msg import *
 
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from geometry_msgs.msg import Point
 
 import topological_navigation.tmap_utils as tmap_utils

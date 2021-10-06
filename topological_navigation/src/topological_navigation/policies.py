@@ -10,9 +10,9 @@ import tf
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
 
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation.marker_arrays import *
-from strands_navigation_msgs.msg import NavRoute
+from topological_navigation_msgs.msg import NavRoute
 
 
 class PoliciesVis(object):

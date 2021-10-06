@@ -16,11 +16,11 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, PoseStamped, Poin
 import actionlib
 import actionlib_msgs
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
-from strands_navigation_msgs.msg import ExecutePolicyModeAction, ExecutePolicyModeGoal
-from strands_navigation_msgs.srv import LoadTopoNavTestScenario, LoadTopoNavTestScenarioResponse, RunTopoNavTestScenario, RunTopoNavTestScenarioResponse, GetRouteTo
+from topological_navigation_msgs.msg import ExecutePolicyModeAction, ExecutePolicyModeGoal
+from topological_navigation_msgs.srv import LoadTopoNavTestScenario, LoadTopoNavTestScenarioResponse, RunTopoNavTestScenario, RunTopoNavTestScenarioResponse, GetRouteTo
 from roslib.packages import find_resource
 import time
-from strands_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
+from topological_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
 from tf import TransformListener
 import tf.transformations as trans
 from topological_navigation.load_maps_from_yaml import YamlMapLoader

@@ -20,15 +20,15 @@ from std_msgs.msg import String
 from nav_msgs.srv import *
 
 
-import strands_navigation_msgs.msg
-from strands_navigation_msgs.msg import TopologicalNode
+import topological_navigation_msgs.msg
+from topological_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
-from strands_navigation_msgs.msg import NavStatistics
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import NavStatistics
+from topological_navigation_msgs.msg import TopologicalMap
 
 from topological_navigation.tmap_utils import *
 
-from strands_navigation_msgs.srv import *
+from topological_navigation_msgs.srv import *
 
 
 def usage():
@@ -66,14 +66,14 @@ class TopologicalSpeedPred(object):
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(action_name, strands_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.build_callback, auto_start = False)
+        self._as = actionlib.SimpleActionServer(action_name, topological_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.build_callback, auto_start = False)
         
         rospy.loginfo(" ...starting")
         self._as.start()
         rospy.loginfo(" ...done")
 
 
-        self.predict_srv=rospy.Service('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
+        self.predict_srv=rospy.Service('topological_prediction/predict_edges', topological_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 

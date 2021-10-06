@@ -16,11 +16,11 @@ from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
 
-import strands_navigation_msgs.srv
+import topological_navigation_msgs.srv
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 
 import topological_navigation.msg
 
@@ -126,7 +126,7 @@ class node_manager(object):
                     rospy.logwarn("Failed to get robot pose")
                     return
                 
-                add_node = rospy.ServiceProxy('/topological_map_manager/add_topological_node', strands_navigation_msgs.srv.AddNode)
+                add_node = rospy.ServiceProxy('/topological_map_manager/add_topological_node', topological_navigation_msgs.srv.AddNode)
                 add_node('',pos, True)
             
                 map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)        

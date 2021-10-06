@@ -14,9 +14,9 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 
 import topological_navigation.msg
 

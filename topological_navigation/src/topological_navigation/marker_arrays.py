@@ -8,7 +8,7 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import Point
 
 from visualization_msgs.msg import *
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
 
 

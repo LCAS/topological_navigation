@@ -13,10 +13,10 @@ import math
 from std_msgs.msg import String
 #import scitos_apps_msgs.msg
 
-#from strands_navigation_msgs.msg import TopologicalNode
+#from topological_navigation_msgs.msg import TopologicalNode
 #from mongodb_store.message_store import MessageStoreProxy
 
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation.tmap_utils import *
 from topological_navigation.route_search import *
         

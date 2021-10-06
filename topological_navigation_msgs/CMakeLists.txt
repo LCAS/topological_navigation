@@ -70,6 +70,9 @@ add_service_files(
   EstimateTravelTime.srv
   PredictEdgeState.srv
   UpdateFailPolicy.srv
+  ReconfAtEdges.srv
+  LoadTopoNavTestScenario.srv
+  RunTopoNavTestScenario.srv
 )
 
 

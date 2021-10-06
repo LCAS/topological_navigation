@@ -10,8 +10,6 @@
 
   <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="-n $(arg map)"/>
 
-  <node pkg="fremenserver" type="fremenserver" name="fremenserver"/>
-
   <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen"/>
 
   <node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen"/>

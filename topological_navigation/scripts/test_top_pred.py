@@ -2,13 +2,13 @@
 
 import sys
 import rospy
-from strands_navigation_msgs.srv import *
+from topological_navigation_msgs.srv import *
 
 
 def predict_edges(seconds_from_now):
     rospy.wait_for_service('topological_prediction/predict_edges')
     try:
-        get_prediction = rospy.ServiceProxy('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState)
+        get_prediction = rospy.ServiceProxy('topological_prediction/predict_edges', topological_navigation_msgs.srv.PredictEdgeState)
         now = rospy.Time.now()
         prediction_time = now + rospy.Duration(seconds_from_now) 
         print "Requesting prediction for %f"%prediction_time.secs

@@ -5,7 +5,7 @@ import sys
 
 import std_msgs.msg
 from topological_navigation.topological_node import *
-from strands_navigation_msgs.msg import TopologicalNode, TopologicalMap, Edge
+from topological_navigation_msgs.msg import TopologicalNode, TopologicalMap, Edge
 from geometry_msgs.msg import Pose, Point
 
 

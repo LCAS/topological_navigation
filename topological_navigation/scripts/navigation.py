@@ -4,12 +4,9 @@ import rospy
 import actionlib
 import yaml, json
 
-import topological_navigation.msg
-import topological_navigation_msgs.msg
-import strands_navigation_msgs.msg
-
 import dynamic_reconfigure.client
 
+import topological_navigation_msgs.msg
 from topological_navigation_msgs.msg import NavStatistics
 from topological_navigation_msgs.msg import CurrentEdge
 from topological_navigation_msgs.msg import ClosestEdges
@@ -103,7 +100,7 @@ class TopologicalNavServer(object):
         
         self.stats_pub = rospy.Publisher("topological_navigation/Statistics", NavStatistics, queue_size=10)
         self.edge_pub = rospy.Publisher("topological_navigation/Edge", CurrentEdge, queue_size=10)
-        self.route_pub = rospy.Publisher("topological_navigation/Route", strands_navigation_msgs.msg.TopologicalRoute, queue_size=10)
+        self.route_pub = rospy.Publisher("topological_navigation/Route", topological_navigation_msgs.msg.TopologicalRoute, queue_size=10)
         self.cur_edge = rospy.Publisher("current_edge", String, queue_size=10)
         self.move_act_pub = rospy.Publisher("topological_navigation/move_action_status", String, latch=True, queue_size=1)
 
@@ -769,7 +766,7 @@ class TopologicalNavServer(object):
 
     def publish_route(self, route, target):
         
-        stroute = strands_navigation_msgs.msg.TopologicalRoute()
+        stroute = topological_navigation_msgs.msg.TopologicalRoute()
         for i in route.source:
             stroute.nodes.append(i)
         stroute.nodes.append(target)

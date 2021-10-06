@@ -4,8 +4,8 @@ import sys
 import rospy
 from std_msgs.msg import String
 
-import strands_navigation_msgs.srv
-from strands_navigation_msgs.msg import TopologicalMap
+import topological_navigation_msgs.srv
+from topological_navigation_msgs.msg import TopologicalMap
 import topological_navigation.route_search
 #from topological_navigation.route_search import *
         
@@ -31,8 +31,8 @@ class SearchPolicyServer(object):
 
 
         #This service returns any given map
-        self.get_map_srv=rospy.Service('get_simple_policy/get_route_to', strands_navigation_msgs.srv.GetRouteTo, self.get_route_cb)
-        self.get_map_srv=rospy.Service('get_simple_policy/get_route_between', strands_navigation_msgs.srv.GetRouteBetween, self.get_routeb_cb)
+        self.get_map_srv=rospy.Service('get_simple_policy/get_route_to', topological_navigation_msgs.srv.GetRouteTo, self.get_route_cb)
+        self.get_map_srv=rospy.Service('get_simple_policy/get_route_between', topological_navigation_msgs.srv.GetRouteBetween, self.get_routeb_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 

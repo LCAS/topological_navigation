@@ -35,6 +35,7 @@ add_message_files(
   NavRoute.msg
   CurrentEdge.msg
   NavStatistics.msg
+  TopologicalRoute.msg
 )
 
 #Generate services in the 'srv' folder
@@ -64,6 +65,8 @@ add_service_files(
   GetTopologicalMap.srv
   UpdateEdgeLegacy.srv
   LocalisePose.srv
+  GetRouteTo.srv
+  GetRouteBetween.srv
 )
 
 

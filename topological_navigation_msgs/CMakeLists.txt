@@ -69,6 +69,7 @@ add_service_files(
   GetRouteBetween.srv
   EstimateTravelTime.srv
   PredictEdgeState.srv
+  UpdateFailPolicy.srv
 )
 
 

@@ -62,6 +62,7 @@ class map_manager_2(object):
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', topological_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
         self.update_action_srv=rospy.Service('/topological_map_manager2/update_action', topological_navigation_msgs.srv.UpdateAction, self.update_action_cb)
         self.add_datum_srv=rospy.Service('/topological_map_manager2/add_datum', topological_navigation_msgs.srv.AddDatum, self.add_datum_cb)
+        self.update_fail_policy_srv=rospy.Service('/topological_map_manager2/update_fail_policy', topological_navigation_msgs.srv.UpdateFailPolicy, self.update_fail_policy_cb)
     
     
     def init_map(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
@@ -958,10 +959,10 @@ class map_manager_2(object):
         """
         Updates an edge's args (action, action type, goal etc)
         """
-        return self.update_edge(req.edge_id, req.action_name, req.action_type, req.goal, req.not_fluid)
+        return self.update_edge(req.edge_id, req.action_name, req.action_type, req.goal, req.fail_policy, req.not_fluid)
     
     
-    def update_edge(self, edge_id, action_name, action_type, goal, not_fluid):
+    def update_edge(self, edge_id, action_name, action_type, goal, fail_policy, not_fluid):
         
         node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
@@ -976,6 +977,8 @@ class map_manager_2(object):
                         edge["action_type"] = action_type
                     if goal:
                         edge["goal"] = json.loads(goal)
+                    if fail_policy:
+                        edge["fail_policy"] = fail_policy
                     if not_fluid:
                         edge["fluid_navigation"] = False
                     else:
@@ -1028,6 +1031,32 @@ class map_manager_2(object):
         try:
             self.tmap2["meta"]["datum_latitude"] = latitude
             self.tmap2["meta"]["datum_longitude"] = longitude
+            self.update()
+            self.write_topological_map(self.filename)
+            return True
+        
+        except Exception as e:
+            rospy.logerr(e)
+            return False
+        
+        
+    def update_fail_policy_cb(self, req):
+        """
+        Update he fail policy of all edges in the map
+        """  
+        return self.update_fail_policy(req.fail_policy)
+    
+    
+    def update_fail_policy(self, fail_policy):
+        
+        if not fail_policy:
+            return False
+        
+        try:
+            for node in self.tmap2["nodes"]:
+                for edge in node["node"]["edges"]:
+                    edge["fail_policy"] = fail_policy
+                        
             self.update()
             self.write_topological_map(self.filename)
             return True

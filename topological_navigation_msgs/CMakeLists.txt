@@ -67,6 +67,8 @@ add_service_files(
   LocalisePose.srv
   GetRouteTo.srv
   GetRouteBetween.srv
+  EstimateTravelTime.srv
+  PredictEdgeState.srv
 )
 
 
@@ -77,6 +79,7 @@ add_action_files(
 	FILES 
 	GotoNode.action
         ExecutePolicyMode.action
+        BuildTopPrediction.action
 )
 
 

@@ -37,6 +37,7 @@ add_service_files(
   EvaluateNode.srv
   EvaluateEdge.srv
   AddDatum.srv
+  UpdateFailPolicy.srv
 )
 
 

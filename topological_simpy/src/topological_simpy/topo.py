@@ -163,6 +163,7 @@ class TopologicalForkGraph(object):
         self.req_ret = {}  # integer, request return: mode of the node requested
         self.deadlocks = {'robot_ids': [],
                           'robot_occupied_nodes': {}}  # robots and their nodes who are in deadlock
+        self.n_deadlock = 0  # number of total deadlocks in a trail
         self.dead_locks = []  # robots who are in deadlock
         self.com_nodes = []  # the nodes that hold completed robots
         self.cold_storage_queue = []  # robots that in the front of queue
@@ -936,6 +937,8 @@ class TopologicalForkGraph(object):
                         yield self.request_node(robot_id, n)
 
                         if robot_id in self.deadlocks['robot_ids']:
+
+                            self.n_deadlock += 1
 
                             self.deadlock_coordinator(self.deadlocks['robot_ids'])
 

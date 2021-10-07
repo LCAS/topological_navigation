@@ -13,7 +13,7 @@ from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRe
 from bayesian_topological_localisation.msg import DistributionStamped, PoseObservation, LikelihoodObservation, ParticlesState
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from std_msgs.msg import String
 
 class TopologicalLocalisation():

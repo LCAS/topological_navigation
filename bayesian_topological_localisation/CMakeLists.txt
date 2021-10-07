@@ -75,7 +75,6 @@ generate_messages(
    geometry_msgs
 #   actionlib_msgs
 #   sensor_msgs
-#   strands_navigation_msgs
 )
 
 ###################################

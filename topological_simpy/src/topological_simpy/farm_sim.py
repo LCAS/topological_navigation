@@ -103,7 +103,7 @@ class FarmSim(topological_simpy.farm.Farm):
 
             # picking finished in all rows
             if len(self.active_iterations) == 0 and self.finished_picking(
-                    self.n_iteration - 1) and not inform_picking_finished:
+                    self.n_iteration - 1) and not inform_picking_finished:    #self.len(idle_robots) == self.n_robots?
                 # time_now, event
                 self.events.append([time_now, "finished picking"])
                 inform_picking_finished = True

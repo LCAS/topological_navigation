@@ -174,4 +174,7 @@ base_station_nodes: &id_base_stations
   - WayPoint141
   - WayPoint142
   - WayPoint144
+#  - WayPoint145
+#  - WayPoint146
+#  - WayPoint147
 wait_nodes: *id_base_stations

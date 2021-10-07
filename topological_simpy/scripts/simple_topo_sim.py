@@ -168,9 +168,12 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
         else:
             os.makedirs(log_dir)
 
+    n_deadlock = topo_graph.n_deadlock
     if SHOW_VIS:
         vis = topological_simpy.visualise_sim.VisualiseAgentsSim(log_dir, topo_graph, robots,
                                                                  pickers, scheduling_policy,
+                                                                 n_deadlock,
+                                                                 tmap_name=tmap_configure_file,
                                                                  show_cs=True,
                                                                  save_random=SAVE_RANDOM,
                                                                  save_final=SAVE_FINAL,
@@ -494,18 +497,20 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
 if __name__ == "__main__":
     # config_file = 'topological_simpy/config/picking_sim_combined.yaml'
     # config_file = '../config/picking_sim_riseholme_simple.yaml'
-    # config_file = '../config/picking_sim_riseholme_4_bases_2_parellel.yaml'
-    config_file = '../config/picking_sim_riseholme_4_bases.yaml'
+    # config_file = '../config/picking_sim_riseholme.yaml'
+    config_file = '../config/picking_sim_riseholme_4_bases_2_parellel.yaml'
+    # config_file = '../config/picking_sim_riseholme_4_bases.yaml'
     # get the config params
     # config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 
     env = simpy.RealtimeEnvironment(factor=SIM_RT_FACTOR, strict=False)
     # env = simpy.Environment()
     # tmap_config_file = 'topological_simpy/maps/tmap.yaml'
-    tmap_config_file = '../maps/riseholme_4_bases_large.tmap2'   # default
+    # tmap_config_file = '../maps/riseholme_4_bases_large.tmap2'   # default
     # tmap_config_file = '../maps/edited_riseholme_3.tmap2'  # default
+    # tmap_config_file = '../maps/riseholme.tmap2'  # default
     # tmap_config_file = '../maps/clockhouse.tmap'
-    # tmap_config_file = '../maps/riseholme_4_bases_2_parallel_3.tmap2'   # default
+    tmap_config_file = '../maps/riseholme_4_bases_2_parallel_4.tmap2'   # default
 
     # parameters for running the simulation
     n_trials = 1
@@ -520,8 +525,8 @@ if __name__ == "__main__":
     for n_picker in range(min_n_pickers, max_n_pickers):
         for n_robot in range(min_n_robots, max_n_robots):
             for schedule_policy in policies:
-                # pool = mp.Pool(mp.cpu_count())
-                pool = mp.Pool(1)
+                pool = mp.Pool(mp.cpu_count())
+                # pool = mp.Pool(1)
                 single_start_time_real = time.time()
                 for trial in range(n_trials):
                     result = pool.apply_async(run_sim, (n_picker, n_robot, schedule_policy, trial, tmap_config_file, ))

@@ -23,7 +23,8 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
     This extension class updates to match topological map2 format.
     """
 
-    def __init__(self, log_dir, topo_graph, robots, pickers, policy, show_cs=False, save_random=False, save_final=False, trial=0):
+    def __init__(self, log_dir, topo_graph, robots, pickers, policy, n_deadlock, tmap_name, show_cs=False, save_random=False,
+                 save_final=False, trial=0):
 
         super(VisualiseAgentsSim, self).__init__(topo_graph, robots, pickers, policy, show_cs=False,
                                                  save_random=False, trial=0)
@@ -35,8 +36,20 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
         self.save_final_fig = save_final
         self.log_dir = log_dir
 
+        self.heatmap_values = None
+        self.heatmap_index_max_x = None
+        self.heatmap_index_min_x = None
+        self.heatmap_index_min_y = None
+        self.heatmap_index_max_y = None
+        self.heatmap_node_pose_x_list = None
+        self.heatmap_node_pose_y_list = None
+        self.tmap_name = tmap_name
+        self.n_deadlock = n_deadlock
+
         self.fig_name_base = self.log_dir + "/P%d_R%d_S%s_T%d_" % (
             self.n_pickers, self.n_robots, self.policy, self.trial)
+
+        self.f_handle = open(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_heatmap.yaml", "w")
 
     def init_plot(self):
         """Initialise the plot frame"""
@@ -247,7 +260,8 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
         self.fig.canvas.draw()
         if self.save_fig:
-            self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_S_%.1f.eps" % self.graph.env.now)
+            self.fig.savefig(
+                self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_S_%.1f.eps" % self.graph.env.now)
 
         return (self.static_lines + self.picker_position_lines +
                 self.picker_status_texts + self.robot_position_lines + self.robot_status_texts)
@@ -269,6 +283,7 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
         Plot the heatmap of node usage
         """
         valid_node_log = dict((k, v) for k, v in self.graph.node_log.iteritems() if v)
+        valid_node_log = dict((k, v) for k, v in self.graph.node_log.iteritems())   # take all nodes
         names = list(valid_node_log.keys())
         values = [len(value) for value in valid_node_log.values()]
         node_pose_x_list = []
@@ -314,6 +329,17 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
         self.ax[1].set_xlabel('Node pose y', fontsize=20)
         self.ax[1].set_ylabel('Node pose x', fontsize=20)
 
+        # save data for logs
+        self.heatmap_values = values
+        self.heatmap_index_max_x = max_x
+        self.heatmap_index_min_x = min_x
+        self.heatmap_index_min_y = min_y
+        self.heatmap_index_max_y = max_y
+        self.heatmap_node_pose_x_list = node_pose_x_list
+        self.heatmap_node_pose_y_list = node_pose_y_list
+
+        self.n_deadlock = self.graph.n_deadlock
+
     def update_plot(self):
         """update the positions of the dynamic objects"""
         for i in range(self.n_pickers):
@@ -357,7 +383,8 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
 
         if self.save_fig:
             if random.random() < 0.1:
-                self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":", "_") + "_S_%.1f.eps" % self.graph.env.now)
+                self.fig.savefig(self.fig_name_base + datetime.now().isoformat().replace(":",
+                                                                                         "_") + "_S_%.1f.eps" % self.graph.env.now)
 
         return (self.static_lines + self.picker_position_lines + self.picker_status_texts +
                 self.robot_position_lines + self.robot_status_texts)
@@ -374,3 +401,15 @@ class VisualiseAgentsSim(topological_simpy.visualise.VisualiseAgents):
                              bbox_inches=extent.expanded(1.22, 1.24))
 
         matplotlib.pyplot.close(self.fig)
+
+        # heatmap details
+        print >> self.f_handle, "# heatmap details"
+        print >> self.f_handle, "map_name: %s" % self.tmap_name.replace('../maps/', '').replace('.', '_')
+        print >> self.f_handle, "trial: %d" % self.trial
+        print >> self.f_handle, "n_deadlock: %d" % self.n_deadlock
+        print >> self.f_handle, "simulation_time: %0.1f" % self.graph.env.now
+        print >> self.f_handle, "heatmap_values: %s" % self.heatmap_values
+        print >> self.f_handle, "heatmap_node_pose_x_list: %s" % self.heatmap_node_pose_x_list
+        print >> self.f_handle, "heatmap_node_pose_y_list: %s" % self.heatmap_node_pose_y_list
+
+        self.f_handle.close()

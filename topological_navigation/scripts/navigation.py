@@ -463,7 +463,7 @@ class TopologicalNavServer(object):
                 rospy.loginfo("Fatal Fail")
                 self.publish_feedback_exec_policy(GoalStatus.PREEMPTED)
             elif self.cancelled:
-                rospy.loginfo("Navigation Failed")
+                rospy.logwarn("Navigation Failed")
                 self.publish_feedback_exec_policy(GoalStatus.ABORTED)
 
         return succeeded

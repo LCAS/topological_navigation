@@ -17,7 +17,7 @@ import sys
 import yaml
 
 from geometry_msgs.msg import Pose
-from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
+from topological_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 import mongodb_store.util as dc_util
 
 #import pymongo

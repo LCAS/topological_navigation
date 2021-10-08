@@ -11,7 +11,7 @@ import sys
 import rospy
 import matplotlib.pyplot
 
-import strands_navigation_msgs.msg
+import topological_navigation_msgs.msg
 
 
 class TopoMapPlotter(object):
@@ -26,7 +26,7 @@ class TopoMapPlotter(object):
         self.node_names = []
         rospy.loginfo("Waiting for topo_map")
         while not self.rec_map:
-            self.topo_map_sub = rospy.Subscriber("/topological_map", strands_navigation_msgs.msg.TopologicalMap, self.topo_map_cb)
+            self.topo_map_sub = rospy.Subscriber("/topological_map", topological_navigation_msgs.msg.TopologicalMap, self.topo_map_cb)
             rospy.sleep(0.5)
         rospy.loginfo("Received topo_map")
 

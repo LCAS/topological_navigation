@@ -2,13 +2,13 @@
 
 import sys
 import rospy
-import strands_navigation_msgs.srv 
+import topological_navigation_msgs.srv 
 
 
 def content_client(node, content):
     rospy.wait_for_service('/topological_map_manager/add_content_to_node')
     try:
-        cont = rospy.ServiceProxy('/topological_map_manager/add_content_to_node', strands_navigation_msgs.srv.AddContent)
+        cont = rospy.ServiceProxy('/topological_map_manager/add_content_to_node', topological_navigation_msgs.srv.AddContent)
         resp1 = cont(node, content)
         return resp1
     except rospy.ServiceException, e:

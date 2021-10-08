@@ -7,11 +7,11 @@ import sys
 import math
 
 
-from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
+from topological_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 from geometry_msgs.msg import Pose
 import mongodb_store.util as dc_util
 from mongodb_store.message_store import MessageStoreProxy
-import strands_navigation_msgs.msg
+import topological_navigation_msgs.msg
 
 
 def get_edge_id(source, target, eids):
@@ -216,7 +216,7 @@ def add_localise_by_topic(tmap, node, json_str):
     #query_meta["map"] = self.nodes.map
 
     #print query, query_meta
-    available = msg_store.query(strands_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
+    available = msg_store.query(topological_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
     #print len(available)
     if len(available) != 1:
          #succeded = False
@@ -234,7 +234,7 @@ def add_localise_by_topic(tmap, node, json_str):
 
 if __name__ == '__main__':
 
-    rospy.init_node('strands_navigation_migration')
+    rospy.init_node('topological_navigation_migration')
     host = rospy.get_param("mongodb_host")
     port = rospy.get_param("mongodb_port")
     client = pymongo.MongoClient(host, port)

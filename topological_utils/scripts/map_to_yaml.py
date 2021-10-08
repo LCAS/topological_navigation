@@ -13,7 +13,7 @@ from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 
 from mongodb_store.message_store import MessageStoreProxy
 import topological_navigation.msg

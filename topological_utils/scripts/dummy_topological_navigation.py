@@ -5,8 +5,8 @@ import topological_navigation.testing
 import rospy
 from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.manager import map_manager
-from topological_navigation.msg import GotoNodeAction, GotoNodeResult, GotoNodeFeedback
-from strands_navigation_msgs.msg import *
+from topological_navigation_msgs.msg import GotoNodeAction, GotoNodeResult, GotoNodeFeedback
+from topological_navigation_msgs.msg import *
 import actionlib 
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String
@@ -38,7 +38,7 @@ class DummyTopologicalNavigator():
         self.simulate_time = simulate_time
         
         if self.simulate_time:
-            from strands_navigation_msgs.srv import PredictEdgeState
+            from topological_navigation_msgs.srv import PredictEdgeState
             time_srv_name = 'topological_prediction/predict_edges'
             try:
                 rospy.wait_for_service(time_srv_name, timeout=120)

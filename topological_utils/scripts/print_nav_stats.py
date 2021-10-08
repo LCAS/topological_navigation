@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import rospy
-from strands_navigation_msgs.msg import TopologicalMap, NavStatistics, NavRoute
+from topological_navigation_msgs.msg import TopologicalMap, NavStatistics, NavRoute
 from mongodb_store.message_store import MessageStoreProxy
-from strands_executive_msgs.msg import Task
-from strands_executive_msgs.srv import AddTasks
-from strands_executive_msgs import task_utils
+#from strands_executive_msgs.msg import Task
+#from strands_executive_msgs.srv import AddTasks
+#from strands_executive_msgs import task_utils
 
 class NavRelaxant(object):
     def __init__(self, count_threshold):

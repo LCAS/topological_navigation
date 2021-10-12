@@ -51,7 +51,7 @@
 # use_cold_storage: true/false, unload at cold storage / local storage
 # cold_storage_node: string, name of the cold storage node in topo map
 ##-----------------------------------------------------------------------------
-n_polytunnels: 20
+n_polytunnels: 1
 n_farm_rows:
   func: copy
   value: [3]
@@ -59,30 +59,30 @@ second_head_lane: false
 # WayPoint108 is the head of row_01, row_02; WayPoint107 is the head of row_03, row04;
 # WayPoint106 is the head of row_01, row_02; WayPoint105 is the head of row_03, row04;
 # ...
-pri_head_nodes:
-  polytunnel_01: [WayPoint108, WayPoint107]
-  polytunnel_02: [WayPoint106, WayPoint105]
-  polytunnel_03: [WayPoint104, WayPoint103]
-  polytunnel_04: [WayPoint102, WayPoint101]
-  polytunnel_05: [WayPoint100, WayPoint99]
-  polytunnel_06: [WayPoint98, WayPoint97]
-  polytunnel_07: [WayPoint152, WayPoint153]
-  polytunnel_08: [WayPoint155, WayPoint156]
-  polytunnel_09: [WayPoint157, WayPoint158]
-  polytunnel_10: [WayPoint160, WayPoint161]
-  polytunnel_11: [WayPoint163, WayPoint164]
-  polytunnel_12: [WayPoint165, WayPoint166]
-  polytunnel_13: [WayPoint167, WayPoint168]
-  polytunnel_14: [WayPoint170, WayPoint171]
-  polytunnel_15: [WayPoint172, WayPoint173]
-  polytunnel_16: [WayPoint174, WayPoint175]
-  polytunnel_17: [WayPoint176, WayPoint177]
-  polytunnel_18: [WayPoint179, WayPoint180]
-  polytunnel_19: [WayPoint181, WayPoint182]
-  polytunnel_20: [WayPoint183, WayPoint184]
+pri_head_nodes: t%d-r%d-c0
+#  polytunnel_01: [WayPoint108, WayPoint107]
+#  polytunnel_02: [WayPoint106, WayPoint105]
+#  polytunnel_03: [WayPoint104, WayPoint103]
+#  polytunnel_04: [WayPoint102, WayPoint101]
+#  polytunnel_05: [WayPoint100, WayPoint99]
+#  polytunnel_06: [WayPoint98, WayPoint97]
+#  polytunnel_07: [WayPoint152, WayPoint153]
+#  polytunnel_08: [WayPoint155, WayPoint156]
+#  polytunnel_09: [WayPoint157, WayPoint158]
+#  polytunnel_10: [WayPoint160, WayPoint161]
+#  polytunnel_11: [WayPoint163, WayPoint164]
+#  polytunnel_12: [WayPoint165, WayPoint166]
+#  polytunnel_13: [WayPoint167, WayPoint168]
+#  polytunnel_14: [WayPoint170, WayPoint171]
+#  polytunnel_15: [WayPoint172, WayPoint173]
+#  polytunnel_16: [WayPoint174, WayPoint175]
+#  polytunnel_17: [WayPoint176, WayPoint177]
+#  polytunnel_18: [WayPoint179, WayPoint180]
+#  polytunnel_19: [WayPoint181, WayPoint182]
+#  polytunnel_20: [WayPoint183, WayPoint184]
 sec_head_nodes: None
 
-row_nodes_config_type: semi_auto_generate
+row_nodes_config_type: first_row_node_is_pri_head_node
 # only given the number of nodes for each polytunnel
 row_nodes: [45, 85, 85, 85, 83, 83, 83, 83, 81, 81, 74, 42, 53, 53, 53, 53, 50, 50, 50, 50]
 
@@ -130,7 +130,7 @@ n_iteration: 1
 # des_env: simpy or ros, type of environment to run DES. simpy - as fast as
 #                        possible, ros - realtime (scalable)
 ##-----------------------------------------------------------------------------
-map_name: clockhouse
+map_name: clockhouse_transportation_rowtagged
 des_env: simpy
 
 
@@ -203,45 +203,7 @@ robot_unloading_time: [10.0]
 # base station used as robot home and waiting place when the cold storage node is busy
 # number of base stations should equal to number of robots
 base_station_nodes: &id_base_stations
-  - WayPoint108
-  - WayPoint107
-  - WayPoint106
-  - WayPoint105
-  - WayPoint104
-  - WayPoint103
-  - WayPoint102
-  - WayPoint101
-  - WayPoint100
-  - WayPoint99
-  - WayPoint98
-  - WayPoint97
-  - WayPoint152
-  - WayPoint153
-  - WayPoint155
-  - WayPoint156
-  - WayPoint157
-  - WayPoint158
-  - WayPoint160
-  - WayPoint161
-  - WayPoint163
-  - WayPoint164
-  - WayPoint165
-  - WayPoint166
-  - WayPoint167
-  - WayPoint168
-  - WayPoint170
-  - WayPoint171
-  - WayPoint172
-  - WayPoint173
-  - WayPoint174
-  - WayPoint175
-  - WayPoint176
-  - WayPoint177
-  - WayPoint179
-  - WayPoint180
-  - WayPoint181
-  - WayPoint182
-  - WayPoint183
-  - WayPoint184
+  - s9
+  - s11
 
 wait_nodes: *id_base_stations

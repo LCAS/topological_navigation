@@ -46,43 +46,91 @@ def check_mimic_des_params(config_data):
     return missing_params
 
 
-def get_head_nodes(node_dict_str, node_dict, n_polytunnels, n_farm_rows):
+def get_head_nodes(node_dict_str, node_dict, n_polytunnels, n_farm_rows, row_nodes_config_type=None):
     """
     """
     nodes = []
     # check all required info is available
-    for poly_num in range(n_polytunnels):
-        poly = "polytunnel_%02d" % (poly_num + 1)
-        if poly not in node_dict:
-            msg = "%s info missing from config_data['%s']" % (poly, node_dict_str)
-            raise Exception(msg)
-        elif len(node_dict[poly]) != n_farm_rows[poly_num] + 1:
-            msg = "Not all %s row info available for %s" % (node_dict_str, poly)
-            raise Exception(msg)
-        else:
-            for item in node_dict[poly]:
-                nodes.append(item)
+    if row_nodes_config_type == 'full_details' or row_nodes_config_type is None:
+        for poly_num in range(n_polytunnels):
+            poly = "polytunnel_%02d" % (poly_num + 1)
+            if poly not in node_dict:
+                msg = "%s info missing from config_data['%s']" % (poly, node_dict_str)
+                raise Exception(msg)
+            elif len(node_dict[poly]) != n_farm_rows[poly_num] + 1:
+                msg = "Not all %s row info available for %s" % (node_dict_str, poly)
+                raise Exception(msg)
+            else:
+                for item in node_dict[poly]:
+                    nodes.append(item)
+
+    elif row_nodes_config_type == 'semi_auto_generate':
+        for poly_num in range(n_polytunnels):
+            poly = "polytunnel_%02d" % (poly_num + 1)
+            if poly not in node_dict:
+                msg = "%s info missing from config_data['%s']" % (poly, node_dict_str)
+                raise Exception(msg)
+            elif (n_farm_rows[poly_num] + 1)/len(node_dict[poly]) != 2:
+                msg = "Every head_node should connect to two rows"
+                raise Exception(msg)
+            else:
+                for item in node_dict[poly]:
+                    for i in range(2):
+                        nodes.append(item)
+    elif row_nodes_config_type == 'first_row_node_is_pri_head_node':
+        for poly_num in range(n_polytunnels):
+            if 't%d-r%d' not in node_dict:
+                msg = "pri_head_nodes:%s format is not set in config_data['%s']" % (node_dict, node_dict_str)
+                raise Exception(msg)
+            elif node_dict == 't%d-r%d-c0':
+                for i in range(n_farm_rows[poly_num] + 1):
+                    nodes.append("t%d-r%d-c0" % (poly_num, i))
+
+    else:
+        msg = "row_nodes_config_type: %s must be one of ['full_details', 'semi_auto_generate', None]" % row_nodes_config_type
+        raise Exception(msg)
     return nodes
 
 
-def get_row_nodes(row_nodes, n_polytunnels, n_farm_rows):
+def get_row_nodes(row_nodes, n_polytunnels, n_farm_rows, row_nodes_config_type=None, row_node_name_format=None):
     """
     """
     nodes = []
     # check all required info is available
-    for poly_num in range(n_polytunnels):
-        poly = "polytunnel_%02d" % (poly_num + 1)
-        if poly not in row_nodes:
-            msg = "%s info missing from config_data['row_nodes']" % (poly)
+    if row_nodes_config_type == 'full_details' or row_nodes_config_type is None:
+        for poly_num in range(n_polytunnels):
+            poly = "polytunnel_%02d" % (poly_num + 1)
+            if poly not in row_nodes:
+                msg = "%s info missing from config_data['row_nodes']" % poly
+                raise Exception(msg)
+            else:
+                if len(row_nodes[poly].keys()) != n_farm_rows[poly_num] + 1:
+                    msg = "Not all row_nodes are available for %s" % poly
+                    raise Exception(msg)
+                else:
+                    # there are (n_farm_rows[poly_num] + 1) topo_nav_rows
+                    for row_num in range(n_farm_rows[poly_num] + 1):
+                        nodes.append(row_nodes[poly]["row_%02d" % (row_num + 1)])
+
+    elif row_nodes_config_type == 'semi_auto_generate' or row_nodes_config_type == 'first_row_node_is_pri_head_node':
+        if row_node_name_format is None:
+            msg = "row_node_name_format is None, config it in the config_file in the config folder"
             raise Exception(msg)
-        else:
-            if len(row_nodes[poly].keys()) != n_farm_rows[poly_num] + 1:
-                msg = "Not all row_nodes are available for %s" % (poly)
+        for poly_num in range(n_polytunnels):
+            poly = "polytunnel_%02d" % (poly_num + 1)
+            if len(row_nodes) < n_polytunnels:
+                msg = "There are %d rows' node numbers are not specified" % (n_polytunnels - len(row_nodes))
                 raise Exception(msg)
             else:
                 # there are (n_farm_rows[poly_num] + 1) topo_nav_rows
                 for row_num in range(n_farm_rows[poly_num] + 1):
-                    nodes.append(row_nodes[poly]["row_%02d" % (row_num + 1)])
+                    nodes.append([row_node_name_format % (
+                        poly_num, row_num, node_idx) for node_idx in range(row_nodes[poly_num])])
+
+    else:
+        msg = "row_nodes_config_type: %s must be one of ['full_details', 'semi_auto_generate', None]" % row_nodes_config_type
+        raise Exception(msg)
+
     return nodes
 
 
@@ -98,6 +146,8 @@ def get_mimic_des_params(config_file, n_pickers=None, n_robots=None):
     config_params = {"map_name": config_data["map_name"], "n_polytunnels": config_data["n_polytunnels"]}
     # extract params
     # map-related
+    config_params["row_nodes_config_type"] = config_data["row_nodes_config_type"]
+    config_params["row_node_name_format"] = config_data["row_node_name_format"]
     assert config_params["n_polytunnels"] > 0
     config_params["n_farm_rows"] = config.graph_param_to_poly_list(
         "n_farm_rows", config_data["n_farm_rows"]["value"],
@@ -115,17 +165,21 @@ def get_mimic_des_params(config_file, n_pickers=None, n_robots=None):
     config_params["pri_head_nodes"] = get_head_nodes("pri_head_nodes",
                                                      config_data["pri_head_nodes"],
                                                      config_params["n_polytunnels"],
-                                                     config_params["n_farm_rows"])
+                                                     config_params["n_farm_rows"],
+                                                     config_params["row_nodes_config_type"])
     config_params["second_head_lane"] = config_data["second_head_lane"]
     if config_params["second_head_lane"]:
         config_params["sec_head_nodes"] = get_head_nodes("sec_head_nodes",
                                                          config_data["sec_head_nodes"],
                                                          config_params["n_polytunnels"],
-                                                         config_params["n_farm_rows"])
+                                                         config_params["n_farm_rows"],
+                                                         config_params["row_nodes_config_type"])
     # row_nodes
     config_params["row_nodes"] = get_row_nodes(config_data["row_nodes"],
                                                config_params["n_polytunnels"],
-                                               config_params["n_farm_rows"])
+                                               config_params["n_farm_rows"],
+                                               config_params["row_nodes_config_type"],
+                                               config_params["row_node_name_format"])
     # yield per node
     config_params["yield_per_node"] = config.graph_param_list_check("yield_per_node",
                                                                     config_data["yield_per_node"][

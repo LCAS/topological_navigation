@@ -321,13 +321,27 @@ class FarmSim(topological_simpy.farm.Farm):
                                      % (self.env.now, robot_id, robot.graph.dodge[robot_id]['cause']))
                         if robot.graph.dodge[robot_id]['cause'] == 'deadlock':
                             try:
-                                robot.graph.goto_process[robot_id].interrupt('quit_from_put_queue')
+                                if robot.graph.goto_process[robot_id].is_alive:
+                                    robot.graph.goto_process[robot_id].interrupt('quit_from_put_queue')
+                                else:
+                                    # robot may be parking, remove from interrupt list
+                                    robot_ids_deadlock = robot.graph.deadlocks['robot_ids']
+                                    for robot_id_deadlock in robot.graph.deadlocks['robot_ids']:
+                                        if not robot.graph.goto_process[robot_id].is_alive:
+                                            robot_ids_deadlock.remove(robot_id_deadlock)
+                                    robot_id_to_interrupt = robot_ids_deadlock.pop()
+                                    self.loginfo('%.1f: %s go_to process dead, %s is to interrupt by %s'
+                                                 % (self.env.now, robot_id, robot_id_to_interrupt,
+                                                    robot.graph.dodge[robot_id]['cause']))
+                                    robot.graph.goto_process[robot_id_to_interrupt].interrupt('quit_from_put_queue')
+
                             except Exception as exc:
                                 print(exc)
                         elif robot.graph.dodge[robot_id]['cause'] == 'parking':
                             # Another robot gonna park for a long time, inform other robot who are waiting to replan route
                             try:
-                                robot.graph.goto_process[robot_id].interrupt(robot.graph.dodge[robot_id]['cause'])
+                                if robot.graph.goto_process[robot_id].is_alive:
+                                    robot.graph.goto_process[robot_id].interrupt(robot.graph.dodge[robot_id]['cause'])
                             except Exception as exc:
                                 print(exc)
                         else:

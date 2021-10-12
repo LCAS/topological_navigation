@@ -158,7 +158,7 @@ class TopologicalForkGraph(object):
 
         self._node_log = {}
         self._hold = {}
-        self.active_nodes = {}   # keep all the occupied nodes for checking that any two robots requesting each other's nodes
+        self.active_nodes = {}  # keep all the occupied nodes for checking that any two robots requesting each other's nodes
 
         self.req_ret = {}  # integer, request return: mode of the node requested
         self.deadlocks = {'robot_ids': [],
@@ -170,7 +170,7 @@ class TopologicalForkGraph(object):
 
         self.base_stations = base_stations
         self.wait_nodes = wait_nodes
-        self.cold_storage_usage_queue = []   # robots that need to use cold storage for unloading will join the queue
+        self.cold_storage_usage_queue = []  # robots that need to use cold storage for unloading will join the queue
         self.cold_storage_queue_wait_time = []
 
         self.targets = {}
@@ -275,6 +275,7 @@ class TopologicalForkGraph(object):
         The bellow methods are used for model topological nodes as containers, each container can only hold one robot.
         Pickers don't use this container feature but use the same topological map. 
         """
+
     def init_agent_nodes(self, robot_id, transportation_rate,
                          transportation_rate_std, unloading_time, assigned_picker_n_trays):
         """
@@ -498,7 +499,10 @@ class TopologicalForkGraph(object):
 
         for robot_id in all_robots:
             # there should be only one robot targets at storage at a moment, or back from storage
-            if self.targets[robot_id]['target'] == self.cold_storage_node or robot_id == self.cold_storage_usage_queue[0]['robot_id']:
+            storage_queue_robot = '' if len(self.cold_storage_usage_queue) == 0 else self.cold_storage_usage_queue[0]['robot_id']
+            row_id_curr = self.get_row_id_of_row_node(self.agent_nodes[robot_id])
+            local_storage_node = '' if row_id_curr is None else self.local_storage_nodes[row_id_curr]
+            if self.targets[robot_id]['target'] == self.cold_storage_node if not self.use_local_storage else local_storage_node or robot_id == storage_queue_robot:
                 self.targets[robot_id]['priority'] = 0  # highest priority, all other robots doge
                 to_be_ranked_robots.remove(robot_id)
 
@@ -516,7 +520,8 @@ class TopologicalForkGraph(object):
             # robot initial priority = 100, if target is base, then increase by 1000. Note: the robot's priority could
             #   be 1000 by now if known as robot_dodge in last step
             elif self.targets[robot_id]['target'] == self.base_stations[robot_id]:
-                self.targets[robot_id]['priority'] += 1000  # TODO[today]: if robot['target'] is back from storage, priority should still be 0!
+                self.targets[robot_id][
+                    'priority'] += 1000  # TODO[today]: if robot['target'] is back from storage, priority should still be 0!
 
             # TODO[future]: optimise priority value. At present, take the target as pickers current node, so the robot
             #   has priority to get to the picker.
@@ -571,7 +576,7 @@ class TopologicalForkGraph(object):
             yield self.env.timeout(self.loop_timeout)
             for robot_id in self.dodge.keys():
                 if self.dodge[robot_id]['dodged']:
-                    self.other_robot_dodged = True   # todo: use local variable?
+                    self.other_robot_dodged = True  # todo: use local variable?
                     self.dodge[robot_id]['dodged'] = False
                     break
             if self.other_robot_dodged:
@@ -767,19 +772,22 @@ class TopologicalForkGraph(object):
             elif self.t_mode[robot_id] == 31:
                 self.add_cold_storage_usage_queue(robot_id, self.env.now)
                 if self.curr_node[robot_id] != self.base_stations[robot_id]:
-                    self.goto_process[robot_id] = self.env.process(self._goto_container(self.base_stations[robot_id], robot_id))
+                    self.goto_process[robot_id] = self.env.process(
+                        self._goto_container(self.base_stations[robot_id], robot_id))
                     yield self.goto_process[robot_id]
                 self.t_mode[robot_id] = 32
 
             elif self.t_mode[robot_id] == 32:
                 try:
-                    self.start_parking_at_base(robot_id, self.env.now)
-                    wait_info = self.get_queue_wait_time(robot_id)
-                    # if wait_info['wait_time'] < 0:  # TODO: never reaching, to be removed
-                    #     print("wait_info['wait_time']: %f" % wait_info['wait_time'])
-                    self.extend_hold_time(self.curr_node[robot_id],
-                                          wait_info['wait_time'])
-
+                    try:
+                        self.start_parking_at_base(robot_id, self.env.now)
+                        wait_info = self.get_queue_wait_time(robot_id)
+                        # if wait_info['wait_time'] < 0:  # TODO: never reaching, to be removed
+                        #     print("wait_info['wait_time']: %f" % wait_info['wait_time'])
+                        self.extend_hold_time(self.curr_node[robot_id],
+                                              wait_info['wait_time'])
+                    except Exception as exc:
+                        print(exc)
                     # todo: inform other robots who are waiting for this node to interrupt and replan route
                     #       1. test: two robots are waiting for this base node, all interrupted, then still working?
                     for robot_name in self.active_nodes.keys():
@@ -791,8 +799,11 @@ class TopologicalForkGraph(object):
                                 yield self.env.timeout(self.loop_timeout)  # back to coordinator -> farm
 
                     # yield self.env.timeout(wait_info['wait_time'])
-                    while robot_id not in self.get_cold_storage_usage_queue_head()['robot_id']:
-                        yield self.env.timeout(self.loop_timeout)
+                    try:
+                        while robot_id not in self.get_cold_storage_usage_queue_head()['robot_id']:
+                            yield self.env.timeout(self.loop_timeout)
+                    except Exception as exc:
+                        print(exc)
                     self.t_mode[robot_id] = 33
                 except Exception as exc:
                     print('parking bug')
@@ -811,7 +822,7 @@ class TopologicalForkGraph(object):
                         break
                 self.goto_process[robot_id] = self.env.process(self._goto_container(target, robot_id))
                 yield self.goto_process[robot_id]
-                self. t_mode[robot_id] = 4
+                self.t_mode[robot_id] = 4
 
     def goto_scheduler_mode(self, target, robot_id):
         """
@@ -966,7 +977,8 @@ class TopologicalForkGraph(object):
                                 # then other robots will be interrupted in yield self.request_node(robot_id, n), and go
                                 # to exception.
                                 try:
-                                    self.loginfo('- %5.1f: %s waiting for other robot to dodge' % (self.env.now, robot_id))
+                                    self.loginfo(
+                                        '- %5.1f: %s waiting for other robot to dodge' % (self.env.now, robot_id))
                                     yield self.env.process(self.wait_to_proceed())
                                     self.loginfo('+ %5.1f: other robot dodged, %s continue old route %s'
                                                  % (self.env.now, robot_id, route_nodes_to_go))
@@ -979,9 +991,10 @@ class TopologicalForkGraph(object):
                             self.log_cost(robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
                             self.remove_robot_from_deadlock(robot_id)
 
-                            self.inform_dodged(robot_id, 'remove_deadlock')  # TODO[today], then reset all dodge? Or reset when robot reaching next node?
+                            self.inform_dodged(robot_id,
+                                               'remove_deadlock')  # TODO[today], then reset all dodge? Or reset when robot reaching next node?
 
-                            self.other_robot_dodged = True   #  TODO [to be removed] other robots could read from self.dodge that some robot has dodged
+                            self.other_robot_dodged = True  # TODO [to be removed] other robots could read from self.dodge that some robot has dodged
 
                             # TODO: How to ensure that the deadlock will be resolved? --> the dodge route is promised to
                             #       be working(unless curr_node_edges is None, i.e., deadlock in single track),
@@ -1007,7 +1020,7 @@ class TopologicalForkGraph(object):
                     #     self.dodge[robot_id]['to_dodge'] = False
                     # if self.dodge[robot_id]['dodged'] is False:
                     #     self.dodge[robot_id]['dodged'] = True
-                    
+
                     interrupted = interrupt.cause  # 'deadlock'    # interrupted by farm.scheduler_monitor: robot._goto_process.interrupt()
                     self.loginfo('  %5.1f: @@@ %s INTERRUPTED when in deadlock, quiting from put_queue of %s' %
                                  (self.env.now, robot_id, n))
@@ -1019,10 +1032,12 @@ class TopologicalForkGraph(object):
                     route_nodes = self.deadlock_dodge(robot_id, n, target, new_route=None)
                     idx = 0
                     self.log_cost(robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
-                    self.remove_robot_from_deadlock(robot_id)   # todo: [next] unify the deadlocks information: deadlocks & dead_locks
+                    self.remove_robot_from_deadlock(
+                        robot_id)  # todo: [next] unify the deadlocks information: deadlocks & dead_locks
 
                     # prepare to change to the new route_nodes
-                    self.cancel_hold_time(n, hold_time)  # cancel the hold_time just set todo double check: 'start_moment' needs to be canceled?
+                    self.cancel_hold_time(n,
+                                          hold_time)  # cancel the hold_time just set todo double check: 'start_moment' needs to be canceled?
                     self.loginfo('^ %5.1f: %s dodging at NEW route: %s' %
                                  (self.env.now, robot_id, route_nodes))
                     # reset dodge flags todo: remove redundant flags
@@ -1034,8 +1049,9 @@ class TopologicalForkGraph(object):
                 # waiting for a parked node, may take waste too much time to wait, replan route
                 elif interrupt.cause == 'parking':
                     interrupted = interrupt.cause
-                    self.loginfo('  %5.1f: @@@ %s INTERRUPTED when waiting for a base node, quiting from put_queue of %s' %
-                                 (self.env.now, robot_id, n))
+                    self.loginfo(
+                        '  %5.1f: @@@ %s INTERRUPTED when waiting for a base node, quiting from put_queue of %s' %
+                        (self.env.now, robot_id, n))
                     yield self.release_node_from_put_queue_return_remove(robot_id, n)
 
                     # change route here, reset idx of while loop
@@ -1043,7 +1059,8 @@ class TopologicalForkGraph(object):
                     route_nodes = self.deadlock_dodge(robot_id, n, target, new_route=None)
                     idx = 0
                     self.log_cost(robot_id, 0, 0, 'CHANGE ROUTE')  # for monitor
-                    self.cancel_hold_time(n, hold_time)  # cancel the hold_time just set todo[next]: why the hold_time was not stored in hold?
+                    self.cancel_hold_time(n,
+                                          hold_time)  # cancel the hold_time just set todo[next]: why the hold_time was not stored in hold?
                     self.loginfo('^ %5.1f: %s dodging at NEW route: %s' %
                                  (self.env.now, robot_id, route_nodes))
 
@@ -1054,7 +1071,7 @@ class TopologicalForkGraph(object):
                     continue
 
                 else:
-                    break    # interrupted by other undefined reason, break out of the while loop and carry on with the interrupt info
+                    break  # interrupted by other undefined reason, break out of the while loop and carry on with the interrupt info
 
             except TypeError:
                 self.loginfo('  %5.1f: %s INTERRUPTED:TypeError, from node %s going to node %s'
@@ -1120,7 +1137,8 @@ class TopologicalForkGraph(object):
 
         if interrupted is not None:
             # When the robot has a goal running and be assigned a new goal node
-            self.loginfo('  %5.1f: %s INTERRUPTED at %s BY %s' % (self.env.now, robot_id, self.curr_node[robot_id], interrupted))
+            self.loginfo(
+                '  %5.1f: %s INTERRUPTED at %s BY %s' % (self.env.now, robot_id, self.curr_node[robot_id], interrupted))
             self.loginfo('  %5.1f: %s ABORTED at %s' % (self.env.now, robot_id, self.curr_node[robot_id]))
             self.log_cost(robot_id, 0, 0, 'ABORTED')  # for monitor
             # self.interrupted = True
@@ -1133,11 +1151,11 @@ class TopologicalForkGraph(object):
                 # yield self.goto_process[robot_id]
                 # self.interrupted = False
             elif interrupted == 'travelling':
-                pass    # todo
+                pass  # todo
             elif interrupted == 'no_route':
-                pass    # todo
+                pass  # todo
             elif interrupted == 'waiting':
-                pass    # todo
+                pass  # todo
 
         else:
             self.update_dist_cost_to_target(robot_id, self.curr_node[robot_id], target, 0)
@@ -1172,7 +1190,7 @@ class TopologicalForkGraph(object):
                                               'target_node': target,
                                               'dist_cost': route_dist_cost}
         return self.dist_cost_to_target
-    
+
     def add_cold_storage_usage_queue(self, robot_id, join_queue_time):
         """
         robots that need to use cold storage for unloading will join the queue
@@ -1236,7 +1254,7 @@ class TopologicalForkGraph(object):
                               'start_parking_time: None/float,
                               'wait_time': float,
                               'use_time': float}
-        Note: in the comment bellow, teh robots in the cold_storage_usage_queue will be referred as:
+        Note: in the comment bellow, the robots in the cold_storage_usage_queue will be referred as:
                 robot[i] -- current robot in the cold_storage_usage_queue
                 robot[i-1] -- previous robot  in the cold_storage_usage_queue
         """
@@ -1256,10 +1274,10 @@ class TopologicalForkGraph(object):
             robot_id = self.cold_storage_usage_queue[0]['robot_id']
             curr_dist_to_base.append(self.get_total_route_distances(self.agent_nodes[robot_id],
                                                                     self.base_stations[robot_id]))
-            curr_dist_to_base_time.append(curr_dist_to_base[0]/self.transportation_rate)
+            curr_dist_to_base_time.append(curr_dist_to_base[0] / self.transportation_rate)
             base_dist_to_cold = self.get_total_route_distances(self.cold_storage_node,
                                                                self.base_stations[robot_name])
-            use_time.append((2*base_dist_to_cold + unloading_time)/self.transportation_rate)
+            use_time.append((2 * base_dist_to_cold) / self.transportation_rate + unloading_time)
             wait_time.append(curr_dist_to_base_time[0])
             self.cold_storage_queue_wait_time.append({'robot_id': robot_name,
                                                       'wait_time': wait_time[0],
@@ -1270,16 +1288,17 @@ class TopologicalForkGraph(object):
                 robot_id = self.cold_storage_usage_queue[i]['robot_id']
                 curr_dist_to_base.append(self.get_total_route_distances(self.agent_nodes[robot_id],
                                                                         self.base_stations[robot_id]))
-                curr_dist_to_base_time.append(curr_dist_to_base[i]/self.transportation_rate)
-                base_dist_to_cold = self.get_total_route_distances(self.cold_storage_node,  # todo:[next] initialise in _init_
+                curr_dist_to_base_time.append(curr_dist_to_base[i] / self.transportation_rate)
+                base_dist_to_cold = self.get_total_route_distances(self.cold_storage_node,
+                                                                   # todo:[next] initialise in _init_
                                                                    self.base_stations[robot_id])
-                use_time.append((2*base_dist_to_cold + unloading_time)/self.transportation_rate)
+                use_time.append((2 * base_dist_to_cold + unloading_time) / self.transportation_rate)
                 # if i == 1:
                 #     wait_time.append(use_time[0] + max(wait_time[0], curr_dist_to_base_time[0]))
                 # if i == 2:
                 #     wait_time.append(use_time[1] + max(wait_time[1], curr_dist_to_base_time[1]))
                 # if i > 0:
-                wait_time.append(use_time[i-1] + max(wait_time[i-1], curr_dist_to_base_time[i-1]))
+                wait_time.append(use_time[i - 1] + max(wait_time[i - 1], curr_dist_to_base_time[i - 1]))
 
                 # get the time of start parking at base:
                 # if robot started parking, record parking time
@@ -1298,7 +1317,8 @@ class TopologicalForkGraph(object):
         else:
             wait_time.append(self.cold_storage_queue_wait_time[0]['wait_time'])
             use_time.append(self.cold_storage_queue_wait_time[0]['use_time'])
-            start_using_storage_time = self.cold_storage_queue_wait_time[0]['start_using_storage_time']
+            start_using_storage_time = self.cold_storage_queue_wait_time[0].get(
+                'start_using_storage_time', self.env.now + self.cold_storage_queue_wait_time[0]['wait_time'])
             robot_id = self.cold_storage_usage_queue[0]['robot_id']
 
             # note: robot transportation_rate and unloading time are simply use the same value for all robots as the wait
@@ -1340,30 +1360,35 @@ class TopologicalForkGraph(object):
                 robot_id = self.cold_storage_usage_queue[i]['robot_id']
                 curr_dist_to_base.append(self.get_total_route_distances(self.agent_nodes[robot_id],
                                                                         self.base_stations[robot_id]))
-                curr_dist_to_base_time.append(curr_dist_to_base[i-1]/self.transportation_rate)
+                curr_dist_to_base_time.append(curr_dist_to_base[i - 1] / self.transportation_rate)
                 base_dist_to_cold = self.get_total_route_distances(self.cold_storage_node,
                                                                    self.base_stations[robot_id])
 
-                use_time.append((2*base_dist_to_cold + unloading_time)/self.transportation_rate)
+                use_time.append((2 * base_dist_to_cold + unloading_time) / self.transportation_rate)
 
                 # get the time that robot[i] will be waiting
                 if i == 1:
                     # get the time of robot[i-1] start using storage
                     # if the robot in the queue head never parked before, start time is the join queue time
-                    if len(self.cold_storage_usage_queue[0]) == 2:
-                        start_using_storage_time = self.cold_storage_usage_queue[0]['join_queue_time']
-                    # if the robot in the queue head has parked in the base before, start time is available in queue wait time
-                    elif len(self.cold_storage_usage_queue[0]) == 3:
-                        start_using_storage_time = self.cold_storage_queue_wait_time[0]['start_using_storage_time']
-                    wait_time.append(abs(use_time[0] + start_using_storage_time - self.env.now))  #  todo: remove abs?
+                    try:
+                        if len(self.cold_storage_usage_queue[0]) == 2:
+                            start_using_storage_time = self.cold_storage_usage_queue[0]['join_queue_time']
+                        # if the robot in the queue head has parked in the base before, start time is available in queue wait time
+                        elif len(self.cold_storage_usage_queue[0]) == 3:
+                            start_using_storage_time = self.cold_storage_queue_wait_time[0].get(
+                                'start_using_storage_time', self.env.now +
+                                                            self.cold_storage_queue_wait_time[0]['wait_time'])
+                    except Exception as exc:
+                        print(exc)
+                    wait_time.append(abs(use_time[0] + start_using_storage_time - self.env.now))  # todo: remove abs?
                 else:
                     # wait_time.append(max(curr_dist_to_base_time[i-1], wait_time[i-1]) + use_time[i-1])
                     # if robot[i-1] won't start using storage before robot[i] arriving at base
-                    if wait_time[i-1] > curr_dist_to_base_time[i-1]:
-                        wait_time.append(wait_time[i-1] + use_time[i-1])
+                    if wait_time[i - 1] > curr_dist_to_base_time[i - 1]:
+                        wait_time.append(wait_time[i - 1] + use_time[i - 1])
                     # if robot[i-1] start using storage, but robot[i] is still on the way to the base
                     else:
-                        previous_robot_id = self.cold_storage_usage_queue[i-1]['robot_id']
+                        previous_robot_id = self.cold_storage_usage_queue[i - 1]['robot_id']
                         previous_robot_wait_time = .0
                         previous_robot_use_time = .0
                         for robot_info in self.cold_storage_queue_wait_time:
@@ -1371,7 +1396,8 @@ class TopologicalForkGraph(object):
                                 previous_robot_wait_time = robot_info['wait_time']
                                 previous_robot_use_time = robot_info['use_time']
                         # robot[i] takes longer time to get to base, or robot[i-1] takes longer time to finish using storage
-                        wait_time.append(max(curr_dist_to_base_time[i-1], previous_robot_wait_time+previous_robot_use_time))
+                        wait_time.append(
+                            max(curr_dist_to_base_time[i - 1], previous_robot_wait_time + previous_robot_use_time))
 
                 # remove old wait time before append latest wait time
                 for queue_robot in self.cold_storage_queue_wait_time:
@@ -1394,9 +1420,14 @@ class TopologicalForkGraph(object):
                                                               'wait_time': wait_time[i],
                                                               'use_time': use_time[i]})
         # return the queried wait time info
+        robot_ids = []
         for queue_robot in self.cold_storage_queue_wait_time:
+            robot_ids.append(queue_robot['robot_id'])
             if robot_name == queue_robot['robot_id']:
                 return queue_robot
+
+        if robot_name not in robot_ids:
+            return 0
 
     def init_wait_queue(self, robot_id, target):
         """
@@ -1419,7 +1450,7 @@ class TopologicalForkGraph(object):
                                                   'wait_time': .0,
                                                   'use_time': use_t})
 
-    def get_cold_storage_queue_wait_time(self, robot_name, robot_curr_node, target, robot_transportation_rate, 
+    def get_cold_storage_queue_wait_time(self, robot_name, robot_curr_node, target, robot_transportation_rate,
                                          unloading_time, is_head):
         """
         Get the estimated wait time for the robot in the queue before being able to use the cold storage
@@ -1438,7 +1469,7 @@ class TopologicalForkGraph(object):
         if self.use_local_storage:
             row_id = self.get_row_id_of_row_node(robot_curr_node)
             storage_node = self.local_storage_nodes[row_id]
-            
+
         if is_head:
             try:
                 assert self.cold_storage_usage_queue[0]['robot_id'] == robot_name
@@ -1455,11 +1486,12 @@ class TopologicalForkGraph(object):
                      ) / robot_transportation_rate + unloading_time
             use_time.append(round(use_t, 1))
             self.cold_storage_queue_wait_time.append({'robot_id': robot_name,
-                                                      'join_queue_time': self.cold_storage_usage_queue[0]['join_queue_time'],
+                                                      'join_queue_time': self.cold_storage_usage_queue[0][
+                                                          'join_queue_time'],
                                                       'wait_time': wait_time[0],
                                                       'use_time': use_time[0]})
             return self.cold_storage_queue_wait_time[0]
-        
+
         # wait_time[1] = use_time[0]
         # robot_id = self.cold_storage_usage_queue[1][0]
         # storage_distances_to_base = self.get_total_route_distances(storage_node, self.base_stations[robot_id])
@@ -1474,16 +1506,17 @@ class TopologicalForkGraph(object):
             use_time.append(self.cold_storage_queue_wait_time[0]['use_time'])
             for i in range(1, len(self.cold_storage_usage_queue)):
                 curr_distances_to_base = self.get_total_route_distances(robot_curr_node, self.base_stations[robot_name])
-                
-                wait_time.append(wait_time[i-1] + use_time[i-1] - (
-                        self.env.now - self.cold_storage_queue_wait_time[i-1]['join_queue_time']))
+
+                wait_time.append(wait_time[i - 1] + use_time[i - 1] - (
+                        self.env.now - self.cold_storage_queue_wait_time[i - 1]['join_queue_time']))
                 if wait_time[i] < 0:
-                    wait_time[i] = wait_time[i-1] + use_time[i-1]  # todo: better solution to be done
-                robot_id = self.cold_storage_usage_queue[i]['robot_id']   # todo: use robot_name directly?
+                    wait_time[i] = wait_time[i - 1] + use_time[i - 1]  # todo: better solution to be done
+                robot_id = self.cold_storage_usage_queue[i]['robot_id']  # todo: use robot_name directly?
                 storage_distances_to_base = self.get_total_route_distances(storage_node, self.base_stations[robot_id])
                 use_time.append(storage_distances_to_base * 2 / robot_transportation_rate + unloading_time)
                 self.cold_storage_queue_wait_time.append({'robot_id': robot_id,
-                                                          'join_queue_time': self.cold_storage_usage_queue[i]['start_parking_time'],
+                                                          'join_queue_time': self.cold_storage_usage_queue[i][
+                                                              'start_parking_time'],
                                                           'wait_time': wait_time[i],
                                                           'use_time': use_time[i]})
 
@@ -1573,7 +1606,7 @@ class TopologicalForkGraph(object):
         :param node: string, topological node name
         return: integer, wait time that the robot should wait before occupying the node
         """
-        if self._hold[node]['wait_time'][-1] is not None:   # if self.req_ret[n] is 1: wait_time = 0
+        if self._hold[node]['wait_time'][-1] is not None:  # if self.req_ret[n] is 1: wait_time = 0
             now = self.env.now
             wait_time = 0  # self.req_ret[n] == 1
             queue_time = 0
@@ -1585,8 +1618,8 @@ class TopologicalForkGraph(object):
             elif self.req_ret[node] > 2:
                 num = self.req_ret[node] - 2
                 for i in range(num):
-                    queue_time = queue_time + self._hold[node]['hold_time'][-2-i]
-                wait_time = self._hold[node]['hold_time'][-2-num] + queue_time - (now - start_moment)
+                    queue_time = queue_time + self._hold[node]['hold_time'][-2 - i]
+                wait_time = self._hold[node]['hold_time'][-2 - num] + queue_time - (now - start_moment)
             if wait_time < 0:
                 print('! %5.1f: %s has held longer than expected! Extend the wait time as before' % (
                     self.env.now, node))
@@ -1666,9 +1699,9 @@ class TopologicalForkGraph(object):
             n = req_ret - 2
             now = self.env.now
             for i in range(n):
-                queue_time = queue_time + self._hold[node_name]['hold_time'][-i-1]
+                queue_time = queue_time + self._hold[node_name]['hold_time'][-i - 1]
             start_moment = self._hold[node_name]['start_moment'][-1]
-            wait_time = self._hold[node_name]['hold_time'][-n-1] + queue_time - (now - start_moment)
+            wait_time = self._hold[node_name]['hold_time'][-n - 1] + queue_time - (now - start_moment)
 
         if wait_time < 0:
             print('! %5.1f: %s has held longer than expected! Extend the wait time as before' % (
@@ -1735,7 +1768,7 @@ class TopologicalForkGraph(object):
             return cost
         else:
             for idx, n in enumerate(route_nodes[:-1]):
-                cost = cost + self.distance(n, route_nodes[idx+1])
+                cost = cost + self.distance(n, route_nodes[idx + 1])
             return cost
 
     def time_cost_to_dist(self, time_cost, speed_m_s):
@@ -1783,9 +1816,11 @@ class TopologicalForkGraph(object):
         if self._node_res[node]:
             if self._node_res[node].capacity - self._node_res[node].level > 0 and self._node_res[node].put_queue == []:
                 state = 1
-            elif self._node_res[node].capacity - self._node_res[node].level == 0 and self._node_res[node].put_queue == []:
+            elif self._node_res[node].capacity - self._node_res[node].level == 0 and self._node_res[
+                node].put_queue == []:
                 state = 2
-            elif self._node_res[node].capacity - self._node_res[node].level == 0 and self._node_res[node].put_queue != []:
+            elif self._node_res[node].capacity - self._node_res[node].level == 0 and self._node_res[
+                node].put_queue != []:
                 state = 2 + len(self._node_res[node].put_queue)
             self.req_ret[node] = state
             return state
@@ -2045,6 +2080,7 @@ class TopologicalForkGraph(object):
         return self._node_log
 
     """ inherited from previous topo class"""
+
     def update_node_index(self):
         """once topo_map is received, get the indices of nodes for easy access to node object"""
         for i in range(len(self.tmap2['nodes'])):

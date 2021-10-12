@@ -498,8 +498,10 @@ if __name__ == "__main__":
     # config_file = 'topological_simpy/config/picking_sim_combined.yaml'
     # config_file = '../config/picking_sim_riseholme_simple.yaml'
     # config_file = '../config/picking_sim_riseholme.yaml'
-    config_file = '../config/picking_sim_riseholme_4_bases_2_parellel.yaml'
+    # config_file = '../config/picking_sim_riseholme_4_bases_2_parellel.yaml'
     # config_file = '../config/picking_sim_riseholme_4_bases.yaml'
+    # config_file = '../config/picking_sim_clockhouse_large.yaml'
+    config_file = '../config/picking_sim_clockhouse_4_polytun.yaml'
     # get the config params
     # config_params = topological_simpy.config_utils_sim.get_mimic_des_params(config_file)
 
@@ -510,13 +512,18 @@ if __name__ == "__main__":
     # tmap_config_file = '../maps/edited_riseholme_3.tmap2'  # default
     # tmap_config_file = '../maps/riseholme.tmap2'  # default
     # tmap_config_file = '../maps/clockhouse.tmap'
-    tmap_config_file = '../maps/riseholme_4_bases_2_parallel_4.tmap2'   # default
+    # tmap_config_file = '../maps/riseholme_4_bases_2_parallel_4.tmap2'
+    # tmap_config_file = '../maps/riseholme_4_bases_2_parallel_5.tmap2'  # default
+    # tmap_config_file = '../maps/riseholme_4_bases_2_parallel_6.tmap2'
+    # tmap_config_file = '../maps/riseholme_4_bases_2_parallel_7.tmap2'
+    # tmap_config_file = '../maps/riseholme_3_bases_roundabout.tmap2'
+    tmap_config_file = '../maps/clockhouse_transportation_rowtagged.tmap2'
 
     # parameters for running the simulation
     n_trials = 1
-    min_n_pickers = 4
-    max_n_pickers = 5
-    min_n_robots = 4
+    min_n_pickers = 2
+    max_n_pickers = 3
+    min_n_robots = 2
     max_n_robots = max_n_pickers
     policies = ["uniform_utilisation"]   # ["lexicographical", "shortest_distance", "uniform_utilisation"]
 

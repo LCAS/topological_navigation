@@ -266,7 +266,6 @@ class TopologicalNavLoc(object):
             
 
     def _sleep(self):
-        
         try:
             self.rate.sleep()
         except rospy.ROSInterruptException:

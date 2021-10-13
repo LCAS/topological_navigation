@@ -163,6 +163,10 @@ class TopologicalNavServer(object):
         rospy.spin()
         
         
+    def _on_node_shutdown(self):
+        self.cancel_current_action(2)
+        
+        
     def make_move_base_edge(self):
         
         self.move_base_edge = {}
@@ -876,10 +880,6 @@ class TopologicalNavServer(object):
             
             self.move_act_pub.publish(String(json.dumps(d)))
         self.prev_status = status
-        
-        
-    def _on_node_shutdown(self):
-        self.cancel_current_action(2)
 ###################################################################################################################
         
 

@@ -63,6 +63,8 @@ class TopologicalNavServer(object):
 
     def __init__(self, name, mode):
         
+        rospy.on_shutdown(self._on_node_shutdown)
+        
         self.node_by_node = False
         self.cancelled = False
         self.preempted = False
@@ -106,17 +108,17 @@ class TopologicalNavServer(object):
 
         self._map_received = False
         rospy.Subscriber("/topological_map_2", String, self.MapCallback)
-        rospy.loginfo("Navigation waiting for the Topological Map ...")
+        rospy.loginfo("Navigation waiting for the Topological Map...")
 
         while not self._map_received:
             rospy.sleep(rospy.Duration.from_sec(0.05))
-        rospy.loginfo("Navigation received the Topological Map.")
+        rospy.loginfo("Navigation received the Topological Map")
         
         self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
         # Creating Action Server for navigation
-        rospy.loginfo("Creating GO-TO-NODE action server ...")
+        rospy.loginfo("Creating GO-TO-NODE action server...")
         self._as = actionlib.SimpleActionServer(name, topological_navigation_msgs.msg.GotoNodeAction,
                                                 execute_cb=self.executeCallback, auto_start=False)
         self._as.register_preempt_callback(self.preemptCallback)
@@ -124,14 +126,14 @@ class TopologicalNavServer(object):
         rospy.loginfo("...done")
 
         # Creating Action Server for execute policy
-        rospy.loginfo("Creating EXECUTE_POLICY_MODE action server ...")
+        rospy.loginfo("Creating EXECUTE_POLICY_MODE action server...")
         self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", topological_navigation_msgs.msg.ExecutePolicyModeAction, 
                                                             execute_cb=self.executeCallbackexecpolicy, auto_start=False)
         self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
         self._as_exec_policy.start()
         rospy.loginfo("...done")
 
-        rospy.loginfo("Subscribing to Localisation Topics ...")
+        rospy.loginfo("Subscribing to Localisation Topics...")
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
@@ -746,7 +748,7 @@ class TopologicalNavServer(object):
         """
         Cancels the action currently in execution. Returns True if the current goal is correctly ended.
         """
-        rospy.loginfo("Cancelling current navigation goal, timeout_secs = {} ...".format(timeout_secs))
+        rospy.loginfo("Cancelling current navigation goal, timeout_secs = {}...".format(timeout_secs))
         
         self.edge_action_manager.preempt()
         self.cancelled = True
@@ -760,7 +762,7 @@ class TopologicalNavServer(object):
                     break
                 rospy.sleep(0.2)
 
-        rospy.loginfo("Cancelled current navigation goal: " + str(self.navigation_activated))
+        rospy.loginfo("Navigation active: " + str(self.navigation_activated))
         return not self.navigation_activated
 
 
@@ -874,6 +876,10 @@ class TopologicalNavServer(object):
             
             self.move_act_pub.publish(String(json.dumps(d)))
         self.prev_status = status
+        
+        
+    def _on_node_shutdown(self):
+        self.cancel_current_action(2)
 ###################################################################################################################
         
 

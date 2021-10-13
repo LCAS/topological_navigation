@@ -131,10 +131,10 @@ class TopologicalNavLoc(object):
 
         rospy.Subscriber('topological_map_2', String, self.MapCallback)
             
-        rospy.loginfo("Localisation waiting for the Topological Map ...")
+        rospy.loginfo("Localisation waiting for the Topological Map...")
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
-        rospy.loginfo("Localisation received the Topological Map.")
+        rospy.loginfo("Localisation received the Topological Map")
         
         self.base_frame = rospy.get_param("~base_frame", "base_link")
         
@@ -191,7 +191,7 @@ class TopologicalNavLoc(object):
                 (trans,rot) = self.listener.lookupTransform(self.tmap_frame, self.base_frame, now)
             except Exception as e:
                 rospy.logerr(e)
-                self.rate.sleep()
+                self._sleep()
                 continue
         
             msg = Pose()
@@ -262,8 +262,16 @@ class TopologicalNavLoc(object):
             else:
                 self.throttle +=1
                 
-            self.rate.sleep()
+            self._sleep()
+            
 
+    def _sleep(self):
+        
+        try:
+            self.rate.sleep()
+        except rospy.ROSInterruptException:
+            pass
+            
 
     def publishTopics(self, wpstr, closest_dist, cnstr, closest_edge_ids, closest_edge_dists) :
         
@@ -319,7 +327,7 @@ class TopologicalNavLoc(object):
         else:
             self.nogos=[]
 
-        rospy.loginfo("Creating localise by topic subscribers ...")
+        rospy.loginfo("Creating localise by topic subscribers...")
 
         for i in self.subscribers:
             del i

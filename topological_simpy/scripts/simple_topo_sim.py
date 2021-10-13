@@ -24,7 +24,7 @@ from datetime import datetime
 
 RANDOM_SEED = 19
 SIM_RT_FACTOR = 0.00001  # simulation speed, 1: real time; 0.01: 100 times faster
-VERBOSE = True
+VERBOSE = False
 SHOW_VIS = True  # show visualisation
 SAVE_RANDOM = True  # save random figures
 SAVE_FINAL = True  # save final figures
@@ -520,7 +520,7 @@ if __name__ == "__main__":
     tmap_config_file = '../maps/clockhouse_transportation_rowtagged.tmap2'
 
     # parameters for running the simulation
-    n_trials = 1
+    n_trials = 10
     min_n_pickers = 2
     max_n_pickers = 3
     min_n_robots = 2

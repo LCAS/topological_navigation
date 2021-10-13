@@ -502,7 +502,7 @@ class TopologicalForkGraph(object):
             storage_queue_robot = '' if len(self.cold_storage_usage_queue) == 0 else self.cold_storage_usage_queue[0]['robot_id']
             row_id_curr = self.get_row_id_of_row_node(self.agent_nodes[robot_id])
             local_storage_node = '' if row_id_curr is None else self.local_storage_nodes[row_id_curr]
-            if self.targets[robot_id]['target'] == self.cold_storage_node if not self.use_local_storage else local_storage_node or robot_id == storage_queue_robot:
+            if (self.targets[robot_id]['target'] == (self.cold_storage_node if not self.use_local_storage else local_storage_node)) or robot_id == storage_queue_robot:
                 self.targets[robot_id]['priority'] = 0  # highest priority, all other robots doge
                 to_be_ranked_robots.remove(robot_id)
 
@@ -555,7 +555,8 @@ class TopologicalForkGraph(object):
         """
         try:
             ranked_robots_list = self.deadlock_rank()
-        except Exception:
+        except Exception as exc:
+            print(exc)
             raise Exception(" deadlock_rank() is not working")
 
         for robot_id in ranked_robots_list:

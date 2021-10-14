@@ -198,7 +198,7 @@ class RouteChecker(object):
                 
     def check_route(self, route):
         
-        rospy.loginfo("Checking Nav Route ...")
+        rospy.loginfo("Checking Route...")
 
         N = len(route.source)
         if N < 1 or N != len(route.edge_id):

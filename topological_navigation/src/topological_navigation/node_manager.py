@@ -18,11 +18,9 @@ from interactive_markers.interactive_marker_server import *
 
 import topological_navigation_msgs.srv
 
-from topological_navigation_msgs.msg import TopologicalNode
-from topological_navigation.topological_map import *
 from topological_navigation_msgs.msg import TopologicalMap
+from topological_navigation.topological_map import *
 
-import topological_navigation.msg
 
 
 class node_manager(object):

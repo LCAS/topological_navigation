@@ -51,7 +51,7 @@
 # use_cold_storage: true/false, unload at cold storage / local storage
 # cold_storage_node: string, name of the cold storage node in topo map
 ##-----------------------------------------------------------------------------
-n_polytunnels: 1
+n_polytunnels: 2
 n_farm_rows:
   func: copy
   value: [3]
@@ -60,31 +60,11 @@ second_head_lane: false
 # WayPoint106 is the head of row_01, row_02; WayPoint105 is the head of row_03, row04;
 # ...
 pri_head_nodes: t%d-r%d-c0
-#  polytunnel_01: [WayPoint108, WayPoint107]
-#  polytunnel_02: [WayPoint106, WayPoint105]
-#  polytunnel_03: [WayPoint104, WayPoint103]
-#  polytunnel_04: [WayPoint102, WayPoint101]
-#  polytunnel_05: [WayPoint100, WayPoint99]
-#  polytunnel_06: [WayPoint98, WayPoint97]
-#  polytunnel_07: [WayPoint152, WayPoint153]
-#  polytunnel_08: [WayPoint155, WayPoint156]
-#  polytunnel_09: [WayPoint157, WayPoint158]
-#  polytunnel_10: [WayPoint160, WayPoint161]
-#  polytunnel_11: [WayPoint163, WayPoint164]
-#  polytunnel_12: [WayPoint165, WayPoint166]
-#  polytunnel_13: [WayPoint167, WayPoint168]
-#  polytunnel_14: [WayPoint170, WayPoint171]
-#  polytunnel_15: [WayPoint172, WayPoint173]
-#  polytunnel_16: [WayPoint174, WayPoint175]
-#  polytunnel_17: [WayPoint176, WayPoint177]
-#  polytunnel_18: [WayPoint179, WayPoint180]
-#  polytunnel_19: [WayPoint181, WayPoint182]
-#  polytunnel_20: [WayPoint183, WayPoint184]
 sec_head_nodes: None
 
 row_nodes_config_type: first_row_node_is_pri_head_node
 # only given the number of nodes for each polytunnel
-row_nodes: [45, 85, 85, 85, 83, 83, 83, 83, 81, 81, 74, 42, 53, 53, 53, 53, 50, 50, 50, 50]
+row_nodes: [45, 45, 45, 45]
 
 row_node_name_format: t%d-r%d-c%d
 # example of the the polytunnels, rows and nodes

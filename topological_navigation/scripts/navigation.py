@@ -164,7 +164,7 @@ class TopologicalNavServer(object):
         
         
     def _on_node_shutdown(self):
-        self.cancel_current_action(2)
+        self.cancel_current_action(timeout_secs=2)
         
         
     def make_move_base_edge(self):
@@ -234,7 +234,7 @@ class TopologicalNavServer(object):
         try:
             self.rcnfclient.update_configuration(params)
         except rospy.ServiceException as exc:
-            rospy.logwarn("I couldn't reconfigure move_base parameters. Caught service exception: %s. Will continue with previous params", exc)
+            rospy.logwarn("Could not reconfigure move_base parameters. Caught service exception: %s. Will continue with previous parameters", exc)
             
 
     def reset_reconf(self):
@@ -264,7 +264,7 @@ class TopologicalNavServer(object):
         This Functions is called when the topo nav Action Server is called
         """
         print("\n####################################################################################################")
-        rospy.loginfo("Processing GO-TO-NODE goal (NO ORIENTATION = {})".format(goal.no_orientation))
+        rospy.loginfo("Processing GO-TO-NODE goal (No Orientation = {})".format(goal.no_orientation))
         can_start = False
 
         with self.navigation_lock:
@@ -284,7 +284,7 @@ class TopologicalNavServer(object):
             self.navigate(goal.target)
 
         else:
-            rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted!")
+            rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
             self._as.set_aborted()
 
         self.navigation_activated = False
@@ -320,7 +320,7 @@ class TopologicalNavServer(object):
             else:
                 result = False
                 self.cancelled = True
-                rospy.logerr("Invalid route in execute policy mode goal!")
+                rospy.logerr("Invalid route in execute policy mode goal")
 
             if not self.cancelled and not self.preempted:
                 self._result_exec_policy.success = result
@@ -337,7 +337,7 @@ class TopologicalNavServer(object):
                     self._as_exec_policy.set_preempted(self._result_exec_policy)
 
         else: 
-            rospy.logwarn("Could not cancel current navigation action, EXECUTE POLICY MODE goal aborted!")
+            rospy.logwarn("Could not cancel current navigation action, EXECUTE POLICY MODE goal aborted.")
             self._as_exec_policy.set_aborted()
 
         self.navigation_activated = False
@@ -466,7 +466,7 @@ class TopologicalNavServer(object):
             self.publish_feedback_exec_policy(GoalStatus.SUCCEEDED)
         else:
             if self.cancelled and self.preempted:
-                rospy.loginfo("Fatal Fail")
+                rospy.logwarn("Fatal Fail")
                 self.publish_feedback_exec_policy(GoalStatus.PREEMPTED)
             elif self.cancelled:
                 rospy.logwarn("Navigation Failed")
@@ -601,7 +601,7 @@ class TopologicalNavServer(object):
             a = edge_from_id["action"]
             rospy.loginfo("First action: %s" % a)
         else:
-            rospy.logerr("Failed to get edge from id {}! Invalid route!".format(route.edge_id[0]))
+            rospy.logerr("Failed to get edge from id {}. Invalid route".format(route.edge_id[0]))
             return False, inc
         
         if not self.nav_from_closest_edge:        

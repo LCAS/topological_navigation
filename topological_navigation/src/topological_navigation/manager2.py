@@ -138,8 +138,8 @@ class map_manager_2(object):
             return
         
         e1 = "Loaded map is {} and should be {}."
-        e2 = " You may be attemting to load an old-format map using topological_navigation/manager2.py" \
-                " Please use topological_navigation/manager.py instead."
+        e2 = " You may be attemting to load an old-format map using topological_navigation/map_manager2.py" \
+                " In that case please use topological_navigation/map_manager.py instead."
         
         map_type = type(self.tmap2)
         if map_type is list:
@@ -571,7 +571,7 @@ class map_manager_2(object):
 
     def remove_edge(self, edge_name, update=True):
         
-        rospy.loginfo("Removing Edge: {}".format(edge_name))
+        rospy.loginfo("Removing Edge {}".format(edge_name))
         
         num_available = 0
         for node in self.tmap2["nodes"]:
@@ -1085,7 +1085,7 @@ class map_manager_2(object):
         # check that all nodes have the same pointset
         pointsets = [node["meta"]["pointset"] for node in self.tmap2["nodes"]]
         if len(set(pointsets)) > 1:
-            rospy.logwarn("multiple poinsets found in meta info: {}".format(set(pointsets)))
+            rospy.logwarn("Multiple poinsets found in meta info: {}".format(set(pointsets)))
             self.map_ok = False
         
         # check for duplicate node names
@@ -1118,14 +1118,14 @@ class map_manager_2(object):
             destination = edge_nodes[1]
  
             if destination not in names:
-                rospy.logwarn("edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
+                rospy.logwarn("Edge with origin '{}' has a destination '{}' that does not exist".format(origin, destination))
                 self.map_ok = False
 
         # check if a node has an edge to itself                
         for node in self.tmap2["nodes"]:
             for edge in node["node"]["edges"]:
                 if node["node"]["name"] == edge["node"]:
-                    rospy.logwarn("edge with id '{}' has a destination '{}' equal to its origin".format(edge["edge_id"], edge["node"]))
+                    rospy.logwarn("Edge with id '{}' has a destination '{}' equal to its origin".format(edge["edge_id"], edge["node"]))
                     self.map_ok = False
                     
                 

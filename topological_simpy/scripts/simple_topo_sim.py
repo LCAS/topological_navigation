@@ -158,10 +158,10 @@ def run_sim(num_pickers, num_robots, scheduling_policy, ith_trial, tmap_configur
     if SAVE_STATS:
         asc_time = time.asctime().split(" ")
         if asc_time[2] == "":
-            log_dir = os.path.join(os.path.expanduser("~"), "des_simpy_logs", "%s_%s_0%s_%s" % (
+            log_dir = os.path.join(os.path.expanduser("~"), "topological_simpy_logs", "%s_%s_0%s_%s" % (
                 asc_time[5], asc_time[1], asc_time[3], asc_time[4].replace(":", "_")))
         else:
-            log_dir = os.path.join(os.path.expanduser("~"), "des_simpy_logs", "%s_%s_%s_%s" % (
+            log_dir = os.path.join(os.path.expanduser("~"), "topological_simpy_logs", "%s_%s_%s_%s" % (
                 asc_time[4], asc_time[1], asc_time[2], asc_time[3].replace(":", "_")))
         if os.path.exists(log_dir):
             pass

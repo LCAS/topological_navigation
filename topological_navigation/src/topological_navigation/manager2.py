@@ -138,7 +138,7 @@ class map_manager_2(object):
             return
         
         e1 = "Loaded map is {} and should be {}."
-        e2 = " You may be attemting to load an old-format map using topological_navigation/map_manager2.py" \
+        e2 = " You may be attemting to load a legacy map using topological_navigation/map_manager2.py" \
                 " In that case please use topological_navigation/map_manager.py instead."
         
         map_type = type(self.tmap2)
@@ -165,7 +165,7 @@ class map_manager_2(object):
         rospy.set_param('topological_map2_filename', os.path.split(self.filename)[1])
         rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
         
-        rospy.loginfo("Caching the map ...")
+        rospy.loginfo("Caching the map...")
         self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
         
         
@@ -348,7 +348,7 @@ class map_manager_2(object):
         rospy.loginfo("Creating Node {}".format(name))
 
         if name in self.names:
-            rospy.logerr("Node already exists, try another name")
+            rospy.logerr("Node {} already exists, try another name".format(name))
             return False
         
         pose = message_converter.convert_ros_message_to_dictionary(node_pose)
@@ -605,7 +605,7 @@ class map_manager_2(object):
         if num_available != 1:
              succeded = False
              meta_out = None
-             print "there are no nodes or more than 1 with that name"
+             rospy.logerr("There are no nodes or more than one with name {}".format(req.node))
         else:
             succeded = True
             node_meta = self.tmap2["nodes"][index]["meta"]
@@ -629,7 +629,7 @@ class map_manager_2(object):
                 node_meta["contains"] = a
             meta_out = str(node_meta)
             
-            print "Updating %s--%s" %(self.tmap2["name"], req.node)
+            rospy.loginfo("Updating %s--%s" %(self.tmap2["name"], req.node))
             self.update()
             self.write_topological_map(self.filename)
 
@@ -849,7 +849,7 @@ class map_manager_2(object):
             return True, msg
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
-            return False, "no edge found or multiple edges found"
+            return False, "No edge found or multiple edges found"
         
         
     def rm_param_from_edge_config_cb(self, req):
@@ -885,7 +885,7 @@ class map_manager_2(object):
             return True, msg
         else:
             rospy.logerr("Cannot update edge {}. {} instances of node with name {} found".format(edge_id, num_available, node_name))
-            return False, "no edge found or multiple edges found"
+            return False, "No edge found or multiple edges found"
         
         
     def update_node_restrictions_cb(self, req):

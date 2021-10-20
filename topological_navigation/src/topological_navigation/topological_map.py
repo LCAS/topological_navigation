@@ -4,7 +4,7 @@ import rospy
 import warnings
 
 from topological_navigation.topological_node import *
-from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
+from topological_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 
 
 from mongodb_store.message_store import MessageStoreProxy

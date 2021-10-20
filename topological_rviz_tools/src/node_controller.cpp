@@ -25,12 +25,12 @@ NodeController::~NodeController()
 {
 }
 
-void NodeController::topmapCallback(const strands_navigation_msgs::TopologicalMap::ConstPtr& msg){
+void NodeController::topmapCallback(const topological_navigation_msgs::TopologicalMap::ConstPtr& msg){
   ROS_INFO("Updating topological map");
   
   // deep copy (because of const), and then sort the array so we display in
   // alphabetical order of node names
-  std::vector<strands_navigation_msgs::TopologicalNode> nodes = msg->nodes;
+  std::vector<topological_navigation_msgs::TopologicalNode> nodes = msg->nodes;
   std::sort(nodes.begin(), nodes.end(), nodeSort);
 
   ROS_INFO("%s", nodes[nodes.size()-1].name.c_str());

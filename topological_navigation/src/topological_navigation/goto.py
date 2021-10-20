@@ -14,11 +14,9 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalMap, GotoNodeGoal, GotoNodeAction
 from topological_navigation.topological_map import *
-from strands_navigation_msgs.msg import TopologicalMap
 
-import topological_navigation.msg
 
 
 class go_to_controllers(object):
@@ -28,7 +26,7 @@ class go_to_controllers(object):
         #self.timer = Timer(1.0, self.timer_callback)
         #map_name = rospy.get_param('topological_map_name', 'top_map')
         self._goto_server = InteractiveMarkerServer("go_to_node")
-        self.client = actionlib.SimpleActionClient('topological_navigation', topological_navigation.msg.GotoNodeAction)
+        self.client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
         self.client.wait_for_server()
         rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo(" ... Go to Initialised")
@@ -103,7 +101,7 @@ class go_to_controllers(object):
             self.in_feedback=True
             print 'GOTO: '+str(feedback.marker_name)
             self.client.cancel_all_goals()
-            navgoal = topological_navigation.msg.GotoNodeGoal()                
+            navgoal = GotoNodeGoal()                
             navgoal.target = feedback.marker_name
             #navgoal.origin = orig
             # Sends the goal to the action server.

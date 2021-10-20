@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from strands_navigation_msgs.msg import *
-from strands_navigation_msgs.srv import *
+from topological_navigation_msgs.msg import *
+from topological_navigation_msgs.srv import *
 from mongodb_store.message_store import MessageStoreProxy
 import actionlib
 import pytz

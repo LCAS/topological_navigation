@@ -12,7 +12,7 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation.topological_map import *
 
 
@@ -24,7 +24,7 @@ class WaypointControllers(object):
         #map_name = rospy.get_param('topological_map_name', 'top_map')
         #print map_name
         self._marker_server = InteractiveMarkerServer("/topological_map_markers")   
-        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time, queue_size=10)
 
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 

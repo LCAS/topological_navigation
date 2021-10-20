@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy, dynamic_reconfigure.client
-from strands_navigation_msgs.srv import ReconfAtEdges, ReconfAtEdgesResponse
+from topological_navigation_msgs.srv import ReconfAtEdges, ReconfAtEdgesResponse
 
 
 class reconf_at_edges_server(object):

@@ -21,10 +21,10 @@ from geometry_msgs.msg import Point
 
 from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.tmap_utils import *
-from strands_navigation_msgs.msg import TopologicalMap
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalNode
 from nav_msgs.msg import OccupancyGrid
-from strands_navigation_msgs.srv import *
+from topological_navigation_msgs.srv import *
 
 
 
@@ -47,7 +47,7 @@ def usage():
 def predict_edges(epoch):
     rospy.wait_for_service('topological_prediction/predict_edges')
     try:
-        get_prediction = rospy.ServiceProxy('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState)
+        get_prediction = rospy.ServiceProxy('topological_prediction/predict_edges', topological_navigation_msgs.srv.PredictEdgeState)
         print "Requesting prediction for %s"%epoch
         resp1 = get_prediction(epoch)
         return resp1

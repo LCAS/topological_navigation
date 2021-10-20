@@ -119,7 +119,7 @@ class EdgeActionManager(object):
  
     def execute(self):
         
-        rospy.loginfo("Edge Action Manager: Executing the action ...")
+        rospy.loginfo("Edge Action Manager: Executing the action...")
         self.client.send_goal(self.goal)
         self.current_action = self.action_name
 #########################################################################################################

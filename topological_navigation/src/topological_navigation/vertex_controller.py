@@ -10,8 +10,8 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
-from strands_navigation_msgs.msg import TopologicalNode
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalMap
 
 from topological_navigation.topological_map import *
 
@@ -22,7 +22,7 @@ class VertexControllers(object):
         #map_name = rospy.get_param('/topological_map_name', 'top_map')
         self.timer = Timer(1.0, self.timer_callback)
         self._vertex_server = InteractiveMarkerServer("topological_map_zones")
-        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time, queue_size=10)
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
 

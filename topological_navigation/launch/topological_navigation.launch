@@ -91,7 +91,6 @@
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>
 
-  <node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true" if="$(arg launch_extras)"/>
   <node pkg="topological_navigation" type="speed_based_prediction.py" name="speed_based_prediction" output="screen" if="$(arg launch_extras)"/>	
   <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true" if="$(arg launch_extras)"/>
   <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(arg launch_extras)"/>

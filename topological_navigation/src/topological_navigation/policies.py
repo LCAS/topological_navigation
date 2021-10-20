@@ -10,9 +10,9 @@ import tf
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
 
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation.marker_arrays import *
-from strands_navigation_msgs.msg import NavRoute
+from topological_navigation_msgs.msg import NavRoute
 
 
 class PoliciesVis(object):
@@ -26,7 +26,7 @@ class PoliciesVis(object):
         #self.update_needed=False
         
         rospy.loginfo("Creating Publishers ...")
-        self.policies_pub = rospy.Publisher('topological_edges_policies', MarkerArray)
+        self.policies_pub = rospy.Publisher('topological_edges_policies', MarkerArray, queue_size=10)
         rospy.loginfo("Done ...")
         
         

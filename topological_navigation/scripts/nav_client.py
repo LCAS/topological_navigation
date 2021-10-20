@@ -4,7 +4,7 @@ import rospy
 import sys
 # Brings in the SimpleActionClient
 import actionlib
-import topological_navigation.msg
+import topological_navigation_msgs.msg
 
 
 class topol_nav_client(object):
@@ -12,12 +12,12 @@ class topol_nav_client(object):
     def __init__(self, targ) :
         
         rospy.on_shutdown(self._on_node_shutdown)
-        self.client = actionlib.SimpleActionClient('topological_navigation', topological_navigation.msg.GotoNodeAction)
+        self.client = actionlib.SimpleActionClient('topological_navigation', topological_navigation_msgs.msg.GotoNodeAction)
         
         self.client.wait_for_server()
         rospy.loginfo(" ... Init done")
     
-        navgoal = topological_navigation.msg.GotoNodeGoal()
+        navgoal = topological_navigation_msgs.msg.GotoNodeGoal()
     
         print "Requesting Navigation to %s" %targ
     

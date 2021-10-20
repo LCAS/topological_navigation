@@ -4,7 +4,7 @@ import json
 import sys
 import rospy
 from geometry_msgs.msg import Pose
-from strands_navigation_msgs.msg import TopologicalNode, Vertex, Edge
+from topological_navigation_msgs.msg import TopologicalNode, Vertex, Edge
 
 import pymongo
 #import mongodb_store.util
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     
     
     query_meta = {}
-    query_meta["stored_type"] = "strands_navigation_msgs/TopologicalNode"
+    query_meta["stored_type"] = "topological_navigation_msgs/TopologicalNode"
     
     available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
     

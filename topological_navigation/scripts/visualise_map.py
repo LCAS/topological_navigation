@@ -19,7 +19,7 @@ from interactive_markers.interactive_marker_server import *
 #from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
 from topological_navigation.marker_arrays import *
 from topological_navigation.node_controller import *
@@ -33,8 +33,8 @@ from topological_navigation.edge_std import *
 from topological_navigation.goto import *
 
 
-from strands_navigation_msgs.msg import NavRoute
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import NavRoute
+from topological_navigation_msgs.msg import TopologicalMap
 import topological_navigation.policies
 import topological_navigation.map_marker
 

@@ -1,0 +1,4 @@
+string node_name
+---
+bool success
+string[] tags

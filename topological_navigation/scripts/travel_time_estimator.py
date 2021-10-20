@@ -2,8 +2,8 @@
 
 
 import rospy
-from strands_navigation_msgs.msg import TopologicalMap
-from strands_navigation_msgs.srv import EstimateTravelTime
+from topological_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.srv import EstimateTravelTime
 from std_msgs.msg import Duration
 import math
 import threading

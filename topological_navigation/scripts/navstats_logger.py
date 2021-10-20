@@ -6,7 +6,7 @@ from datetime import datetime
 
 import rospy
 
-from strands_navigation_msgs.msg import NavStatistics
+from topological_navigation_msgs.msg import NavStatistics
 from mongodb_store.message_store import MessageStoreProxy
 
 class TopologicalNavStatsSaver(object):

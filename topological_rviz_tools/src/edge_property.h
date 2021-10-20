@@ -5,8 +5,8 @@
 #include "rviz/properties/property.h"
 #include "rviz/properties/string_property.h"
 #include "rviz/properties/float_property.h"
-#include "strands_navigation_msgs/Edge.h"
-#include "strands_navigation_msgs/UpdateEdge.h"
+#include "topological_navigation_msgs/Edge.h"
+#include "topological_navigation_msgs/UpdateEdgeLegacy.h"
 
 namespace topological_rviz_tools
 {
@@ -17,7 +17,7 @@ class EdgeProperty: public rviz::Property
 Q_OBJECT
 public:
   EdgeProperty(const QString& name = QString(),
-               const strands_navigation_msgs::Edge& default_value = strands_navigation_msgs::Edge(),
+               const topological_navigation_msgs::Edge& default_value = topological_navigation_msgs::Edge(),
                const QString& description = QString(),
                Property* parent = 0,
                const char *changed_slot = 0,
@@ -34,7 +34,7 @@ Q_SIGNALS:
   void edgeModified();
 
 private:
-  const strands_navigation_msgs::Edge& edge_;
+  const topological_navigation_msgs::Edge& edge_;
   
   // keep track of changing values to ensure that they are redisplayed correctly
   // when we fail to update.

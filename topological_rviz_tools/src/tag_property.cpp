@@ -17,7 +17,7 @@ TagProperty::TagProperty(const QString& name,
 {
   connect(this, SIGNAL(changed()), this, SLOT(updateTag()));
   ros::NodeHandle nh;
-  tagUpdate_ = nh.serviceClient<strands_navigation_msgs::ModifyTag>("/topological_map_manager/modify_node_tags", true);
+  tagUpdate_ = nh.serviceClient<topological_navigation_msgs::ModifyTag>("/topological_map_manager/modify_node_tags", true);
 }
 
 void TagProperty::updateTag(){
@@ -26,7 +26,7 @@ void TagProperty::updateTag(){
     return;
   }
 
-  strands_navigation_msgs::ModifyTag srv;
+  topological_navigation_msgs::ModifyTag srv;
   srv.request.tag = tag_value_.c_str();
   srv.request.new_tag = getString().toStdString().c_str();
   srv.request.node.push_back(node_name_);

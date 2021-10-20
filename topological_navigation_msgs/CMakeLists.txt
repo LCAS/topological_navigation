@@ -4,7 +4,12 @@ project(topological_navigation_msgs)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
+find_package(catkin REQUIRED COMPONENTS 
+  message_generation 
+  std_msgs 
+  geometry_msgs
+  actionlib_msgs
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -23,6 +28,14 @@ find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
 add_message_files(
   FILES
   ClosestEdges.msg
+  TopologicalMap.msg
+  TopologicalNode.msg
+  Vertex.msg
+  Edge.msg
+  NavRoute.msg
+  CurrentEdge.msg
+  NavStatistics.msg
+  TopologicalRoute.msg
 )
 
 #Generate services in the 'srv' folder
@@ -37,26 +50,49 @@ add_service_files(
   EvaluateNode.srv
   EvaluateEdge.srv
   AddDatum.srv
+  GetTaggedNodes.srv
+  GetTags.srv
+  GetNodeTags.srv
+  GetEdgesBetweenNodes.srv
+  AddNode.srv
+  RmvNode.srv
+  AddEdge.srv
+  AddContent.srv
+  UpdateNodeName.srv
+  UpdateNodeTolerance.srv
+  ModifyTag.srv
+  AddTag.srv
+  GetTopologicalMap.srv
+  UpdateEdgeLegacy.srv
+  LocalisePose.srv
+  GetRouteTo.srv
+  GetRouteBetween.srv
+  EstimateTravelTime.srv
+  PredictEdgeState.srv
   UpdateFailPolicy.srv
+  ReconfAtEdges.srv
+  LoadTopoNavTestScenario.srv
+  RunTopoNavTestScenario.srv
 )
 
 
 
-#find_package(catkin REQUIRED genmsg actionlib_msgs)
-#add_action_files(
-#	DIRECTORY action 
-#	FILES 
-#	SomeAction.action
-#)
+find_package(catkin REQUIRED genmsg actionlib_msgs)
+add_action_files(
+	DIRECTORY action 
+	FILES 
+	GotoNode.action
+        ExecutePolicyMode.action
+        BuildTopPrediction.action
+)
 
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
   std_msgs
-#  geometry_msgs
-#  sensor_msgs
-#  actionlib_msgs 
+  geometry_msgs
+  actionlib_msgs 
 )
 
 ###################################
@@ -70,7 +106,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES strands_perception_people_msgs
-#  CATKIN_DEPENDS message_generation std_msgs
+  CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 

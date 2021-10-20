@@ -1,0 +1,5 @@
+string nodea
+string nodeb
+---
+string[] ids_a_to_b
+string[] ids_b_to_a

@@ -23,7 +23,7 @@
 	<!-- <node pkg="topological_navigation" type="speed_based_prediction.py" name="topological_prediction"/>  -->
 
 
-	<node pkg="fremenserver" type="fremenserver" name="fremenserver"/> 
+	<!--node pkg="fremenserver" type="fremenserver" name="fremenserver"/--> 
 
 
 </launch>

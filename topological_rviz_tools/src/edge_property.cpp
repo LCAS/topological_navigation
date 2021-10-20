@@ -4,7 +4,7 @@ namespace topological_rviz_tools
 {
 
 EdgeProperty::EdgeProperty(const QString& name,
-			   const strands_navigation_msgs::Edge& default_value,
+			   const topological_navigation_msgs::Edge& default_value,
 			   const QString& description,
 			   Property* parent,
 			   const char *changed_slot,
@@ -16,7 +16,7 @@ EdgeProperty::EdgeProperty(const QString& name,
   , reset_value_(false)
 {
   ros::NodeHandle nh;
-  edgeUpdate_ = nh.serviceClient<strands_navigation_msgs::UpdateEdge>("/topological_map_manager/update_edge", true);
+  edgeUpdate_ = nh.serviceClient<topological_navigation_msgs::UpdateEdgeLegacy>("/topological_map_manager/update_edge", true);
   setReadOnly(true);
   edge_id_ = new rviz::StringProperty("Edge ID", edge_.edge_id.c_str(), "", this);
   edge_id_->setReadOnly(true);
@@ -36,7 +36,7 @@ void EdgeProperty::updateTopvel(){
     return;
   }
 
-  strands_navigation_msgs::UpdateEdge srv;
+  topological_navigation_msgs::UpdateEdgeLegacy srv;
   srv.request.edge_id = edge_id_->getStdString().c_str();
   srv.request.top_vel = top_vel_->getFloat();
   srv.request.action = action_->getStdString().c_str();
@@ -65,7 +65,7 @@ void EdgeProperty::updateAction(){
     return;
   }
 
-  strands_navigation_msgs::UpdateEdge srv;
+  topological_navigation_msgs::UpdateEdgeLegacy srv;
   srv.request.edge_id = edge_id_->getStdString().c_str();
   srv.request.top_vel = top_vel_->getFloat();
   srv.request.action = action_->getStdString().c_str();

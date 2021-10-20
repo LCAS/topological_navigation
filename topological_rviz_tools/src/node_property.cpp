@@ -4,7 +4,7 @@ namespace topological_rviz_tools
 {
 
 NodeProperty::NodeProperty(const QString& name,
-			   const strands_navigation_msgs::TopologicalNode& default_value,
+			   const topological_navigation_msgs::TopologicalNode& default_value,
 			   const QString& description,
 			   Property* parent,
 			   const char *changed_slot,
@@ -22,8 +22,8 @@ NodeProperty::NodeProperty(const QString& name,
   connect(this, SIGNAL(changed()), this, SLOT(updateNodeName()));
 
   ros::NodeHandle nh;
-  nameUpdate_ = nh.serviceClient<strands_navigation_msgs::UpdateNodeName>("/topological_map_manager/update_node_name", true);
-  toleranceUpdate_ = nh.serviceClient<strands_navigation_msgs::UpdateNodeTolerance>("/topological_map_manager/update_node_tolerance", true);
+  nameUpdate_ = nh.serviceClient<topological_navigation_msgs::UpdateNodeName>("/topological_map_manager/update_node_name", true);
+  toleranceUpdate_ = nh.serviceClient<topological_navigation_msgs::UpdateNodeTolerance>("/topological_map_manager/update_node_tolerance", true);
 
   map_ = new rviz::StringProperty("Map", node_.map.c_str(), "", this);
   map_->setReadOnly(true);
@@ -45,8 +45,8 @@ NodeProperty::NodeProperty(const QString& name,
 					  " position is less than this value.",
 					  this, SLOT(updateXYTolerance()), this);
 
-  ros::ServiceClient tagService_ = nh.serviceClient<strands_navigation_msgs::GetNodeTags>("/topological_map_manager/get_node_tags", true);
-  strands_navigation_msgs::GetNodeTags srv;
+  ros::ServiceClient tagService_ = nh.serviceClient<topological_navigation_msgs::GetNodeTags>("/topological_map_manager/get_node_tags", true);
+  topological_navigation_msgs::GetNodeTags srv;
   srv.request.node_name = name_.c_str();
   std::vector<std::string> node_tags;
   if (tagService_.call(srv)) {
@@ -83,7 +83,7 @@ void NodeProperty::updateYawTolerance(){
     return;
   }
 
-  strands_navigation_msgs::UpdateNodeTolerance srv;
+  topological_navigation_msgs::UpdateNodeTolerance srv;
   srv.request.node_name = name_;
   srv.request.yaw_tolerance = yaw_tolerance_->getFloat();
   srv.request.xy_tolerance = xy_tolerance_->getFloat();
@@ -111,7 +111,7 @@ void NodeProperty::updateXYTolerance(){
     return;
   }
 
-  strands_navigation_msgs::UpdateNodeTolerance srv;
+  topological_navigation_msgs::UpdateNodeTolerance srv;
   srv.request.node_name = name_;
   srv.request.yaw_tolerance = yaw_tolerance_->getFloat();
   srv.request.xy_tolerance = xy_tolerance_->getFloat();
@@ -139,7 +139,7 @@ void NodeProperty::updateNodeName(){
     return;
   }
 
-  strands_navigation_msgs::UpdateNodeName srv;
+  topological_navigation_msgs::UpdateNodeName srv;
   srv.request.node_name = name_;
   srv.request.new_name = this->getValue().toString().toStdString().c_str();
   

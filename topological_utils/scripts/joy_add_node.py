@@ -10,7 +10,7 @@ from geometry_msgs.msg import Pose
 #from strands_navigation_msgs.msg import TopologicalNode
 #from ros_datacentre.message_store import MessageStoreProxy
 #from topological_navigation.topological_node import *
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation.topological_map import *
 
 

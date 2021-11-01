@@ -34,7 +34,6 @@ if __name__ == '__main__' :
             load=False
         else:
             _map=sys.argv[1]
-            print "Loading Map (%s)" %_map
 
     rospy.init_node("topological_map_manager")
     ps = map_manager_2()

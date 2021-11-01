@@ -128,6 +128,7 @@ class map_manager_2(object):
 
     def load_map(self, filename):
         self.loaded = False
+        rospy.loginfo("Loading Topological Map {}".format(filename))
         
         try:
             with open(filename, "r") as f:

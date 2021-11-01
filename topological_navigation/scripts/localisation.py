@@ -134,7 +134,6 @@ class TopologicalNavLoc(object):
         rospy.loginfo("Localisation waiting for the Topological Map...")
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
-        rospy.loginfo("Localisation received the Topological Map")
         
         self.base_frame = rospy.get_param("~base_frame", "base_link")
         
@@ -316,6 +315,7 @@ class TopologicalNavLoc(object):
 
         self.tmap = json.loads(msg.data) 
         self.tmap_frame = self.tmap["transformation"]["child"]
+        rospy.loginfo("Localisation received the Topological Map")
         
         self.get_edge_vectors()
         self.update_loc_by_topic()

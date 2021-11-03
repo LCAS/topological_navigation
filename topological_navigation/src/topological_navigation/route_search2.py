@@ -45,13 +45,13 @@ class TopologicalRouteSearch2(object):
                 self.children[name].append(item)
 
 
-    def search_route(self, origin, target):
+    def search_route(self, origin, target, avoid_nodes=[]):
         """
         This function searches the route to reach the goal
         """
         route = NavRoute()
 
-        if origin == "none" or target == "none" or origin == target:
+        if origin == "none" or target == "none" or origin == target or target in avoid_nodes:
             return route
 
         goal = self.get_node_from_tmap2(target)
@@ -66,9 +66,14 @@ class TopologicalRouteSearch2(object):
         cen = orig # currently expanded node
         children = self.get_connected_nodes_tmap2(cen) # nodes current node is connected to
 
+        # remove the nodes we want to avoid
+        for _node in avoid_nodes:
+            if _node in children:
+                children.remove(_node)
+
         not_goal=True
         route_found=False
-        while not_goal :
+        while not_goal:
             if target in children:
                 not_goal=False
                 route_found=True
@@ -119,6 +124,10 @@ class TopologicalRouteSearch2(object):
                     cen =  self.get_node_from_tmap2(nte.name)
                     expanded.append(nte)
                     children = self.get_connected_nodes_tmap2(cen)
+                    # remove the nodes we want to avoid
+                    for _node in avoid_nodes:
+                        if _node in children:
+                            children.remove(_node)
                 else:
                     not_goal=False
                     route_found=False

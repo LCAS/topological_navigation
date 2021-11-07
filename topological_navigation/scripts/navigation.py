@@ -863,7 +863,7 @@ class TopologicalNavServer(object):
                         recovering = True
                     elif rec_action[0] == "replan":
                         # rospy.loginfo(">>> PLAN ROUTE {}, {}, {}".format(origin_node["node"]["name"], target, destination_node["node"]["name"]))
-                        _route = self.rsearch.search_route(origin_node["node"]["name"], target, avoid_nodes=[destination_node["node"]["name"]])
+                        _route = self.rsearch.search_route(origin_node["node"]["name"], target, avoid_edges=[edge["edge_id"]])
                         # rospy.loginfo(">>> RESULT {}".format(_route))
                         _route = self.enforce_navigable_route(_route, target)
                         # rospy.loginfo(">>> enforced navigable {}".format(_route))

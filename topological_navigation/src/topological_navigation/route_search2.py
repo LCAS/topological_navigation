@@ -45,13 +45,13 @@ class TopologicalRouteSearch2(object):
                 self.children[name].append(item)
 
 
-    def search_route(self, origin, target, avoid_nodes=[]):
+    def search_route(self, origin, target, avoid_edges=[]):
         """
         This function searches the route to reach the goal
         """
         route = NavRoute()
 
-        if origin == "none" or target == "none" or origin == target or target in avoid_nodes:
+        if origin == "none" or target == "none" or origin == target:
             return route
 
         goal = self.get_node_from_tmap2(target)
@@ -66,10 +66,18 @@ class TopologicalRouteSearch2(object):
         cen = orig # currently expanded node
         children = self.get_connected_nodes_tmap2(cen) # nodes current node is connected to
 
+        # get the pair of node (orig-dest) of the edges we need to avoid
+        avoid_pairs = []
+        for _edge in avoid_edges:
+            avoid_pairs.append(
+                get_node_names_from_edge_id_2(self.top_map, _edge)
+            )
+
         # remove the nodes we want to avoid
-        for _node in avoid_nodes:
-            if _node in children:
-                children.remove(_node)
+        if origin in [p[0] for p in avoid_pairs]:
+            for (_, _dest) in avoid_pairs:
+                if _dest in children:
+                    children.remove(_dest)
 
         not_goal=True
         route_found=False
@@ -125,9 +133,10 @@ class TopologicalRouteSearch2(object):
                     expanded.append(nte)
                     children = self.get_connected_nodes_tmap2(cen)
                     # remove the nodes we want to avoid
-                    for _node in avoid_nodes:
-                        if _node in children:
-                            children.remove(_node)
+                    if nte.name in [p[0] for p in avoid_pairs]:
+                        for (_, _dest) in avoid_pairs:
+                            if _dest in children:
+                                children.remove(_dest)
                 else:
                     not_goal=False
                     route_found=False

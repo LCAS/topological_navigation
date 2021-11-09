@@ -261,7 +261,7 @@ class map_manager(object):
         if len(available) != 1:
              succeded = False
              meta_out = None
-             print 'there are no nodes or more than 1 with that name'
+             print('there are no nodes or more than 1 with that name')
         else:
             succeded = True
             for i in available:
@@ -285,7 +285,7 @@ class map_manager(object):
                             a.append(data)
                     i[1]['contains']=a
                 meta_out = str(i[1])
-                print "Updating %s--%s" %(i[0].pointset, i[0].name)
+                print("Updating %s--%s" %(i[0].pointset, i[0].name))
                 msg_store.update_id(msgid, i[0], i[1], upsert = False)
 
         return succeded, meta_out
@@ -373,10 +373,10 @@ class map_manager(object):
                 msgid= i[1]['_id']
                 if 'tag' in i[1]:
                     if msg.tag in i[1]['tag']:
-                        print 'removing tag'
+                        print('removing tag')
                         i[1]['tag'].remove(msg.tag)
-                        print 'new list of tags'
-                        print i[1]['tag']
+                        print('new list of tags')
+                        print(i[1]['tag'])
                         msg_store.update_id(msgid, i[0], i[1], upsert = False)
                         succeded = True
                 meta_out = str(i[1])
@@ -416,7 +416,7 @@ class map_manager(object):
 
     def get_topological_map_cb(self, req):
         nodes = self.loadMap(req.pointset)
-        print "Returning Map %s"%req.pointset
+        print("Returning Map %s"%req.pointset)
         nodes.nodes.sort(key=lambda node: node.name)
         return nodes
 
@@ -426,14 +426,14 @@ class map_manager(object):
         if not self.load_from_file:
             self.nodes = self.loadMap(req.pointset)
             self.name = req.pointset
-            print "Returning Map {}".format(req.pointset)
+            print("Returning Map {}".format(req.pointset))
         else:
             rospy.set_param('topological_map_filename', req.pointset)
             path = rospy.get_param('topological_map_path')
             f = path + "/" + req.pointset
             self.nodes, self.tmap = self.load_map_from_file(f)
             self.name = f
-            print "Returning Map {}".format(f)
+            print("Returning Map {}".format(f))
         #nodes.nodes.sort(key=lambda node: node.name)
         self.names = self.create_list_of_nodes()
         self.map_pub.publish(self.nodes)
@@ -707,7 +707,7 @@ class map_manager(object):
         if len(available) == 1 :
             node_found = True
             rm_id = str(available[0][1]['_id'])
-            print rm_id
+            print(rm_id)
         else :
             rospy.logerr("Node not found "+str(len(available))+" waypoints found after query")
             #rospy.logerr("Available data: "+str(available))
@@ -724,7 +724,7 @@ class map_manager(object):
                         edges_to_rm.append(edge_rm)
 
             for k in edges_to_rm :
-                print 'remove: '+k
+                print('remove: '+k)
                 self.remove_edge(k)
 
             msg_store.delete(rm_id)
@@ -749,7 +749,7 @@ class map_manager(object):
 
         if len(available) >= 1 :
             for i in available :
-                print i[0]
+                print(i[0])
                 for j in i[0].edges:
                     if j.edge_id == edge_name :
                         i[0].edges.remove(j)

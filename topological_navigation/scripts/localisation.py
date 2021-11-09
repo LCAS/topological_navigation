@@ -435,7 +435,7 @@ class TopologicalNavLoc(object):
             resp1 = cont(req.tag)
             tagnodes = resp1.nodes
             
-        except rospy.ServiceException, e:
+        except (rospy.ServiceException) as e:
             rospy.logerr("Service call failed: %s"%e)
 
         ldis = [x["node"]["node"]["name"] for x in self.distances]
@@ -488,7 +488,7 @@ class TopologicalNavLoc(object):
             resp1 = get_prediction('no_go')
             return resp1.nodes
         
-        except rospy.ServiceException, e:
+        except rospy.ServiceException as e:
             rospy.logerr("Service call failed: %s"%e)
 
 

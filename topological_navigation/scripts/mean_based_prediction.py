@@ -32,14 +32,14 @@ from topological_navigation_msgs.srv import *
 
 
 def usage():
-    print "For using all the available stats use:"
-    print "\t rosrun topological_navigation mean_based_prediction.py"
-    print "For all the stats in a range use:"
-    print "\t rosrun topological_navigation mean_based_prediction.py from_epoch to_epoch"
-    print "For all the stats from a date until now use:"
-    print "\t rosrun topological_navigation mean_based_prediction.py from_epoch -1"
-    print "For all the stats until one date:"
-    print "\t rosrun topological_navigation mean_based_prediction.py 0 to_epoch"
+    print("For using all the available stats use:")
+    print("\t rosrun topological_navigation mean_based_prediction.py")
+    print("For all the stats in a range use:")
+    print("\t rosrun topological_navigation mean_based_prediction.py from_epoch to_epoch")
+    print("For all the stats from a date until now use:")
+    print("\t rosrun topological_navigation mean_based_prediction.py from_epoch -1")
+    print("For all the stats until one date:")
+    print("\t rosrun topological_navigation mean_based_prediction.py 0 to_epoch")
 
 
 class TopologicalMeanPred(object):
@@ -165,13 +165,13 @@ if __name__ == '__main__':
     rospy.init_node('topological_prediction')
     epochs=[]
     if len(sys.argv) < 2:
-        print "gathering all the stats"        
+        print("gathering all the stats")
         epochs=[0, rospy.get_rostime().to_sec()]
     else:
         if len(sys.argv) == 3:
             epochs.append(int(sys.argv[1]))
             epochs.append(int(sys.argv[2]))
-            print epochs
+            print(epochs)
         else: 
             usage()
             sys.exit(1)

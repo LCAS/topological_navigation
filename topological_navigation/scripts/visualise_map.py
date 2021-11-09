@@ -79,7 +79,7 @@ class VisualiseMap(object):
 
        
     def _on_node_shutdown(self):
-        print "bye"
+        print("bye")
 
 
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     noedit_mode=False
     #mapname=str(sys.argv[1])
     argc = len(sys.argv)
-    print argc
+    print(argc)
     if argc > 1:
         if '-edit' in sys.argv or '-e' in sys.argv :
             edit_mode = True

@@ -99,25 +99,25 @@ class EdgeReconfigureManager(object):
         """
         edge_group = "none"
         for group in self.edge_groups:
-            print "Check Edge: ", edge_id, "in ", group
+            print("Check Edge: ", edge_id, "in ", group)
             if edge_id in self.edge_groups[group]["edges"]:
                 edge_group = group
                 break
 
-        print "current group: ", self.current_edge_group
-        print "edge group: ", edge_group
+        print("current group: ", self.current_edge_group)
+        print("edge group: ", edge_group)
 
         if edge_group is not self.current_edge_group:
-            print "RECONFIGURING EDGE: ", edge_id
-            print "TO ", edge_group
+            print("RECONFIGURING EDGE: ", edge_id)
+            print("TO ", edge_group)
             try:
                 rospy.wait_for_service("reconf_at_edges", timeout=3)
                 reconf_at_edges = rospy.ServiceProxy("reconf_at_edges", ReconfAtEdges)
                 resp1 = reconf_at_edges(edge_id)
-                print resp1.success
+                print(resp1.success)
                 if resp1.success:
                     self.current_edge_group = edge_group
-            except rospy.ServiceException, e:
+            except rospy.ServiceException as e:
                 rospy.logerr("Service call failed: %s" % e)
-        print "-------"
+        print("-------")
 ############################################################################################################# 

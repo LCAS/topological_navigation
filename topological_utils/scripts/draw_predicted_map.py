@@ -51,7 +51,7 @@ def predict_edges(epoch):
         print "Requesting prediction for %s"%epoch
         resp1 = get_prediction(epoch)
         return resp1
-    except rospy.ServiceException, e:
+    except rospy.ServiceException as e:
         print "Service call failed: %s"%e
 
 

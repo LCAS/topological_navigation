@@ -33,7 +33,7 @@ class go_to_controllers(object):
 
 
     def update_map(self, map_msg) :
-        print "updating goto controllers..."
+        print("updating goto controllers...")
         #self.topo_map = topological_map(map_name)
         self._goto_server.clear()
         for i in map_msg.nodes :
@@ -51,7 +51,7 @@ class go_to_controllers(object):
 
     def makeEmptyMarker(self, dummyBox=True ) :
         int_marker = InteractiveMarker()
-        int_marker.header.frame_id = "/map"
+        int_marker.header.frame_id = "map"
         int_marker.scale = 1
         return int_marker
 
@@ -99,7 +99,7 @@ class go_to_controllers(object):
     def feedback_cb(self, feedback):
         if not self.in_feedback :
             self.in_feedback=True
-            print 'GOTO: '+str(feedback.marker_name)
+            print('GOTO: '+str(feedback.marker_name))
             self.client.cancel_all_goals()
             navgoal = GotoNodeGoal()                
             navgoal.target = feedback.marker_name

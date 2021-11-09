@@ -117,6 +117,13 @@ class TopologicalNavServer(object):
         self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
+        self.edge_reconfigure = rospy.get_param("~reconfigure_edges", True)
+        self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
+        if self.edge_reconfigure:
+            self.edgeReconfigureManager = EdgeReconfigureManager()
+        else:
+            rospy.logwarn("Edge Reconfigure Unavailable")
+
         # Creating Action Server for navigation
         rospy.loginfo("Creating GO-TO-NODE action server...")
         self._as = actionlib.SimpleActionServer(name, topological_navigation_msgs.msg.GotoNodeAction,
@@ -151,13 +158,6 @@ class TopologicalNavServer(object):
         except:
             rospy.logwarn("Restrictions Unavailable")
             self.using_restrictions = False
-
-        self.edge_reconfigure = rospy.get_param("~reconfigure_edges", True)
-        self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
-        if self.edge_reconfigure:
-            self.edgeReconfigureManager = EdgeReconfigureManager()
-        else:
-            rospy.logwarn("Edge Reconfigure Unavailable")
 
         # this keeps the runtime state of the fail policies that are currently in execution 
         self.executing_fail_policy = {}
@@ -220,7 +220,7 @@ class TopologicalNavServer(object):
         translation = DYNPARAM_MAPPING[key]
         
         translated_params = {}
-        for k, v in params.iteritems():
+        for k, v in params.items():
             if k in translation:
                 if rospy.has_param(self.move_base_planner + "/" + translation[k]):
                     translated_params[translation[k]] = v

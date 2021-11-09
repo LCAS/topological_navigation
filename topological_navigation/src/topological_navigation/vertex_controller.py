@@ -27,7 +27,7 @@ class VertexControllers(object):
 
 
     def update_map(self, msg) :
-        print "updating vertex controllers..."
+        print("updating vertex controllers...")
         self.topo_map = topological_map(msg.name, msg=msg)
         self._vertex_server.clear()
         self._vertex_server.applyChanges()
@@ -59,7 +59,7 @@ class VertexControllers(object):
     def _vertex_marker(self, marker_name, pose, marker_description="vertex marker"):
         # create an interactive marker for our server
         marker = InteractiveMarker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.name = marker_name
         marker.description = marker_description
 

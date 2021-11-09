@@ -32,14 +32,14 @@ from topological_navigation_msgs.srv import *
 
 
 def usage():
-    print "For using all the available stats use:"
-    print "\t rosrun topological_navigation topological_prediction.py"
-    print "For all the stats in a range use:"
-    print "\t rosrun topological_navigation topological_prediction.py from_epoch to_epoch"
-    print "For all the stats from a date until now use:"
-    print "\t rosrun topological_navigation topological_prediction.py from_epoch -1"
-    print "For all the stats until one date:"
-    print "\t rosrun topological_navigation topological_prediction.py 0 to_epoch"
+    print("For using all the available stats use:")
+    print("\t rosrun topological_navigation topological_prediction.py")
+    print("For all the stats in a range use:")
+    print("\t rosrun topological_navigation topological_prediction.py from_epoch to_epoch")
+    print("For all the stats from a date until now use:")
+    print("\t rosrun topological_navigation topological_prediction.py from_epoch -1")
+    print("For all the stats until one date:")
+    print("\t rosrun topological_navigation topological_prediction.py 0 to_epoch")
 
 
 class TopologicalSpeedPred(object):
@@ -90,12 +90,12 @@ class TopologicalSpeedPred(object):
     def map_callback(self, tmap) :
         self.edge_to_duration = {}
         
-        print 'tmap ', tmap   
+        print('tmap ', tmap) 
 
         for i in tmap.nodes :
-            print i
+            print(i)
             for j in i.edges:
-                print j
+                print(j)
                 if j.edge_id not in self.edge_to_duration:                                    
                     destination = get_node(tmap, j.node)
                     if j.top_vel >=  0.1:

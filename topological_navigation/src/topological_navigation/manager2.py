@@ -804,10 +804,10 @@ class map_manager_2(object):
                 meta = self.tmap2["nodes"][i]["meta"]
                 if "tag" in meta:
                     if msg.tag in meta["tag"]:
-                        print 'removing tag'
+                        print('removing tag')
                         meta["tag"].remove(msg.tag)
-                        print 'new list of tags'
-                        print meta["tag"]
+                        print('new list of tags')
+                        print(meta["tag"])
                         succeded = True
                 meta_out = str(meta)
                 

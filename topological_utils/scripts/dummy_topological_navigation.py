@@ -166,7 +166,7 @@ class DummyTopologicalNavigator():
         meta['map'] = map_name
         meta['pointset'] = map_name
 
-        for (node_name, node) in self.nodes.iteritems():
+        for (node_name, node) in self.nodes.items():
             meta["node"] = node_name
             node.map = meta['map']
             node.pointset = meta['pointset']

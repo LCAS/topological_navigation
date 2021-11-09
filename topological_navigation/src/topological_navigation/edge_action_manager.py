@@ -31,7 +31,7 @@ class dict_tools(object):
         Recursively loops through a nested dictionary. 
         For each inner-most value generates the list of keys needed to access it.
         """
-        for key, value in nested.iteritems():
+        for key, value in nested.items():
             path = "{},{}".format(prefix, key)
             if isinstance(value, collections.Mapping):
                 for inner_key, inner_value in self.nested_dict_iter(value, path):

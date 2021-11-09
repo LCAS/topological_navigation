@@ -23,7 +23,7 @@ def load_data_from_yaml(file_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print ("Usage: add_node_tags.py <in_file> <out_file> <config_file>")
+        print("Usage: add_node_tags.py <in_file> <out_file> <config_file>")
     else:
         in_file = sys.argv[1]
         out_file = sys.argv[2]

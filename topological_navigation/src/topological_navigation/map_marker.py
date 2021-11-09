@@ -32,7 +32,7 @@ class TopologicalVis(object):
 
 
     def _update_everything(self) :
-        print "updating marker arrays ..."
+        print("updating marker arrays ...")
         del self.map_markers
         self.map_markers = MarkerArray()
         self.map_markers.markers=[]
@@ -71,7 +71,7 @@ class TopologicalVis(object):
         col=self.get_colour(self.actions.index(action))
         marker = Marker()
         marker.id = idn
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = marker.TEXT_VIEW_FACING
         marker.text=action
         marker.pose.position.x= 1.0+(0.12*row)
@@ -90,7 +90,7 @@ class TopologicalVis(object):
     def get_name_marker(self, node, idn):
         marker = Marker()
         marker.id = idn
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = marker.TEXT_VIEW_FACING
         marker.text= node.name
         marker.pose = node.pose
@@ -107,7 +107,7 @@ class TopologicalVis(object):
     def get_edge_marker(self, node, edge, idn):
         marker = Marker()
         marker.id = idn
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = marker.LINE_LIST
         V1=Point()
         V2=Point()
@@ -135,7 +135,7 @@ class TopologicalVis(object):
     def get_node_marker(self, node, idn):
         marker = Marker()
         marker.id = idn
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = Marker.SPHERE
         marker.scale.x = 0.2
         marker.scale.y = 0.2
@@ -153,7 +153,7 @@ class TopologicalVis(object):
     def get_zone_marker(self, node, idn):
         marker = Marker()
         marker.id = idn
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = marker.LINE_STRIP
         marker.pose.orientation.w= 1.0
         marker.scale.x = 0.1
@@ -197,7 +197,7 @@ class TopologicalVis(object):
                 if not j.action in self.actions:
                     self.actions.append(j.action)
 
-        print self.actions
+        print(self.actions)
 
         self.map_received = True
         self._update_everything()

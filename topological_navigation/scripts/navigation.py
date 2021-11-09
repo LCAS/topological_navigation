@@ -281,6 +281,7 @@ class TopologicalNavServer(object):
             self.cancelled = False
             self.preempted = False
             self.no_orientation = goal.no_orientation
+            self.executing_fail_policy = {}
             
             self._feedback.route = "Starting..."
             self._as.publish_feedback(self._feedback)

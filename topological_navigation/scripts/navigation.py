@@ -784,6 +784,7 @@ class TopologicalNavServer(object):
         stroute.nodes.append(target)
         self.route_pub.publish(stroute)
         
+        
     def publish_stats(self):
         pubst = NavStatistics()
         pubst.edge_id = self.stat.edge_id
@@ -800,6 +801,7 @@ class TopologicalNavServer(object):
         pubst.date_finished = self.stat.get_finish_time_str()
         self.stats_pub.publish(pubst)
         self.stat = None
+        
 
     def get_fail_policy_state(self, edge):
         policy = None
@@ -817,10 +819,10 @@ class TopologicalNavServer(object):
             state = 0
             self.executing_fail_policy = {
                 "policy": policy,   # the policy we want to execute
-                "state": state,          # at which point of the policy we are
+                "state": state,     # at which point of the policy we are
                 "edge": edge["edge_id"]
             }
-        # elif edge["edge_id"] in self.executing_fail_policy:
+            
         else:
             policy = self.executing_fail_policy["policy"]
             # increment the state because if we are here it means that the previous policy action failed
@@ -829,16 +831,19 @@ class TopologicalNavServer(object):
 
         return policy, state
 
-    # this function wraps `execute_action` by executing the fail_policy in case of ABORTED action
-    # The fail policy sometimes modifies the current route by including the recovery action
+
     def execute_action_fail_recovery(self, edge, destination_node, route, idx, origin_node, target):
+        """
+        This function wraps `execute_action` by executing the fail_policy in case of ABORTED action
+        The fail policy sometimes modifies the current route by including the recovery action
+        """
         nav_ok, inc = self.execute_action(edge, destination_node, origin_node)
 
         new_route = route
         recovering = False
 
         # this means the action is aborted -> execute the fail policy
-        # TODO make sure that if the goal is cancelled by the client we don't enter here
+        # make sure that if the goal is cancelled by the client we don't enter here
         if not nav_ok and not self.preempted:
             rospy.loginfo("\t>> route: {}".format(route))
             route_updated = False
@@ -869,7 +874,7 @@ class TopologicalNavServer(object):
                         _route = self.enforce_navigable_route(_route, target)
                         # rospy.loginfo(">>> enforced navigable {}".format(_route))
 
-                        # build the new route from the 
+                        # build the new route
                         new_route.source = route.source[:idx] + _route.source
                         new_route.edge_id = route.edge_id[:idx] + _route.edge_id
                         route_updated = True
@@ -880,8 +885,8 @@ class TopologicalNavServer(object):
                     recovering = False
 
             rospy.loginfo("\t>> new route: {}".format(new_route))
-
         return nav_ok, inc, recovering, new_route
+    
 
     def execute_action(self, edge, destination_node, origin_node=None):
         
@@ -952,9 +957,7 @@ class TopologicalNavServer(object):
         status = self.edge_action_manager.client.get_state()
         self.pub_status(status)
 
-
-        rospy.loginfo("\t\t status {}, result {}, inc {}".format(status_mapping[status], result, inc))
-        
+        rospy.loginfo("move action status: {}, goal reached: {}, inc: {}".format(status_mapping[status], result, inc))
         return result, inc
     
     

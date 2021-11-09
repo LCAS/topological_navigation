@@ -28,11 +28,17 @@ def pose_dist(pose1, pose2):
 class map_manager_2(object):
     
     
-    def __init__(self):
+    def __init__(self, advertise_srvs=True):
         
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
+        
+        if advertise_srvs:
+            self.advertise()
+        
+    
+    def advertise(self):
         
         # Services that retrieve information from the map
         self.get_map_srv=rospy.Service('/topological_map_manager2/get_topological_map', Trigger, self.get_topological_map_cb)
@@ -1182,7 +1188,7 @@ class map_manager_2(object):
 
         except Exception as e:
             rospy.logerr(
-                "Cannot convert map to the old format. The conversion requires all fields of the old format map to be set.")
+                "Cannot convert map to the legacy format. The conversion requires all fields of the legacy map to be set.")
             points = topological_navigation_msgs.msg.TopologicalMap()
 
         return points

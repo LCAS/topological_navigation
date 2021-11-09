@@ -16,7 +16,7 @@ def load_yaml(filename):
     
 def edge_groups_to_tmap2(f_tmap2, groups, group_names):
     
-    mm2 = map_manager_2()
+    mm2 = map_manager_2(advertise_srvs=False)
     mm2.init_map(filename=f_tmap2)
 
     for name in group_names:

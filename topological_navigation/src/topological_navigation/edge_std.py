@@ -71,7 +71,7 @@ class edges_std_marker(object):
         m = cm.ScalarMappable(norm=norm, cmap=cmap)   
 
         marker = Marker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = marker.ARROW
         pose = Pose()
         

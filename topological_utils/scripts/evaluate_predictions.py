@@ -65,7 +65,7 @@ def evaluate_prediction(predictor, epoch, stats):
 
         return errors
 
-    except rospy.ServiceException, e:
+    except rospy.ServiceException as e:
         print "Service call failed: %s"%e
 
 
@@ -159,7 +159,7 @@ def collect_predictions(predictor_name, now, tmap, training_window_start, traini
 
         # now test each nav stat from the windows
         result_set = '%s___%s' % (window_start, window_end)
-        for epoch, stats in test_epochs.iteritems():
+        for epoch, stats in test_epochs.items():
             results = evaluate_prediction(predictor, epoch, stats)
             result_doc = {'result_time': now, 'training_window_start': window_start, 'training_window_end': window_end, 'predictor' : predictor_name, 'epoch' : epoch, 'results': results} 
             results_collection.insert(result_doc)
@@ -208,7 +208,7 @@ def visualise_window(result_time, predictor, results_collection, window_start, w
     edge_stddevs = []
 
 
-    for edge_id, edge_errors in edge_results.iteritems():
+    for edge_id, edge_errors in edge_results.items():
         edge_errors = np.absolute(np.array(edge_errors))
         edge_ids.append(edge_id_to_x[edge_id])
         real_edge_ids.append(edge_id)
@@ -254,7 +254,7 @@ def visualise_results(tmap, result_time):
             window_dates[window['training_window_start']].append(window['training_window_end'])
 
         windows = []
-        for start, ends in window_dates.iteritems():
+        for start, ends in window_dates.items():
             ends = set(ends)        
             windows += [[predictor, start, end] for end in ends] 
 
@@ -283,7 +283,7 @@ def visualise_results(tmap, result_time):
             visualise_window(result_time, window[0], results_collection, window[1], window[2], colours[count], window[0] + str(count), duration_ax, success_ax)
             count += 1
 
-            for edge, x in edge_id_to_x.iteritems():
+            for edge, x in edge_id_to_x.items():
                 edge_id_to_x[edge] = x + 1
 
         plt.legend()

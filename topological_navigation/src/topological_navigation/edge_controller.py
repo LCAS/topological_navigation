@@ -30,7 +30,7 @@ class edge_controllers(object):
 
 
     def update_map(self, msg) :
-        print "updating edge controllers..."
+        print("updating edge controllers...")
         
         self.topo_map = topological_map(msg.name, msg=msg)       
         self._edge_server.clear()
@@ -59,7 +59,7 @@ class edge_controllers(object):
 
     def makeEmptyMarker(self, dummyBox=True ):
         int_marker = InteractiveMarker()
-        int_marker.header.frame_id = "/map"
+        int_marker.header.frame_id = "map"
         int_marker.scale = 1
         return int_marker
 

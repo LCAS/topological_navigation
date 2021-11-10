@@ -29,7 +29,7 @@ class WaypointControllers(object):
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
     def update_map(self, msg) :
-        print "updating node controllers..."
+        print("updating node controllers...")
         self.topo_map = topological_map(msg.name, msg=msg)
         self._marker_server.clear()
         self._marker_server.applyChanges()
@@ -50,7 +50,7 @@ class WaypointControllers(object):
     def _create_marker(self, marker_name, pose, marker_description="waypoint marker") :
         # create an interactive marker for our server
         marker = InteractiveMarker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.name = marker_name
         marker.description = marker_description
 

@@ -36,7 +36,7 @@ class node_manager(object):
 
 
     def update_map(self, msg) :
-        print "updating node controllers..."
+        print("updating node controllers...")
         self.topo_map = topological_map(msg.name, msg=msg)
         self._node_server.clear()
         self._node_server.applyChanges()
@@ -116,7 +116,7 @@ class node_manager(object):
                 rospy.logwarn("Failed to get current node")
                 return
             
-            print current.data
+            print(current.data)
             if current.data == 'none':
                 try:
                     pos = rospy.wait_for_message('robot_pose', Pose, timeout=10.0)

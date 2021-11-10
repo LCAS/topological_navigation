@@ -19,7 +19,7 @@ class topol_nav_client(object):
     
         navgoal = topological_navigation_msgs.msg.GotoNodeGoal()
     
-        print "Requesting Navigation to %s" %targ
+        print("Requesting Navigation to %s" %targ)
     
         navgoal.target = targ
         #navgoal.origin = orig
@@ -32,7 +32,7 @@ class topol_nav_client(object):
     
         # Prints out the result of executing the action
         ps = self.client.get_result()  # A FibonacciResult
-        print ps
+        print(ps)
 
     def _on_node_shutdown(self):
         self.client.cancel_all_goals()
@@ -40,7 +40,7 @@ class topol_nav_client(object):
 
 
 if __name__ == '__main__':
-    print 'Argument List:',str(sys.argv)
+    print('Argument List:',str(sys.argv))
     if len(sys.argv) < 2 :
 	sys.exit(2)
     rospy.init_node('topol_nav_test')

@@ -18,7 +18,7 @@ class waypoints_markers(object):
         self.map_nodes = MarkerArray()
         for i in nodes.nodes :
             marker = Marker()
-            marker.header.frame_id = "/map"
+            marker.header.frame_id = "map"
             #marker.header.stamp = rospy.now()
             #marker.type = marker.ARROW
             marker.type = Marker.SPHERE
@@ -49,7 +49,7 @@ class edges_marker(object):
         for node in nodes.nodes :
             for i in node.edges :
                 marker = Marker()
-                marker.header.frame_id = "/map"
+                marker.header.frame_id = "map"
                 marker.type = marker.LINE_LIST
                 ind = nodes._get_node_index(i['node'])
                 V1=Point()
@@ -77,7 +77,7 @@ class vertices_marker(object):
         self.node_zone = MarkerArray()
         for node in nodes.nodes :
             marker = Marker()
-            marker.header.frame_id = "/map"
+            marker.header.frame_id = "map"
             marker.type = marker.LINE_STRIP
             marker.scale.x = 0.1
             marker.color.a = 0.8

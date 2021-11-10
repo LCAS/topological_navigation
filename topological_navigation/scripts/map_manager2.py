@@ -10,12 +10,12 @@ from topological_navigation.manager2 import map_manager_2
 
 
 def usage():
-    print "\nPublishes Topological Maps:"
-    print "\nFor loading a map:"
-    print "\t rosrun topological_navigation map_manager2.py map_filename"
-    print "\nFor creating a new map:"
-    print "\t rosrun topological_navigation map_manager2.py -n map_filename"
-    print "\n\n"
+    print("\nPublishes Topological Maps:")
+    print("\nFor loading a map:")
+    print("\t rosrun topological_navigation map_manager2.py map_filename")
+    print("\nFor creating a new map:")
+    print("\t rosrun topological_navigation map_manager2.py -n map_filename")
+    print("\n\n")
 #########################################################################################################    
 
 
@@ -30,7 +30,7 @@ if __name__ == '__main__' :
         if '-n' in sys.argv:
             ind = sys.argv.index('-n')
             _map=sys.argv[ind+1]
-            print "Creating new Map (%s)" %_map
+            print("Creating new Map (%s)" %_map)
             load=False
         else:
             _map=sys.argv[1]

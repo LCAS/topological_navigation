@@ -47,17 +47,17 @@ class PoliciesVis(object):
 
 
     def _update_everything(self) :
-        print "updating ..."
-        print self.route_nodes
+        print("updating ...")
+        print(self.route_nodes)
 
         self.map_edges.markers=[]
         
         counter=0
         total = len(self.route_nodes.source)
 
-        print 'updating '+str(total)+' edges'        
+        print('updating '+str(total)+' edges')
         while counter < total :
-            print 'Creating edge '+str(counter)
+            print('Creating edge '+str(counter))
             source = self.route_nodes.source[counter]
             ori = self.get_node(self.lnodes, source)
             targ = self.find_action(ori.name, self.route_nodes.edge_id[counter])
@@ -78,12 +78,12 @@ class PoliciesVis(object):
             m.id = idn
             idn += 1
         self.policies_pub.publish(self.map_edges)
-        print "All Done"
+        print("All Done")
 
 
     def create_edge(self, point1, point2, color="red"):
         marker = Marker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = marker.ARROW
         
         
@@ -127,7 +127,7 @@ class PoliciesVis(object):
         Given a topological map and a node name it returns the node object
     """
     def get_node(self, top_map, node_name):
-        print 'looking for: '+node_name
+        print('looking for: '+node_name)
         for i in top_map.nodes:
             #print i.name
             if i.name == node_name:
@@ -160,7 +160,7 @@ class PoliciesVis(object):
 
 
     def policies_callback(self, msg) :
-        print "GOT policies"
+        print("GOT policies")
         self.added_sources = []
         self.route_nodes = msg
         self._update_everything()
@@ -172,7 +172,7 @@ class PoliciesVis(object):
      This function receives the Topological Map
     """
     def MapCallback(self, msg) :
-        print "got map"
+        print("got map")
         self.lnodes = msg
 #        print self.lnodes.nodes
         self.map_received = True 

@@ -25,14 +25,14 @@ import fremenserver.msg
 
 
 def usage():
-    print "\nFor using all the available stats use:"
-    print "\t rosrun topological_navigation topological_prediction.py"
-    print "For all the stats in a range use:"
-    print "\t rosrun topological_navigation topological_prediction.py -range from_epoch to_epoch"
-    print "For all the stats from a date until now use:"
-    print "\t rosrun topological_navigation topological_prediction.py -range from_epoch -1"
-    print "For all the stats until one date:"
-    print "\t rosrun topological_navigation topological_prediction.py -range 0 to_epoch"
+    print("\nFor using all the available stats use:")
+    print("\t rosrun topological_navigation topological_prediction.py")
+    print("For all the stats in a range use:")
+    print("\t rosrun topological_navigation topological_prediction.py -range from_epoch to_epoch")
+    print("For all the stats from a date until now use:")
+    print("\t rosrun topological_navigation topological_prediction.py -range from_epoch -1")
+    print("For all the stats until one date:")
+    print("\t rosrun topological_navigation topological_prediction.py -range 0 to_epoch")
 
 
 def get_model(name, models):
@@ -60,10 +60,10 @@ class TopologicalNavPred(object):
         
         if self.ignore_map_name:
             rospy.logwarn("Ignoring map name in model creation. All stats will be considered")
-            print self.ignore_map_name
+            print(self.ignore_map_name)
         else:
             rospy.logwarn("Using map name in model creation. Only stats for current map will be considered")
-            print self.ignore_map_name
+            print(self.ignore_map_name)
        
 
         # Creating fremen server client
@@ -289,14 +289,14 @@ class TopologicalNavPred(object):
         
         rospy.set_param('topological_prediction/success_values',self.sucesses)
         rospy.set_param('topological_prediction/fail_values',self.fails)
-        print "++++++++++++++++++++++++++++++++++"
-        print "++++++++++++++++++++++++++++++++++"        
-        print "successes:"
-        print self.sucesses
-        print "fails:"
-        print self.fails
-        print "++++++++++++++++++++++++++++++++++"        
-        print "++++++++++++++++++++++++++++++++++"
+        print("++++++++++++++++++++++++++++++++++")
+        print("++++++++++++++++++++++++++++++++++" )       
+        print("successes:")
+        print(self.sucesses)
+        print("fails:")
+        print(self.fails)
+        print("++++++++++++++++++++++++++++++++++")       
+        print("++++++++++++++++++++++++++++++++++")
 
 
         for i in self.eids:
@@ -361,8 +361,8 @@ class TopologicalNavPred(object):
             mid = i["model_id"]
             tmid = i["time_model_id"]
           
-            print "Creating models:"
-            print mid, tmid
+            print("Creating models:")
+            print(mid, tmid)
             #print i["dist"]
             stimes=[]
             times=[]
@@ -387,9 +387,9 @@ class TopologicalNavPred(object):
             
             i["t_order"] = self.add_and_eval_value_models(tmid,stimes,speeds)
 #            i["t_order"] = self.add_and_eval_models(tmid,stimes,speeds)
-            print "Done Model Order %d" %i["t_order"]
-            print "samples", len(i["models"])
-            print "------------------------------------"            
+            print("Done Model Order %d" %i["t_order"])
+            print("samples", len(i["models"]))
+            print("------------------------------------")         
             #print times
             #print states
 

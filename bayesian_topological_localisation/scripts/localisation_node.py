@@ -139,7 +139,7 @@ class TopologicalLocalisation():
         staparviz_pub = rospy.Publisher("{}/stateless_particles_viz".format(name), MarkerArray, queue_size=10)
         self.viz_publishers.append((cnviz_pub, parviz_pub, staparviz_pub))
         nodemkrmsg = Marker()
-        nodemkrmsg.header.frame_id = "/map"
+        nodemkrmsg.header.frame_id = "map"
         nodemkrmsg.type = nodemkrmsg.SPHERE
         nodemkrmsg.pose.position.z = 6
         nodemkrmsg.pose.orientation.w = 1
@@ -154,7 +154,7 @@ class TopologicalLocalisation():
         ptcsarrmsg = MarkerArray()
         for i in range(n_particles):
             ptcmkrmsg = Marker()
-            ptcmkrmsg.header.frame_id = "/map"
+            ptcmkrmsg.header.frame_id = "map"
             ptcmkrmsg.type = ptcmkrmsg.SPHERE
             ptcmkrmsg.pose.position.z = 0
             ptcmkrmsg.pose.orientation.w = 1
@@ -170,7 +170,7 @@ class TopologicalLocalisation():
         staptcsarrmsg = MarkerArray()
         for i in range(n_particles):
             staptcmkrmsg = Marker()
-            staptcmkrmsg.header.frame_id = "/map"
+            staptcmkrmsg.header.frame_id = "map"
             staptcmkrmsg.type = staptcmkrmsg.SPHERE
             staptcmkrmsg.pose.position.z = 0
             staptcmkrmsg.pose.orientation.w = 1

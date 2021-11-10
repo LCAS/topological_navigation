@@ -14,14 +14,14 @@ from topological_navigation.manager import map_manager
 
 
 def usage():
-    print "\nPublishes Topological Maps:"
-    print "\nFor loading a map from the mongodb:"
-    print "\t rosrun topological_navigation map_manager.py map_name"
-    print "\nFor loading a map from a tmap file:"
-    print "\t rosrun topological_navigation map_manager.py -f map_filename"
-    print "\nFor creating a new map:"
-    print "\t rosrun topological_navigation map_manager.py -n map_name"
-    print "\n\n"
+    print("\nPublishes Topological Maps:")
+    print("\nFor loading a map from the mongodb:")
+    print("\t rosrun topological_navigation map_manager.py map_name")
+    print("\nFor loading a map from a tmap file:")
+    print("\t rosrun topological_navigation map_manager.py -f map_filename")
+    print("\nFor creating a new map:")
+    print("\t rosrun topological_navigation map_manager.py -n map_name")
+    print("\n\n")
     
     
     
@@ -35,12 +35,12 @@ if __name__ == '__main__' :
         if '-n' in sys.argv:
             ind = sys.argv.index('-n')
             _map=sys.argv[ind+1]
-            print "Creating new Map (%s)" %_map
+            print("Creating new Map (%s)" %_map)
             load=False
         elif '-f' in sys.argv:
             ind = sys.argv.index('-f')
             _map=sys.argv[ind+1]
-            print "Loading map from tmap file (%s)" %_map
+            print("Loading map from tmap file (%s)" %_map)
             load_from_file=True
         else:
             _map=sys.argv[1]

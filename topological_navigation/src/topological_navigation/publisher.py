@@ -34,7 +34,7 @@ class map_publisher(object):
 
     def get_topological_map_cb(self, req):
         nodes = self.loadMap(req.pointset)
-        print "Returning Map %s"%req.pointset
+        print("Returning Map %s"%req.pointset)
         return nodes
 
 

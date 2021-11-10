@@ -40,13 +40,13 @@ class SearchPolicyServer(object):
     def get_route_cb(self, req):
         rsearch = topological_navigation.route_search.TopologicalRouteSearch(self.top_map)
         route = rsearch.search_route(self.closest_node, req.goal)
-        print route
+        print(route)
         return route
 
     def get_routeb_cb(self, req):
         rsearch = topological_navigation.route_search.TopologicalRouteSearch(self.top_map)
         route = rsearch.search_route(req.origin, req.goal)
-        print route
+        print(route)
         return route        
 
 

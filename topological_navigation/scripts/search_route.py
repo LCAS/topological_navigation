@@ -46,7 +46,7 @@ class SearchRoute(object):
             
         rsearch = TopologicalRouteSearch(self.top_map)
         route = rsearch.search_route(cnode, goal)
-        print route
+        print(route)
         
         rospy.loginfo("All Done ...")
         #rospy.spin()

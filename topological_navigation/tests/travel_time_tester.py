@@ -44,7 +44,7 @@ class TestTravelTimeEstimator(unittest.TestCase):
         meta['map'] = 'test_travel_time_estimator_map'
         meta['pointset'] = 'test_travel_time_estimator_map'
 
-        for (nodeName, node) in test_nodes.iteritems():
+        for (nodeName, node) in test_nodes.items():
             meta["node"] = nodeName
             node.map = meta['map']
             node.pointset = meta['pointset']

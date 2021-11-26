@@ -134,6 +134,8 @@ include_directories(
    scripts/speed_based_prediction.py
    scripts/reconf_at_edges_server.py
    scripts/topological_transform_publisher.py
+   scripts/restrictions_manager.py
+   scripts/navstats_logger.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

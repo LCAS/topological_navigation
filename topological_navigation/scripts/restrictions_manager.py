@@ -14,7 +14,7 @@ from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 from std_msgs.msg import String
 from sympy.parsing.sympy_parser import parse_expr
-from restrictions_impl import *
+from topological_navigation.restrictions_impl import *
 
 
 class RestrictionsManager():

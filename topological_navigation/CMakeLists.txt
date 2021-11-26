@@ -4,7 +4,7 @@ project(topological_navigation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS rospy std_msgs nav_msgs sensor_msgs actionlib_msgs mongodb_store message_generation)
+find_package(catkin REQUIRED COMPONENTS rospy std_msgs nav_msgs sensor_msgs actionlib_msgs topological_navigation_msgs mongodb_store message_generation)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -134,6 +134,8 @@ include_directories(
    scripts/speed_based_prediction.py
    scripts/reconf_at_edges_server.py
    scripts/topological_transform_publisher.py
+   scripts/restrictions_manager.py
+   scripts/navstats_logger.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

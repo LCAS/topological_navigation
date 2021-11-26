@@ -21,6 +21,7 @@
   <build_depend>mongodb_store</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>topological_navigation</build_depend>
+  <build_depend>topological_rviz_tools</build_depend>
   
   <run_depend>rospy</run_depend>
   <run_depend>message_runtime</run_depend>
@@ -28,6 +29,7 @@
   <run_depend>mongodb_store</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>topological_navigation</run_depend>
+  <run_depend>topological_rviz_tools</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

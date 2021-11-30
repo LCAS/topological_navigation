@@ -187,6 +187,9 @@ class TopologicalNavServer(object):
     def init_reconfigure(self):
         
         self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
+        if not self.move_base_planner.split("/")[-1] in DYNPARAM_MAPPING:
+            DYNPARAM_MAPPING[self.move_base_planner.split("/")[-1]] = {}
+        
         rospy.loginfo("Creating reconfigure client for {}".format(self.move_base_planner))
         self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
         self.init_dynparams = self.rcnfclient.get_configuration()
@@ -207,7 +210,7 @@ class TopologicalNavServer(object):
             cytol = 6.283
 
         params = {"yaw_goal_tolerance": cytol, "xy_goal_tolerance": cxygtol}
-        rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_name, params))
+        rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_planner, params))
         print("Intermediate: {}".format(intermediate))
         self.reconfigure_movebase_params(params)
         

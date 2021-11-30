@@ -210,7 +210,7 @@ class TopologicalNavServer(object):
             cytol = 6.283
 
         params = {"yaw_goal_tolerance": cytol, "xy_goal_tolerance": cxygtol}
-        rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_name, params))
+        rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_planner, params))
         print("Intermediate: {}".format(intermediate))
         self.reconfigure_movebase_params(params)
         

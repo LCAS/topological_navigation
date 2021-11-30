@@ -99,10 +99,6 @@ class TopologicalNavServer(object):
         self.move_base_name = rospy.get_param("~move_base_name", "move_base")
         if not self.move_base_name in self.move_base_actions:
             self.move_base_actions.append(self.move_base_name)
-            
-        self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
-        if not self.move_base_planner.split("/")[-1] in DYNPARAM_MAPPING:
-            DYNPARAM_MAPPING[self.move_base_planner.split("/")[-1]] = {}
         
         self.stats_pub = rospy.Publisher("topological_navigation/Statistics", NavStatistics, queue_size=10)
         self.edge_pub = rospy.Publisher("topological_navigation/Edge", CurrentEdge, queue_size=10)
@@ -191,6 +187,9 @@ class TopologicalNavServer(object):
     def init_reconfigure(self):
         
         self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
+        if not self.move_base_planner.split("/")[-1] in DYNPARAM_MAPPING:
+            DYNPARAM_MAPPING[self.move_base_planner.split("/")[-1]] = {}
+        
         rospy.loginfo("Creating reconfigure client for {}".format(self.move_base_planner))
         self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
         self.init_dynparams = self.rcnfclient.get_configuration()

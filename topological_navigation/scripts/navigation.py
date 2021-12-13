@@ -147,6 +147,7 @@ class TopologicalNavServer(object):
         rospy.loginfo("...done")
         
         try:
+            rospy.loginfo("Waiting for restrictions...")
             rospy.wait_for_service('restrictions_manager/evaluate_edge', timeout=3.0)
             
             self.evaluate_edge_srv = rospy.ServiceProxy(
@@ -154,6 +155,7 @@ class TopologicalNavServer(object):
             self.evaluate_node_srv = rospy.ServiceProxy(
                 'restrictions_manager/evaluate_node', EvaluateNode)
             
+            rospy.loginfo("Restrictions Available")
             self.using_restrictions = True
         except:
             rospy.logwarn("Restrictions Unavailable")
@@ -167,7 +169,10 @@ class TopologicalNavServer(object):
         
         
     def _on_node_shutdown(self):
-        self.cancel_current_action(timeout_secs=2)
+        with self.navigation_lock:
+            if self.navigation_activated:
+                self.preempted = True
+                self.cancel_current_action(timeout_secs=2)
         
         
     def make_move_base_edge(self):

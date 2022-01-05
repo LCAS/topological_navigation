@@ -67,7 +67,7 @@ class EdgeActionManager(object):
         self.destination_node = destination_node
         self.origin_node = origin_node
         
-        rospy.loginfo("Edge Action Manager: Processing edge {} with target {}".format(self.edge["edge_id"], self.destination_node["node"]["name"]))
+        rospy.loginfo("Edge Action Manager: Processing edge {} and target {}".format(self.edge["edge_id"], self.destination_node["node"]["name"]))
         #rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         
         self.action_name = self.edge["action"]
@@ -99,6 +99,9 @@ class EdgeActionManager(object):
         
         
     def construct_goal(self, action_type, goal_args):
+        
+        print(self.destination_node["node"]["pose"])
+        print(self.origin_node["node"]["pose"])
         
         paths = self.dt.get_paths_from_nested_dict(goal_args)
         

@@ -555,7 +555,8 @@ class TopologicalNavServer(object):
         else:
             rospy.loginfo("Navigating Case 2a: Getting to the exact pose of target {}".format(g_node["node"]["name"]))
             self.current_target = g_node["node"]["name"]
-            origin_node,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge)
+            origin_name,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge["edge_id"])
+            origin_node = self.rsearch.get_node_from_tmap2(origin_name)
             result, inc = self.execute_action(the_edge, g_node, origin_node)
             if not result:
                 rospy.logwarn("Navigation Failed")

@@ -6,7 +6,7 @@ Created on Tue Apr 13 22:02:24 2021
 """
 #########################################################################################################
 import rospy, actionlib
-import operator, collections
+import operator, collections, copy
 
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
@@ -86,7 +86,7 @@ class EdgeActionManager(object):
         self.client.wait_for_server()
         
         rospy.loginfo("Edge Action Manager: Constructing the goal")
-        self.construct_goal(action_type, self.edge["goal"])
+        self.construct_goal(action_type, copy.deepcopy(self.edge["goal"]))
         
         
     def preempt(self):

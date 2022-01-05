@@ -6,7 +6,7 @@ Created on Tue Apr 13 22:02:24 2021
 """
 #########################################################################################################
 import rospy, actionlib
-import operator, collections
+import operator, collections, copy
 
 from functools import reduce  # forward compatibility for Python 3
 from rospy_message_converter import message_converter
@@ -67,8 +67,7 @@ class EdgeActionManager(object):
         self.destination_node = destination_node
         self.origin_node = origin_node
         
-        rospy.loginfo("Edge Action Manager: Processing edge {} and target {}".format(self.edge["edge_id"], self.destination_node["node"]["name"]))
-        #rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
+        rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         
         self.action_name = self.edge["action"]
         if self.action_name != self.current_action:
@@ -87,7 +86,7 @@ class EdgeActionManager(object):
         self.client.wait_for_server()
         
         rospy.loginfo("Edge Action Manager: Constructing the goal")
-        self.construct_goal(action_type, self.edge["goal"])
+        self.construct_goal(action_type, copy.deepcopy(self.edge["goal"]))
         
         
     def preempt(self):
@@ -99,9 +98,6 @@ class EdgeActionManager(object):
         
         
     def construct_goal(self, action_type, goal_args):
-        
-        print(self.destination_node["node"]["pose"])
-        print(self.origin_node["node"]["pose"])
         
         paths = self.dt.get_paths_from_nested_dict(goal_args)
         
@@ -119,7 +115,6 @@ class EdgeActionManager(object):
                     goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
-        print(self.goal)
         
  
     def execute(self):

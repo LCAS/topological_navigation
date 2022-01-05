@@ -67,7 +67,8 @@ class EdgeActionManager(object):
         self.destination_node = destination_node
         self.origin_node = origin_node
         
-        rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
+        rospy.loginfo("Edge Action Manager: Processing edge {} with target {}".format(self.edge["edge_id"], self.destination_node["node"]["name"]))
+        #rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         
         self.action_name = self.edge["action"]
         if self.action_name != self.current_action:
@@ -115,6 +116,7 @@ class EdgeActionManager(object):
                     goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
+        print(self.goal)
         
  
     def execute(self):

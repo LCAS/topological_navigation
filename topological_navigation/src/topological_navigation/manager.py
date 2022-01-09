@@ -476,7 +476,16 @@ class map_manager(object):
         #print query, query_meta
         available = msg_store.query(topological_navigation_msgs.msg.TopologicalNode._type, query, query_meta)
         #print len(available)
-        if len(available) == 1 :
+
+        #Checking also that the destination node exists
+        query = {"name" : de_waypoint, "pointset": self.nodes.name}
+        query_meta = {}
+        query_meta["pointset"] = self.nodes.name
+        query_meta["map"] = self.nodes.map
+        dest_available = msg_store.query(topological_navigation_msgs.msg.TopologicalNode._type, query, query_meta)    
+
+
+        if len(available) == 1 and len(dest_available) == 1:
             eids = []
             for i in available[0][0].edges :
                 eids.append(i.edge_id)

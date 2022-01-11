@@ -557,7 +557,11 @@ class TopologicalNavServer(object):
             self.current_target = g_node["node"]["name"]
             origin_name,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge["edge_id"])
             origin_node = self.rsearch.get_node_from_tmap2(origin_name)
+
+            self.edge_reconf_start(the_edge)
             result, inc = self.execute_action(the_edge, g_node, origin_node)
+            self.edge_reconf_end()
+
             if not result:
                 rospy.logwarn("Navigation Failed")
                 inc=1
@@ -704,22 +708,12 @@ class TopologicalNavServer(object):
             self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
             dt_text = self.stat.get_start_time_str()
 
-            if self.edge_reconfigure:
-                if not self.srv_edge_reconfigure:
-                    self.edgeReconfigureManager.register_edge(cedg)
-                    self.edgeReconfigureManager.initialise()
-                    self.edgeReconfigureManager.reconfigure()
-                else:
-                    self.edgeReconfigureManager.srv_reconfigure(cedg["edge_id"])
-
+            self.edge_reconf_start(cedg)
             if exec_policy:
                 nav_ok, inc = self.execute_action(cedg, cnode, onode)
             else:
                 nav_ok, inc, recovering, route = self.execute_action_fail_recovery(cedg, cnode, route, rindex, onode, target)
-
-            if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
-                self.edgeReconfigureManager._reset()
-                rospy.sleep(rospy.Duration.from_sec(0.3))
+            self.edge_reconf_end()
 
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
             self.reconfigure_movebase_params(params)
@@ -762,6 +756,24 @@ class TopologicalNavServer(object):
 
         result = nav_ok
         return result, inc
+
+
+    def edge_reconf_start(self, edge):
+
+        if self.edge_reconfigure:
+            if not self.srv_edge_reconfigure:
+                self.edgeReconfigureManager.register_edge(edge)
+                self.edgeReconfigureManager.initialise()
+                self.edgeReconfigureManager.reconfigure()
+            else:
+                self.edgeReconfigureManager.srv_reconfigure(edge["edge_id"])
+
+
+    def edge_reconf_end(self):
+
+        if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
+            self.edgeReconfigureManager._reset()
+            rospy.sleep(rospy.Duration.from_sec(0.3))
 
 
     def cancel_current_action(self, timeout_secs=-1):

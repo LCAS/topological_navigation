@@ -342,10 +342,10 @@ class map_manager_2(object):
         """
         Adds a node to the topological map
         """
-        return self.add_topological_node(req.name, req.pose, req.add_close_nodes)
+        return self.add_topological_node(req.name, req.pose, req.vertices_x, req.vertices_y, req.add_close_nodes)
         
         
-    def add_topological_node(self, node_name, node_pose, add_close_nodes, dist=8.0):
+    def add_topological_node(self, node_name, node_pose, vertices_x, vertices_y, add_close_nodes, dist=8.0):
         
         if node_name:
             name = node_name
@@ -367,7 +367,12 @@ class map_manager_2(object):
                     if node["node"]["name"] != "ChargingPoint":
                         close_nodes.append(node["node"]["name"])
                         
-        self.add_node(name, pose)
+        if len(vertices_x) < 3 or len(vertices_y) < 3 or len(vertices_x) != len(vertices_y):
+            verts = "default"
+        else:
+            verts = [{"x":x, "y":y} for x, y in zip(vertices_x, vertices_y)]
+                        
+        self.add_node(name, pose, verts=verts)
         
         for close_node in close_nodes:
             self.add_edge(name, close_node, "move_base", "", False)

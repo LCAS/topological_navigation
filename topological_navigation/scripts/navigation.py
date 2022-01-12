@@ -547,13 +547,13 @@ class TopologicalNavServer(object):
                         the_edge = i
 
         if the_edge is None:
-            rospy.logwarn("Navigating Case 2: Could not find a move base action in the edges of target {}. Unsafe to move".format(g_node["node"]["name"]))
+            rospy.logwarn("Navigating Case 2a: Could not find a move base action in the edges of target {}. Unsafe to move".format(g_node["node"]["name"]))
             rospy.loginfo("Action not taken, outputting success")
             result=True
             inc=0
-            rospy.loginfo("Navigating Case 2 -> res: %d", inc)
+            rospy.loginfo("Navigating Case 2a -> res: %d", inc)
         else:
-            rospy.loginfo("Navigating Case 2a: Getting to the exact pose of target {}".format(g_node["node"]["name"]))
+            rospy.loginfo("Navigating Case 2: Getting to the exact pose of target {}".format(g_node["node"]["name"]))
             self.current_target = g_node["node"]["name"]
             origin_name,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge["edge_id"])
             origin_node = self.rsearch.get_node_from_tmap2(origin_name)
@@ -567,7 +567,7 @@ class TopologicalNavServer(object):
                 inc=1
             else:
                 rospy.loginfo("Navigation Finished Successfully")
-            rospy.loginfo("Navigating Case 2a -> res: %d", inc)
+            rospy.loginfo("Navigating Case 2 -> res: %d", inc)
             
         return result, inc
 

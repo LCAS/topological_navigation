@@ -122,7 +122,7 @@ class map_manager_2(object):
         self.broadcast_transform()
         
         self.convert_to_legacy = rospy.get_param("~convert_to_legacy", True)
-        if self.loaded and self.convert_to_legacy:
+        if self.convert_to_legacy:
             self.points_pub = rospy.Publisher('/topological_map', topological_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)

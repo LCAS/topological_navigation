@@ -30,8 +30,8 @@ class map_manager_2(object):
     
     def __init__(self, advertise_srvs=True):
         
-        self.cache_maps = rospy.get_param("cache_maps", True)
-        self.auto_write = rospy.get_param("auto_write", True)
+        self.cache_maps = rospy.get_param("~cache_maps", True)
+        self.auto_write = rospy.get_param("~auto_write", True)
 
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
         if not os.path.exists(self.cache_dir):

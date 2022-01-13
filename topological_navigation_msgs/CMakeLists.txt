@@ -73,6 +73,7 @@ add_service_files(
   ReconfAtEdges.srv
   LoadTopoNavTestScenario.srv
   RunTopoNavTestScenario.srv
+  SetInfluenceZone.srv
 )
 
 

@@ -1,7 +1,5 @@
 string name
 geometry_msgs/Pose pose
-float64[] vertices_x
-float64[] vertices_y
 # Set to true to add nodes which are in close proximity (currently hardcoded to 8m)
 bool add_close_nodes
 ---

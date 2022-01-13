@@ -5,7 +5,7 @@ Created on Tue Apr 13 22:02:24 2021
 
 """
 #########################################################################################################
-import rospy, actionlib
+import rospy, actionlib, json, yaml
 import operator, collections, copy
 
 from functools import reduce  # forward compatibility for Python 3
@@ -63,9 +63,13 @@ class EdgeActionManager(object):
     
     def initialise(self, edge, destination_node, origin_node=None):
         
-        self.edge = edge
-        self.destination_node = destination_node
-        self.origin_node = origin_node
+        self.edge = yaml.safe_load(json.dumps(edge))
+        self.destination_node = yaml.safe_load(json.dumps(destination_node))
+        
+        if origin_node is not None:
+            self.origin_node = yaml.safe_load(json.dumps(origin_node))
+        else:
+            self.origin_node = origin_node
         
         rospy.loginfo("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
         

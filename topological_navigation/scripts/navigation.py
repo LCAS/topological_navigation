@@ -256,9 +256,8 @@ class TopologicalNavServer(object):
         """
          This Function updates the Topological Map everytime it is called
         """
-        self.lnodes = yaml.safe_load(msg.data)
+        self.lnodes = json.loads(msg.data)
         self.topol_map = self.lnodes["pointset"]
-        self.curr_tmap = deepcopy(self.lnodes)
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
 

@@ -943,7 +943,7 @@ class TopologicalNavServer(object):
                 return result, inc
 
         
-        self.edge_action_manager.initialise(yaml.safe_load(json.dumps(edge)), destination_node, origin_node)
+        self.edge_action_manager.initialise(edge, destination_node, origin_node)
         self.edge_action_manager.execute()
         
         status = self.edge_action_manager.client.get_state()

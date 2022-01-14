@@ -30,8 +30,8 @@ class map_manager_2(object):
     
     def __init__(self, advertise_srvs=True):
         
-        self.cache_maps = rospy.get_param("~cache_maps", True)
-        self.auto_write = rospy.get_param("~auto_write", True)
+        self.cache_maps = rospy.get_param("cache_topological_maps", True)
+        self.auto_write = rospy.get_param("auto_write_topological_maps", True)
 
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
         if not os.path.exists(self.cache_dir):
@@ -865,6 +865,7 @@ class map_manager_2(object):
                     if "config" not in edge:
                         edge["config"] = []
                     if new_param not in edge["config"]:
+                        rospy.loginfo("Adding param {} to edge {}".format(new_param, edge["edge_id"]))
                         edge["config"].append(new_param)
                     msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
             

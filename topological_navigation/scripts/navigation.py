@@ -909,13 +909,7 @@ class TopologicalNavServer(object):
     
 
     def execute_action(self, edge, destination_node, origin_node=None):
-        
-        edge = yaml.safe_load(json.dumps(edge))
-        destination_node = yaml.safe_load(json.dumps(destination_node))
-        
-        if origin_node is not None:
-            origin_node = yaml.safe_load(json.dumps(origin_node))
-        
+
         inc = 0
         result = True
         self.goal_reached = False
@@ -949,7 +943,7 @@ class TopologicalNavServer(object):
                 return result, inc
 
         
-        self.edge_action_manager.initialise(edge, destination_node, origin_node)
+        self.edge_action_manager.initialise(yaml.safe_load(json.dumps(edge)), destination_node, origin_node)
         self.edge_action_manager.execute()
         
         status = self.edge_action_manager.client.get_state()

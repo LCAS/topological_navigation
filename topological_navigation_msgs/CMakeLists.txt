@@ -36,6 +36,10 @@ add_message_files(
   CurrentEdge.msg
   NavStatistics.msg
   TopologicalRoute.msg
+  AddEdge.msg
+  AddNode.msg
+  SetInfluenceZone.msg
+  UpdateEdgeConfig.msg
 )
 
 #Generate services in the 'srv' folder

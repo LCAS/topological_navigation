@@ -36,10 +36,10 @@ add_message_files(
   CurrentEdge.msg
   NavStatistics.msg
   TopologicalRoute.msg
-  AddEdge.msg
-  AddNode.msg
-  SetInfluenceZone.msg
-  UpdateEdgeConfig.msg
+  AddEdgeReq.msg
+  AddNodeReq.msg
+  SetInfluenceZoneReq.msg
+  UpdateEdgeConfigReq.msg
 )
 
 #Generate services in the 'srv' folder
@@ -78,6 +78,10 @@ add_service_files(
   LoadTopoNavTestScenario.srv
   RunTopoNavTestScenario.srv
   SetInfluenceZone.srv
+  AddEdgeArray.srv
+  AddNodeArray.srv
+  SetInfluenceZoneArray.srv
+  UpdateEdgeConfigArray.srv
 )
 
 

@@ -851,7 +851,7 @@ class map_manager_2(object):
         return self.add_param_to_edge_config(req.edge_id, req.namespace, req.name, req.value, req.value_is_string)
     
     
-    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string, write_map=True):
+    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string, update=True, write_map=True):
         
         if not value:
             return False, "no value provided"
@@ -876,7 +876,8 @@ class map_manager_2(object):
                     msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
             
             self.tmap2["nodes"][index] = the_node
-            self.update()
+            if update:
+                self.update()
             if write_map and self.auto_write:
                 self.write_topological_map(self.filename)
             
@@ -1114,7 +1115,7 @@ class map_manager_2(object):
         return self.set_influence_zone(req.name, req.vertices_x, req.vertices_y)
 
 
-    def set_influence_zone(self, node_name, vertices_x, vertices_y):
+    def set_influence_zone(self, node_name, vertices_x, vertices_y, update=True):
 
         num_available, index = self.get_instances_of_node(node_name)
 
@@ -1127,7 +1128,8 @@ class map_manager_2(object):
                 verts = [{"x":x, "y":y} for x, y in zip(vertices_x, vertices_y)]
 
             self.tmap2["nodes"][index]["node"]["verts"] = verts
-            self.update()
+            if update:
+                self.update()
             if self.auto_write:
                 self.write_topological_map(self.filename)
             return True
@@ -1192,7 +1194,7 @@ class map_manager_2(object):
 
         try:
             for item in data:
-                self.add_param_to_edge_config(item.edge_id, item.namespace, item.name, item.value, item.value_is_string, write_map=False)
+                self.add_param_to_edge_config(item.edge_id, item.namespace, item.name, item.value, item.value_is_string, update=False, write_map=False)
             self.update()
             if self.auto_write:
                 self.write_topological_map(self.filename)
@@ -1214,7 +1216,7 @@ class map_manager_2(object):
 
         try:
             for item in data:
-                self.set_influence_zone(item.name, item.vertices_x, item.vertices_y)
+                self.set_influence_zone(item.name, item.vertices_x, item.vertices_y, update=False)
             self.update()
             if self.auto_write:
                 self.write_topological_map(self.filename)

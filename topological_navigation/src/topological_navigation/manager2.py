@@ -73,6 +73,12 @@ class map_manager_2(object):
         self.add_datum_srv=rospy.Service('/topological_map_manager2/add_datum', topological_navigation_msgs.srv.AddDatum, self.add_datum_cb)
         self.update_fail_policy_srv=rospy.Service('/topological_map_manager2/update_fail_policy', topological_navigation_msgs.srv.UpdateFailPolicy, self.update_fail_policy_cb)
         self.set_influence_zone_srv=rospy.Service('/topological_map_manager2/set_node_influence_zone', topological_navigation_msgs.srv.SetInfluenceZone, self.set_influence_zone_cb)
+        
+        # Services for modifying the map quickly
+        self.add_nodes_srv=rospy.Service('/topological_map_manager2/add_topological_node_multi', topological_navigation_msgs.srv.AddNodeArray, self.add_topological_nodes_cb)
+        self.add_edges_srv=rospy.Service('/topological_map_manager2/add_edges_between_nodes_multi', topological_navigation_msgs.srv.AddEdgeArray, self.add_edges_cb)
+        self.add_params_to_edges_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config_multi', topological_navigation_msgs.srv.UpdateEdgeConfigArray, self.add_params_to_edges_cb)
+        self.set_influence_zones_srv=rospy.Service('/topological_map_manager2/set_node_influence_zone_multi', topological_navigation_msgs.srv.SetInfluenceZoneArray, self.set_influence_zones_cb)
 
     
     def init_map(self, name="new_map", metric_map="map_2d", pointset="new_map", transformation="default", filename="", load=True):
@@ -1127,6 +1133,95 @@ class map_manager_2(object):
             return True
         else:
             rospy.logerr("Error updating the influence zone of node {}. {} instances of node with name {} found".format(node_name, num_available, node_name))
+            return False
+        
+        
+    def add_topological_nodes_cb(self, req):
+        """
+        Add a list of nodes to the topological map
+        """
+        return self.add_topological_nodes(req.data)
+    
+    
+    def add_topological_nodes(self, data):
+
+        try:
+            for item in data:
+                pose = message_converter.convert_ros_message_to_dictionary(item.pose)
+                self.add_node(item.name, pose)
+            self.update()
+            if self.auto_write:
+                self.write_topological_map(self.filename)
+            return True
+        
+        except Exception as e:
+            rospy.logerr(e)
+            return False
+            
+            
+    def add_edges_cb(self, req):
+        """
+        Add a list of edges to the topological map
+        """
+        return self.add_edges(req.data)
+    
+    
+    def add_edges(self, data):
+        
+        try:
+            for item in data:
+                self.add_edge_to_node(item.origin, item.destination, item.action, item.edge_id)
+            self.update()
+            if self.auto_write:
+                self.write_topological_map(self.filename)
+            return True
+        
+        except Exception as e:
+            rospy.logerr(e)
+            return False
+        
+        
+    def add_params_to_edges_cb(self, req):
+        """
+        Add parameters to a list of edges
+        """
+        return self.add_params_to_edges(req.data)
+    
+    
+    def add_params_to_edges(self, data):
+
+        try:
+            for item in data:
+                self.add_param_to_edge_config(item.edge_id, item.namespace, item.name, item.value, item.value_is_string, write_map=False)
+            self.update()
+            if self.auto_write:
+                self.write_topological_map(self.filename)
+            return True
+        
+        except Exception as e:
+            rospy.logerr(e)
+            return False
+        
+        
+    def set_influence_zones_cb(self, req):
+        """
+        Set the influence zone of a list of edges
+        """
+        return self.set_influence_zones(req.data)
+    
+    
+    def set_influence_zones(self, data):
+
+        try:
+            for item in data:
+                self.set_influence_zone(item.name, item.vertices_x, item.vertices_y)
+            self.update()
+            if self.auto_write:
+                self.write_topological_map(self.filename)
+            return True
+        
+        except Exception as e:
+            rospy.logerr(e)
             return False
 
 

@@ -15,6 +15,7 @@ import topological_navigation_msgs.srv
 import std_msgs.msg
 
 from std_srvs.srv import Trigger, TriggerResponse
+from std_srvs.srv import Empty, EmptyResponse
 from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
 
 from rospy_message_converter import message_converter
@@ -73,6 +74,7 @@ class map_manager_2(object):
         self.add_datum_srv=rospy.Service('/topological_map_manager2/add_datum', topological_navigation_msgs.srv.AddDatum, self.add_datum_cb)
         self.update_fail_policy_srv=rospy.Service('/topological_map_manager2/update_fail_policy', topological_navigation_msgs.srv.UpdateFailPolicy, self.update_fail_policy_cb)
         self.set_influence_zone_srv=rospy.Service('/topological_map_manager2/set_node_influence_zone', topological_navigation_msgs.srv.SetInfluenceZone, self.set_influence_zone_cb)
+        self.clear_nodes_srv=rospy.Service('/topological_map_manager2/clear_topological_nodes', Empty, self.clear_nodes_cb)
         
         # Services for modifying the map quickly
         self.add_nodes_srv=rospy.Service('/topological_map_manager2/add_topological_node_multi', topological_navigation_msgs.srv.AddNodeArray, self.add_topological_nodes_cb)
@@ -1138,6 +1140,25 @@ class map_manager_2(object):
             return False
         
         
+    def clear_nodes_cb(self, req):
+        """
+        Remove all nodes from the topological map
+        """
+        self.clear_nodes()
+
+        ans = EmptyResponse()
+        return ans
+
+
+    def clear_nodes(self):
+
+        self.tmap2["nodes"] = []
+
+        self.update()
+        if self.auto_write:
+            self.write_topological_map(self.filename)
+
+
     def add_topological_nodes_cb(self, req):
         """
         Add a list of nodes to the topological map

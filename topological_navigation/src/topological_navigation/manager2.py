@@ -34,6 +34,9 @@ class map_manager_2(object):
         self.cache_maps = rospy.get_param("cache_topological_maps", True)
         self.auto_write = rospy.get_param("auto_write_topological_maps", True)
 
+        rospy.loginfo("cache_topological_maps: {}".format(self.cache_maps))
+        rospy.loginfo("auto_write_topological_maps: {}".format(self.auto_write))
+
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
@@ -362,7 +365,7 @@ class map_manager_2(object):
         return self.add_topological_node(req.name, req.pose, req.add_close_nodes)
         
         
-    def add_topological_node(self, node_name, node_pose, add_close_nodes, dist=8.0):
+    def add_topological_node(self, node_name, node_pose, add_close_nodes, dist=8.0, update=True):
         
         if node_name:
             name = node_name
@@ -390,7 +393,8 @@ class map_manager_2(object):
             self.add_edge(name, close_node, "move_base", "", False)
             self.add_edge(close_node, name, "move_base", "", False)
 
-        self.update()
+        if update:
+            self.update()
         if self.auto_write:
             self.write_topological_map(self.filename)
 
@@ -1168,18 +1172,15 @@ class map_manager_2(object):
     
     def add_topological_nodes(self, data):
 
-        try:
-            for item in data:
-                pose = message_converter.convert_ros_message_to_dictionary(item.pose)
-                self.add_node(item.name, pose)
-            self.update()
-            if self.auto_write:
-                self.write_topological_map(self.filename)
-            return True
-        
-        except Exception as e:
-            rospy.logerr(e)
-            return False
+        for item in data:
+            success = self.add_topological_node(item.name, item.pose, False, update=False)
+            if not success:
+                return False
+
+        self.update()
+        if self.auto_write:
+            self.write_topological_map(self.filename)
+        return True
             
             
     def add_edges_cb(self, req):
@@ -1191,17 +1192,15 @@ class map_manager_2(object):
     
     def add_edges(self, data):
         
-        try:
-            for item in data:
-                self.add_edge_to_node(item.origin, item.destination, item.action, item.edge_id)
-            self.update()
-            if self.auto_write:
-                self.write_topological_map(self.filename)
-            return True
-        
-        except Exception as e:
-            rospy.logerr(e)
-            return False
+        for item in data:
+            success = self.add_edge(item.origin, item.destination, item.action, item.edge_id, update=False)
+            if not success:
+                return False
+
+        self.update()
+        if self.auto_write:
+            self.write_topological_map(self.filename)
+        return True
         
         
     def add_params_to_edges_cb(self, req):
@@ -1213,18 +1212,16 @@ class map_manager_2(object):
     
     def add_params_to_edges(self, data):
 
-        try:
-            for item in data:
-                self.add_param_to_edge_config(item.edge_id, item.namespace, item.name, item.value, item.value_is_string, update=False, write_map=False)
-            self.update()
-            if self.auto_write:
-                self.write_topological_map(self.filename)
-            return True
-        
-        except Exception as e:
-            rospy.logerr(e)
-            return False
-        
+        for item in data:
+            success,_ = self.add_param_to_edge_config(item.edge_id, item.namespace, item.name, item.value, item.value_is_string, update=False, write_map=False)
+            if not success:
+                return False
+
+        self.update()
+        if self.auto_write:
+            self.write_topological_map(self.filename)
+        return True
+
         
     def set_influence_zones_cb(self, req):
         """
@@ -1235,18 +1232,16 @@ class map_manager_2(object):
     
     def set_influence_zones(self, data):
 
-        try:
-            for item in data:
-                self.set_influence_zone(item.name, item.vertices_x, item.vertices_y, update=False)
-            self.update()
-            if self.auto_write:
-                self.write_topological_map(self.filename)
-            return True
-        
-        except Exception as e:
-            rospy.logerr(e)
-            return False
+        for item in data:
+            success = self.set_influence_zone(item.name, item.vertices_x, item.vertices_y, update=False)
+            if not success:
+                return False
 
+        self.update()
+        if self.auto_write:
+            self.write_topological_map(self.filename)
+        return True
+        
 
     def get_instances_of_node(self, node_name):
         

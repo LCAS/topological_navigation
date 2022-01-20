@@ -31,8 +31,8 @@ class map_manager_2(object):
     
     def __init__(self, advertise_srvs=True):
         
-        self.cache_maps = rospy.get_param("cache_topological_maps", True)
-        self.auto_write = rospy.get_param("auto_write_topological_maps", True)
+        self.cache_maps = rospy.get_param("~cache_topological_maps", True)
+        self.auto_write = rospy.get_param("~auto_write_topological_maps", True)
 
         rospy.loginfo("cache_topological_maps: {}".format(self.cache_maps))
         rospy.loginfo("auto_write_topological_maps: {}".format(self.auto_write))

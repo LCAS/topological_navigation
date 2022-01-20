@@ -609,6 +609,7 @@ class TopologicalNavServer(object):
         rindex = 0
         nav_ok = True
         recovering = False
+        replanned = False
         self.fluid_navigation = True
 
         o_node = self.rsearch.get_node_from_tmap2(Orig)
@@ -711,7 +712,7 @@ class TopologicalNavServer(object):
             if exec_policy:
                 nav_ok, inc = self.execute_action(cedg, cnode, onode)
             else:
-                nav_ok, inc, recovering, route = self.execute_action_fail_recovery(cedg, cnode, route, rindex, onode, target)
+                nav_ok, inc, recovering, route, replanned = self.execute_action_fail_recovery(cedg, cnode, route, rindex, onode, target)
             self.edge_reconf_end()
 
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
@@ -747,7 +748,9 @@ class TopologicalNavServer(object):
 
             self.current_action = "none"
             self.next_action = "none"
-            rindex = rindex + 1
+            
+            if not replanned:
+                rindex = rindex + 1
 
         self.reset_reconf()
 
@@ -861,6 +864,7 @@ class TopologicalNavServer(object):
 
         new_route = route
         recovering = False
+        replanned = False
 
         # this means the action is aborted -> execute the fail policy
         # make sure that if the goal is cancelled by the client we don't enter here
@@ -878,34 +882,36 @@ class TopologicalNavServer(object):
                         new_route.edge_id.insert(idx+1, route.edge_id[idx])
                         route_updated = True
                         recovering = True
+                        replanned = False
                     elif rec_action[0] == "fail":
                         route_updated = True
                         recovering = False
+                        replanned = False
                     elif rec_action[0] == "wait":
                         secs = 1
                         if len(rec_action) > 1:
                             secs = int(rec_action[-1])
                         rospy.sleep(secs)
                         recovering = True
+                        replanned = False
                     elif rec_action[0] == "replan":
-                        # rospy.loginfo(">>> PLAN ROUTE {}, {}, {}".format(origin_node["node"]["name"], target, destination_node["node"]["name"]))
                         _route = self.rsearch.search_route(origin_node["node"]["name"], target, avoid_edges=[edge["edge_id"]])
-                        # rospy.loginfo(">>> RESULT {}".format(_route))
                         _route = self.enforce_navigable_route(_route, target)
-                        # rospy.loginfo(">>> enforced navigable {}".format(_route))
 
                         # build the new route
                         new_route.source = route.source[:idx] + _route.source
                         new_route.edge_id = route.edge_id[:idx] + _route.edge_id
                         route_updated = True
                         recovering = True
+                        replanned = True
                 else:
                     # clean the current fail policy data
                     self.executing_fail_policy = {}
                     recovering = False
+                    replanned = False
 
             rospy.loginfo("\t>> new route: {}".format(new_route))
-        return nav_ok, inc, recovering, new_route
+        return nav_ok, inc, recovering, new_route, replanned
     
 
     def execute_action(self, edge, destination_node, origin_node=None):
@@ -916,27 +922,23 @@ class TopologicalNavServer(object):
         self.prev_status = None
 
         if self.using_restrictions and edge["edge_id"] != "move_base_edge":
-            ## check restrictions for the edge
             rospy.loginfo("Evaluating restrictions on edge {}".format(edge["edge_id"]))
             ev_edge_msg = EvaluateEdgeRequest()
             ev_edge_msg.edge = edge["edge_id"]
             ev_edge_msg.runtime = True
             resp = self.evaluate_edge_srv.call(ev_edge_msg)
             if resp.success and resp.evaluation:
-                #the edge is restricted
                 rospy.logwarn("The edge is restricted, stopping navigation")
                 result = False
                 inc = 1
                 return result, inc
-    
-            ## check restrictions for the node
+
             rospy.loginfo("Evaluating restrictions on node {}".format(destination_node["node"]["name"]))
             ev_node_msg = EvaluateNodeRequest()
             ev_node_msg.node = destination_node["node"]["name"]
             ev_node_msg.runtime = True
             resp = self.evaluate_node_srv.call(ev_node_msg)
             if resp.success and resp.evaluation:
-                #the node is restricted
                 rospy.logwarn("The node is restricted, stopping navigation")
                 result = False
                 inc = 1

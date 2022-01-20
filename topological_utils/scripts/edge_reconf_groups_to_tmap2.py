@@ -29,6 +29,7 @@ def edge_groups_to_tmap2(f_tmap2, groups, group_names):
                     value = str(param["value"])
                     value_is_string = False
                 else:
+                    value = param["value"]
                     value_is_string = True
                     
                 mm2.add_param_to_edge_config(edge_id, param["ns"], param["name"], value, value_is_string, write_map=False)

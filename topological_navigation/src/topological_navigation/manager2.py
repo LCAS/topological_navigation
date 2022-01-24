@@ -9,6 +9,7 @@ from __future__ import division
 import rospy, tf2_ros, math
 import yaml, datetime, json
 import re, uuid, copy, os
+import multiprocessing
 
 from topological_navigation_msgs.msg import *
 import topological_navigation_msgs.srv
@@ -31,8 +32,8 @@ class map_manager_2(object):
     
     def __init__(self, advertise_srvs=True):
         
-        self.cache_maps = rospy.get_param("~cache_topological_maps", True)
-        self.auto_write = rospy.get_param("~auto_write_topological_maps", True)
+        self.cache_maps = rospy.get_param("~cache_topological_maps", False)
+        self.auto_write = rospy.get_param("~auto_write_topological_maps", False)
 
         rospy.loginfo("cache_topological_maps: {}".format(self.cache_maps))
         rospy.loginfo("auto_write_topological_maps: {}".format(self.auto_write))
@@ -148,15 +149,26 @@ class map_manager_2(object):
 
 
     def load_map(self, filename, check=False):
+
+        def worker(filename, transporter):
+            try:
+                with open(filename, "r") as f:
+                    transporter["tmap2"] = yaml.safe_load(f)
+            except Exception as e:
+                rospy.logerr(e)
+                transporter["tmap2"] = {}
+
+
         self.loaded = False
-        rospy.loginfo("Loading Topological Map {}".format(filename))
+        rospy.loginfo("Loading Topological Map {} ...".format(filename))
         
-        try:
-            with open(filename, "r") as f:
-                self.tmap2 = yaml.safe_load(f)
-        except Exception as e:
-            rospy.logerr(e)
-            self.tmap2 = {}
+        transporter = multiprocessing.Manager().dict()
+        p = multiprocessing.Process(target=worker, args=(filename, transporter))
+        p.start()
+        p.join()
+
+        self.tmap2 = transporter["tmap2"]
+        if not self.tmap2:
             return
         
         e1 = "Loaded map is {} and should be {}."
@@ -198,7 +210,7 @@ class map_manager_2(object):
         
     def write_topological_map(self, filename):
         
-        rospy.loginfo("Writing map to {}".format(filename))
+        rospy.loginfo("Writing map to {} ...".format(filename))
         
         nodes = copy.deepcopy(self.tmap2["nodes"])
         nodes.sort(key=lambda node: node["node"]["name"])
@@ -209,6 +221,8 @@ class map_manager_2(object):
         fh.write(str(yml))
         fh.close
         
+        rospy.loginfo("Done")
+
         
     def update(self, update_time=True):
         

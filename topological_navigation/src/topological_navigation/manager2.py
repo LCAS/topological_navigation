@@ -32,8 +32,8 @@ class map_manager_2(object):
     
     def __init__(self, advertise_srvs=True):
         
-        self.cache_maps = rospy.get_param("~cache_topological_maps", True)
-        self.auto_write = rospy.get_param("~auto_write_topological_maps", True)
+        self.cache_maps = rospy.get_param("~cache_topological_maps", False)
+        self.auto_write = rospy.get_param("~auto_write_topological_maps", False)
 
         rospy.loginfo("cache_topological_maps: {}".format(self.cache_maps))
         rospy.loginfo("auto_write_topological_maps: {}".format(self.auto_write))
@@ -153,8 +153,7 @@ class map_manager_2(object):
         def worker(filename, transporter):
             try:
                 with open(filename, "r") as f:
-                    tmap2 = yaml.safe_load(f)
-                    transporter["tmap2"] = tmap2
+                    transporter["tmap2"] = yaml.safe_load(f)
             except Exception as e:
                 rospy.logerr(e)
                 transporter["tmap2"] = {}
@@ -211,7 +210,7 @@ class map_manager_2(object):
         
     def write_topological_map(self, filename):
         
-        rospy.loginfo("Writing map to {}".format(filename))
+        rospy.loginfo("Writing map to {} ...".format(filename))
         
         nodes = copy.deepcopy(self.tmap2["nodes"])
         nodes.sort(key=lambda node: node["node"]["name"])
@@ -222,6 +221,8 @@ class map_manager_2(object):
         fh.write(str(yml))
         fh.close
         
+        rospy.loginfo("Done")
+
         
     def update(self, update_time=True):
         

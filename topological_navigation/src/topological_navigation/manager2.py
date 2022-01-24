@@ -9,6 +9,7 @@ from __future__ import division
 import rospy, tf2_ros, math
 import yaml, datetime, json
 import re, uuid, copy, os
+import multiprocessing
 
 from topological_navigation_msgs.msg import *
 import topological_navigation_msgs.srv
@@ -148,15 +149,27 @@ class map_manager_2(object):
 
 
     def load_map(self, filename, check=False):
+
+        def worker(filename, transporter):
+            try:
+                with open(filename, "r") as f:
+                    tmap2 = yaml.safe_load(f)
+                    transporter["tmap2"] = tmap2
+            except Exception as e:
+                rospy.logerr(e)
+                transporter["tmap2"] = {}
+
+
         self.loaded = False
         rospy.loginfo("Loading Topological Map {}".format(filename))
         
-        try:
-            with open(filename, "r") as f:
-                self.tmap2 = yaml.safe_load(f)
-        except Exception as e:
-            rospy.logerr(e)
-            self.tmap2 = {}
+        transporter = multiprocessing.Manager().dict()
+        p = multiprocessing.Process(target=worker, args=(filename, transporter))
+        p.start()
+        p.join()
+
+        self.tmap2 = transporter["tmap2"]
+        if not self.tmap2:
             return
         
         e1 = "Loaded map is {} and should be {}."

@@ -161,7 +161,7 @@ class map_manager_2(object):
 
 
         self.loaded = False
-        rospy.loginfo("Loading Topological Map {}".format(filename))
+        rospy.loginfo("Loading Topological Map {} ...".format(filename))
         
         transporter = multiprocessing.Manager().dict()
         p = multiprocessing.Process(target=worker, args=(filename, transporter))

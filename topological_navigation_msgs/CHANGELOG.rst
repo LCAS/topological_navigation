@@ -2,6 +2,77 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel
+  Map manager improvements
+* update
+* update
+* update
+* Adding new msg and srv files
+* Adding new msg files
+* Separate srv for setting influence zone.
+  Caching the map and auto saving after service calls are both optional via ros params.
+* Service /add_topological_node has option to add node vertices
+* Merge pull request `#116 <https://github.com/magnucha/topological_navigation/issues/116>`_ from adambinch/final_things
+  A few final things.
+* A few final things.
+  Set `advertise_srvs` arg to False when initialising the map manager 2 allows other scripts/nodes to use its functions without advertising 20+ services.
+  Descriptions of fail policy actions added to `UpdateFailPolicy.srv`.
+  Tidying.
+* Merge pull request `#114 <https://github.com/magnucha/topological_navigation/issues/114>`_ from adambinch/melodic-devel
+  Corrected inaccurate description of the `not_fluid` arg in `UpdateEdge.srv`
+* Minor changes
+* Merge pull request `#111 <https://github.com/magnucha/topological_navigation/issues/111>`_ from adambinch/remove_strands_dependencies
+  Removing strands navigation dependencies from topological navigation.
+* strands dependencies removed from `topological_navigation/topological_utils`
+* update
+* strands dependencies removed from `topological_navigation/topological_navigation`
+* Merge branch 'master' of github.com:LCAS/topological_navigation into remove_strands_dependencies
+  # Conflicts:
+  #	topological_navigation/src/topological_navigation/manager2.py
+  #	topological_navigation_msgs/CMakeLists.txt
+* Merge pull request `#112 <https://github.com/magnucha/topological_navigation/issues/112>`_ from adambinch/fail_policy_srvs
+  Services for updating the fail policy.
+* Services for updating the fail policy.
+  Service `/topological_map_manager2/update_edge` now has field for updating the edge's fail policy.
+  New service `/topological_map_manager2/update_fail_policy` for updating the fail policy of every edge in the map.
+* Removing strands dependencies from topological navigation
+* Removing strands dependencies from topological navigation
+* Removing strands nav dependencies from navigation
+* Removing strands nav dependencies from navigation
+* Removed strands nav msgs from localisation
+* Legacy map manager no longer dependent on strands nav msgs
+* Moving topomap msgs from strands nav to toponav repo. Map manager 2 is now strands independent.
+* Removing strands navigation dependencies from the Toponav repo.
+* Removing strands navigation dependencies from TopoNav.
+  Copying srv definitions used by toponav from strands nav to the toponav repo.
+* Merge pull request `#107 <https://github.com/magnucha/topological_navigation/issues/107>`_ from adambinch/node_names
+  Resolves Issue `#90 <https://github.com/magnucha/topological_navigation/issues/90>`_, Adds datum to the tmap meta, and other things.
+* Service `/topological_map_manager2/update_edge` replaces `/topological_map_manager2/update_edge_action`
+  setting the same args with an additional boolean arg for setting whether navigation is fluid or not.
+  Uses srv type `topological_navigation_msgs.srv.UpdateEdge`
+* Map manager service for adding GNSS latitude/longitude to the topological map's top-level meta info
+* Merge branch 'master' of github.com:LCAS/topological_navigation into node_names
+* Merge pull request `#78 <https://github.com/magnucha/topological_navigation/issues/78>`_ from francescodelduchetto/toponav2-restrictions
+  Toponav2 restrictions
+* Merge branch 'master' of github.com:LCAS/topological_navigation into francescodelduchetto-toponav2-restrictions
+* remove satisfy_runtime_restrictions code and comment some prints
+* do not call runtime_restriction but rather use an ad-hoc flag for 'fluid_navigation' in the tmap
+* move action status topic now has std msg type String
+* Status of move action moved from go to node action definition to its own topic /topological_navigation/move_action_status.
+  Msg definition is topological_navigation_msgs/MoveActionStatus
+* Merge branch 'master' of github.com:LCAS/topological_navigation into toponav2_launch
+* adding possibility of satisfying runtime restrictions, not tested yet
+* Merge branch 'master' of github.com:LCAS/topological_navigation into faster_route_search2
+* adding services to evaluate single nodes/edges and exactPose restriction
+* Merge branch 'toponav2-devel-restrictions' of github.com:francescodelduchetto/topological_navigation into toponav2-devel
+* restriction manager works with runtime and planning restrictions; test script for testing
+* Merge branch 'melodic-devel' of https://github.com/adambinch/topological_navigation into adam_melodic-devel
+* WIP kinda of works
+* WIP restrictions manager
+* Contributors: Adam Binch, adambinch, francescodelduchetto
+
 2.3.0 (2021-07-15)
 ------------------
 * Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2

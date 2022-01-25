@@ -2,6 +2,28 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#117 <https://github.com/magnucha/topological_navigation/issues/117>`_ from LCAS/noetic
+  Basic navigation works in ros noetic but not all scripts are converted to python 3
+* python 3 compatible for most parts of toponav but not all!
+* Merge pull request `#111 <https://github.com/magnucha/topological_navigation/issues/111>`_ from adambinch/remove_strands_dependencies
+  Removing strands navigation dependencies from topological navigation.
+* revert
+* strands dependencies removed from `bayesian_topological_localisation`
+* Merge branch 'master' of github.com:LCAS/topological_navigation into node_names
+* Merge pull request `#78 <https://github.com/magnucha/topological_navigation/issues/78>`_ from francescodelduchetto/toponav2-restrictions
+  Toponav2 restrictions
+* adding files lost somehow in the commits
+* adding lost files after the merge; fix few changes
+* Merge branch 'master' of github.com:LCAS/topological_navigation into francescodelduchetto-toponav2-restrictions
+* Merge branch 'master' of github.com:LCAS/topological_navigation into toponav2_launch
+* Merge branch 'master' of github.com:LCAS/topological_navigation into faster_route_search2
+* removing bayesian_toponav which shouldn't be here
+* Merge branch 'toponav2-devel-restrictions' of github.com:francescodelduchetto/topological_navigation into toponav2-devel
+* Merge branch 'master' of https://github.com/adambinch/topological_navigation into adam-master
+* Contributors: Adam Binch, MikHut, adambinch, francescodelduchetto
+
 2.3.0 (2021-07-15)
 ------------------
 * Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2

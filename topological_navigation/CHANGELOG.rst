@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.0 (2022-01-25)
+------------------
 * Merge pull request `#134 <https://github.com/magnucha/topological_navigation/issues/134>`_ from adambinch/melodic-devel
   Map manager uses multiprocessing to load topomaps to decrease RAM usage.
 * Minor changes

@@ -2,8 +2,8 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.0 (2022-01-25)
+------------------
 * Merge pull request `#117 <https://github.com/magnucha/topological_navigation/issues/117>`_ from LCAS/noetic
   Basic navigation works in ros noetic but not all scripts are converted to python 3
 * python 3 compatible for most parts of toponav but not all!

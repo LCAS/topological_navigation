@@ -124,22 +124,6 @@ class TopologicalNavServer(object):
         else:
             rospy.logwarn("Edge Reconfigure Unavailable")
 
-        # Creating Action Server for navigation
-        rospy.loginfo("Creating GO-TO-NODE action server...")
-        self._as = actionlib.SimpleActionServer(name, topological_navigation_msgs.msg.GotoNodeAction,
-                                                execute_cb=self.executeCallback, auto_start=False)
-        self._as.register_preempt_callback(self.preemptCallback)
-        self._as.start()
-        rospy.loginfo("...done")
-
-        # Creating Action Server for execute policy
-        rospy.loginfo("Creating EXECUTE_POLICY_MODE action server...")
-        self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", topological_navigation_msgs.msg.ExecutePolicyModeAction, 
-                                                            execute_cb=self.executeCallbackexecpolicy, auto_start=False)
-        self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
-        self._as_exec_policy.start()
-        rospy.loginfo("...done")
-
         rospy.loginfo("Subscribing to Localisation Topics...")
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
@@ -163,6 +147,22 @@ class TopologicalNavServer(object):
 
         # this keeps the runtime state of the fail policies that are currently in execution 
         self.executing_fail_policy = {}
+        
+        # Creating Action Server for navigation
+        rospy.loginfo("Creating GO-TO-NODE action server...")
+        self._as = actionlib.SimpleActionServer(name, topological_navigation_msgs.msg.GotoNodeAction,
+                                                execute_cb=self.executeCallback, auto_start=False)
+        self._as.register_preempt_callback(self.preemptCallback)
+        self._as.start()
+        rospy.loginfo("...done")
+
+        # Creating Action Server for execute policy
+        rospy.loginfo("Creating EXECUTE_POLICY_MODE action server...")
+        self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", topological_navigation_msgs.msg.ExecutePolicyModeAction, 
+                                                            execute_cb=self.executeCallbackexecpolicy, auto_start=False)
+        self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
+        self._as_exec_policy.start()
+        rospy.loginfo("...done")
 
         rospy.loginfo("All Done.")
         rospy.spin()

@@ -363,7 +363,7 @@ class TopologicalNavLoc(object):
             for edge in node["node"]["edges"]:
                 dest_pose = node_poses[edge["node"]]
                 
-                if orig_pose != dest_pose:
+                if node["node"]["name"] != edge["node"]:
                     self.dist_edge_ids.append(edge["edge_id"])
                     end = [dest_pose["position"]["x"], dest_pose["position"]["y"], 0]
                     

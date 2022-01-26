@@ -505,6 +505,10 @@ class map_manager_2(object):
             eids = []
             for edge in self.tmap2["nodes"][index]["node"]["edges"]:
                 eids.append(edge["edge_id"])
+                
+                if edge_id == edge["edge_id"]:
+                    rospy.logerr("Error adding edge to node {}. Edge already exists.".format(origin))
+                    return False
 
             if not edge_id or edge_id in eids:
                 test=0

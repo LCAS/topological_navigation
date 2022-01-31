@@ -932,13 +932,14 @@ class map_manager_2(object):
             msg = ""
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
+
                     config = copy.deepcopy(edge["config"])
                     config = [i for i in config if not (i["namespace"] == namespace and i["name"] == name)]
 
                     edge["config"] = config
                     msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
-            self.tmap2["nodes"][index] = the_node
 
+            self.tmap2["nodes"][index] = the_node
             self.update()
             if self.auto_write:
                 self.write_topological_map(self.filename)

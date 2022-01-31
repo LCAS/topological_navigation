@@ -33,6 +33,9 @@
   <!-- ### TOPOLOGICAL NAVIGATION ARGS ### -->
   <!-- The action being used for move_base -->
   <arg name="move_base_name" default="move_base"/>
+  <!-- The goal being used by the move_base_name action. Defaults to a move base type goal if this arg is not set. -->
+  <arg name="move_base_goal" default="$(find topological_navigation)/config/move_base_goal.yaml"/>
+  <rosparam command="load" file="$(arg move_base_goal)"/>
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
   <!-- If the action of the current or next edge in the route is not in this list then the robot must get to the exact pose of the current edge's destination node. -->

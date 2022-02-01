@@ -88,7 +88,6 @@ class TopologicalNavServer(object):
             "han_vc_junction",
         ]
 
-        self.needed_actions = []
         self.move_base_actions = rospy.get_param("~move_base_actions", move_base_actions)
 
         # what service are we using as move_base?
@@ -262,6 +261,9 @@ class TopologicalNavServer(object):
                         move_base_goal["action_type"] = edge["action_type"]
                         move_base_goal["goal"] = edge["goal"]
                         break
+                else:
+                    continue
+                break
 
         if not move_base_goal:
             move_base_goal["action_type"] = "move_base_msgs/MoveBaseGoal"
@@ -274,7 +276,7 @@ class TopologicalNavServer(object):
         self.move_base_edge["action_type"] = move_base_goal["action_type"]
         self.move_base_edge["goal"] = move_base_goal["goal"]
 
-        rospy.loginfo("Move base goal: {}".format(move_base_goal["action_type"]))
+        rospy.loginfo("Move Base Goal set to {}".format(move_base_goal["action_type"]))
 
 
     def executeCallback(self, goal):

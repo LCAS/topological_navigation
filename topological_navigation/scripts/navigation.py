@@ -110,7 +110,6 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo("Navigation received the Topological Map")
         
-        self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", True)
@@ -169,26 +168,6 @@ class TopologicalNavServer(object):
             if self.navigation_activated:
                 self.preempted = True
                 self.cancel_current_action(timeout_secs=2)
-        
-        
-    def make_move_base_edge(self):
-
-        self.move_base_edge = {}
-        self.move_base_edge["action"] = self.move_base_name
-        self.move_base_edge["edge_id"] = "move_base_edge"
-
-        move_base_goal = rospy.get_param("~move_base_goal", {})
-
-        if not move_base_goal:
-            self.move_base_edge["action_type"] = "move_base_msgs/MoveBaseGoal"
-            self.move_base_edge["goal"] = {}
-            self.move_base_edge["goal"]["target_pose"] = {}
-            self.move_base_edge["goal"]["target_pose"]["pose"] = "$node.pose"
-            self.move_base_edge["goal"]["target_pose"]["header"] = {}
-            self.move_base_edge["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
-        else:
-            self.move_base_edge["action_type"] = move_base_goal["action_type"]
-            self.move_base_edge["goal"] = move_base_goal["goal"]
 
 
     def init_reconfigure(self):
@@ -263,13 +242,39 @@ class TopologicalNavServer(object):
         self.topol_map = self.lnodes["pointset"]
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
+        self.make_move_base_edge()
 
-        for node in self.lnodes["nodes"]:
-            for edge in node["node"]["edges"]:
-                if edge["action"] not in self.needed_actions:
-                    self.needed_actions.append(edge["action"])
-        
         self._map_received = True
+
+
+    def make_move_base_edge(self):
+
+        self.move_base_edge = {}
+        self.move_base_edge["action"] = self.move_base_name
+        self.move_base_edge["edge_id"] = "move_base_edge"
+
+        move_base_goal = rospy.get_param("~move_base_goal", {})
+
+        if not move_base_goal:
+            for node in self.lnodes["nodes"]:
+                for edge in node["node"]["edges"]:
+                    if edge["action"] == self.move_base_name:
+                        move_base_goal["action_type"] = edge["action_type"]
+                        move_base_goal["goal"] = edge["goal"]
+                        break
+
+        if not move_base_goal:
+            move_base_goal["action_type"] = "move_base_msgs/MoveBaseGoal"
+            move_base_goal["goal"] = {}
+            move_base_goal["goal"]["target_pose"] = {}
+            move_base_goal["goal"]["target_pose"]["pose"] = "$node.pose"
+            move_base_goal["goal"]["target_pose"]["header"] = {}
+            move_base_goal["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
+
+        self.move_base_edge["action_type"] = move_base_goal["action_type"]
+        self.move_base_edge["goal"] = move_base_goal["goal"]
+
+        rospy.loginfo("Move base goal: {}".format(move_base_goal["action_type"]))
 
 
     def executeCallback(self, goal):

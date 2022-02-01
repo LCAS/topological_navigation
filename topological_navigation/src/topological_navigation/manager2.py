@@ -186,9 +186,6 @@ class map_manager_2(object):
             return
         
         self.loaded = True
-
-        if check:
-            self.map_check()
             
         self.name = self.tmap2["name"]
         self.metric_map = self.tmap2["metric_map"]
@@ -202,6 +199,9 @@ class map_manager_2(object):
         rospy.set_param('topological_map2_path', os.path.split(self.filename)[0])
         
         rospy.loginfo("Done")
+
+        if check:
+            self.map_check()
 
         if self.cache_maps:
             rospy.loginfo("Caching the map...")
@@ -886,19 +886,23 @@ class map_manager_2(object):
         node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
         
-        new_param = {"namespace":namespace, "name":name, "value":value}
+        param = {"namespace":namespace, "name":name, "value":value}
+
         if num_available == 1:
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
             msg = ""
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
-                    if "config" not in edge:
-                        edge["config"] = []
-                    if new_param not in edge["config"]:
-                        rospy.loginfo("Adding param {} to edge {}".format(new_param, edge["edge_id"]))
-                        edge["config"].append(new_param)
+
+                    config = copy.deepcopy(edge["config"])
+                    config = [i for i in config if not (i["namespace"] == param["namespace"] and i["name"] == param["name"])]
+
+                    rospy.loginfo("Adding param {} to edge {}".format(param, edge["edge_id"]))
+                    config.append(param)
+                    edge["config"] = config
+
                     msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
-            
+
             self.tmap2["nodes"][index] = the_node
             if update:
                 self.update()
@@ -928,15 +932,13 @@ class map_manager_2(object):
             msg = ""
             for edge in the_node["node"]["edges"]:
                 if edge["edge_id"] == edge_id:
-                    if "config" in edge:
-                        params_new = []
-                        for param in copy.deepcopy(edge["config"]):
-                            if param["namespace"] == namespace and param["name"] == name:
-                                continue
-                            else:
-                                params_new.append(param)
-                        edge["config"] = params_new
-                        msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
+
+                    config = copy.deepcopy(edge["config"])
+                    config = [i for i in config if not (i["namespace"] == namespace and i["name"] == name)]
+
+                    edge["config"] = config
+                    msg = "edge action is {} and edge config is {}".format(edge["action"], edge["config"])
+
             self.tmap2["nodes"][index] = the_node
             self.update()
             if self.auto_write:

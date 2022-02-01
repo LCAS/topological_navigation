@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-import rospy
-import actionlib
-import yaml, json
-
+import rospy, actionlib, json
 import dynamic_reconfigure.client
 
 import topological_navigation_msgs.msg
@@ -22,7 +19,6 @@ from topological_navigation.tmap_utils import *
 from topological_navigation.edge_action_manager import EdgeActionManager
 from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
 
-from copy import deepcopy
 from threading import Lock
 
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
@@ -92,7 +88,6 @@ class TopologicalNavServer(object):
             "han_vc_junction",
         ]
 
-        self.needed_actions = []
         self.move_base_actions = rospy.get_param("~move_base_actions", move_base_actions)
 
         # what service are we using as move_base?
@@ -114,7 +109,6 @@ class TopologicalNavServer(object):
             rospy.sleep(rospy.Duration.from_sec(0.05))
         rospy.loginfo("Navigation received the Topological Map")
         
-        self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
         self.edge_reconfigure = rospy.get_param("~reconfigure_edges", True)
@@ -157,7 +151,7 @@ class TopologicalNavServer(object):
         rospy.loginfo("...done")
 
         # Creating Action Server for execute policy
-        rospy.loginfo("Creating EXECUTE_POLICY_MODE action server...")
+        rospy.loginfo("Creating EXECUTE POLICY MODE action server...")
         self._as_exec_policy = actionlib.SimpleActionServer("topological_navigation/execute_policy_mode", topological_navigation_msgs.msg.ExecutePolicyModeAction, 
                                                             execute_cb=self.executeCallbackexecpolicy, auto_start=False)
         self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
@@ -173,27 +167,14 @@ class TopologicalNavServer(object):
             if self.navigation_activated:
                 self.preempted = True
                 self.cancel_current_action(timeout_secs=2)
-        
-        
-    def make_move_base_edge(self):
-        
-        self.move_base_edge = {}
-        self.move_base_edge["action"] = self.move_base_name
-        self.move_base_edge["edge_id"] = "move_base_edge"
-        self.move_base_edge["action_type"] = "move_base_msgs/MoveBaseGoal"
-        
-        self.move_base_edge["goal"] = {}
-        self.move_base_edge["goal"]["target_pose"] = {}
-        self.move_base_edge["goal"]["target_pose"]["pose"] = "$node.pose"
-        self.move_base_edge["goal"]["target_pose"]["header"] = {}
-        self.move_base_edge["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
-    
+
 
     def init_reconfigure(self):
         
         self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
-        if not self.move_base_planner.split("/")[-1] in DYNPARAM_MAPPING:
-            DYNPARAM_MAPPING[self.move_base_planner.split("/")[-1]] = {}
+        planner = self.move_base_planner.split("/")[-1]
+        if not planner in DYNPARAM_MAPPING:
+            DYNPARAM_MAPPING[planner] = {}
         
         rospy.loginfo("Creating reconfigure client for {}".format(self.move_base_planner))
         self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
@@ -260,13 +241,42 @@ class TopologicalNavServer(object):
         self.topol_map = self.lnodes["pointset"]
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
+        self.make_move_base_edge()
 
-        for node in self.lnodes["nodes"]:
-            for edge in node["node"]["edges"]:
-                if edge["action"] not in self.needed_actions:
-                    self.needed_actions.append(edge["action"])
-        
         self._map_received = True
+
+
+    def make_move_base_edge(self):
+
+        self.move_base_edge = {}
+        self.move_base_edge["action"] = self.move_base_name
+        self.move_base_edge["edge_id"] = "move_base_edge"
+
+        move_base_goal = rospy.get_param("~move_base_goal", {})
+
+        if not move_base_goal:
+            for node in self.lnodes["nodes"]:
+                for edge in node["node"]["edges"]:
+                    if edge["action"] == self.move_base_name:
+                        move_base_goal["action_type"] = edge["action_type"]
+                        move_base_goal["goal"] = edge["goal"]
+                        break
+                else:
+                    continue
+                break
+
+        if not move_base_goal:
+            move_base_goal["action_type"] = "move_base_msgs/MoveBaseGoal"
+            move_base_goal["goal"] = {}
+            move_base_goal["goal"]["target_pose"] = {}
+            move_base_goal["goal"]["target_pose"]["pose"] = "$node.pose"
+            move_base_goal["goal"]["target_pose"]["header"] = {}
+            move_base_goal["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
+
+        self.move_base_edge["action_type"] = move_base_goal["action_type"]
+        self.move_base_edge["goal"] = move_base_goal["goal"]
+
+        rospy.loginfo("Move Base Goal set to {}".format(move_base_goal["action_type"]))
 
 
     def executeCallback(self, goal):

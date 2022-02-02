@@ -1,0 +1,16 @@
+on:
+  push:
+    tags:
+      - 'v?[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
+jobs:
+  dev:
+    uses: SAGARobotics/SagaWorkflows/.github/workflows/release.yml@main
+    with:
+      ros-distributions: '[\"melodic\"]'
+      release-type: 'dev'
+    secrets:
+      pat-token: ${{ secrets.SERVICE_ACCOUNT_PAT_REPO_READ }}
+      dev-apt-read-user: ${{ secrets.APT_READ_USER }}
+      dev-apt-read-write-user: ${{ secrets.APT_READWRITE_USER }}

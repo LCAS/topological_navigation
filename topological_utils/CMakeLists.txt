@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(topological_utils)
 
-find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generation mongodb_store visualization_msgs)
+find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generation visualization_msgs)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed

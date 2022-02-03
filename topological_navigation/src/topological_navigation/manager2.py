@@ -150,7 +150,7 @@ class map_manager_2(object):
 
     def load_map(self, filename, check=False):
 
-        def worker(filename, transporter):
+        def loader(filename, transporter):
             try:
                 with open(filename, "r") as f:
                     transporter["tmap2"] = yaml.safe_load(f)
@@ -163,7 +163,7 @@ class map_manager_2(object):
         rospy.loginfo("Loading Topological Map {} ...".format(filename))
         
         transporter = multiprocessing.Manager().dict()
-        p = multiprocessing.Process(target=worker, args=(filename, transporter))
+        p = multiprocessing.Process(target=loader, args=(filename, transporter))
         p.start()
         p.join()
 

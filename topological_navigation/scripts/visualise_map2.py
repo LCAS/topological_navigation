@@ -17,7 +17,7 @@ from visualization_msgs.msg import *
 
 from interactive_markers.interactive_marker_server import *
 
-from topological_navigation_msgs.msg import GotoNodeGoal, GotoNodeAction
+from topological_navigation_msgs.msg import GotoNodeGoal, GotoNodeAction, TopologicalRoute
 
 def get_node(nodes_list, name):
     for i in nodes_list:
@@ -27,7 +27,7 @@ def get_node(nodes_list, name):
 
 class TopoMap2Vis(object):
     _pallete=[[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,1,0],[1,0,1],[0,1,1],[1,1,1]]
-    def __init__(self, name) :
+    def __init__(self, name, no_goto=False) :
         """
         """
         self.killall=False
@@ -39,13 +39,16 @@ class TopoMap2Vis(object):
         rospy.on_shutdown(self._on_node_shutdown)
 
         self.topmap_pub = rospy.Publisher('topological_map2_visualisation', MarkerArray, queue_size = 1, latch=True)
+        self.routevis_pub = rospy.Publisher('topological_route2_visualisation', MarkerArray, queue_size = 1)
         self.topo_map_sub = rospy.Subscriber("topological_map_2", String, self.topo_map_cb)
+        self.topo_route_sub = rospy.Subscriber("/topological_navigation/Route", TopologicalRoute, self.route_cb)
 
         rospy.loginfo("Waiting for topo_map")
 
-        self._goto_server = InteractiveMarkerServer("go_to_node2")
-        self.client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
-        self.client.wait_for_server()
+        if not no_goto:
+            self._goto_server = InteractiveMarkerServer("go_to_node2")
+            self.client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
+            self.client.wait_for_server()
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -57,6 +60,47 @@ class TopoMap2Vis(object):
         rospy.loginfo("Received new topo_map")
         print(self.topological_map['name'])
         self.create_map_marker()
+
+
+    def route_cb(self, msg):
+        self.route_marker = MarkerArray()
+        self.route_marker.markers=[]
+        self.routevis_pub.publish(self.route_marker)
+        self.route_marker = MarkerArray()
+        self.route_marker.markers=[]
+        idn=0
+        for i in range(1,len(msg.nodes)):
+            self.route_marker.markers.append(self.get_route_marker(msg.nodes[i-1], msg.nodes[i], idn))
+            idn+=1
+        self.routevis_pub.publish(self.route_marker)
+
+
+    def get_route_marker(self, origin, end, idn):
+        marker = Marker()
+        marker.id = idn
+        marker.header.frame_id = 'topo_map'
+        marker.type = marker.ARROW
+        V1=Point()
+        V2=Point()
+        origin_node = get_node(self.topological_map['nodes'], origin)
+        end_node = get_node(self.topological_map['nodes'], end)
+        V1=self.node2pose(origin_node['pose']).position
+        V1.z += 0.25
+        V2=self.node2pose(end_node['pose']).position
+        V2.z += 0.25
+#        marker.pose.orientation.w= 1.0
+        marker.scale.x = 0.2
+        marker.scale.y = 0.2
+        marker.scale.z = 0.4
+        marker.color.a = 0.5
+        marker.color.r = 0.33
+        marker.color.g = 0.99
+        marker.color.b = 0.55
+        marker.points.append(V1)
+        marker.points.append(V2)
+        marker.lifetime = rospy.Duration(120)
+        marker.ns='/route'
+        return marker
 
 
     def create_map_marker(self):
@@ -101,7 +145,7 @@ class TopoMap2Vis(object):
         marker.header.frame_id = node['parent_frame']
         marker.scale = 1
         marker.name = node['name']
-        marker.description = node['name']
+        marker.description = ''#node['name']
 
         control = InteractiveMarkerControl()
         control.interaction_mode = InteractiveMarkerControl.BUTTON
@@ -129,9 +173,9 @@ class TopoMap2Vis(object):
         marker.scale.y = scale * 0.25
         marker.scale.z = scale * 0.15
         marker.lifetime.secs = 3
-        marker.color.r = 0.1
-        marker.color.g = 0.8
-        marker.color.b = 0.1
+        marker.color.r = 0.2
+        marker.color.g = 0.9
+        marker.color.b = 0.2
         marker.color.a = 1.0
         return marker
 
@@ -304,5 +348,12 @@ class TopoMap2Vis(object):
 
 
 if __name__ == '__main__':
+    nogoto_mode=False
+    argc = len(sys.argv)
+    print(argc)
+    if argc > 1:
+        if '-no_goto' in sys.argv or '-n' in sys.argv :
+            nogoto_mode = True
+
     rospy.init_node('topomap2_visualisation')
-    server = TopoMap2Vis(rospy.get_name())
+    server = TopoMap2Vis(rospy.get_name(), no_goto=nogoto_mode)

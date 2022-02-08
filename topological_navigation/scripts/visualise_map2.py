@@ -96,7 +96,7 @@ class TopoMap2Vis(object):
         V1.z += 0.25
         V2=self.node2pose(end_node['pose']).position
         V2.z += 0.25
-#        marker.pose.orientation.w= 1.0
+        marker.pose.orientation.w= 1.0
         marker.scale.x = 0.2
         marker.scale.y = 0.2
         marker.scale.z = 0.4

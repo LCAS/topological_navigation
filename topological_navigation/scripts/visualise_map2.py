@@ -38,15 +38,15 @@ class TopoMap2Vis(object):
 
         rospy.on_shutdown(self._on_node_shutdown)
 
-        self.topmap_pub = rospy.Publisher('topological_map2_visualisation', MarkerArray, queue_size = 1, latch=True)
-        self.routevis_pub = rospy.Publisher('topological_route2_visualisation', MarkerArray, queue_size = 1)
+        self.topmap_pub = rospy.Publisher('topological_map_visualisation', MarkerArray, queue_size = 1, latch=True)
+        self.routevis_pub = rospy.Publisher('topological_route_visualisation', MarkerArray, queue_size = 1)
         self.topo_map_sub = rospy.Subscriber("topological_map_2", String, self.topo_map_cb)
         self.topo_route_sub = rospy.Subscriber("/topological_navigation/Route", TopologicalRoute, self.route_cb)
 
         rospy.loginfo("Waiting for topo_map")
 
         if not no_goto:
-            self._goto_server = InteractiveMarkerServer("go_to_node2")
+            self._goto_server = InteractiveMarkerServer("go_to_node")
             self.client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
             self.client.wait_for_server()
 
@@ -63,9 +63,7 @@ class TopoMap2Vis(object):
 
 
     def route_cb(self, msg):
-        self.route_marker = MarkerArray()
-        self.route_marker.markers=[]
-        self.routevis_pub.publish(self.route_marker)
+        self.clear_route() # clear the last route
         self.route_marker = MarkerArray()
         self.route_marker.markers=[]
         idn=0
@@ -73,6 +71,16 @@ class TopoMap2Vis(object):
             self.route_marker.markers.append(self.get_route_marker(msg.nodes[i-1], msg.nodes[i], idn))
             idn+=1
         self.routevis_pub.publish(self.route_marker)
+        
+        
+    def clear_route(self):
+        self.route_marker = MarkerArray()
+        self.route_marker.markers=[]
+        marker = Marker()
+        marker.action = marker.DELETEALL
+        self.route_marker.markers.append(marker)
+        self.routevis_pub.publish(self.route_marker) 
+        rospy.sleep(0.1)
 
 
     def get_route_marker(self, origin, end, idn):
@@ -342,6 +350,7 @@ class TopoMap2Vis(object):
     def _on_node_shutdown(self):
         """
         """
+        self.clear_route()
         self.killall=True
         rospy.loginfo("See you later")
         #sleep(2)

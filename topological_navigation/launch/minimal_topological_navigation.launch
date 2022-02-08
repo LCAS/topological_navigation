@@ -22,6 +22,6 @@
     <param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true"/>
+  <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" respawn="true"/>
 
 </launch>

@@ -31,8 +31,7 @@
     <param name="convert_to_legacy" value="$(arg convert_to_legacy)"/>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" respawn="true" unless="$(arg load_map_from_file)"/>
-  <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" args="-n" respawn="true" if="$(arg load_map_from_file)"/>
+  <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" args="-no_goto" respawn="true"/>
 
   <node pkg="topological_rviz_tools" name="topmap_interface" type="python_topmap_interface.py" output="screen" if="$(eval arg('legacy') and not arg('load_map_from_file'))">
     <param name="map_name" value="$(arg pointset)"/>

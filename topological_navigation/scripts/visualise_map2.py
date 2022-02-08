@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import sys
 import rospy
-import pymongo
 import json
 import sys
 import math
-
+import actionlib
 
 from time import sleep
 
@@ -17,6 +15,9 @@ from std_msgs.msg import String
 
 from visualization_msgs.msg import *
 
+from interactive_markers.interactive_marker_server import *
+
+from topological_navigation_msgs.msg import GotoNodeGoal, GotoNodeAction
 
 def get_node(nodes_list, name):
     for i in nodes_list:
@@ -25,7 +26,7 @@ def get_node(nodes_list, name):
 
 
 class TopoMap2Vis(object):
-    _pallete=[[1,1,1],[0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1]]
+    _pallete=[[0,0,0],[1,0,0],[0,0,1],[0,1,0],[1,1,0],[1,0,1],[0,1,1],[1,1,1]]
     def __init__(self, name) :
         """
         """
@@ -33,6 +34,7 @@ class TopoMap2Vis(object):
         self.topological_map = None
         self.map_markers = MarkerArray()
         self.map_markers.markers=[]
+        self.in_feedback=False
 
         rospy.on_shutdown(self._on_node_shutdown)
 
@@ -40,6 +42,10 @@ class TopoMap2Vis(object):
         self.topo_map_sub = rospy.Subscriber("topological_map_2", String, self.topo_map_cb)
 
         rospy.loginfo("Waiting for topo_map")
+
+        self._goto_server = InteractiveMarkerServer("go_to_node2")
+        self.client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
+        self.client.wait_for_server()
 
         rospy.loginfo("All Done ...")
         rospy.spin()
@@ -75,6 +81,10 @@ class TopoMap2Vis(object):
                     self.map_markers.markers.append(marker)
                     idn += 1
         
+
+        for i in self.topological_map['nodes']:
+            self.create_goto_marker(i['node'])
+
         legend =0
         for k in self.actions:
             marker = self.get_legend_marker(k, legend, idn)
@@ -82,6 +92,65 @@ class TopoMap2Vis(object):
             idn += 1
             legend+=1
         self.topmap_pub.publish(self.map_markers)
+
+
+    def create_goto_marker(self, node):
+        """
+        """
+        marker = InteractiveMarker()
+        marker.header.frame_id = node['parent_frame']
+        marker.scale = 1
+        marker.name = node['name']
+        marker.description = node['name']
+
+        control = InteractiveMarkerControl()
+        control.interaction_mode = InteractiveMarkerControl.BUTTON
+        control.always_visible = True
+
+        control.markers.append(self.makeArrow( marker.scale ))
+        marker.controls.append(control)
+    
+        self._goto_server.insert(marker, self.goto_feedback_cb)
+        self._goto_server.applyChanges()
+
+        pos = self.node2pose(node['pose'])
+
+        if pos is not None:
+            pos.position.z=pos.position.z+0.15
+            self._goto_server.setPose( marker.name, pos )
+            self._goto_server.applyChanges()
+
+
+    def makeArrow(self, scale):
+        marker = Marker()
+
+        marker.type = Marker.ARROW
+        marker.scale.x = scale * 0.5
+        marker.scale.y = scale * 0.25
+        marker.scale.z = scale * 0.15
+        marker.lifetime.secs = 3
+        marker.color.r = 0.1
+        marker.color.g = 0.8
+        marker.color.b = 0.1
+        marker.color.a = 1.0
+        return marker
+
+
+    def goto_feedback_cb(self, feedback):
+        if not self.in_feedback:
+            self.in_feedback=True
+            print('GOTO: '+str(feedback.marker_name))
+            self.client.cancel_all_goals()
+            navgoal = GotoNodeGoal()
+            navgoal.target = feedback.marker_name
+            #navgoal.origin = orig
+            # Sends the goal to the action server.
+            self.client.send_goal(navgoal)
+            rospy.Timer(rospy.Duration(1.0), self.timer_cb, oneshot=True)    # This is needed so the callback is only triggered once
+
+    
+    def timer_cb(self, event) :
+        self.in_feedback = False
 
 
     def get_colour(self, number):
@@ -177,11 +246,11 @@ class TopoMap2Vis(object):
         marker.pose = self.node2pose(node['pose'])
         marker.pose.position.z += 0.2
         #marker.pose.position.y += 0.2
-        marker.scale.z = 0.15
-        marker.color.a = 0.99
-        marker.color.r = 0.99
-        marker.color.g = 0.99
-        marker.color.b = 0.99
+        marker.scale.z = 0.20
+        marker.color.a = 1.00
+        marker.color.r = 1.00
+        marker.color.g = 1.00
+        marker.color.b = 1.00
         marker.ns='/names'
         return marker
 

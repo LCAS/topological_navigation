@@ -30,6 +30,7 @@ class TopoMap2Vis(object):
     def __init__(self, name, no_goto=False) :
         """
         """
+        self.no_goto = no_goto
         self.killall=False
         self.topological_map = None
         self.map_markers = MarkerArray()
@@ -80,7 +81,7 @@ class TopoMap2Vis(object):
         marker.action = marker.DELETEALL
         self.route_marker.markers.append(marker)
         self.routevis_pub.publish(self.route_marker) 
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
 
 
     def get_route_marker(self, origin, end, idn):
@@ -106,7 +107,7 @@ class TopoMap2Vis(object):
         marker.color.b = 0.55
         marker.points.append(V1)
         marker.points.append(V2)
-        marker.lifetime = rospy.Duration(120)
+        marker.lifetime = rospy.Duration(1800)
         marker.ns='/route'
         return marker
 
@@ -133,9 +134,9 @@ class TopoMap2Vis(object):
                     self.map_markers.markers.append(marker)
                     idn += 1
         
-
-        for i in self.topological_map['nodes']:
-            self.create_goto_marker(i['node'])
+        if not self.no_goto:
+            for i in self.topological_map['nodes']:
+                self.create_goto_marker(i['node'])
 
         legend =0
         for k in self.actions:
@@ -168,7 +169,7 @@ class TopoMap2Vis(object):
         pos = self.node2pose(node['pose'])
 
         if pos is not None:
-            pos.position.z=pos.position.z+0.15
+            pos.position.z=pos.position.z+0.5
             self._goto_server.setPose( marker.name, pos )
             self._goto_server.applyChanges()
 

@@ -81,7 +81,7 @@ class TopoMap2Vis(object):
         marker.action = marker.DELETEALL
         self.route_marker.markers.append(marker)
         self.routevis_pub.publish(self.route_marker) 
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
 
 
     def get_route_marker(self, origin, end, idn):
@@ -169,7 +169,7 @@ class TopoMap2Vis(object):
         pos = self.node2pose(node['pose'])
 
         if pos is not None:
-            pos.position.z=pos.position.z+0.15
+            pos.position.z=pos.position.z+0.5
             self._goto_server.setPose( marker.name, pos )
             self._goto_server.applyChanges()
 

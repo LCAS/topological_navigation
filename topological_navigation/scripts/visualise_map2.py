@@ -30,6 +30,7 @@ class TopoMap2Vis(object):
     def __init__(self, name, no_goto=False) :
         """
         """
+        self.no_goto = no_goto
         self.killall=False
         self.topological_map = None
         self.map_markers = MarkerArray()
@@ -133,9 +134,9 @@ class TopoMap2Vis(object):
                     self.map_markers.markers.append(marker)
                     idn += 1
         
-
-        for i in self.topological_map['nodes']:
-            self.create_goto_marker(i['node'])
+        if not self.no_goto:
+            for i in self.topological_map['nodes']:
+                self.create_goto_marker(i['node'])
 
         legend =0
         for k in self.actions:

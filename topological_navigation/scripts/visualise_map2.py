@@ -107,7 +107,7 @@ class TopoMap2Vis(object):
         marker.color.b = 0.55
         marker.points.append(V1)
         marker.points.append(V2)
-        marker.lifetime = rospy.Duration(120)
+        marker.lifetime = rospy.Duration(1800)
         marker.ns='/route'
         return marker
 

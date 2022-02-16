@@ -61,10 +61,13 @@ class EdgeReconfigureManager(object):
 
             for param in self.edge["config"]:
                 if param["namespace"] == namespace:
-                    self.initial_config[namespace][param["name"]] = config[param["name"]]
                     self.edge_config[namespace][param["name"]] = param["value"]
-                
-        
+
+                    reset = True if "reset" not in param else param["reset"]
+                    if reset:
+                        self.initial_config[namespace][param["name"]] = config[param["name"]]
+
+
     def reconfigure(self):
         """
         If using the new map then edge reconfigure is done using settings in the map.
@@ -79,8 +82,9 @@ class EdgeReconfigureManager(object):
         Used to reset edge params to their default values when the action has completed (only if using the new map)
         """
         for namespace in self.initial_config:
-            rospy.loginfo("Edge Reconfigure Manager: Resetting {} = {}".format(namespace, self.initial_config[namespace]))            
-            self.update(namespace, self.initial_config[namespace])
+            if self.initial_config[namespace]:
+                rospy.loginfo("Edge Reconfigure Manager: Resetting {} = {}".format(namespace, self.initial_config[namespace]))
+                self.update(namespace, self.initial_config[namespace])
                 
                 
     def update(self, namespace, params):

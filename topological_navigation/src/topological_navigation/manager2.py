@@ -876,10 +876,10 @@ class map_manager_2(object):
         """
         Update edge reconfigure parameters.
         """
-        return self.add_param_to_edge_config(req.edge_id, req.namespace, req.name, req.value, req.value_is_string)
+        return self.add_param_to_edge_config(req.edge_id, req.namespace, req.name, req.value, req.value_is_string, req.not_reset)
     
     
-    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string, update=True, write_map=True):
+    def add_param_to_edge_config(self, edge_id, namespace, name, value, value_is_string, not_reset, update=True, write_map=True):
         
         if not value:
             return False, "no value provided"
@@ -890,7 +890,7 @@ class map_manager_2(object):
         node_name, _ = get_node_names_from_edge_id_2(self.tmap2, edge_id)
         num_available, index = self.get_instances_of_node(node_name)
         
-        param = {"namespace":namespace, "name":name, "value":value}
+        param = {"namespace":namespace, "name":name, "value":value, "reset":not not_reset}
 
         if num_available == 1:
             the_node = copy.deepcopy(self.tmap2["nodes"][index])
@@ -1248,7 +1248,7 @@ class map_manager_2(object):
     def add_params_to_edges(self, data, update=True, write_map=True):
 
         for item in data:
-            success,_ = self.add_param_to_edge_config(item.edge_id, item.namespace, item.name, item.value, item.value_is_string, update=False, write_map=False)
+            success,_ = self.add_param_to_edge_config(item.edge_id, item.namespace, item.name, item.value, item.value_is_string, item.not_reset, update=False, write_map=False)
             if not success:
                 return False
 

@@ -71,6 +71,7 @@ class map_manager_2(object):
         self.rm_tag_srv=rospy.Service('/topological_map_manager2/rm_tag_from_node', topological_navigation_msgs.srv.AddTag, self.rm_tag_cb)        
         self.add_param_to_edge_config_srv=rospy.Service('/topological_map_manager2/add_param_to_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.add_param_to_edge_config_cb)
         self.rm_param_from_edge_config_srv=rospy.Service('/topological_map_manager2/rm_param_from_edge_config', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_edge_config_cb)
+        self.rm_param_from_topological_map_srv=rospy.Service('/topological_map_manager2/rm_param_from_topological_map', topological_navigation_msgs.srv.UpdateEdgeConfig, self.rm_param_from_topological_map_cb)
         self.update_node_restrictions_srv=rospy.Service('/topological_map_manager2/update_node_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_node_restrictions_cb)
         self.update_edge_restrictions_srv=rospy.Service('/topological_map_manager2/update_edge_restrictions', topological_navigation_msgs.srv.UpdateRestrictions, self.update_edge_restrictions_cb)
         self.update_edge_srv=rospy.Service('/topological_map_manager2/update_edge', topological_navigation_msgs.srv.UpdateEdge, self.update_edge_cb)
@@ -956,6 +957,37 @@ class map_manager_2(object):
             return False, "No edge found or multiple edges found"
         
         
+    def rm_param_from_topological_map_cb(self, req):
+        """
+        Remove all instances of a param from the topological map.
+        """
+        return self.rm_param_from_topological_map(req.namespace, req.name)
+    
+    
+    def rm_param_from_topological_map(self, namespace, name, update=True, write_map=True):
+        
+        success = False
+        for node in self.tmap2["nodes"]:
+            for edge in node["node"]["edges"]:
+                config0 = copy.deepcopy(edge["config"])
+                config0 = [i for i in config0 if (i["namespace"] == namespace and i["name"] == name)]
+                if config0:
+                    success = True
+                
+                config = copy.deepcopy(edge["config"])
+                config = [i for i in config if not (i["namespace"] == namespace and i["name"] == name)]
+                edge["config"] = config
+        
+        if success:
+            if update:            
+                self.update()
+            if self.auto_write and write_map:
+                self.write_topological_map(self.filename)
+            return True, ""
+        else:
+            return False, "parameter not found in topological map"
+        
+        
     def update_node_restrictions_cb(self, req):
         """
         Update a node's restrictions
@@ -1206,7 +1238,7 @@ class map_manager_2(object):
     def add_topological_nodes(self, data, update=True, write_map=True):
 
         for item in data:
-            success = self.add_topological_node(item.name, item.pose, False, update=False)
+            success = self.add_topological_node(item.name, item.pose, add_close_nodes=False, update=False, write_map=False)
             if not success:
                 return False
 
@@ -1269,7 +1301,7 @@ class map_manager_2(object):
     def set_influence_zones(self, data, update=True, write_map=True):
 
         for item in data:
-            success = self.set_influence_zone(item.name, item.vertices_x, item.vertices_y, update=False)
+            success = self.set_influence_zone(item.name, item.vertices_x, item.vertices_y, update=False, write_map=False)
             if not success:
                 return False
 

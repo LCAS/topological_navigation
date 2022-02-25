@@ -12,6 +12,6 @@ jobs:
       release-type: 'dev'
       runs-on: '["ubuntu-latest"]'
     secrets:
-      pat-token: ${{ secrets.SERVICE_ACCOUNT_PAT_REPO_READ }}
-      dev-apt-read-user: ${{ secrets.APT_READ_USER }}
-      dev-apt-read-write-user: ${{ secrets.APT_READWRITE_USER }}
+      pat-token: ${{ secrets.CI_PAT_PUBLIC }}
+      dev-apt-read-user: ${{ secrets.APT_USER_PUBLIC }}
+      dev-apt-read-write-user: ${{ secrets.APT_USER_PUBLIC }}

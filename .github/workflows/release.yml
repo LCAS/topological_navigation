@@ -10,6 +10,7 @@ jobs:
     with:
       ros-distributions: '[\"melodic\"]'
       release-type: 'dev'
+      runs-on: '["ubuntu-latest"]'
     secrets:
       pat-token: ${{ secrets.SERVICE_ACCOUNT_PAT_REPO_READ }}
       dev-apt-read-user: ${{ secrets.APT_READ_USER }}

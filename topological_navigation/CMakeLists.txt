@@ -167,7 +167,8 @@ install(DIRECTORY tests
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
 
-  add_rostest(tests/travel_time_estimator.test)
+#  add_rostest(tests/travel_time_estimator.test)
+  add_rostest(tests/map_manager.test)
 
 #  temporarily disabling Morse based tests
 #  add_rostest(tests/navigation_scenarios.test)

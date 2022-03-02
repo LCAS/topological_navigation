@@ -117,7 +117,7 @@ class map_manager_2(object):
         self.loaded = False
         self.load = load            
         if self.load:
-            self.load_map(self.filename, check=True)
+            self.load_map(self.filename)
         else:
             self.tmap2 = {}
             self.tmap2["name"] = self.name
@@ -139,7 +139,7 @@ class map_manager_2(object):
         self.broadcast_transform()
         
         self.convert_to_legacy = rospy.get_param("~convert_to_legacy", True)
-        if self.convert_to_legacy:
+        if self.tmap2 and self.convert_to_legacy:
             self.points_pub = rospy.Publisher('/topological_map', topological_navigation_msgs.msg.TopologicalMap, latch=True, queue_size=1)
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
@@ -149,7 +149,7 @@ class map_manager_2(object):
         return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 
-    def load_map(self, filename, check=False):
+    def load_map(self, filename):
 
         def loader(filename, transporter):
             try:
@@ -173,7 +173,7 @@ class map_manager_2(object):
             return
         
         e1 = "Loaded map is {} and should be {}."
-        e2 = " You may be attemting to load a legacy map using topological_navigation/map_manager2.py" \
+        e2 = " You may be attemting to load a legacy map using topological_navigation/map_manager2.py." \
                 " In that case please use topological_navigation/map_manager.py instead."
         
         map_type = type(self.tmap2)
@@ -201,8 +201,7 @@ class map_manager_2(object):
         
         rospy.loginfo("Done")
 
-        if check:
-            self.map_check()
+        self.map_check()
 
         if self.cache_maps:
             rospy.loginfo("Caching the map...")
@@ -234,7 +233,7 @@ class map_manager_2(object):
         self.names = self.create_list_of_nodes()
         self.map_check()
         
-        if self.loaded and self.convert_to_legacy:
+        if self.tmap2 and self.convert_to_legacy:
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
         

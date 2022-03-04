@@ -95,7 +95,7 @@
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true">
+  <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" respawn="true">
     <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>

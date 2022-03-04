@@ -4,7 +4,7 @@ project(topological_navigation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS rospy std_msgs nav_msgs sensor_msgs actionlib_msgs topological_navigation_msgs mongodb_store message_generation)
+find_package(catkin REQUIRED COMPONENTS rospy std_msgs nav_msgs sensor_msgs actionlib_msgs topological_navigation_msgs message_generation)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -167,7 +167,8 @@ install(DIRECTORY tests
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
 
-  add_rostest(tests/travel_time_estimator.test)
+#  add_rostest(tests/travel_time_estimator.test)
+  add_rostest(tests/map_manager.test)
 
 #  temporarily disabling Morse based tests
 #  add_rostest(tests/navigation_scenarios.test)

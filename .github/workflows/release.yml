@@ -6,7 +6,7 @@ on:
 
 jobs:
   dev:
-    uses: SAGARobotics/SagaWorkflows/.github/workflows/release.yml@main
+    uses: SAGARobotics/SagaWorkflows/.github/workflows/release.yml@v1.0
     with:
       ros-distributions: '[\"melodic\"]'
       release-type: 'dev'

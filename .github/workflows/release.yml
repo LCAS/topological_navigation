@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    uses: SAGARobotics/SagaWorkflows/.github/workflows/release.yml@v2.0
+    uses: SAGARobotics/SagaWorkflows/.github/workflows/release.yml@v2.1
     with:
       runs-on: '["ubuntu-latest"]'
     secrets:

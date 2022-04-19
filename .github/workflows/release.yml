@@ -16,6 +16,7 @@ jobs:
     uses: SAGARobotics/SagaWorkflows/.github/workflows/release.yml@v2.1
     with:
       runs-on: '["ubuntu-latest"]'
+      disable-checks: ${{ github.event.inputs.disable_checks }}
     secrets:
       pat-token: ${{ secrets.CI_PAT_PUBLIC }}
       repo-user: ${{ secrets.SAGA_REPO_PUBLIC_WRITE_USER }}

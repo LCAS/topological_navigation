@@ -71,6 +71,7 @@ class TopologicalNavServer(object):
         self.next_action = "none"
         self.nav_from_closest_edge = False
         self.fluid_navigation = True
+        self.final_goal = False
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -297,6 +298,7 @@ class TopologicalNavServer(object):
 
             self.cancelled = False
             self.preempted = False
+            self.final_goal = False
             self.no_orientation = goal.no_orientation
             self.executing_fail_policy = {}
             
@@ -330,6 +332,7 @@ class TopologicalNavServer(object):
             self.cancelled = False
             self.preempted = False
             self.nav_from_closest_edge = False
+            self.final_goal = False
             
             route = goal.route
             valid_route = self.route_checker.check_route(route)
@@ -563,6 +566,7 @@ class TopologicalNavServer(object):
             rospy.loginfo("Navigating Case 2a -> res: %d", inc)
         else:
             rospy.loginfo("Navigating Case 2: Getting to the exact pose of target {}".format(g_node["node"]["name"]))
+            self.final_goal = True
             self.current_target = g_node["node"]["name"]
             origin_name,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge["edge_id"])
             origin_node = self.rsearch.get_node_from_tmap2(origin_name)
@@ -683,6 +687,7 @@ class TopologicalNavServer(object):
                 nedge = None
                 a1 = "none"
                 self.fluid_navigation = False
+                self.final_goal = True
 
             self.current_action = a
             self.next_action = a1
@@ -998,6 +1003,7 @@ class TopologicalNavServer(object):
         if status != self.prev_status:
             d = {}
             d["goal"] = self.edge_action_manager.destination_node["node"]["name"]
+            d["final_goal"] = self.final_goal
             d["action"] = self.edge_action_manager.current_action.upper()
             d["status"] = status_mapping[status]
             

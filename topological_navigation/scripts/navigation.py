@@ -331,8 +331,14 @@ class TopologicalNavServer(object):
 
             self.cancelled = False
             self.preempted = False
-            self.nav_from_closest_edge = False
             self.final_goal = False
+            
+            self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
+            
+            if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+                self.nav_from_closest_edge = False
+            else:
+                self.nav_from_closest_edge = True
             
             route = goal.route
             valid_route = self.route_checker.check_route(route)
@@ -340,6 +346,7 @@ class TopologicalNavServer(object):
             if valid_route:
                 final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
                 target = final_edge["node"]
+                route = self.enforce_navigable_route(route, target)
                 result = self.execute_policy(route, target)
             else:
                 result = False
@@ -597,7 +604,7 @@ class TopologicalNavServer(object):
                 for edge_id in self.closest_edges.edge_ids:
                     origin, destination = get_node_names_from_edge_id_2(self.lnodes, edge_id)
                     
-                    if destination == first_node:
+                    if destination == first_node and edge_id not in route.edge_id:
                         route.source.insert(0, origin)
                         route.edge_id.insert(0, edge_id)
                         break

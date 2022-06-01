@@ -71,6 +71,7 @@ class TopologicalNavServer(object):
         self.next_action = "none"
         self.nav_from_closest_edge = False
         self.fluid_navigation = True
+        self.final_goal = False
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -297,6 +298,7 @@ class TopologicalNavServer(object):
 
             self.cancelled = False
             self.preempted = False
+            self.final_goal = False
             self.no_orientation = goal.no_orientation
             self.executing_fail_policy = {}
             
@@ -329,7 +331,14 @@ class TopologicalNavServer(object):
 
             self.cancelled = False
             self.preempted = False
-            self.nav_from_closest_edge = False
+            self.final_goal = False
+            
+            self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
+            
+            if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+                self.nav_from_closest_edge = False
+            else:
+                self.nav_from_closest_edge = True
             
             route = goal.route
             valid_route = self.route_checker.check_route(route)
@@ -337,6 +346,7 @@ class TopologicalNavServer(object):
             if valid_route:
                 final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
                 target = final_edge["node"]
+                route = self.enforce_navigable_route(route, target)
                 result = self.execute_policy(route, target)
             else:
                 result = False
@@ -563,6 +573,7 @@ class TopologicalNavServer(object):
             rospy.loginfo("Navigating Case 2a -> res: %d", inc)
         else:
             rospy.loginfo("Navigating Case 2: Getting to the exact pose of target {}".format(g_node["node"]["name"]))
+            self.final_goal = True
             self.current_target = g_node["node"]["name"]
             origin_name,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge["edge_id"])
             origin_node = self.rsearch.get_node_from_tmap2(origin_name)
@@ -593,7 +604,7 @@ class TopologicalNavServer(object):
                 for edge_id in self.closest_edges.edge_ids:
                     origin, destination = get_node_names_from_edge_id_2(self.lnodes, edge_id)
                     
-                    if destination == first_node:
+                    if destination == first_node and edge_id not in route.edge_id:
                         route.source.insert(0, origin)
                         route.edge_id.insert(0, edge_id)
                         break
@@ -683,6 +694,7 @@ class TopologicalNavServer(object):
                 nedge = None
                 a1 = "none"
                 self.fluid_navigation = False
+                self.final_goal = True
 
             self.current_action = a
             self.next_action = a1
@@ -998,6 +1010,7 @@ class TopologicalNavServer(object):
         if status != self.prev_status:
             d = {}
             d["goal"] = self.edge_action_manager.destination_node["node"]["name"]
+            d["final_goal"] = self.final_goal
             d["action"] = self.edge_action_manager.current_action.upper()
             d["status"] = status_mapping[status]
             

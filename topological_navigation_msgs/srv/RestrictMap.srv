@@ -1,4 +1,5 @@
 string state    # the state of the robot, e.g. '{"robot": "tall", "task": "uv"}'
+bool update_restricted_map # define to update or not after evaluation
 
 ---
 

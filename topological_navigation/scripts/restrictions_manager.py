@@ -148,6 +148,9 @@ class RestrictionsManager():
 
         response.restricted_tmap = json.dumps(new_topo_map)
 
+        if request.update_restricted_map:
+            self._publish_updated_restricted_maps(new_topo_map)
+
         return response
     
     def restrict_runtime_map_handle(self, request):
@@ -157,6 +160,10 @@ class RestrictionsManager():
         new_topo_map = self._restrict_map_handle(request, "restrictions_runtime")
 
         response.restricted_tmap = json.dumps(new_topo_map)
+
+        if request.update_restricted_map:
+            self._publish_updated_restricted_maps(new_topo_map)
+
 
         return response
 
@@ -233,9 +240,9 @@ class RestrictionsManager():
         robot_state = {}
         try:
             robot_state = eval(request.state)
-        except:
+        except Exception as e:
             pass
-            # rospy.logwarn("Robot state data conversion to dictionary not valid, skip message")
+            rospy.logwarn("Robot state data conversion to dictionary not valid, skip message {} ".format(e))
             # robot_state = None 
         finally:
             # tmp_topo_map = copy.deepcopy(self.topo_map)

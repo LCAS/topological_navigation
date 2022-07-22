@@ -211,5 +211,46 @@ class ObstacleFree(AbstractRestriction):
 
     def ground_to_robot(self):
         pass
+
+class AllowedSide(AbstractRestriction):
+    name = "allowedside"
+
+    def __init__(self):
+        super(AbstractRestriction, self).__init__()
+
+        # subscribe to task topic
+        def _save_allowed_side(msg):
+            self.robot_state.update({
+                "allowedside": msg.data
+            })
+
+        rospy.Subscriber("allowed_side", 
+            String, 
+            lambda msg: _save_allowed_side(msg)
+        )
+
+    def _evaluate(self, value, robot_state):
+        evaluation = self.DEFAULT_EVALUATION
+        # default state
+        if "allowedside" not in robot_state:
+            robot_state = self.robot_state
+            #print("im here")
+
+        if "allowedside" in robot_state:
+            evaluation = value.lower() == robot_state["allowedside"].lower()
+        
+        return evaluation
+    
+    def evaluate_node(self, node, value, robot_state={}, tmap=None):
+        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
+        return self._evaluate(value, robot_state)
+
+    def evaluate_edge(self, edge, value, robot_state={}, tmap=None):
+        """ Returns the value of the restriction associated with the given entity, must return a boolean value  """
+        return self._evaluate(value, robot_state)
+
+    def ground_to_robot(self):
+        pass
+
 ###############################
 

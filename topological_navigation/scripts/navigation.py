@@ -67,6 +67,7 @@ class TopologicalNavServer(object):
         self.stat = None
         self.no_orientation = False
         self._target = "None"
+        self.current_target = "none"
         self.current_action = "none"
         self.next_action = "none"
         self.nav_from_closest_edge = False

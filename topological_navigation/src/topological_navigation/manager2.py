@@ -27,6 +27,11 @@ def pose_dist(pose1, pose2):
     return math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
 
 
+class NoAliasDumper(yaml.SafeDumper):
+    def ignore_aliases(self, data):
+        return True
+
+
 class map_manager_2(object):
     
     
@@ -216,7 +221,8 @@ class map_manager_2(object):
         nodes.sort(key=lambda node: node["node"]["name"])
         self.tmap2["nodes"] = nodes
         
-        yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
+        #yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
+        yml = yaml.dump(self.tmap2, default_flow_style=False, Dumper=NoAliasDumper)
         fh = open(filename, "w")
         fh.write(str(yml))
         fh.close

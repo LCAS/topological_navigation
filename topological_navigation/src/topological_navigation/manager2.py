@@ -213,7 +213,7 @@ class map_manager_2(object):
             self.write_topological_map(os.path.join(self.cache_dir, os.path.basename(self.filename)))
         
         
-    def write_topological_map(self, filename):
+    def write_topological_map(self, filename, no_alias=False):
         
         rospy.loginfo("Writing map to {} ...".format(filename))
         
@@ -221,8 +221,12 @@ class map_manager_2(object):
         nodes.sort(key=lambda node: node["node"]["name"])
         self.tmap2["nodes"] = nodes
         
-        #yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
-        yml = yaml.dump(self.tmap2, default_flow_style=False, Dumper=NoAliasDumper)
+        if no_alias:
+            rospy.loginfo("Disabling anchors and aliases in topological map yaml ...")
+            yml = yaml.dump(self.tmap2, default_flow_style=False, Dumper=NoAliasDumper)
+        else:
+            yml = yaml.safe_dump(self.tmap2, default_flow_style=False)
+
         fh = open(filename, "w")
         fh.write(str(yml))
         fh.close
@@ -366,11 +370,13 @@ class map_manager_2(object):
         """
         filename = req.filename
         if not filename:
-            filename = self.filename
+            path = rospy.get_param('topological_map2_path')
+            fname = rospy.get_param('topological_map2_filename')
+            filename = path + "/" + fname
         
         try:
             message = "Writing map to {}".format(filename)
-            self.write_topological_map(filename)
+            self.write_topological_map(filename, req.no_alias)
             success = True
         except Exception as message:
             success = False

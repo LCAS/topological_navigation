@@ -121,6 +121,7 @@ class TopologicalNavServer(object):
             rospy.logwarn("Edge Reconfigure Unavailable")
 
         rospy.loginfo("Subscribing to Localisation Topics...")
+        rospy.wait_for_message('/closest_edges', ClosestEdges, timeout=10)
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)

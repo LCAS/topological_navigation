@@ -40,7 +40,7 @@ class TopologicalLocalisation():
         self.node_distances = []
         self.connected_nodes = []
         self.node_names = []
-        self.node_coords = []
+        self.node_coords = np.array([])
 
         # contains a list of threading.Event for stopping the localisation of each agent
         self.stopping_events = []
@@ -52,17 +52,24 @@ class TopologicalLocalisation():
         self.default_reinit_jsd_threshold = 0.975
         self.default_unconnected_jump_threshold = 0.6
 
-        # declare services
-        rospy.Service("~localise_agent", LocaliseAgent, self._localise_agent_handler)
-        rospy.Service("~stop_localise", StopLocalise, self._stop_localise_handler)
-        rospy.Service("~set_JSD_upper_bound", SetFloat64, self._set_JSD_upper_bound)
-        rospy.Service("~set_entropy_lower_bound", SetFloat64, self._set_entropy_lower_bound)
 
         rospy.Subscriber("topological_map", TopologicalMap, self._topo_map_cb)
 
         rospy.loginfo("Waiting for topological map...")
         while self.topo_map is None:
             rospy.sleep(0.5)
+            
+        # declare services
+        rospy.Service("~localise_agent", LocaliseAgent, self._localise_agent_handler)
+        rospy.Service("~stop_localise", StopLocalise, self._stop_localise_handler)
+        rospy.Service("~set_JSD_upper_bound", SetFloat64, self._set_JSD_upper_bound)
+        rospy.Service("~set_entropy_lower_bound", SetFloat64, self._set_entropy_lower_bound)
+
+        #rospy.Subscriber("topological_map", TopologicalMap, self._topo_map_cb)
+
+        #rospy.loginfo("Waiting for topological map...")
+        #while self.topo_map is None:
+        #    rospy.sleep(0.5)
 
         rospy.loginfo("DONE")
 

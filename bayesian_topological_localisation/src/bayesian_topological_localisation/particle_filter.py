@@ -24,7 +24,7 @@ class TopologicalParticleFilter():
         self.initial_spread_policy = initial_spread_policy
         # speed decay when doing only prediction (it does eventually stop)
         self.prediction_speed_decay = prediction_speed_decay
-        self.node_coords = node_coords
+        self.node_coords = np.array(node_coords)
         self.node_distances = node_distances
         self.connected_nodes = connected_nodes
         self.node_diffs2D = node_diffs2D

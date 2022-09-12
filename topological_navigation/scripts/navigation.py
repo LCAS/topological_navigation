@@ -344,7 +344,7 @@ class TopologicalNavServer(object):
             route = goal.route
             valid_route = self.route_checker.check_route(route)
             
-            if valid_route:
+            if valid_route and (route.source[0] == self.current_node or route.source[0] == self.closest_node):
                 final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
                 target = final_edge["node"]
                 route = self.enforce_navigable_route(route, target)

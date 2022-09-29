@@ -67,6 +67,7 @@ class TopologicalNavServer(object):
         self.stat = None
         self.no_orientation = False
         self._target = "None"
+        self.current_target = "none"
         self.current_action = "none"
         self.next_action = "none"
         self.nav_from_closest_edge = False
@@ -120,6 +121,7 @@ class TopologicalNavServer(object):
             rospy.logwarn("Edge Reconfigure Unavailable")
 
         rospy.loginfo("Subscribing to Localisation Topics...")
+        rospy.wait_for_message('/closest_edges', ClosestEdges, timeout=10)
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
@@ -160,7 +162,6 @@ class TopologicalNavServer(object):
         rospy.loginfo("...done")
 
         rospy.loginfo("All Done.")
-        rospy.spin()
         
         
     def _on_node_shutdown(self):
@@ -343,7 +344,7 @@ class TopologicalNavServer(object):
             route = goal.route
             valid_route = self.route_checker.check_route(route)
             
-            if valid_route:
+            if valid_route and (route.source[0] == self.current_node or route.source[0] == self.closest_node):
                 final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
                 target = final_edge["node"]
                 route = self.enforce_navigable_route(route, target)
@@ -427,7 +428,7 @@ class TopologicalNavServer(object):
             
             self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
             
-            if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
+            if self.closest_edges.distances and (self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none"):
                 self.nav_from_closest_edge = False
                 o_node = self.rsearch.get_node_from_tmap2(self.closest_node)
                 rospy.loginfo("Planning from the closest NODE: {}".format(self.closest_node))
@@ -597,7 +598,7 @@ class TopologicalNavServer(object):
         Enforces the route to always contain the initial edge that leads the robot to the first node in the given route.
         In other words, avoid that the route contains an initial edge that is too far from the robot pose. 
         """
-        if self.nav_from_closest_edge:
+        if self.nav_from_closest_edge and self.closest_edges.edge_ids and len(self.closest_edges.edge_ids) == 2:
             if not(self.closest_edges.edge_ids[0] in route.edge_id or self.closest_edges.edge_ids[1] in route.edge_id):
                 first_node = route.source[0] if len(route.source) > 0 else target_node
                 
@@ -1024,6 +1025,7 @@ if __name__ == "__main__":
     rospy.init_node("topological_navigation")
     mode = "normal"
     server = TopologicalNavServer(rospy.get_name(), mode)
+    rospy.spin()
 
     rospy.loginfo("Exiting.")
 ###################################################################################################################

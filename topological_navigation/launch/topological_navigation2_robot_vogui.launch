@@ -57,10 +57,10 @@
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>
 
-  <node pkg="topological_navigation" type="handling_2side_navigation.py" name="handling_2side_navigation" respawn="true">
+  <node pkg="bacchus_navigation" type="handling_2side_navigation.py" name="handling_2side_navigation" respawn="true">
   </node>
 
-  <node pkg="topological_navigation" type="get_simple_policy.py" name="handling_2side_navigation" respawn="true">
+  <node pkg="topological_navigation" type="get_simple_policy.py" name="get_simple_policy" respawn="true">
   </node>
 
 

@@ -1,0 +1,9 @@
+#goal definition
+string node_name
+---
+#result definition
+string message
+uint8 status
+---
+#feedback
+string message

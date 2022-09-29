@@ -31,10 +31,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.669764536
         y: 3.439528703
@@ -89,10 +89,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.669764536
         y: 3.439528703
@@ -147,10 +147,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.5791106514166664
         y: -6.299859755958334
@@ -205,10 +205,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.5791106514166664
         y: -6.299859755958334
@@ -263,10 +263,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.470045262958333
         y: -7.273798601854166
@@ -321,10 +321,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.470045262958333
         y: -7.273798601854166
@@ -379,10 +379,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.3609798745
         y: -8.24773744775
@@ -437,10 +437,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.3609798745
         y: -8.24773744775
@@ -495,10 +495,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.2519144860416667
         y: -9.221676293645833
@@ -553,10 +553,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.2519144860416667
         y: -9.221676293645833
@@ -611,10 +611,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.1428490975833334
         y: -10.195615139541665
@@ -669,10 +669,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.1428490975833334
         y: -10.195615139541665
@@ -727,10 +727,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.033783709125
         y: -11.1695539854375
@@ -785,10 +785,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.033783709125
         y: -11.1695539854375
@@ -843,10 +843,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.924718320666667
         y: -12.143492831333333
@@ -901,10 +901,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.924718320666667
         y: -12.143492831333333
@@ -959,10 +959,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.8156529322083337
         y: -13.117431677229167
@@ -1017,10 +1017,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.8156529322083337
         y: -13.117431677229167
@@ -1075,10 +1075,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.70658754375
         y: -14.091370523125
@@ -1133,10 +1133,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.70658754375
         y: -14.091370523125
@@ -1191,10 +1191,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.5975221552916667
         y: -15.065309369020834
@@ -1249,10 +1249,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.5975221552916667
         y: -15.065309369020834
@@ -1307,10 +1307,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.5606991475416665
         y: 2.465589857104167
@@ -1365,10 +1365,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.5606991475416665
         y: 2.465589857104167
@@ -1423,10 +1423,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.4884567668333335
         y: -16.039248214916668
@@ -1481,10 +1481,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.4884567668333335
         y: -16.039248214916668
@@ -1539,10 +1539,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.3793913783750003
         y: -17.0131870608125
@@ -1597,10 +1597,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.3793913783750003
         y: -17.0131870608125
@@ -1655,10 +1655,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.270325989916667
         y: -17.987125906708332
@@ -1713,10 +1713,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.270325989916667
         y: -17.987125906708332
@@ -1771,10 +1771,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.1612606014583333
         y: -18.961064752604166
@@ -1829,10 +1829,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.1612606014583333
         y: -18.961064752604166
@@ -1887,10 +1887,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.052195213
         y: -19.9350035985
@@ -1945,10 +1945,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.052195213
         y: -19.9350035985
@@ -2003,10 +2003,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.9431298245416668
         y: -20.908942444395834
@@ -2061,10 +2061,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.9431298245416668
         y: -20.908942444395834
@@ -2119,10 +2119,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.8340644360833336
         y: -21.882881290291667
@@ -2177,10 +2177,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.8340644360833336
         y: -21.882881290291667
@@ -2235,10 +2235,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.7249990476250003
         y: -22.8568201361875
@@ -2293,10 +2293,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.7249990476250003
         y: -22.8568201361875
@@ -2351,10 +2351,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.615933659166667
         y: -23.83075898208333
@@ -2409,10 +2409,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.615933659166667
         y: -23.83075898208333
@@ -2467,10 +2467,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.5068682707083334
         y: -24.804697827979165
@@ -2525,10 +2525,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.5068682707083334
         y: -24.804697827979165
@@ -2583,10 +2583,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.451633759083333
         y: 1.4916510112083334
@@ -2641,10 +2641,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.451633759083333
         y: 1.4916510112083334
@@ -2699,10 +2699,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.3978028822500002
         y: -25.778636673875
@@ -2757,10 +2757,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.3978028822500002
         y: -25.778636673875
@@ -2815,10 +2815,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.288737493791667
         y: -26.752575519770833
@@ -2873,10 +2873,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.288737493791667
         y: -26.752575519770833
@@ -2931,10 +2931,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.1796721053333337
         y: -27.726514365666667
@@ -2989,10 +2989,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.1796721053333337
         y: -27.726514365666667
@@ -3047,10 +3047,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -1.0706067168750004
         y: -28.700453211562497
@@ -3105,10 +3105,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -1.0706067168750004
         y: -28.700453211562497
@@ -3163,10 +3163,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.9615413284166672
         y: -29.674392057458334
@@ -3221,10 +3221,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.9615413284166672
         y: -29.674392057458334
@@ -3279,10 +3279,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.8524759399583339
         y: -30.648330903354164
@@ -3337,10 +3337,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.8524759399583339
         y: -30.648330903354164
@@ -3395,10 +3395,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.7434105515000002
         y: -31.622269749250002
@@ -3453,10 +3453,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.7434105515000002
         y: -31.622269749250002
@@ -3511,10 +3511,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.634345163041667
         y: -32.59620859514583
@@ -3569,10 +3569,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.634345163041667
         y: -32.59620859514583
@@ -3627,10 +3627,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.5252797745833337
         y: -33.57014744104167
@@ -3685,10 +3685,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.5252797745833337
         y: -33.57014744104167
@@ -3743,10 +3743,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.4162143861250005
         y: -34.5440862869375
@@ -3801,10 +3801,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.4162143861250005
         y: -34.5440862869375
@@ -3859,10 +3859,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.342568370625
         y: 0.5177121653125001
@@ -3917,10 +3917,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.342568370625
         y: 0.5177121653125001
@@ -3975,10 +3975,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.30714899766666726
         y: -35.51802513283334
@@ -4033,10 +4033,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.30714899766666726
         y: -35.51802513283334
@@ -4091,10 +4091,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.198083609208334
         y: -36.49196397872917
@@ -4149,10 +4149,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.198083609208334
         y: -36.49196397872917
@@ -4207,10 +4207,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -0.08901822075000076
         y: -37.465902824625
@@ -4265,10 +4265,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -0.08901822075000076
         y: -37.465902824625
@@ -4323,10 +4323,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: 0.02004716770833248
         y: -38.439841670520835
@@ -4381,10 +4381,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: 0.02004716770833248
         y: -38.439841670520835
@@ -4439,10 +4439,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: 0.12911255616666573
         y: -39.413780516416665
@@ -4497,10 +4497,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: 0.12911255616666573
         y: -39.413780516416665
@@ -4555,10 +4555,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: 0.23817794462499986
         y: -40.3877193623125
@@ -4613,10 +4613,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: 0.23817794462499986
         y: -40.3877193623125
@@ -4671,10 +4671,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: 0.3472433330833331
         y: -41.36165820820833
@@ -4729,10 +4729,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: 0.3472433330833331
         y: -41.36165820820833
@@ -4787,10 +4787,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.233502982166667
         y: -0.45622668058333327
@@ -4845,10 +4845,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.233502982166667
         y: -0.45622668058333327
@@ -4903,10 +4903,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.1244375937083335
         y: -1.430165526479167
@@ -4961,10 +4961,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.1244375937083335
         y: -1.430165526479167
@@ -5019,10 +5019,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.015372205249999
         y: -2.404104372375
@@ -5077,10 +5077,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.015372205249999
         y: -2.404104372375
@@ -5135,10 +5135,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.9063068167916666
         y: -3.378043218270833
@@ -5193,10 +5193,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.9063068167916666
         y: -3.378043218270833
@@ -5251,10 +5251,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.7972414283333333
         y: -4.351982064166666
@@ -5309,10 +5309,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.7972414283333333
         y: -4.351982064166666
@@ -5367,10 +5367,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.6881760398749996
         y: -5.3259209100625
@@ -5425,10 +5425,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.6881760398749996
         y: -5.3259209100625
@@ -5513,10 +5513,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.7928662042652863
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: -0.6093957516540112
+        z: -0.667268985176
       position:
         x: -5.10302657518716
         y: 6.762363249454556
@@ -5586,10 +5586,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.769439658027843
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: -0.6387195101560591
+        z: 0.745982276586
       position:
         x: 0.5653741193776085
         y: -43.309535918374806
@@ -5644,10 +5644,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.925193938
         y: 2.948509382
@@ -5702,10 +5702,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.925193938
         y: 2.948509382
@@ -5760,10 +5760,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.83485326693617
         y: -6.968267616297871
@@ -5818,10 +5818,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.83485326693617
         y: -6.968267616297871
@@ -5876,10 +5876,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.725819199829787
         y: -7.959945316127659
@@ -5934,10 +5934,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.725819199829787
         y: -7.959945316127659
@@ -5992,10 +5992,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.616785132723404
         y: -8.951623015957445
@@ -6050,10 +6050,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.616785132723404
         y: -8.951623015957445
@@ -6108,10 +6108,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.507751065617021
         y: -9.943300715787231
@@ -6166,10 +6166,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.507751065617021
         y: -9.943300715787231
@@ -6224,10 +6224,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.398716998510638
         y: -10.93497841561702
@@ -6282,10 +6282,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.398716998510638
         y: -10.93497841561702
@@ -6340,10 +6340,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.289682931404255
         y: -11.926656115446807
@@ -6398,10 +6398,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.289682931404255
         y: -11.926656115446807
@@ -6456,10 +6456,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.180648864297872
         y: -12.918333815276593
@@ -6514,10 +6514,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.180648864297872
         y: -12.918333815276593
@@ -6572,10 +6572,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.071614797191489
         y: -13.91001151510638
@@ -6630,10 +6630,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.071614797191489
         y: -13.91001151510638
@@ -6688,10 +6688,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.962580730085106
         y: -14.901689214936166
@@ -6746,10 +6746,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.962580730085106
         y: -14.901689214936166
@@ -6804,10 +6804,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.853546662978723
         y: -15.893366914765956
@@ -6862,10 +6862,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.853546662978723
         y: -15.893366914765956
@@ -6920,10 +6920,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.816159870893617
         y: 1.956831682170213
@@ -6978,10 +6978,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.816159870893617
         y: 1.956831682170213
@@ -7036,10 +7036,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.74451259587234
         y: -16.885044614595742
@@ -7094,10 +7094,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.74451259587234
         y: -16.885044614595742
@@ -7152,10 +7152,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.635478528765957
         y: -17.87672231442553
@@ -7210,10 +7210,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.635478528765957
         y: -17.87672231442553
@@ -7268,10 +7268,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.526444461659574
         y: -18.868400014255318
@@ -7326,10 +7326,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.526444461659574
         y: -18.868400014255318
@@ -7384,10 +7384,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.417410394553191
         y: -19.860077714085104
@@ -7442,10 +7442,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.417410394553191
         y: -19.860077714085104
@@ -7500,10 +7500,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.308376327446808
         y: -20.85175541391489
@@ -7558,10 +7558,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.308376327446808
         y: -20.85175541391489
@@ -7616,10 +7616,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.199342260340425
         y: -21.843433113744677
@@ -7674,10 +7674,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.199342260340425
         y: -21.843433113744677
@@ -7732,10 +7732,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.090308193234042
         y: -22.835110813574463
@@ -7790,10 +7790,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.090308193234042
         y: -22.835110813574463
@@ -7848,10 +7848,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.9812741261276594
         y: -23.826788513404253
@@ -7906,10 +7906,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.9812741261276594
         y: -23.826788513404253
@@ -7964,10 +7964,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.8722400590212764
         y: -24.81846621323404
@@ -8022,10 +8022,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.8722400590212764
         y: -24.81846621323404
@@ -8080,10 +8080,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.7632059919148935
         y: -25.810143913063825
@@ -8138,10 +8138,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.7632059919148935
         y: -25.810143913063825
@@ -8196,10 +8196,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.707125803787234
         y: 0.9651539823404258
@@ -8254,10 +8254,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.707125803787234
         y: 0.9651539823404258
@@ -8312,10 +8312,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.6541719248085105
         y: -26.801821612893615
@@ -8370,10 +8370,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.6541719248085105
         y: -26.801821612893615
@@ -8428,10 +8428,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.5451378577021275
         y: -27.7934993127234
@@ -8486,10 +8486,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.5451378577021275
         y: -27.7934993127234
@@ -8544,10 +8544,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.4361037905957446
         y: -28.785177012553188
@@ -8602,10 +8602,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.4361037905957446
         y: -28.785177012553188
@@ -8660,10 +8660,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.3270697234893616
         y: -29.776854712382974
@@ -8718,10 +8718,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.3270697234893616
         y: -29.776854712382974
@@ -8776,10 +8776,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.2180356563829786
         y: -30.76853241221276
@@ -8834,10 +8834,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.2180356563829786
         y: -30.76853241221276
@@ -8892,10 +8892,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -3.1090015892765956
         y: -31.760210112042547
@@ -8950,10 +8950,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -3.1090015892765956
         y: -31.760210112042547
@@ -9008,10 +9008,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.9999675221702127
         y: -32.751887811872336
@@ -9066,10 +9066,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.9999675221702127
         y: -32.751887811872336
@@ -9124,10 +9124,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.8909334550638297
         y: -33.74356551170213
@@ -9182,10 +9182,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.8909334550638297
         y: -33.74356551170213
@@ -9240,10 +9240,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.7818993879574467
         y: -34.735243211531916
@@ -9298,10 +9298,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.7818993879574467
         y: -34.735243211531916
@@ -9356,10 +9356,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.6728653208510638
         y: -35.7269209113617
@@ -9414,10 +9414,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.6728653208510638
         y: -35.7269209113617
@@ -9472,10 +9472,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.598091736680851
         y: -0.02652371748936133
@@ -9530,10 +9530,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.598091736680851
         y: -0.02652371748936133
@@ -9588,10 +9588,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.563831253744681
         y: -36.71859861119149
@@ -9646,10 +9646,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.563831253744681
         y: -36.71859861119149
@@ -9704,10 +9704,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.454797186638298
         y: -37.710276311021275
@@ -9762,10 +9762,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.454797186638298
         y: -37.710276311021275
@@ -9820,10 +9820,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.345763119531915
         y: -38.70195401085106
@@ -9878,10 +9878,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.345763119531915
         y: -38.70195401085106
@@ -9936,10 +9936,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.236729052425532
         y: -39.69363171068085
@@ -9994,10 +9994,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.236729052425532
         y: -39.69363171068085
@@ -10052,10 +10052,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.127694985319149
         y: -40.68530941051064
@@ -10110,10 +10110,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.127694985319149
         y: -40.68530941051064
@@ -10168,10 +10168,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -2.018660918212766
         y: -41.67698711034043
@@ -10226,10 +10226,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -2.018660918212766
         y: -41.67698711034043
@@ -10284,10 +10284,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.489057669574468
         y: -1.0182014173191485
@@ -10342,10 +10342,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.489057669574468
         y: -1.0182014173191485
@@ -10400,10 +10400,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.380023602468085
         y: -2.0098791171489356
@@ -10458,10 +10458,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.380023602468085
         y: -2.0098791171489356
@@ -10516,10 +10516,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.270989535361702
         y: -3.001556816978723
@@ -10574,10 +10574,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.270989535361702
         y: -3.001556816978723
@@ -10632,10 +10632,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.161955468255319
         y: -3.99323451680851
@@ -10690,10 +10690,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.161955468255319
         y: -3.99323451680851
@@ -10748,10 +10748,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.052921401148936
         y: -4.984912216638297
@@ -10806,10 +10806,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.052921401148936
         y: -4.984912216638297
@@ -10864,10 +10864,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.943887334042553
         y: -5.976589916468083
@@ -10922,10 +10922,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.943887334042553
         y: -5.976589916468083
@@ -11010,10 +11010,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.6322679121515368
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.774749822370768
+        z: -0.667268985176
       position:
         x: -7.173946139326077
         y: 5.6433806496035
@@ -11098,10 +11098,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.6602872211269416
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.7510131727316514
+        z: 0.745982276586
       position:
         x: -1.8005927840287228
         y: -43.66034250880617
@@ -11156,10 +11156,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.47065475
         y: 2.227666938
@@ -11214,10 +11214,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.47065475
         y: 2.227666938
@@ -11272,10 +11272,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.349596452444445
         y: -7.51641437711111
@@ -11330,10 +11330,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.349596452444445
         y: -7.51641437711111
@@ -11388,10 +11388,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.237490622688888
         y: -8.490822508622221
@@ -11446,10 +11446,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.237490622688888
         y: -8.490822508622221
@@ -11504,10 +11504,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.125384792933334
         y: -9.465230640133333
@@ -11562,10 +11562,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.125384792933334
         y: -9.465230640133333
@@ -11620,10 +11620,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.013278963177777
         y: -10.439638771644443
@@ -11678,10 +11678,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.013278963177777
         y: -10.439638771644443
@@ -11736,10 +11736,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.901173133422222
         y: -11.414046903155555
@@ -11794,10 +11794,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.901173133422222
         y: -11.414046903155555
@@ -11852,10 +11852,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.789067303666666
         y: -12.388455034666665
@@ -11910,10 +11910,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.789067303666666
         y: -12.388455034666665
@@ -11968,10 +11968,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.676961473911111
         y: -13.362863166177776
@@ -12026,10 +12026,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.676961473911111
         y: -13.362863166177776
@@ -12084,10 +12084,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.564855644155555
         y: -14.337271297688888
@@ -12142,10 +12142,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.564855644155555
         y: -14.337271297688888
@@ -12200,10 +12200,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.4527498144
         y: -15.3116794292
@@ -12258,10 +12258,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.4527498144
         y: -15.3116794292
@@ -12316,10 +12316,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.340643984644444
         y: -16.28608756071111
@@ -12374,10 +12374,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.340643984644444
         y: -16.28608756071111
@@ -12432,10 +12432,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.358548920244443
         y: 1.253258806488889
@@ -12490,10 +12490,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.358548920244443
         y: 1.253258806488889
@@ -12548,10 +12548,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.228538154888889
         y: -17.26049569222222
@@ -12606,10 +12606,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.228538154888889
         y: -17.26049569222222
@@ -12664,10 +12664,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.116432325133333
         y: -18.234903823733333
@@ -12722,10 +12722,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.116432325133333
         y: -18.234903823733333
@@ -12780,10 +12780,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.004326495377778
         y: -19.209311955244445
@@ -12838,10 +12838,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.004326495377778
         y: -19.209311955244445
@@ -12896,10 +12896,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.892220665622222
         y: -20.183720086755557
@@ -12954,10 +12954,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.892220665622222
         y: -20.183720086755557
@@ -13012,10 +13012,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.780114835866667
         y: -21.15812821826667
@@ -13070,10 +13070,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.780114835866667
         y: -21.15812821826667
@@ -13128,10 +13128,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.668009006111111
         y: -22.132536349777777
@@ -13186,10 +13186,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.668009006111111
         y: -22.132536349777777
@@ -13244,10 +13244,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.555903176355556
         y: -23.10694448128889
@@ -13302,10 +13302,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.555903176355556
         y: -23.10694448128889
@@ -13360,10 +13360,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.4437973466
         y: -24.0813526128
@@ -13418,10 +13418,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.4437973466
         y: -24.0813526128
@@ -13476,10 +13476,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.331691516844444
         y: -25.05576074431111
@@ -13534,10 +13534,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.331691516844444
         y: -25.05576074431111
@@ -13592,10 +13592,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.219585687088889
         y: -26.030168875822223
@@ -13650,10 +13650,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.219585687088889
         y: -26.030168875822223
@@ -13708,10 +13708,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.246443090488889
         y: 0.27885067497777793
@@ -13766,10 +13766,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.246443090488889
         y: 0.27885067497777793
@@ -13824,10 +13824,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.107479857333333
         y: -27.00457700733333
@@ -13882,10 +13882,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.107479857333333
         y: -27.00457700733333
@@ -13940,10 +13940,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.995374027577778
         y: -27.978985138844443
@@ -13998,10 +13998,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.995374027577778
         y: -27.978985138844443
@@ -14056,10 +14056,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.883268197822222
         y: -28.953393270355555
@@ -14114,10 +14114,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.883268197822222
         y: -28.953393270355555
@@ -14172,10 +14172,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.771162368066667
         y: -29.927801401866667
@@ -14230,10 +14230,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.771162368066667
         y: -29.927801401866667
@@ -14288,10 +14288,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.659056538311111
         y: -30.90220953337778
@@ -14346,10 +14346,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.659056538311111
         y: -30.90220953337778
@@ -14404,10 +14404,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.546950708555556
         y: -31.87661766488889
@@ -14462,10 +14462,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.546950708555556
         y: -31.87661766488889
@@ -14520,10 +14520,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.4348448788
         y: -32.8510257964
@@ -14578,10 +14578,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.4348448788
         y: -32.8510257964
@@ -14636,10 +14636,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.322739049044444
         y: -33.825433927911114
@@ -14694,10 +14694,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.322739049044444
         y: -33.825433927911114
@@ -14752,10 +14752,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.210633219288889
         y: -34.79984205942222
@@ -14810,10 +14810,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.210633219288889
         y: -34.79984205942222
@@ -14868,10 +14868,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -5.098527389533333
         y: -35.77425019093333
@@ -14926,10 +14926,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -5.098527389533333
         y: -35.77425019093333
@@ -14984,10 +14984,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.134337260733332
         y: -0.6955574565333333
@@ -15042,10 +15042,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.134337260733332
         y: -0.6955574565333333
@@ -15100,10 +15100,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.986421559777778
         y: -36.74865832244444
@@ -15158,10 +15158,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.986421559777778
         y: -36.74865832244444
@@ -15216,10 +15216,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.874315730022222
         y: -37.72306645395555
@@ -15274,10 +15274,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.874315730022222
         y: -37.72306645395555
@@ -15332,10 +15332,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.762209900266667
         y: -38.697474585466665
@@ -15390,10 +15390,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.762209900266667
         y: -38.697474585466665
@@ -15448,10 +15448,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.650104070511111
         y: -39.67188271697778
@@ -15506,10 +15506,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.650104070511111
         y: -39.67188271697778
@@ -15564,10 +15564,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.537998240755556
         y: -40.64629084848889
@@ -15622,10 +15622,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.537998240755556
         y: -40.64629084848889
@@ -15680,10 +15680,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -4.425892411
         y: -41.62069898
@@ -15738,10 +15738,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -4.425892411
         y: -41.62069898
@@ -15796,10 +15796,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.022231430977778
         y: -1.6699655880444442
@@ -15854,10 +15854,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.022231430977778
         y: -1.6699655880444442
@@ -15912,10 +15912,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.910125601222221
         y: -2.644373719555555
@@ -15970,10 +15970,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.910125601222221
         y: -2.644373719555555
@@ -16028,10 +16028,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.798019771466667
         y: -3.6187818510666667
@@ -16086,10 +16086,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.798019771466667
         y: -3.6187818510666667
@@ -16144,10 +16144,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.68591394171111
         y: -4.593189982577778
@@ -16202,10 +16202,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.68591394171111
         y: -4.593189982577778
@@ -16260,10 +16260,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.573808111955556
         y: -5.567598114088888
@@ -16318,10 +16318,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.573808111955556
         y: -5.567598114088888
@@ -16376,10 +16376,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.4617022822
         y: -6.5420062456
@@ -16434,10 +16434,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.4617022822
         y: -6.5420062456
@@ -16522,10 +16522,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.7505975938061243
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: -0.6607596024065457
+        z: -0.667268985176
       position:
         x: -9.559484919033252
         y: 5.1421202825254895
@@ -16610,10 +16610,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.7925601042213753
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: -0.6097938021959576
+        z: 0.745982276586
       position:
         x: -4.133229482401827
         y: -43.59788102665304
@@ -16668,10 +16668,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.74616503
         y: 1.413106389
@@ -16726,10 +16726,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.74616503
         y: 1.413106389
@@ -16784,10 +16784,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.650159822045454
         y: -8.433521238045454
@@ -16842,10 +16842,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.650159822045454
         y: -8.433521238045454
@@ -16900,10 +16900,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.54055930125
         y: -9.418184000750001
@@ -16958,10 +16958,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.54055930125
         y: -9.418184000750001
@@ -17016,10 +17016,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.430958780454546
         y: -10.402846763454546
@@ -17074,10 +17074,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.430958780454546
         y: -10.402846763454546
@@ -17132,10 +17132,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.32135825965909
         y: -11.387509526159091
@@ -17190,10 +17190,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.32135825965909
         y: -11.387509526159091
@@ -17248,10 +17248,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.211757738863636
         y: -12.372172288863638
@@ -17306,10 +17306,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.211757738863636
         y: -12.372172288863638
@@ -17364,10 +17364,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.102157218068182
         y: -13.356835051568183
@@ -17422,10 +17422,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.102157218068182
         y: -13.356835051568183
@@ -17480,10 +17480,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.992556697272727
         y: -14.341497814272728
@@ -17538,10 +17538,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.992556697272727
         y: -14.341497814272728
@@ -17596,10 +17596,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.882956176477272
         y: -15.326160576977273
@@ -17654,10 +17654,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.882956176477272
         y: -15.326160576977273
@@ -17712,10 +17712,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.773355655681819
         y: -16.310823339681818
@@ -17770,10 +17770,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.773355655681819
         y: -16.310823339681818
@@ -17828,10 +17828,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.663755134886364
         y: -17.295486102386363
@@ -17886,10 +17886,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.663755134886364
         y: -17.295486102386363
@@ -17944,10 +17944,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.636564509204545
         y: 0.4284436262954545
@@ -18002,10 +18002,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.636564509204545
         y: 0.4284436262954545
@@ -18060,10 +18060,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.554154614090908
         y: -18.280148865090908
@@ -18118,10 +18118,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.554154614090908
         y: -18.280148865090908
@@ -18176,10 +18176,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.444554093295455
         y: -19.264811627795456
@@ -18234,10 +18234,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.444554093295455
         y: -19.264811627795456
@@ -18292,10 +18292,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.3349535725
         y: -20.2494743905
@@ -18350,10 +18350,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.3349535725
         y: -20.2494743905
@@ -18408,10 +18408,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.225353051704545
         y: -21.234137153204546
@@ -18466,10 +18466,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.225353051704545
         y: -21.234137153204546
@@ -18524,10 +18524,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.115752530909091
         y: -22.21879991590909
@@ -18582,10 +18582,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.115752530909091
         y: -22.21879991590909
@@ -18640,10 +18640,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.006152010113636
         y: -23.203462678613636
@@ -18698,10 +18698,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.006152010113636
         y: -23.203462678613636
@@ -18756,10 +18756,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.896551489318181
         y: -24.18812544131818
@@ -18814,10 +18814,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.896551489318181
         y: -24.18812544131818
@@ -18872,10 +18872,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.786950968522728
         y: -25.172788204022726
@@ -18930,10 +18930,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.786950968522728
         y: -25.172788204022726
@@ -18988,10 +18988,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.677350447727273
         y: -26.157450966727275
@@ -19046,10 +19046,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.677350447727273
         y: -26.157450966727275
@@ -19104,10 +19104,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.567749926931818
         y: -27.14211372943182
@@ -19162,10 +19162,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.567749926931818
         y: -27.14211372943182
@@ -19220,10 +19220,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.526963988409092
         y: -0.5562191364090909
@@ -19278,10 +19278,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.526963988409092
         y: -0.5562191364090909
@@ -19336,10 +19336,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.458149406136364
         y: -28.126776492136365
@@ -19394,10 +19394,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.458149406136364
         y: -28.126776492136365
@@ -19452,10 +19452,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.348548885340909
         y: -29.11143925484091
@@ -19510,10 +19510,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.348548885340909
         y: -29.11143925484091
@@ -19568,10 +19568,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.238948364545454
         y: -30.096102017545455
@@ -19626,10 +19626,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.238948364545454
         y: -30.096102017545455
@@ -19684,10 +19684,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.12934784375
         y: -31.08076478025
@@ -19742,10 +19742,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.12934784375
         y: -31.08076478025
@@ -19800,10 +19800,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -8.019747322954546
         y: -32.065427542954545
@@ -19858,10 +19858,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -8.019747322954546
         y: -32.065427542954545
@@ -19916,10 +19916,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.91014680215909
         y: -33.05009030565909
@@ -19974,10 +19974,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.91014680215909
         y: -33.05009030565909
@@ -20032,10 +20032,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.800546281363636
         y: -34.034753068363635
@@ -20090,10 +20090,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.800546281363636
         y: -34.034753068363635
@@ -20148,10 +20148,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.690945760568182
         y: -35.01941583106818
@@ -20206,10 +20206,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.690945760568182
         y: -35.01941583106818
@@ -20264,10 +20264,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.581345239772727
         y: -36.004078593772725
@@ -20322,10 +20322,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.581345239772727
         y: -36.004078593772725
@@ -20380,10 +20380,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.4717447189772725
         y: -36.98874135647727
@@ -20438,10 +20438,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.4717447189772725
         y: -36.98874135647727
@@ -20496,10 +20496,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.417363467613637
         y: -1.5408818991136364
@@ -20554,10 +20554,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.417363467613637
         y: -1.5408818991136364
@@ -20612,10 +20612,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.362144198181818
         y: -37.973404119181815
@@ -20670,10 +20670,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.362144198181818
         y: -37.973404119181815
@@ -20728,10 +20728,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.252543677386363
         y: -38.95806688188637
@@ -20786,10 +20786,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.252543677386363
         y: -38.95806688188637
@@ -20844,10 +20844,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.142943156590909
         y: -39.94272964459091
@@ -20902,10 +20902,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.142943156590909
         y: -39.94272964459091
@@ -20960,10 +20960,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -7.033342635795455
         y: -40.92739240729546
@@ -21018,10 +21018,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -7.033342635795455
         y: -40.92739240729546
@@ -21076,10 +21076,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -6.923742115
         y: -41.91205517
@@ -21134,10 +21134,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -6.923742115
         y: -41.91205517
@@ -21192,10 +21192,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.307762946818182
         y: -2.5255446618181816
@@ -21250,10 +21250,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.307762946818182
         y: -2.5255446618181816
@@ -21308,10 +21308,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.198162426022728
         y: -3.5102074245227266
@@ -21366,10 +21366,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.198162426022728
         y: -3.5102074245227266
@@ -21424,10 +21424,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.088561905227273
         y: -4.4948701872272725
@@ -21482,10 +21482,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.088561905227273
         y: -4.4948701872272725
@@ -21540,10 +21540,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.978961384431818
         y: -5.479532949931818
@@ -21598,10 +21598,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.978961384431818
         y: -5.479532949931818
@@ -21656,10 +21656,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.869360863636365
         y: -6.464195712636363
@@ -21714,10 +21714,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.869360863636365
         y: -6.464195712636363
@@ -21772,10 +21772,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.75976034284091
         y: -7.448858475340908
@@ -21830,10 +21830,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.75976034284091
         y: -7.448858475340908
@@ -21918,10 +21918,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.6355677711925615
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.7720450817285995
+        z: -0.667268985176
       position:
         x: -12.19164473280976
         y: 4.12919126172477
@@ -22006,10 +22006,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.6249835278873127
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.7806379377595792
+        z: 0.745982276586
       position:
         x: -6.5885762619301005
         y: -44.30187223414207
@@ -22064,10 +22064,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -14.34383873
         y: 0.984304285
@@ -22122,10 +22122,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -14.34383873
         y: 0.984304285
@@ -22180,10 +22180,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.238062768636363
         y: -8.760049009318182
@@ -22238,10 +22238,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.238062768636363
         y: -8.760049009318182
@@ -22296,10 +22296,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.1274851725
         y: -9.73448433875
@@ -22354,10 +22354,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.1274851725
         y: -9.73448433875
@@ -22412,10 +22412,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.016907576363636
         y: -10.708919668181819
@@ -22470,10 +22470,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.016907576363636
         y: -10.708919668181819
@@ -22528,10 +22528,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.906329980227273
         y: -11.683354997613637
@@ -22586,10 +22586,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.906329980227273
         y: -11.683354997613637
@@ -22644,10 +22644,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.795752384090909
         y: -12.657790327045456
@@ -22702,10 +22702,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.795752384090909
         y: -12.657790327045456
@@ -22760,10 +22760,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.685174787954544
         y: -13.632225656477274
@@ -22818,10 +22818,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.685174787954544
         y: -13.632225656477274
@@ -22876,10 +22876,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.574597191818182
         y: -14.606660985909093
@@ -22934,10 +22934,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.574597191818182
         y: -14.606660985909093
@@ -22992,10 +22992,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.464019595681817
         y: -15.581096315340911
@@ -23050,10 +23050,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.464019595681817
         y: -15.581096315340911
@@ -23108,10 +23108,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.353441999545455
         y: -16.555531644772728
@@ -23166,10 +23166,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.353441999545455
         y: -16.555531644772728
@@ -23224,10 +23224,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.24286440340909
         y: -17.529966974204548
@@ -23282,10 +23282,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.24286440340909
         y: -17.529966974204548
@@ -23340,10 +23340,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -14.233261133863635
         y: 0.009868955568181681
@@ -23398,10 +23398,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -14.233261133863635
         y: 0.009868955568181681
@@ -23456,10 +23456,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.132286807272727
         y: -18.504402303636365
@@ -23514,10 +23514,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.132286807272727
         y: -18.504402303636365
@@ -23572,10 +23572,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -12.021709211136363
         y: -19.478837633068185
@@ -23630,10 +23630,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -12.021709211136363
         y: -19.478837633068185
@@ -23688,10 +23688,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.911131614999999
         y: -20.4532729625
@@ -23746,10 +23746,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.911131614999999
         y: -20.4532729625
@@ -23804,10 +23804,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.800554018863636
         y: -21.427708291931822
@@ -23862,10 +23862,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.800554018863636
         y: -21.427708291931822
@@ -23920,10 +23920,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.689976422727272
         y: -22.40214362136364
@@ -23978,10 +23978,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.689976422727272
         y: -22.40214362136364
@@ -24036,10 +24036,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.579398826590909
         y: -23.37657895079546
@@ -24094,10 +24094,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.579398826590909
         y: -23.37657895079546
@@ -24152,10 +24152,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.468821230454544
         y: -24.351014280227275
@@ -24210,10 +24210,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.468821230454544
         y: -24.351014280227275
@@ -24268,10 +24268,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.358243634318182
         y: -25.325449609659096
@@ -24326,10 +24326,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.358243634318182
         y: -25.325449609659096
@@ -24384,10 +24384,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.247666038181817
         y: -26.299884939090912
@@ -24442,10 +24442,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.247666038181817
         y: -26.299884939090912
@@ -24500,10 +24500,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.137088442045453
         y: -27.274320268522732
@@ -24558,10 +24558,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.137088442045453
         y: -27.274320268522732
@@ -24616,10 +24616,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -14.122683537727273
         y: -0.9645663738636366
@@ -24674,10 +24674,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -14.122683537727273
         y: -0.9645663738636366
@@ -24732,10 +24732,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -11.02651084590909
         y: -28.24875559795455
@@ -24790,10 +24790,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -11.02651084590909
         y: -28.24875559795455
@@ -24848,10 +24848,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.915933249772726
         y: -29.22319092738637
@@ -24906,10 +24906,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.915933249772726
         y: -29.22319092738637
@@ -24964,10 +24964,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.805355653636363
         y: -30.197626256818186
@@ -25022,10 +25022,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.805355653636363
         y: -30.197626256818186
@@ -25080,10 +25080,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.694778057499999
         y: -31.172061586250003
@@ -25138,10 +25138,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.694778057499999
         y: -31.172061586250003
@@ -25196,10 +25196,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.584200461363636
         y: -32.14649691568182
@@ -25254,10 +25254,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.584200461363636
         y: -32.14649691568182
@@ -25312,10 +25312,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.473622865227272
         y: -33.12093224511364
@@ -25370,10 +25370,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.473622865227272
         y: -33.12093224511364
@@ -25428,10 +25428,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.363045269090907
         y: -34.095367574545456
@@ -25486,10 +25486,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.363045269090907
         y: -34.095367574545456
@@ -25544,10 +25544,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.252467672954545
         y: -35.069802903977276
@@ -25602,10 +25602,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.252467672954545
         y: -35.069802903977276
@@ -25660,10 +25660,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.141890076818182
         y: -36.0442382334091
@@ -25718,10 +25718,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.141890076818182
         y: -36.0442382334091
@@ -25776,10 +25776,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -10.031312480681818
         y: -37.01867356284092
@@ -25834,10 +25834,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -10.031312480681818
         y: -37.01867356284092
@@ -25892,10 +25892,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -14.012105941590908
         y: -1.939001703295455
@@ -25950,10 +25950,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -14.012105941590908
         y: -1.939001703295455
@@ -26008,10 +26008,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.920734884545453
         y: -37.99310889227273
@@ -26066,10 +26066,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.920734884545453
         y: -37.99310889227273
@@ -26124,10 +26124,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.81015728840909
         y: -38.96754422170455
@@ -26182,10 +26182,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.81015728840909
         y: -38.96754422170455
@@ -26240,10 +26240,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.699579692272726
         y: -39.94197955113637
@@ -26298,10 +26298,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.699579692272726
         y: -39.94197955113637
@@ -26356,10 +26356,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.589002096136362
         y: -40.91641488056819
@@ -26414,10 +26414,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.589002096136362
         y: -40.91641488056819
@@ -26472,10 +26472,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -9.4784245
         y: -41.89085021
@@ -26530,10 +26530,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -9.4784245
         y: -41.89085021
@@ -26588,10 +26588,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.901528345454546
         y: -2.9134370327272734
@@ -26646,10 +26646,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.901528345454546
         y: -2.9134370327272734
@@ -26704,10 +26704,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.790950749318181
         y: -3.8878723621590914
@@ -26762,10 +26762,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.790950749318181
         y: -3.8878723621590914
@@ -26820,10 +26820,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.680373153181819
         y: -4.862307691590909
@@ -26878,10 +26878,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.680373153181819
         y: -4.862307691590909
@@ -26936,10 +26936,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.569795557045454
         y: -5.836743021022728
@@ -26994,10 +26994,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.569795557045454
         y: -5.836743021022728
@@ -27052,10 +27052,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.45921796090909
         y: -6.811178350454546
@@ -27110,10 +27110,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.45921796090909
         y: -6.811178350454546
@@ -27168,10 +27168,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: -0.667268985176
       position:
         x: -13.348640364772727
         y: -7.785613679886364
@@ -27226,10 +27226,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 1.0
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: 0.0
+        z: 0.745982276586
       position:
         x: -13.348640364772727
         y: -7.785613679886364
@@ -27299,10 +27299,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.7587852750407499
+        w: 0.744816824073
         x: 0.0
         y: 0.0
-        z: -0.6513408526887697
+        z: -0.667268985176
       position:
         x: -14.570711634183212
         y: 3.5547130109481095
@@ -27372,10 +27372,10 @@ nodes:
     parent_frame: map
     pose:
       orientation:
-        w: 0.7694046982739573
+        w: 0.665965797185
         x: 0.0
         y: 0.0
-        z: -0.63876162241791
+        z: 0.745982276586
       position:
         x: -9.310187939859084
         y: -44.0937067917826

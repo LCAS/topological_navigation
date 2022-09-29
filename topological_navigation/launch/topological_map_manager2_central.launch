@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<launch>
+
+	<arg name="tmap_file"/>
+	<arg name="machine" default="localhost"/>
+	<arg name="user" default=""/>
+	<arg name="vis" default="true"/>
+
+
+	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
+
+	<node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager2" args="$(arg tmap_file)" respawn="true"/>
+<!--
+	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="-e" respawn="false" if="$(arg vis)"/>
+-->
+
+</launch>

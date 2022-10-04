@@ -8,17 +8,17 @@ from topological_navigation_msgs.msg import GotoNodeAction, GotoNodeGoal
 
 
 class GoTo(object): 
-    #_feedback = actionlib_tutorials.msg.FibonacciFeedback()
-    #_result = actionlib_tutorials.msg.FibonacciResult()
-
     def __init__(self):
 
         rospy.wait_for_service('restrictions_manager/restrict_planning_map')
         self.apply_restriction_service = rospy.ServiceProxy('restrictions_manager/restrict_planning_map',topological_navigation_msgs.srv.RestrictMap)
 
-        self.apply_restriction_service('{"allowedside": "b"}',True)
+        print "calling"
+        self.apply_restriction_service('{"allowedside": "a"}',True)
+        print "Im here"
+
 
 if __name__ == '__main__':
-    rospy.init_node('GoTo_node')
+    rospy.init_node('GoTo_node_test')
     goto = GoTo()
     rospy.spin()

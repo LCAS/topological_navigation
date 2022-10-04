@@ -106,12 +106,16 @@ class GoTo(object):
             # apply restrictions to block a certain side so the topo localisation is not confused
             try:
                 if subgoal_node[-2:] == "sa":
+                    rospy.loginfo("Calling restrictions service")
                     self.apply_restriction_service('{"allowedside": "a"}',True)
+                    rospy.sleep(5)
                     rospy.loginfo("Restrictions applied")
                     _feedback.message = "Restrictions applied"
                     self.goto_as.publish_feedback(_feedback)
                 if subgoal_node[-2:] == "sb":
+                    rospy.loginfo("Calling restrictions service")
                     self.apply_restriction_service('{"allowedside": "b"}',True)
+                    rospy.sleep(5)
                     rospy.loginfo("Restrictions applied")
                     _feedback.message = "Restrictions applied"
                     self.goto_as.publish_feedback(_feedback)

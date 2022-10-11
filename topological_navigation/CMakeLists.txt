@@ -125,6 +125,7 @@ include_directories(
    scripts/nav_client.py
    scripts/navigation.py
    scripts/visualise_map.py
+   scripts/visualise_map2.py
    scripts/map_manager.py
    scripts/map_manager2.py
    scripts/travel_time_estimator.py

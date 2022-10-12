@@ -26,7 +26,7 @@ add_service_files(
 )
 generate_messages(
 DEPENDENCIES
-    std_msgs 
+    std_msgs
 )
 catkin_package(
 #  INCLUDE_DIRS include
@@ -72,7 +72,7 @@ catkin_package(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
- install(PROGRAMS
+ catkin_install_python(PROGRAMS
    scripts/add_content.py
    scripts/add_edge.py
    scripts/add_node.py

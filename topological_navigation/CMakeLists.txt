@@ -120,7 +120,7 @@ include_directories(
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
- install(PROGRAMS
+catkin_install_python(PROGRAMS
    scripts/localisation.py
    scripts/nav_client.py
    scripts/navigation.py

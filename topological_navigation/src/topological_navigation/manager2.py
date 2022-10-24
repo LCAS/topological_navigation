@@ -9,7 +9,7 @@ from __future__ import division
 import rospy, tf2_ros, math
 import yaml, datetime, json
 import re, uuid, copy, os
-import multiprocessing
+import multiprocessing, rospkg
 
 from topological_navigation_msgs.msg import *
 import topological_navigation_msgs.srv
@@ -25,13 +25,15 @@ from topological_navigation.tmap_utils import get_node_names_from_edge_id_2
 
 def pose_dist(pose1, pose2):
     return math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
-
+    
 
 class NoAliasDumper(yaml.SafeDumper):
     def ignore_aliases(self, data):
         return True
+#########################################################################################################
 
 
+#########################################################################################################
 class map_manager_2(object):
     
     
@@ -46,6 +48,11 @@ class map_manager_2(object):
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")     
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
+
+        self.goal_mappings = {}        
+        mb_goal_f = "{}/config/{}".format(rospkg.RosPack().get_path("topological_navigation"), "move_base_goal.yaml")
+        with open(mb_goal_f, "r") as f:
+            self.move_base_goal = yaml.safe_load(f)["topological_navigation/move_base_goal"]
         
         if advertise_srvs:
             self.advertise()
@@ -504,10 +511,10 @@ class map_manager_2(object):
         """
         Adds an edge to a topological node
         """
-        return self.add_edge(req.origin, req.destination, req.action, req.edge_id)
+        return self.add_edge(req.origin, req.destination, req.action, req.action_type, req.edge_id)
     
     
-    def add_edge(self, origin, destination, action, edge_id, update=True, write_map=True):
+    def add_edge(self, origin, destination, action, action_type, edge_id, update=True, write_map=True):
         
         rospy.loginfo("Adding Edge from {} to {} using {}".format(origin, destination, action))
         
@@ -531,7 +538,7 @@ class map_manager_2(object):
             else:
                 eid=edge_id
                 
-            self.add_edge_to_node(origin, destination, action, eid)
+            self.add_edge_to_node(origin, destination, action, eid, action_type=action_type)
             
             if update:
                 self.update()
@@ -543,8 +550,8 @@ class map_manager_2(object):
             return False
         
         
-    def add_edge_to_node(self, origin, destination, action="move_base", edge_id="default", config=[],
-                         recovery_behaviours_config="", action_type="move_base_msgs/MoveBaseGoal", goal="default", fail_policy="fail", 
+    def add_edge_to_node(self, origin, destination, action="", edge_id="default", config=[],
+                         recovery_behaviours_config="", action_type="", goal={}, fail_policy="fail", 
                          restrictions_planning="True", restrictions_runtime="True", fluid_navigation=True):
         
         edge = {}
@@ -559,20 +566,14 @@ class map_manager_2(object):
         edge["config"] = config
         edge["recovery_behaviours_config"] = recovery_behaviours_config
         
-        if action_type == "default":
-            edge["action_type"] = self.set_action_type(action)
-        else:
-            edge["action_type"] = action_type
-            
-        if goal == "default":
-            edge["goal"] = {}
-            edge["goal"]["target_pose"] = {}
-            edge["goal"]["target_pose"]["pose"] = "$node.pose"
-            edge["goal"]["target_pose"]["header"] = {}
-            edge["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
-        else:
-            edge["goal"] = goal
-            
+        if not action_type:
+            action_type = "move_base_msgs/MoveBaseGoal"
+        
+        the_action_type, the_goal = self.set_goal(action, action_type)
+        
+        edge["action_type"] = the_action_type
+        edge["goal"] = the_goal
+        
         edge["fail_policy"] = fail_policy
         edge["restrictions_planning"] = restrictions_planning
         edge["restrictions_runtime"] = restrictions_runtime
@@ -582,7 +583,29 @@ class map_manager_2(object):
             if node["node"]["name"] == origin:
                 node["node"]["edges"].append(edge)
                 
+    
+    def set_goal(self, action, action_type):
+        
+        if action in self.goal_mappings:
+            action_type = self.goal_mappings[action]["action_type"]
+            goal = self.goal_mappings[action]["goal"]
+        else:
+            package = action_type.split("/")[0]
+            goal_def = action_type.split("/")[1]
+            
+            try:
+                _file = "{}/config/{}.yaml".format(rospkg.RosPack().get_path(package), goal_def)
+                with open(_file, "r") as f:
+                    goal = yaml.safe_load(f)
+            except:
+                action_type = self.move_base_goal["action_type"]
+                goal = self.move_base_goal["goal"]
                 
+            self.goal_mappings[action] = {"action_type": action_type, "goal": goal}
+            
+        return action_type, goal
+            
+
     def set_action_type(self, action):
         
         package = action + "_msgs"
@@ -591,8 +614,8 @@ class map_manager_2(object):
         action_type = package + "/" + goal_type
             
         return action_type
-                
-                
+        
+
     def remove_node_cb(self, req):
         """
         Removes a node from the topological map

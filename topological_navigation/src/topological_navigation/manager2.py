@@ -25,7 +25,6 @@ from topological_navigation.tmap_utils import get_node_names_from_edge_id_2
 
 def pose_dist(pose1, pose2):
     return math.sqrt((pose1["position"]["x"] - pose2["position"]["x"])**2 + (pose1["position"]["y"] - pose2["position"]["y"])**2)
-    
 
 class NoAliasDumper(yaml.SafeDumper):
     def ignore_aliases(self, data):
@@ -604,7 +603,7 @@ class map_manager_2(object):
             self.goal_mappings[action] = {"action_type": action_type, "goal": goal}
             
         return action_type, goal
-            
+
 
     def set_action_type(self, action):
         
@@ -614,7 +613,7 @@ class map_manager_2(object):
         action_type = package + "/" + goal_type
             
         return action_type
-        
+
 
     def remove_node_cb(self, req):
         """

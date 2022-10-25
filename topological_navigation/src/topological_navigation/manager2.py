@@ -514,7 +514,7 @@ class map_manager_2(object):
     
     
     def add_edge(self, origin, destination, action, action_type, edge_id, update=True, write_map=True):
-        
+
         rospy.loginfo("Adding Edge from {} to {} using {}".format(origin, destination, action))
         
         num_available, index = self.get_instances_of_node(origin)
@@ -585,14 +585,13 @@ class map_manager_2(object):
     
     def set_goal(self, action, action_type):
         
-        if action in self.goal_mappings:
-            action_type = self.goal_mappings[action]["action_type"]
+        if action in self.goal_mappings and action_type == self.goal_mappings[action]["action_type"]:
             goal = self.goal_mappings[action]["goal"]
         else:
-            package = action_type.split("/")[0]
-            goal_def = action_type.split("/")[1]
-            
             try:
+                package = action_type.split("/")[0]
+                goal_def = action_type.split("/")[1]
+
                 _file = "{}/config/{}.yaml".format(rospkg.RosPack().get_path(package), goal_def)
                 with open(_file, "r") as f:
                     goal = yaml.safe_load(f)
@@ -1149,6 +1148,10 @@ class map_manager_2(object):
                         edge["action_type"] = action_type
                     if goal:
                         edge["goal"] = json.loads(goal)
+                    elif action_type and not goal:
+                        _action_type, _goal = self.set_goal(action_name, action_type)
+                        edge["action_type"] = _action_type
+                        edge["goal"] = _goal
                     success = True
         
         if success:
@@ -1292,7 +1295,7 @@ class map_manager_2(object):
     def add_edges(self, data, update=True, write_map=True):
         
         for item in data:
-            success = self.add_edge(item.origin, item.destination, item.action, item.edge_id, update=False, write_map=False)
+            success = self.add_edge(item.origin, item.destination, item.action, item.action_type, item.edge_id, update=False, write_map=False)
             if not success:
                 return False
 

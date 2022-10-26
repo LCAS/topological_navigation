@@ -550,7 +550,7 @@ class map_manager_2(object):
         
         
     def add_edge_to_node(self, origin, destination, action="", edge_id="default", config=[],
-                         recovery_behaviours_config="", action_type="", goal={}, fail_policy="fail", 
+                         recovery_behaviours_config="", action_type="", goal=None, fail_policy="fail", 
                          restrictions_planning="True", restrictions_runtime="True", fluid_navigation=True):
         
         edge = {}
@@ -568,7 +568,7 @@ class map_manager_2(object):
         if not action_type:
             action_type = "move_base_msgs/MoveBaseGoal"
         
-        the_action_type, the_goal = self.set_goal(action, action_type)
+        the_action_type, the_goal = self.set_goal(action, action_type, goal)
         
         edge["action_type"] = the_action_type
         edge["goal"] = the_goal
@@ -583,21 +583,24 @@ class map_manager_2(object):
                 node["node"]["edges"].append(edge)
                 
     
-    def set_goal(self, action, action_type):
+    def set_goal(self, action, action_type, _goal=None):
         
         if action in self.goal_mappings and action_type == self.goal_mappings[action]["action_type"]:
             goal = self.goal_mappings[action]["goal"]
         else:
-            try:
-                package = action_type.split("/")[0]
-                goal_def = action_type.split("/")[1]
-
-                _file = "{}/config/{}.yaml".format(rospkg.RosPack().get_path(package), goal_def)
-                with open(_file, "r") as f:
-                    goal = yaml.safe_load(f)
-            except:
-                action_type = self.move_base_goal["action_type"]
-                goal = self.move_base_goal["goal"]
+            if _goal is not None:
+                goal = _goal
+            else:
+                try:
+                    package = action_type.split("/")[0]
+                    goal_def = action_type.split("/")[1]
+    
+                    _file = "{}/config/{}.yaml".format(rospkg.RosPack().get_path(package), goal_def)
+                    with open(_file, "r") as f:
+                        goal = yaml.safe_load(f)
+                except:
+                    action_type = self.move_base_goal["action_type"]
+                    goal = self.move_base_goal["goal"]
                 
             self.goal_mappings[action] = {"action_type": action_type, "goal": goal}
             
@@ -1112,6 +1115,10 @@ class map_manager_2(object):
                         edge["action_type"] = action_type
                     if goal:
                         edge["goal"] = json.loads(goal)
+                    elif action_type and not goal:
+                        _action_type, _goal = self.set_goal(action_name, action_type)
+                        edge["action_type"] = _action_type
+                        edge["goal"] = _goal
                     if fail_policy:
                         edge["fail_policy"] = fail_policy
                     if not_fluid:

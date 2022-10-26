@@ -26,7 +26,7 @@ add_service_files(
 )
 generate_messages(
 DEPENDENCIES
-    std_msgs 
+    std_msgs
 )
 catkin_package(
 #  INCLUDE_DIRS include

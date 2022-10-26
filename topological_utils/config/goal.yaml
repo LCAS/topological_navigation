@@ -1,8 +1,0 @@
-target_pose:
-  header:
-    frame_id: $node.parent_frame
-  pose: $node.pose
-origin_pose:
-  header:
-    frame_id: +node.parent_frame
-  pose: +node.pose

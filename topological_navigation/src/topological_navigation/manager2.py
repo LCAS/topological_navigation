@@ -595,7 +595,10 @@ class map_manager_2(object):
                     package = action_type.split("/")[0]
                     goal_def = action_type.split("/")[1]
     
-                    _file = "{}/config/{}.yaml".format(rospkg.RosPack().get_path(package), goal_def)
+                    _file = rospy.get_param("~" + action_type, "")
+                    if not _file:
+                        _file = "{}/config/{}.yaml".format(rospkg.RosPack().get_path(package), goal_def)
+
                     with open(_file, "r") as f:
                         goal = yaml.safe_load(f)
                 except:

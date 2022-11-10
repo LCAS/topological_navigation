@@ -141,9 +141,10 @@ catkin_install_python(PROGRAMS
  )
 
 
-install(DIRECTORY launch
-   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+foreach (dir launch config)
+   install(DIRECTORY ${dir}/
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/${dir})
+endforeach(dir)
 
 install(DIRECTORY tests
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

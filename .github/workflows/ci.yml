@@ -1,0 +1,21 @@
+name: Continuous integration
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  workflow_dispatch:
+  
+jobs:
+  ci:
+    uses: SAGARobotics/SagaWorkflows/.github/workflows/ci.yml@v3.6
+    with:
+      release: 'false'
+      distribution: 'noetic'
+      disable-checks: 'true'
+    secrets:
+      pat-token: ${{ secrets.SERVICE_ACCOUNT_PAT_REPO_READ }}
+      repo-user: ${{ secrets.SAGA_REPO_WRITE_USER }}
+      repo-pass: ${{ secrets.SAGA_REPO_WRITE_PASS }}

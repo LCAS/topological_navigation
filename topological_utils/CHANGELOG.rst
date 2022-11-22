@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.1 (2022-11-22)
+------------------
 * Merge pull request `#26 <https://github.com/SAGARobotics/topological_navigation/issues/26>`_ from adambinch/set_goals
   Auto set goal when adding an edge to the topological map
 * update

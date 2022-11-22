@@ -2,8 +2,8 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.1 (2022-11-22)
+------------------
 * Merge pull request `#25 <https://github.com/SAGARobotics/topological_navigation/issues/25>`_ from SAGARobotics/magnucha/use-catkin-install-python-macro
   Replace install -> catkin_install_python in CMakeLists
 * Replace install -> catkin_install_python in CMakeLists

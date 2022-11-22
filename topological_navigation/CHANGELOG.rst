@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.1 (2022-11-22)
+------------------
 * Merge pull request `#28 <https://github.com/SAGARobotics/topological_navigation/issues/28>`_ from SAGARobotics/magnucha/install-config-dir
   Mark config directory for installation
 * Install config directory

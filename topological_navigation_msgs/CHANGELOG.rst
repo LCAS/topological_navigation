@@ -2,6 +2,21 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.1 (2022-11-22)
+------------------
+* Merge pull request `#26 <https://github.com/SAGARobotics/topological_navigation/issues/26>`_ from adambinch/set_goals
+  Auto set goal when adding an edge to the topological map
+* update
+* Auto set goal when adding an edge to the topological map
+  If a file e.g. `thorvald_navigation_actions/config/inrownavGoal.yaml` exists then the
+  map manager will automatically set the goal of the action to the goal specified in thaty file,
+  when the add edge function/service is called with arg `action_type` set to `inrownavGoal`.
+  If that arg is not set then a move base type goal is assumed.
+* Merge pull request `#19 <https://github.com/SAGARobotics/topological_navigation/issues/19>`_ from adambinch/no_alias_yaml
+  Option to disable anchors and aliases in generated topological map yaml file
+* Option to disable anchors and aliases in generated topological map yaml file
+* Contributors: Adam Binch
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel

@@ -1,0 +1,17 @@
+name: Internal release
+on:
+  push:
+    tags:
+      - 'v?[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  release:
+    uses: SAGARobotics/SagaWorkflows/.github/workflows/ci.yml@v3.6
+    with:
+      runs-on: '["ubuntu-latest"]'
+      release: 'true'
+      distribution: 'noetic'
+    secrets:
+      pat-token: ${{ secrets.CI_PAT_PUBLIC }}
+      repo-user: ${{ secrets.SAGA_REPO_PUBLIC_WRITE_USER }}
+      repo-pass: ${{ secrets.SAGA_REPO_PUBLIC_WRITE_PASS }}

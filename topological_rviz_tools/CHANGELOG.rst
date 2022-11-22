@@ -2,6 +2,17 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.1 (2022-11-22)
+------------------
+* Merge pull request `#25 <https://github.com/SAGARobotics/topological_navigation/issues/25>`_ from SAGARobotics/magnucha/use-catkin-install-python-macro
+  Replace install -> catkin_install_python in CMakeLists
+* Replace install -> catkin_install_python in CMakeLists
+  This change makes sure that when catkin builds the package,
+  any '#!/usr/bin/env python' is replaced with the default python
+  version for the relevant ROS distribution, instead of requiring
+  Python2
+* Contributors: Magnus Conrad Harr, Michael Hutchinson
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#111 <https://github.com/magnucha/topological_navigation/issues/111>`_ from adambinch/remove_strands_dependencies

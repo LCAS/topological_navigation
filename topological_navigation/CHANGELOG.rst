@@ -2,6 +2,66 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.1 (2022-11-22)
+------------------
+* Merge pull request `#28 <https://github.com/SAGARobotics/topological_navigation/issues/28>`_ from SAGARobotics/magnucha/install-config-dir
+  Mark config directory for installation
+* Install config directory
+* Merge pull request `#27 <https://github.com/SAGARobotics/topological_navigation/issues/27>`_ from adambinch/goal_converter
+  Goal mapping config can be set as a param
+* Goal mapping config can be set as a param
+* Merge pull request `#26 <https://github.com/SAGARobotics/topological_navigation/issues/26>`_ from adambinch/set_goals
+  Auto set goal when adding an edge to the topological map
+* update
+* update
+* update
+* Auto set goal when adding an edge to the topological map
+  If a file e.g. `thorvald_navigation_actions/config/inrownavGoal.yaml` exists then the
+  map manager will automatically set the goal of the action to the goal specified in thaty file,
+  when the add edge function/service is called with arg `action_type` set to `inrownavGoal`.
+  If that arg is not set then a move base type goal is assumed.
+* Merge pull request `#25 <https://github.com/SAGARobotics/topological_navigation/issues/25>`_ from SAGARobotics/magnucha/use-catkin-install-python-macro
+  Replace install -> catkin_install_python in CMakeLists
+* Replace install -> catkin_install_python in CMakeLists
+  This change makes sure that when catkin builds the package,
+  any '#!/usr/bin/env python' is replaced with the default python
+  version for the relevant ROS distribution, instead of requiring
+  Python2
+* Merge pull request `#24 <https://github.com/SAGARobotics/topological_navigation/issues/24>`_ from SAGARobotics/install-visualise-map2
+  Add visualise_map2.py as install target
+* Add visualise_map2.py as install target
+* Merge pull request `#22 <https://github.com/SAGARobotics/topological_navigation/issues/22>`_ from adambinch/melodic-devel
+  update with lcas toponav
+* update with lcas toponav
+* Merge pull request `#20 <https://github.com/SAGARobotics/topological_navigation/issues/20>`_ from adambinch/melodic-devel
+  Wait for closest edges before creating action servers.
+* Wait for closest edges before creating action servers.
+* Merge pull request `#19 <https://github.com/SAGARobotics/topological_navigation/issues/19>`_ from adambinch/no_alias_yaml
+  Option to disable anchors and aliases in generated topological map yaml file
+* Option to disable anchors and aliases in generated topological map yaml file
+* Merge branch 'master' of https://github.com/SAGARobotics/topological_navigation into no_alias_yaml
+* Merge pull request `#18 <https://github.com/SAGARobotics/topological_navigation/issues/18>`_ from adambinch/master
+  Checks for closest edges in nav script
+* Checks for closest edges in nav script
+* update
+* Merge pull request `#16 <https://github.com/SAGARobotics/topological_navigation/issues/16>`_ from MikHut/patch-1
+  Remove unused generate_messages from topological_navigation CMakeLists
+* Remove unused generate_messages from topological_navigation CMakeLists
+* Merge pull request `#15 <https://github.com/SAGARobotics/topological_navigation/issues/15>`_ from adambinch/exec_pol_nav_from_edge
+  Navigating from the edge works with exec policy
+* Navigating from the edge works with exec policy
+* Merge pull request `#14 <https://github.com/SAGARobotics/topological_navigation/issues/14>`_ from adambinch/pub_final_goal
+  Topic `move_action_status` publishes whether the goal of the current …
+* Topic `move_action_status` publishes whether the goal of the current action is the final (toponav) goal (or not).
+* Merge pull request `#12 <https://github.com/SAGARobotics/topological_navigation/issues/12>`_ from SAGARobotics/bugfix/missing_dependencies
+  Added necessary run dependency
+* Merge pull request `#13 <https://github.com/SAGARobotics/topological_navigation/issues/13>`_ from adambinch/bugfix/missing_dependencies
+  removing tf as a test dependency
+* removing tf as a test dependency
+* Update package.xml
+  added `tf` as run-depend
+* Contributors: Adam Binch, Bård-Kristian, Magnus Conrad Harr, Michael Hutchinson, MikHut
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#134 <https://github.com/magnucha/topological_navigation/issues/134>`_ from adambinch/melodic-devel

@@ -2,6 +2,24 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#26 <https://github.com/SAGARobotics/topological_navigation/issues/26>`_ from adambinch/set_goals
+  Auto set goal when adding an edge to the topological map
+* update
+* Merge pull request `#25 <https://github.com/SAGARobotics/topological_navigation/issues/25>`_ from SAGARobotics/magnucha/use-catkin-install-python-macro
+  Replace install -> catkin_install_python in CMakeLists
+* Replace install -> catkin_install_python in CMakeLists
+  This change makes sure that when catkin builds the package,
+  any '#!/usr/bin/env python' is replaced with the default python
+  version for the relevant ROS distribution, instead of requiring
+  Python2
+* Merge pull request `#23 <https://github.com/SAGARobotics/topological_navigation/issues/23>`_ from adambinch/goal_converter
+  Goal Converter
+* Goal Converter
+  Convert goal in all tmaps
+* Contributors: Adam Binch, Magnus Conrad Harr, Michael Hutchinson
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel

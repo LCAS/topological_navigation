@@ -42,7 +42,7 @@ class TopoMap2Vis(object):
         self.topmap_pub = rospy.Publisher('topological_map_visualisation', MarkerArray, queue_size = 1, latch=True)
         self.routevis_pub = rospy.Publisher('topological_route_visualisation', MarkerArray, queue_size = 1)
         self.topo_map_sub = rospy.Subscriber("topological_map_2", String, self.topo_map_cb)
-        self.topo_route_sub = rospy.Subscriber("/topological_navigation/Route", TopologicalRoute, self.route_cb)
+        self.topo_route_sub = rospy.Subscriber("topological_navigation/Route", TopologicalRoute, self.route_cb)
 
         rospy.loginfo("Waiting for topo_map")
 

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>bayesian_topological_localisation</name>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
   <description>The bayesian_topological_localisation package</description>
 
 

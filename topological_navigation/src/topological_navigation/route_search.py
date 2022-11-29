@@ -2,7 +2,7 @@
 
 import rospy
 from topological_navigation.tmap_utils import *
-from strands_navigation_msgs.msg import NavRoute
+from topological_navigation_msgs.msg import NavRoute
 
 
 class NodeToExpand(object):

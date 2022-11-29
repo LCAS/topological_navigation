@@ -16,13 +16,11 @@ from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
 
-import strands_navigation_msgs.srv
+import topological_navigation_msgs.srv
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation.topological_map import *
-from strands_navigation_msgs.msg import TopologicalMap
 
-import topological_navigation.msg
 
 
 class node_manager(object):
@@ -32,13 +30,13 @@ class node_manager(object):
         #map_name = rospy.get_param('topological_map_name', 'top_map')
         self._node_server = InteractiveMarkerServer("/topological_map_add_rm_node")
         rospy.loginfo(" ... Init done")
-        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)
+        self.map_update = rospy.Publisher('/update_map', std_msgs.msg.Time, queue_size=10)
         rospy.Subscriber('/topological_map', TopologicalMap, self.MapCallback)
 
 
 
     def update_map(self, msg) :
-        print "updating node controllers..."
+        print("updating node controllers...")
         self.topo_map = topological_map(msg.name, msg=msg)
         self._node_server.clear()
         self._node_server.applyChanges()
@@ -118,7 +116,7 @@ class node_manager(object):
                 rospy.logwarn("Failed to get current node")
                 return
             
-            print current.data
+            print(current.data)
             if current.data == 'none':
                 try:
                     pos = rospy.wait_for_message('robot_pose', Pose, timeout=10.0)
@@ -126,7 +124,7 @@ class node_manager(object):
                     rospy.logwarn("Failed to get robot pose")
                     return
                 
-                add_node = rospy.ServiceProxy('/topological_map_manager/add_topological_node', strands_navigation_msgs.srv.AddNode)
+                add_node = rospy.ServiceProxy('/topological_map_manager/add_topological_node', topological_navigation_msgs.srv.AddNode)
                 add_node('',pos, True)
             
                 map_update = rospy.Publisher('/update_map', std_msgs.msg.Time)        

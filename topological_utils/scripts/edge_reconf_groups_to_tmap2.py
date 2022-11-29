@@ -16,7 +16,7 @@ def load_yaml(filename):
     
 def edge_groups_to_tmap2(f_tmap2, groups, group_names):
     
-    mm2 = map_manager_2()
+    mm2 = map_manager_2(advertise_srvs=False)
     mm2.init_map(filename=f_tmap2)
 
     for name in group_names:
@@ -29,9 +29,10 @@ def edge_groups_to_tmap2(f_tmap2, groups, group_names):
                     value = str(param["value"])
                     value_is_string = False
                 else:
+                    value = param["value"]
                     value_is_string = True
                     
-                mm2.add_param_to_edge_config(edge_id, param["ns"], param["name"], value, value_is_string, write_map=False)
+                mm2.add_param_to_edge_config(edge_id, param["ns"], param["name"], value, value_is_string, update=False, write_map=False)
     
     mm2.write_topological_map(f_tmap2)            
 #########################################################################################################

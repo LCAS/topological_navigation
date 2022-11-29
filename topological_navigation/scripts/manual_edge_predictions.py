@@ -7,13 +7,13 @@ import yaml
 import actionlib
 from actionlib_msgs.msg import *
 
-from strands_navigation_msgs.srv import *
-from strands_navigation_msgs.msg import *
+from topological_navigation_msgs.srv import *
+from topological_navigation_msgs.msg import *
 
 
 def usage():
-    print "Run with a yaml file containing edge prediction information:"
-    print "\t rosrun topological_navigation manual_edge_predictions.py <yaml file>"
+    print("Run with a yaml file containing edge prediction information:")
+    print("\t rosrun topological_navigation manual_edge_predictions.py <yaml file>")
 
 # Examaple yaml format:
 # - edge_id: WayPoint0_WayPoint1

@@ -2,7 +2,7 @@
 Provides routines for working with topological map nodes
 """
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
 import queries
 import rospy

@@ -14,9 +14,9 @@ from geometry_msgs.msg import Point
 
 from visualization_msgs.msg import *
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from topological_navigation.topological_map import *
-from strands_navigation_msgs.msg import NavRoute
+from topological_navigation_msgs.msg import NavRoute
 
 
 class edges_std_marker(object):
@@ -71,7 +71,7 @@ class edges_std_marker(object):
         m = cm.ScalarMappable(norm=norm, cmap=cmap)   
 
         marker = Marker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.type = marker.ARROW
         pose = Pose()
         

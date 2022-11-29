@@ -4,7 +4,7 @@ import json
 import sys
 import rospy
 from geometry_msgs.msg import Pose
-from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
+from topological_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 
 import pymongo
 #import mongodb_store.util

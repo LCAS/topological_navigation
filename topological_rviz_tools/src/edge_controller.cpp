@@ -4,7 +4,7 @@
 namespace topological_rviz_tools
 {
 EdgeController::EdgeController(const QString& name,
-			       const std::vector<strands_navigation_msgs::Edge>& default_values,
+			       const std::vector<topological_navigation_msgs::Edge>& default_values,
 			       const QString& description,
 			       rviz::Property* parent,
 			       const char *changed_slot,

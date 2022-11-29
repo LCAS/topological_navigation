@@ -24,7 +24,7 @@ class TopologicalTransformPublisher(object):
 
         rospy.Subscriber('topological_map_2', String, self.map_callback)
 
-        rospy.loginfo("Waiting for Topological map ...")
+        rospy.loginfo("Transform Publisher waiting for the Topological Map...")
         while not self.rec_map :
             rospy.sleep(rospy.Duration.from_sec(0.1))
 
@@ -34,7 +34,7 @@ class TopologicalTransformPublisher(object):
         self.tmap = json.loads(msg.data)
         self.rec_map=True
 
-        rospy.loginfo("Topological map received")
+        rospy.loginfo("Transform Publisher received the Topological Map")
 
         self.publish_transform()
 

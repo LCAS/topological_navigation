@@ -13,7 +13,7 @@ from bayesian_topological_localisation.srv import LocaliseAgent, LocaliseAgentRe
 from bayesian_topological_localisation.msg import DistributionStamped, PoseObservation, LikelihoodObservation, ParticlesState
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from std_msgs.msg import String
 
 class TopologicalLocalisation():
@@ -40,7 +40,7 @@ class TopologicalLocalisation():
         self.node_distances = []
         self.connected_nodes = []
         self.node_names = []
-        self.node_coords = []
+        self.node_coords = np.array([])
 
         # contains a list of threading.Event for stopping the localisation of each agent
         self.stopping_events = []
@@ -52,17 +52,24 @@ class TopologicalLocalisation():
         self.default_reinit_jsd_threshold = 0.975
         self.default_unconnected_jump_threshold = 0.6
 
-        # declare services
-        rospy.Service("~localise_agent", LocaliseAgent, self._localise_agent_handler)
-        rospy.Service("~stop_localise", StopLocalise, self._stop_localise_handler)
-        rospy.Service("~set_JSD_upper_bound", SetFloat64, self._set_JSD_upper_bound)
-        rospy.Service("~set_entropy_lower_bound", SetFloat64, self._set_entropy_lower_bound)
 
         rospy.Subscriber("topological_map", TopologicalMap, self._topo_map_cb)
 
         rospy.loginfo("Waiting for topological map...")
         while self.topo_map is None:
             rospy.sleep(0.5)
+            
+        # declare services
+        rospy.Service("~localise_agent", LocaliseAgent, self._localise_agent_handler)
+        rospy.Service("~stop_localise", StopLocalise, self._stop_localise_handler)
+        rospy.Service("~set_JSD_upper_bound", SetFloat64, self._set_JSD_upper_bound)
+        rospy.Service("~set_entropy_lower_bound", SetFloat64, self._set_entropy_lower_bound)
+
+        #rospy.Subscriber("topological_map", TopologicalMap, self._topo_map_cb)
+
+        #rospy.loginfo("Waiting for topological map...")
+        #while self.topo_map is None:
+        #    rospy.sleep(0.5)
 
         rospy.loginfo("DONE")
 
@@ -139,7 +146,7 @@ class TopologicalLocalisation():
         staparviz_pub = rospy.Publisher("{}/stateless_particles_viz".format(name), MarkerArray, queue_size=10)
         self.viz_publishers.append((cnviz_pub, parviz_pub, staparviz_pub))
         nodemkrmsg = Marker()
-        nodemkrmsg.header.frame_id = "/map"
+        nodemkrmsg.header.frame_id = "map"
         nodemkrmsg.type = nodemkrmsg.SPHERE
         nodemkrmsg.pose.position.z = 6
         nodemkrmsg.pose.orientation.w = 1
@@ -154,7 +161,7 @@ class TopologicalLocalisation():
         ptcsarrmsg = MarkerArray()
         for i in range(n_particles):
             ptcmkrmsg = Marker()
-            ptcmkrmsg.header.frame_id = "/map"
+            ptcmkrmsg.header.frame_id = "map"
             ptcmkrmsg.type = ptcmkrmsg.SPHERE
             ptcmkrmsg.pose.position.z = 0
             ptcmkrmsg.pose.orientation.w = 1
@@ -170,7 +177,7 @@ class TopologicalLocalisation():
         staptcsarrmsg = MarkerArray()
         for i in range(n_particles):
             staptcmkrmsg = Marker()
-            staptcmkrmsg.header.frame_id = "/map"
+            staptcmkrmsg.header.frame_id = "map"
             staptcmkrmsg.type = staptcmkrmsg.SPHERE
             staptcmkrmsg.pose.position.z = 0
             staptcmkrmsg.pose.orientation.w = 1

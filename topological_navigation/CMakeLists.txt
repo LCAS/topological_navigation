@@ -4,7 +4,7 @@ project(topological_navigation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS rospy std_msgs nav_msgs sensor_msgs actionlib_msgs mongodb_store strands_navigation_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS rospy std_msgs nav_msgs sensor_msgs actionlib_msgs topological_navigation_msgs message_generation)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -54,21 +54,20 @@ catkin_python_setup()
 # )
 
 ## Generate actions in the 'action' folder
-add_action_files(
-  DIRECTORY action
-  FILES
-  GotoNode.action
+#add_action_files(
+#  DIRECTORY action
+#  FILES
+#  GotoNode.action
 #  ExecutePolicy.action
-)
+#)
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   std_msgs
-   actionlib_msgs
-   sensor_msgs
-#   strands_navigation_msgs
-)
+#generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   actionlib_msgs
+#   sensor_msgs
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -126,6 +125,7 @@ include_directories(
    scripts/nav_client.py
    scripts/navigation.py
    scripts/visualise_map.py
+   scripts/visualise_map2.py
    scripts/map_manager.py
    scripts/map_manager2.py
    scripts/travel_time_estimator.py
@@ -135,6 +135,8 @@ include_directories(
    scripts/speed_based_prediction.py
    scripts/reconf_at_edges_server.py
    scripts/topological_transform_publisher.py
+   scripts/restrictions_manager.py
+   scripts/navstats_logger.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
@@ -166,7 +168,8 @@ install(DIRECTORY tests
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
 
-  add_rostest(tests/travel_time_estimator.test)
+#  add_rostest(tests/travel_time_estimator.test)
+  add_rostest(tests/map_manager.test)
 
   add_rostest(tests/restrictions.test)
 

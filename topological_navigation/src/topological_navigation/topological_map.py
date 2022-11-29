@@ -4,7 +4,7 @@ import rospy
 import warnings
 
 from topological_navigation.topological_node import *
-from strands_navigation_msgs.msg import TopologicalNode, Edge, Vertex
+from topological_navigation_msgs.msg import TopologicalNode, Edge, Vertex
 
 
 from mongodb_store.message_store import MessageStoreProxy
@@ -229,7 +229,7 @@ class topological_map(object):
         if len(available) == 1:
             node_found = True
             rm_id = str(available[0][1]['_id'])
-            print rm_id
+            print(rm_id)
         else:
             rospy.logerr("Node not found "+str(len(available))+" waypoints found after query")
             #rospy.logerr("Available data: "+str(available))
@@ -247,7 +247,7 @@ class topological_map(object):
                         edges_to_rm.append(edge_rm)
 
             for k in edges_to_rm:
-                print 'remove: '+k
+                print('remove: '+k)
                 self.remove_edge(k)
             msg_store.delete(rm_id)
 

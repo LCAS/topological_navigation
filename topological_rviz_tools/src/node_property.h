@@ -5,10 +5,10 @@
 #include "rviz/properties/property.h"
 #include "rviz/properties/string_property.h"
 #include "rviz/properties/float_property.h"
-#include "strands_navigation_msgs/TopologicalNode.h"
-#include "strands_navigation_msgs/GetNodeTags.h"
-#include "strands_navigation_msgs/UpdateNodeName.h"
-#include "strands_navigation_msgs/UpdateNodeTolerance.h"
+#include "topological_navigation_msgs/TopologicalNode.h"
+#include "topological_navigation_msgs/GetNodeTags.h"
+#include "topological_navigation_msgs/UpdateNodeName.h"
+#include "topological_navigation_msgs/UpdateNodeTolerance.h"
 #include "pose_property.h"
 #include "edge_controller.h"
 #include "tag_controller.h"
@@ -24,7 +24,7 @@ class NodeProperty: public rviz::Property
 Q_OBJECT
 public:
   NodeProperty(const QString& name = QString(),
-               const strands_navigation_msgs::TopologicalNode& default_value = strands_navigation_msgs::TopologicalNode(),
+               const topological_navigation_msgs::TopologicalNode& default_value = topological_navigation_msgs::TopologicalNode(),
                const QString& description = QString(),
                Property* parent = 0,
                const char *changed_slot = 0,
@@ -44,7 +44,7 @@ Q_SIGNALS:
 void nodeModified(Property* node);
 
 private:
-  const strands_navigation_msgs::TopologicalNode& node_;
+  const topological_navigation_msgs::TopologicalNode& node_;
   
   ros::ServiceClient nameUpdate_;
   ros::ServiceClient toleranceUpdate_;

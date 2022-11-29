@@ -6,15 +6,13 @@ Created on Wed Feb 10 15:58:34 2021
 """
 #############################################################################################################
 import rospy, dynamic_reconfigure.client
-from strands_navigation_msgs.srv import ReconfAtEdges
+from topological_navigation_msgs.srv import ReconfAtEdges
 
 
 class EdgeReconfigureManager(object):
     
     
     def __init__(self):
-        
-        rospy.logwarn("Edge Reconfigure Manager: USING EDGE RECONFIGURE ...")
         
         self.active = False
         
@@ -63,10 +61,13 @@ class EdgeReconfigureManager(object):
 
             for param in self.edge["config"]:
                 if param["namespace"] == namespace:
-                    self.initial_config[namespace][param["name"]] = config[param["name"]]
                     self.edge_config[namespace][param["name"]] = param["value"]
-                
-        
+
+                    reset = True if "reset" not in param else param["reset"]
+                    if reset:
+                        self.initial_config[namespace][param["name"]] = config[param["name"]]
+
+
     def reconfigure(self):
         """
         If using the new map then edge reconfigure is done using settings in the map.
@@ -81,8 +82,9 @@ class EdgeReconfigureManager(object):
         Used to reset edge params to their default values when the action has completed (only if using the new map)
         """
         for namespace in self.initial_config:
-            rospy.loginfo("Edge Reconfigure Manager: Resetting {} = {}".format(namespace, self.initial_config[namespace]))            
-            self.update(namespace, self.initial_config[namespace])
+            if self.initial_config[namespace]:
+                rospy.loginfo("Edge Reconfigure Manager: Resetting {} = {}".format(namespace, self.initial_config[namespace]))
+                self.update(namespace, self.initial_config[namespace])
                 
                 
     def update(self, namespace, params):
@@ -101,25 +103,25 @@ class EdgeReconfigureManager(object):
         """
         edge_group = "none"
         for group in self.edge_groups:
-            print "Check Edge: ", edge_id, "in ", group
+            print("Check Edge: ", edge_id, "in ", group)
             if edge_id in self.edge_groups[group]["edges"]:
                 edge_group = group
                 break
 
-        print "current group: ", self.current_edge_group
-        print "edge group: ", edge_group
+        print("current group: ", self.current_edge_group)
+        print("edge group: ", edge_group)
 
         if edge_group is not self.current_edge_group:
-            print "RECONFIGURING EDGE: ", edge_id
-            print "TO ", edge_group
+            print("RECONFIGURING EDGE: ", edge_id)
+            print("TO ", edge_group)
             try:
                 rospy.wait_for_service("reconf_at_edges", timeout=3)
                 reconf_at_edges = rospy.ServiceProxy("reconf_at_edges", ReconfAtEdges)
                 resp1 = reconf_at_edges(edge_id)
-                print resp1.success
+                print(resp1.success)
                 if resp1.success:
                     self.current_edge_group = edge_group
-            except rospy.ServiceException, e:
+            except rospy.ServiceException as e:
                 rospy.logerr("Service call failed: %s" % e)
-        print "-------"
+        print("-------")
 ############################################################################################################# 

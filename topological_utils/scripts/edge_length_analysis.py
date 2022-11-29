@@ -8,7 +8,7 @@ import time
 import json
 
 #import strands_navigation_msgs.msg
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation.tmap_utils import *
 import mongodb_store.util as dc_util
 from topological_navigation.tmap_utils import *

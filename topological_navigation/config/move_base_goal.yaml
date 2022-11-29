@@ -1,0 +1,7 @@
+topological_navigation/move_base_goal:
+  action_type: move_base_msgs/MoveBaseGoal
+  goal:
+    target_pose:
+      header:
+        frame_id: $node.parent_frame
+      pose: $node.pose

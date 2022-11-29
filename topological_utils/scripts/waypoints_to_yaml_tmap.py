@@ -18,9 +18,9 @@ import pymongo
 import yaml
 import mongodb_store.util as dc_util
 
-from strands_navigation_msgs.msg import TopologicalNode
-from strands_navigation_msgs.msg import Vertex
-from strands_navigation_msgs.msg import Edge
+from topological_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import Vertex
+from topological_navigation_msgs.msg import Edge
 from geometry_msgs.msg import Pose
 
 

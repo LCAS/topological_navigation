@@ -8,7 +8,7 @@ import math
 from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.publisher import map_publisher
 from topological_navigation.publisher import map_publisher
-from strands_navigation_msgs.srv import EstimateTravelTime
+from topological_navigation_msgs.srv import EstimateTravelTime
 
 
 class TestTravelTimeEstimator(unittest.TestCase):
@@ -44,7 +44,7 @@ class TestTravelTimeEstimator(unittest.TestCase):
         meta['map'] = 'test_travel_time_estimator_map'
         meta['pointset'] = 'test_travel_time_estimator_map'
 
-        for (nodeName, node) in test_nodes.iteritems():
+        for (nodeName, node) in test_nodes.items():
             meta["node"] = nodeName
             node.map = meta['map']
             node.pointset = meta['pointset']

@@ -1,0 +1,4 @@
+string origin
+string goal
+---
+topological_navigation_msgs/NavRoute route

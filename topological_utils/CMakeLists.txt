@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(topological_utils)
 
-find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generation mongodb_store visualization_msgs strands_navigation_msgs)
+find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generation visualization_msgs)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -26,7 +26,7 @@ add_service_files(
 )
 generate_messages(
 DEPENDENCIES
-    std_msgs 
+    std_msgs
 )
 catkin_package(
 #  INCLUDE_DIRS include
@@ -82,6 +82,7 @@ catkin_package(
    scripts/dummy_topological_navigation.py
    scripts/draw_predicted_map.py
    scripts/edge_length_analysis.py
+   scripts/edge_reconf_groups_to_tmap2.py
    scripts/evaluate_predictions.py
    scripts/insert_empty_map.py
    scripts/insert_map.py
@@ -94,6 +95,7 @@ catkin_package(
    scripts/map_export.py
    scripts/map_to_json.py
    scripts/map_to_yaml.py
+   scripts/map_converter.py
    scripts/migrate.py
    scripts/node_rm.py
    scripts/node_metadata.py

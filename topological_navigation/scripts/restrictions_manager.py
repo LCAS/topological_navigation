@@ -10,11 +10,11 @@ import inspect
 from topological_navigation_msgs.srv import RestrictMap, RestrictMapResponse,\
         EvaluateNode, EvaluateNodeResponse, EvaluateEdge, EvaluateEdgeResponse
 from topological_navigation.manager2 import map_manager_2
-from strands_navigation_msgs.msg import TopologicalMap
-from strands_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
+from topological_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.srv import GetTaggedNodes, GetTaggedNodesRequest
 from std_msgs.msg import String
 from sympy.parsing.sympy_parser import parse_expr
-from restrictions_impl import *
+from topological_navigation.restrictions_impl import *
 
 
 class RestrictionsManager():
@@ -52,10 +52,10 @@ class RestrictionsManager():
     def register_connections(self):
         rospy.Subscriber("/topological_map_2",
                          String, self._topomap_cb)
-        rospy.loginfo("Waiting for topological map...")
+        rospy.loginfo("Restrictions manager waiting for the Topological Map...")
         while self.topo_map is None:
             rospy.sleep(0.5)
-        rospy.loginfo("DONE")
+        rospy.loginfo("Restrictions manager received the Topological Map")
 
         rospy.Service("restrictions_manager/restrict_planning_map",
                       RestrictMap, self.restrict_planning_map_handle)
@@ -148,8 +148,6 @@ class RestrictionsManager():
 
         response.restricted_tmap = json.dumps(new_topo_map)
 
-        self._publish_updated_restricted_maps(new_topo_map)
-
         return response
     
     def restrict_runtime_map_handle(self, request):
@@ -159,8 +157,6 @@ class RestrictionsManager():
         new_topo_map = self._restrict_map_handle(request, "restrictions_runtime")
 
         response.restricted_tmap = json.dumps(new_topo_map)
-
-        self._publish_updated_restricted_maps(new_topo_map)
 
         return response
 

@@ -26,8 +26,8 @@
 #include "rviz/viewport_mouse_event.h"
 #include "rviz/window_manager_interface.h"
 
-#include "strands_navigation_msgs/TopologicalMap.h"
-#include "strands_navigation_msgs/TopologicalNode.h"
+#include "topological_navigation_msgs/TopologicalMap.h"
+#include "topological_navigation_msgs/TopologicalNode.h"
 
 #include "node_property.h"
 
@@ -81,18 +81,18 @@ protected:
   void addModifiedChild(rviz::Property* modifiedChild){ modifiedChildren_.push_back(modifiedChild); }
 
 private:
-  void topmapCallback(const strands_navigation_msgs::TopologicalMap::ConstPtr& msg);
+  void topmapCallback(const topological_navigation_msgs::TopologicalMap::ConstPtr& msg);
 
   QString class_id_;
   ros::Subscriber top_sub_;
   std::vector<rviz::Property*> modifiedChildren_;
 
-  /* bool sortNodes(strands_navigation_msgs::TopologicalNode a, strands_navigation_msgs::TopologicalNode b) { return a.name.compare(b.name) < 0; } */
+  /* bool sortNodes(topological_navigation_msgs::TopologicalNode a, topological_navigation_msgs::TopologicalNode b) { return a.name.compare(b.name) < 0; } */
 
   struct NodeSorter {
 
-    bool operator() (strands_navigation_msgs::TopologicalNode a,
-                     strands_navigation_msgs::TopologicalNode b) {
+    bool operator() (topological_navigation_msgs::TopologicalNode a,
+                     topological_navigation_msgs::TopologicalNode b) {
       std::string an = a.name;
       std::string bn = b.name;
       std::transform(an.begin(), an.end(), an.begin(), ::tolower);

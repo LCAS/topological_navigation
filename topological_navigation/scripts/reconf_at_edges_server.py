@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy, dynamic_reconfigure.client
-from strands_navigation_msgs.srv import ReconfAtEdges, ReconfAtEdgesResponse
+from topological_navigation_msgs.srv import ReconfAtEdges, ReconfAtEdgesResponse
 
 
 class reconf_at_edges_server(object):
@@ -30,7 +30,7 @@ class reconf_at_edges_server(object):
 
         try:
             for param in self.edge_groups[group]["parameters"]:
-                print "Setting {} = {}".format("/".join((param["ns"], param["name"])), param["value"])
+                print("Setting {} = {}".format("/".join((param["ns"], param["name"])), param["value"]))
 
                 rcnfclient = dynamic_reconfigure.client.Client(param["ns"], timeout=5.0)
                 rcnfclient.update_configuration({param["name"]: param["value"]})

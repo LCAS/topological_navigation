@@ -4,7 +4,7 @@ import json
 import yaml
 import sys
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 import mongodb_store.util as dc_util
 from mongodb_store.message_store import MessageStoreProxy
 

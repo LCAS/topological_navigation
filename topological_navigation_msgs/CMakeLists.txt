@@ -82,6 +82,7 @@ add_service_files(
   AddNodeArray.srv
   SetInfluenceZoneArray.srv
   UpdateEdgeConfigArray.srv
+  GetDistancesBetweenPoints.srv
 )
 
 

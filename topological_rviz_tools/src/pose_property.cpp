@@ -20,7 +20,7 @@ PoseProperty::PoseProperty(const QString& name,
   ros::NodeHandle nh;
   // Use addnode because it has the fields we need, so we don't have to write a
   // new message
-  poseUpdate_ = nh.serviceClient<strands_navigation_msgs::AddNode>("/topological_map_manager/update_node_pose", true);
+  poseUpdate_ = nh.serviceClient<topological_navigation_msgs::AddNode>("/topological_map_manager/update_node_pose", true);
 
   orientation_ = new rviz::StringProperty("Orientation", "", "", this);
   orientation_w_ = new rviz::FloatProperty("w", pose_.orientation.w, "",  orientation_);
@@ -60,7 +60,7 @@ PoseProperty::~PoseProperty()
 
 void PoseProperty::positionUpdated()
 {
-  strands_navigation_msgs::AddNode srv;
+  topological_navigation_msgs::AddNode srv;
   srv.request.name = getParent()->getValue().toString().toStdString().c_str();
   srv.request.pose.position.x = position_x_->getFloat();
   srv.request.pose.position.y = position_y_->getFloat();

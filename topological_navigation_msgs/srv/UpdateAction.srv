@@ -1,0 +1,5 @@
+string action_name    # the action for which you are setting the type and goal for every edge in map
+string action_type    # e.g. move_base_msgs/MoveBaseGoal
+string goal           # json string setting the args of the goal
+---
+bool success

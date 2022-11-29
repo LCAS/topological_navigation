@@ -1,0 +1,7 @@
+string name                    # node name or edge id
+string restrictions_planning   # boolean sentence
+string restrictions_runtime    # boolean sentence
+bool update_edges              # if updating node restrictions then apply planning restrictions to edges involving the node
+---
+bool success
+string message

@@ -2,6 +2,87 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.0 (2022-01-25)
+------------------
+* Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel
+  Map manager improvements
+* update
+* update
+* new params namespaced
+* Merge pull request `#118 <https://github.com/magnucha/topological_navigation/issues/118>`_ from adambinch/fix_dependencies
+  Fixing dependencies.
+* Fixing dependencies.
+  `topological_map_edition.launch` moved to `topological_utils` package, which depends on `topological_rviz_tools` package.
+  `topological_navigation` package depends on `topological_navigation_msgs` package.
+* Merge pull request `#117 <https://github.com/magnucha/topological_navigation/issues/117>`_ from LCAS/noetic
+  Basic navigation works in ros noetic but not all scripts are converted to python 3
+* python 3 compatible for most parts of toponav but not all!
+* Merge pull request `#116 <https://github.com/magnucha/topological_navigation/issues/116>`_ from adambinch/final_things
+  A few final things.
+* A few final things.
+  Set `advertise_srvs` arg to False when initialising the map manager 2 allows other scripts/nodes to use its functions without advertising 20+ services.
+  Descriptions of fail policy actions added to `UpdateFailPolicy.srv`.
+  Tidying.
+* Merge pull request `#111 <https://github.com/magnucha/topological_navigation/issues/111>`_ from adambinch/remove_strands_dependencies
+  Removing strands navigation dependencies from topological navigation.
+* Merge branch 'master' of github.com:LCAS/topological_navigation into remove_strands_dependencies
+* Merge pull request `#113 <https://github.com/magnucha/topological_navigation/issues/113>`_ from gpdas/fixes
+  Mostly additive.
+  Minor fixes
+* plot tmap2 from topic and yaml files
+* strands dependencies removed from `topological_navigation/topological_utils`
+* update
+* Merge branch 'master' of github.com:LCAS/topological_navigation into francescodelduchetto-toponav2-restrictions
+* Merge pull request `#101 <https://github.com/magnucha/topological_navigation/issues/101>`_ from adambinch/new_topics
+  New topics
+* sleep in map converter
+* Merge pull request `#100 <https://github.com/magnucha/topological_navigation/issues/100>`_ from adambinch/toponav2_launch
+  Launch files toponav 2 ready
+* Making launch files toponav 2 ready.
+  Updated rviz config.
+  Tidying of nav script.
+* Merge branch 'master' of github.com:LCAS/topological_navigation into toponav2_launch
+* Merge branch 'master' of github.com:LCAS/topological_navigation into faster_route_search2
+* Merge branch 'toponav2-devel-restrictions' of github.com:francescodelduchetto/topological_navigation into toponav2-devel
+* Merge branch 'master' of https://github.com/adambinch/topological_navigation into adam-master
+* Contributors: Adam Binch, Gautham P Das, MikHut, adambinch, francescodelduchetto, gpdas
+
+2.3.0 (2021-07-15)
+------------------
+* Merge pull request `#94 <https://github.com/LCAS/topological_navigation/issues/94>`_ from adambinch/tmap_to_tmap2
+  Script for converting all tmaps found in repo to tmap2 format and script for populating tmap2s with params from edge reconfigure config files.
+* Code simplification
+* Script for populating tmap2s with edge reconfigure params from edge reconfigure groups config files.
+* Moved map converter to topological_utils package
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Merge pull request `#25 <https://github.com/LCAS/topological_navigation/issues/25>`_ from heuristicus/ms-add-missing-scripts
+  add missing scripts to cmakelists
+* add missing scripts to cmakelists
+* Contributors: Adam Binch, Ayush Sharma, Michal Staniaszek, adambinch
+
+* Merge pull request `#94 <https://github.com/LCAS/topological_navigation/issues/94>`_ from adambinch/tmap_to_tmap2
+  Script for converting all tmaps found in repo to tmap2 format and script for populating tmap2s with params from edge reconfigure config files.
+* Code simplification
+* Script for populating tmap2s with edge reconfigure params from edge reconfigure groups config files.
+* Moved map converter to topological_utils package
+* Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2
+* Merge pull request `#82 <https://github.com/LCAS/topological_navigation/issues/82>`_ from adambinch/fix_conflicts
+  Fix conflicts
+* Merge branch 'master' of github.com:LCAS/topological_navigation into fix_conflicts
+  # Conflicts:
+  #	topological_navigation/scripts/execute_policy_server.py
+  #	topological_navigation/scripts/navigation.py
+* Merge pull request `#25 <https://github.com/LCAS/topological_navigation/issues/25>`_ from heuristicus/ms-add-missing-scripts
+  add missing scripts to cmakelists
+* add missing scripts to cmakelists
+* Contributors: Adam Binch, Ayush Sharma, Michal Staniaszek, adambinch
+
 2.1.0 (2020-04-20)
 ------------------
 

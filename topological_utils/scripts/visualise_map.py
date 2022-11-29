@@ -20,7 +20,7 @@ from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 
 from topological_navigation.topological_map import *
 
@@ -59,7 +59,7 @@ class TopologicalMapVis(object):
         for i in self.topo_map.nodes :
             #print i
             marker = Marker()
-            marker.header.frame_id = "/map"
+            marker.header.frame_id = "map"
             #marker.header.stamp = rospy.now()
             marker.type = marker.ARROW
             marker.scale.x = 0.3
@@ -85,7 +85,7 @@ class TopologicalMapVis(object):
         for node in self.topo_map.nodes :
             for i in node.edges :
                 marker = Marker()
-                marker.header.frame_id = "/map"
+                marker.header.frame_id = "map"
                 #marker.header.stamp = rospy.now()
                 marker.type = marker.LINE_LIST
                 #marker.lifetime=2
@@ -116,7 +116,7 @@ class TopologicalMapVis(object):
 
         for node in self.topo_map.nodes :
             marker = Marker()
-            marker.header.frame_id = "/map"
+            marker.header.frame_id = "map"
             marker.type = marker.LINE_STRIP
             #marker.lifetime=2
             marker.scale.x = 0.1
@@ -175,7 +175,7 @@ class TopologicalMapVis(object):
     def _edge_marker(self, marker_name, point1, point2, marker_description="edge marker") :
         # create an interactive marker for our server
         marker = InteractiveMarker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.name = marker_name
         marker.description = marker_description
 
@@ -223,7 +223,7 @@ class TopologicalMapVis(object):
     def _create_marker(self, marker_name, pose, marker_description="waypoint marker") :
         # create an interactive marker for our server
         marker = InteractiveMarker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.name = marker_name
         marker.description = marker_description
 
@@ -287,7 +287,7 @@ class TopologicalMapVis(object):
     def _vertex_marker(self, marker_name, pose, marker_description="vertex marker"):
         # create an interactive marker for our server
         marker = InteractiveMarker()
-        marker.header.frame_id = "/map"
+        marker.header.frame_id = "map"
         marker.name = marker_name
         marker.description = marker_description
 

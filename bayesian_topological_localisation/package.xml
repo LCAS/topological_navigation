@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<package>
+  <name>bayesian_topological_localisation</name>
+  <version>2.4.0</version>
+  <description>The bayesian_topological_localisation package</description>
+
+
+  <maintainer email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</maintainer>
+
+  <author>Francesco Del Duchetto</author>
+
+  <license>MIT</license>
+
+  <!--   <test_depend>gtest</test_depend> -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <!-- <build_depend>nav_msgs</build_depend> -->
+  <!-- <build_depend>sensor_msgs</build_depend> -->
+  <!-- <build_depend>actionlib</build_depend> -->
+  <!-- <build_depend>actionlib_msgs</build_depend> -->
+  <!-- <build_depend>strands_navigation_msgs</build_depend> -->
+  <!-- <build_depend>mongodb_store</build_depend> -->
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>topological_navigation</build_depend>
+  <!-- <build_depend>rospy_message_converter</build_depend> -->
+
+  <run_depend>rospy</run_depend>
+  <!-- <run_depend>move_base</run_depend>   -->
+  <run_depend>message_runtime</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <!-- <run_depend>nav_msgs</run_depend> -->
+  <!-- <run_depend>sensor_msgs</run_depend> -->
+  <!-- <run_depend>actionlib</run_depend> -->
+  <!-- <run_depend>actionlib_msgs</run_depend> -->
+  <!-- <run_depend>mongodb_store</run_depend> -->
+  <!-- <run_depend>strands_navigation_msgs</run_depend> -->
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>topological_navigation</run_depend>
+  <!-- <run_depend>dwa_local_planner</run_depend> -->
+  <!-- <run_depend>fremenserver</run_depend> -->
+  <!-- <run_depend>rospy_message_converter</run_depend> -->
+
+  <!-- <test_depend>rosunit</test_depend>
+  <test_depend>rostest</test_depend>
+  <test_depend>roslib</test_depend>
+  <test_depend>std_srvs</test_depend>
+  <test_depend>strands_morse</test_depend>
+  <test_depend>scitos_teleop</test_depend>
+  <test_depend>tf</test_depend> -->
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- You can specify that this package is a metapackage here: -->
+    <!-- <metapackage/> -->
+
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+
+</package>

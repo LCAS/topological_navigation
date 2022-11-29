@@ -13,26 +13,26 @@ from datetime import datetime
 
 import std_msgs.msg
 
-import strands_navigation_msgs.msg
+import topological_navigation_msgs.msg
 from mongodb_store.message_store import MessageStoreProxy
-from strands_navigation_msgs.msg import NavStatistics
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import NavStatistics
+from topological_navigation_msgs.msg import TopologicalMap
 
 from topological_navigation.tmap_utils import *
 
-from strands_navigation_msgs.srv import *
+from topological_navigation_msgs.srv import *
 import fremenserver.msg
 
 
 def usage():
-    print "\nFor using all the available stats use:"
-    print "\t rosrun topological_navigation topological_prediction.py"
-    print "For all the stats in a range use:"
-    print "\t rosrun topological_navigation topological_prediction.py -range from_epoch to_epoch"
-    print "For all the stats from a date until now use:"
-    print "\t rosrun topological_navigation topological_prediction.py -range from_epoch -1"
-    print "For all the stats until one date:"
-    print "\t rosrun topological_navigation topological_prediction.py -range 0 to_epoch"
+    print("\nFor using all the available stats use:")
+    print("\t rosrun topological_navigation topological_prediction.py")
+    print("For all the stats in a range use:")
+    print("\t rosrun topological_navigation topological_prediction.py -range from_epoch to_epoch")
+    print("For all the stats from a date until now use:")
+    print("\t rosrun topological_navigation topological_prediction.py -range from_epoch -1")
+    print("For all the stats until one date:")
+    print("\t rosrun topological_navigation topological_prediction.py -range 0 to_epoch")
 
 
 def get_model(name, models):
@@ -44,8 +44,8 @@ def get_model(name, models):
 
 class TopologicalNavPred(object):
 
-    _feedback = strands_navigation_msgs.msg.BuildTopPredictionFeedback()
-    _result   = strands_navigation_msgs.msg.BuildTopPredictionResult()
+    _feedback = topological_navigation_msgs.msg.BuildTopPredictionFeedback()
+    _result   = topological_navigation_msgs.msg.BuildTopPredictionResult()
 
     def __init__(self, epochs) :
         rospy.on_shutdown(self._on_node_shutdown)
@@ -60,10 +60,10 @@ class TopologicalNavPred(object):
         
         if self.ignore_map_name:
             rospy.logwarn("Ignoring map name in model creation. All stats will be considered")
-            print self.ignore_map_name
+            print(self.ignore_map_name)
         else:
             rospy.logwarn("Using map name in model creation. Only stats for current map will be considered")
-            print self.ignore_map_name
+            print(self.ignore_map_name)
        
 
         # Creating fremen server client
@@ -75,7 +75,7 @@ class TopologicalNavPred(object):
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(action_name, strands_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.BuildCallback, auto_start = False)
+        self._as = actionlib.SimpleActionServer(action_name, topological_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.BuildCallback, auto_start = False)
         self._as.register_preempt_callback(self.preemptCallback)
         rospy.loginfo(" ...starting")
         self._as.start()
@@ -92,8 +92,8 @@ class TopologicalNavPred(object):
         rospy.loginfo("... Got Topological map")
 
 
-        self.predict_srv=rospy.Service('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
-        self.predict_srv=rospy.Service('topological_prediction/edge_entropies', strands_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
+        self.predict_srv=rospy.Service('topological_prediction/predict_edges', topological_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
+        self.predict_srv=rospy.Service('topological_prediction/edge_entropies', topological_navigation_msgs.srv.PredictEdgeState, self.edge_entropies_cb)
 
 
         rospy.loginfo("Set-Up Fremenserver monitors")
@@ -289,14 +289,14 @@ class TopologicalNavPred(object):
         
         rospy.set_param('topological_prediction/success_values',self.sucesses)
         rospy.set_param('topological_prediction/fail_values',self.fails)
-        print "++++++++++++++++++++++++++++++++++"
-        print "++++++++++++++++++++++++++++++++++"        
-        print "successes:"
-        print self.sucesses
-        print "fails:"
-        print self.fails
-        print "++++++++++++++++++++++++++++++++++"        
-        print "++++++++++++++++++++++++++++++++++"
+        print("++++++++++++++++++++++++++++++++++")
+        print("++++++++++++++++++++++++++++++++++" )       
+        print("successes:")
+        print(self.sucesses)
+        print("fails:")
+        print(self.fails)
+        print("++++++++++++++++++++++++++++++++++")       
+        print("++++++++++++++++++++++++++++++++++")
 
 
         for i in self.eids:
@@ -361,8 +361,8 @@ class TopologicalNavPred(object):
             mid = i["model_id"]
             tmid = i["time_model_id"]
           
-            print "Creating models:"
-            print mid, tmid
+            print("Creating models:")
+            print(mid, tmid)
             #print i["dist"]
             stimes=[]
             times=[]
@@ -387,9 +387,9 @@ class TopologicalNavPred(object):
             
             i["t_order"] = self.add_and_eval_value_models(tmid,stimes,speeds)
 #            i["t_order"] = self.add_and_eval_models(tmid,stimes,speeds)
-            print "Done Model Order %d" %i["t_order"]
-            print "samples", len(i["models"])
-            print "------------------------------------"            
+            print("Done Model Order %d" %i["t_order"])
+            print("samples", len(i["models"]))
+            print("------------------------------------")         
             #print times
             #print states
 

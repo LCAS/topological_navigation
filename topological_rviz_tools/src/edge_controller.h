@@ -22,7 +22,7 @@
 #include "rviz/viewport_mouse_event.h"
 #include "rviz/window_manager_interface.h"
 
-#include "strands_navigation_msgs/Edge.h"
+#include "topological_navigation_msgs/Edge.h"
 #include "geometry_msgs/Pose.h"
 
 #include "edge_property.h"
@@ -35,7 +35,7 @@ class EdgeController: public rviz::Property
 Q_OBJECT
 public:
   EdgeController(const QString& name = QString(),
-		 const std::vector<strands_navigation_msgs::Edge>& default_values = std::vector<strands_navigation_msgs::Edge>(),
+		 const std::vector<topological_navigation_msgs::Edge>& default_values = std::vector<topological_navigation_msgs::Edge>(),
 		 const QString& description = QString(),
 		 rviz::Property* parent = 0,
 		 const char *changed_slot = 0,
@@ -61,7 +61,7 @@ public:
 
   virtual void load(const rviz::Config& config);
   virtual void save(rviz::Config config) const;
-  bool addEdge(const strands_navigation_msgs::Edge& edge);
+  bool addEdge(const topological_navigation_msgs::Edge& edge);
 Q_SIGNALS:
   void configChanged();
 

@@ -16,11 +16,11 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, PoseStamped, Poin
 import actionlib
 import actionlib_msgs
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
-from strands_navigation_msgs.msg import ExecutePolicyModeAction, ExecutePolicyModeGoal
-from strands_navigation_msgs.srv import LoadTopoNavTestScenario, LoadTopoNavTestScenarioResponse, RunTopoNavTestScenario, RunTopoNavTestScenarioResponse, GetRouteTo
+from topological_navigation_msgs.msg import ExecutePolicyModeAction, ExecutePolicyModeGoal
+from topological_navigation_msgs.srv import LoadTopoNavTestScenario, LoadTopoNavTestScenarioResponse, RunTopoNavTestScenario, RunTopoNavTestScenarioResponse, GetRouteTo
 from roslib.packages import find_resource
 import time
-from strands_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
+from topological_navigation_msgs.srv import GetTopologicalMap, GetTopologicalMapRequest
 from tf import TransformListener
 import tf.transformations as trans
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
@@ -208,7 +208,7 @@ class ScenarioServer(object):
         # Clean up whole scene
         # Create pose outside of map
         clear_pose = PoseStamped(
-            header=Header(stamp=rospy.Time.now(), frame_id="/map"),
+            header=Header(stamp=rospy.Time.now(), frame_id="map"),
             pose=Pose(position=Point(x=20, y=20, z=0.01))
         )
 
@@ -296,11 +296,11 @@ class ScenarioServer(object):
         grace_res = False
         sub = rospy.Subscriber("robot_pose", Pose, self.robot_callback)
         rospy.loginfo("Sending goal to policy execution ...")
-        print self._policy.route
+        print(self._policy.route)
         self.client.send_goal(ExecutePolicyModeGoal(route=self._policy.route))
         t = time.time()
         rospy.loginfo("... waiting for result ...")
-        print self._timeout
+        print(self._timeout)
         nav_timeout = not self.client.wait_for_result(timeout=rospy.Duration(self._timeout))
         elapsed = time.time() - t
         res = self.client.get_state() == actionlib_msgs.msg.GoalStatus.SUCCEEDED
@@ -345,7 +345,7 @@ class ScenarioServer(object):
         for node in topo_map.nodes:
             if node.name == self._robot_start_node:
                 self._robot_start_pose = PoseStamped(
-                    header=Header(stamp=rospy.Time.now(), frame_id="/map"),
+                    header=Header(stamp=rospy.Time.now(), frame_id="map"),
                     pose=node.pose
                 )
             elif node.name == self._robot_goal_node:
@@ -354,7 +354,7 @@ class ScenarioServer(object):
                 self._obstacle_poses.append({
                     "name": node.name.lower(),
                     "pose": PoseStamped(
-                        header=Header(stamp=rospy.Time.now(), frame_id="/map"),
+                        header=Header(stamp=rospy.Time.now(), frame_id="map"),
                         pose=node.pose
                     )
                 })

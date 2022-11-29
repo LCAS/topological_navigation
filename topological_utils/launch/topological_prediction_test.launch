@@ -8,7 +8,7 @@
 
 	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)" respawn="true"/>
 
-	<node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true"/>
+	<!--node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true"/-->
 
 	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true"/>
 

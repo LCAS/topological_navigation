@@ -1,0 +1,6 @@
+string state    # the state of the robot, e.g. '{"robot": "tall", "task": "uv"}'
+
+---
+
+bool success
+string restricted_tmap      # the map without the nodes/edges which does not satisfy the restrictions according to the state

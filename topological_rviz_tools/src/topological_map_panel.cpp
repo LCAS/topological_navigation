@@ -42,10 +42,10 @@ TopologicalMapPanel::TopologicalMapPanel(QWidget* parent)
     r.sleep();
     ROS_INFO("Waiting for remove_edge service\n");
   }
-  delNodeSrv_ = nh.serviceClient<strands_navigation_msgs::RmvNode>("/topological_map_manager/remove_topological_node", true);
-  addTagSrv_ = nh.serviceClient<strands_navigation_msgs::AddTag>("/topological_map_manager/add_tag_to_node", true);
-  delTagSrv_ = nh.serviceClient<strands_navigation_msgs::AddTag>("/topological_map_manager/rm_tag_from_node", true);
-  delEdgeSrv_ = nh.serviceClient<strands_navigation_msgs::AddEdge>("/topological_map_manager/remove_edge", true);
+  delNodeSrv_ = nh.serviceClient<topological_navigation_msgs::RmvNode>("/topological_map_manager/remove_topological_node", true);
+  addTagSrv_ = nh.serviceClient<topological_navigation_msgs::AddTag>("/topological_map_manager/add_tag_to_node", true);
+  delTagSrv_ = nh.serviceClient<topological_navigation_msgs::AddTag>("/topological_map_manager/rm_tag_from_node", true);
+  delEdgeSrv_ = nh.serviceClient<topological_navigation_msgs::AddEdge>("/topological_map_manager/remove_edge", true);
   update_map_ = nh.advertise<std_msgs::Time>("/update_map", 5);
 
   QPushButton* add_tag_button = new QPushButton("Add tag");
@@ -117,7 +117,7 @@ void TopologicalMapPanel::onDeleteClicked()
   }
   
   for(int i = 0; i < nodes_to_delete.size(); i++) {
-    strands_navigation_msgs::RmvNode srv;
+    topological_navigation_msgs::RmvNode srv;
     srv.request.name = nodes_to_delete[i]->getValue().toString().toStdString().c_str();
     
     if (delNodeSrv_.call(srv)) {
@@ -132,7 +132,7 @@ void TopologicalMapPanel::onDeleteClicked()
   }
 
   for(int i = 0; i < tags_to_delete.size(); i++) {
-    strands_navigation_msgs::AddTag srv;
+    topological_navigation_msgs::AddTag srv;
     srv.request.tag = tags_to_delete[i]->getString().toStdString().c_str();
     // go over all nodes in the controller and see which one this tag is from so
     // we can extract the node name
@@ -156,7 +156,7 @@ void TopologicalMapPanel::onDeleteClicked()
   }
 
   for(int i = 0; i < edges_to_delete.size(); i++) {
-    strands_navigation_msgs::AddEdge srv;
+    topological_navigation_msgs::AddEdge srv;
     srv.request.edge_id = edges_to_delete[i]->getEdgeId().c_str();
 
     if (delEdgeSrv_.call(srv)) {
@@ -188,7 +188,7 @@ void TopologicalMapPanel::onAddTagClicked()
     return;
   }
 
-  strands_navigation_msgs::AddTag srv;
+  topological_navigation_msgs::AddTag srv;
   srv.request.tag = tag.toStdString().c_str();
 
   for(int i = 0; i < nodes.size(); i++)

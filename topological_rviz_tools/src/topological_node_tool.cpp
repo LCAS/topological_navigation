@@ -59,7 +59,7 @@ void TopmapNodeTool::onInitialize()
     ROS_INFO("Waiting for add_topological_node service\n");
   }
 
-  addNodeSrv_ = nh.serviceClient<strands_navigation_msgs::AddNode>("/topological_map_manager/add_topological_node", true);
+  addNodeSrv_ = nh.serviceClient<topological_navigation_msgs::AddNode>("/topological_map_manager/add_topological_node", true);
   update_map_ = nh.advertise<std_msgs::Time>("/update_map", 5);
 
 }
@@ -106,7 +106,7 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
       clicked.orientation.w = 1.0;
       // On the second click, send the edge to the service to be added to the
       // map, and then reset the poses.
-      strands_navigation_msgs::AddNode srv;
+      topological_navigation_msgs::AddNode srv;
       srv.request.pose = clicked;
 
       // If rmb pressed, don't add edges to nodes close to the new node location

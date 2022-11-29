@@ -4,8 +4,8 @@ import rospy
 import yaml
 from topological_navigation.load_maps_from_yaml import YamlMapLoader
 from mongodb_store.message_store import MessageStoreProxy
-from strands_navigation_msgs.msg import TopologicalNode
-from strands_navigation_msgs.srv import AddNode
+from topological_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.srv import AddNode
 from geometry_msgs.msg import Pose
 
 if __name__ == '__main__':

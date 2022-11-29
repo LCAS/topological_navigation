@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <arg name="test_map" default="$(find topological_navigation)/tests/conf/test.tmap2" />
+
+  <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager2" args="$(arg test_map)" respawn="true"/>
+
+  <test test-name="map_manager_tester" pkg="topological_navigation" type="map_manager_tester.py"/>
+
+</launch>

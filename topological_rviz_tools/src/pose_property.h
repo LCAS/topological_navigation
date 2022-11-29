@@ -2,7 +2,7 @@
 #define POSE_PROPERTY_H
 
 #include "ros/ros.h"
-#include "strands_navigation_msgs/AddNode.h"
+#include "topological_navigation_msgs/AddNode.h"
 #include "geometry_msgs/Pose.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/float_property.h"

@@ -5,8 +5,8 @@ import math
 import operator
 from std_msgs.msg import Time
 import topological_rviz_tools.srv
-from strands_navigation_msgs.msg import TopologicalMap
-from strands_navigation_msgs.srv import *
+from topological_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.srv import *
 from geometry_msgs.msg import Pose
 
 class TopmapInterface(object):
@@ -29,7 +29,7 @@ class TopmapInterface(object):
         self.topmap_sub = rospy.Subscriber("/topological_map", TopologicalMap, self.topmap_cb)
         self.add_edge_srv = rospy.Service("~add_edge", topological_rviz_tools.srv.AddEdge, self.add_edge)
 
-        self.manager_add_edge = rospy.ServiceProxy("/topological_map_manager/add_edges_between_nodes", strands_navigation_msgs.srv.AddEdge)
+        self.manager_add_edge = rospy.ServiceProxy("/topological_map_manager/add_edges_between_nodes", topological_navigation_msgs.srv.AddEdge)
 
         rospy.spin()
     

@@ -2,6 +2,19 @@
 Changelog for package topological_rviz_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.0 (2022-01-25)
+------------------
+* Merge pull request `#111 <https://github.com/magnucha/topological_navigation/issues/111>`_ from adambinch/remove_strands_dependencies
+  Removing strands navigation dependencies from topological navigation.
+* update
+* strands dependencies removed from topological_rviz_tools
+* Merge branch 'master' of github.com:LCAS/topological_navigation into francescodelduchetto-toponav2-restrictions
+* Merge branch 'master' of github.com:LCAS/topological_navigation into toponav2_launch
+* Merge branch 'master' of github.com:LCAS/topological_navigation into faster_route_search2
+* Merge branch 'toponav2-devel-restrictions' of github.com:francescodelduchetto/topological_navigation into toponav2-devel
+* Merge branch 'master' of https://github.com/adambinch/topological_navigation into adam-master
+* Contributors: Adam Binch, adambinch, francescodelduchetto
+
 2.3.0 (2021-07-15)
 ------------------
 * Merge branch 'master' of github.com:LCAS/topological_navigation into tmap_to_tmap2

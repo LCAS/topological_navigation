@@ -1,0 +1,130 @@
+meta:
+  last_updated: 2022-03-02_10-07-31
+metric_map: map_2d
+name: new_map
+nodes:
+- meta:
+    map: map_2d
+    node: WayPoint1
+    pointset: new_map
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: &id001 []
+      edge_id: WayPoint1_WayPoint2
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint2
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: WayPoint1
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: 'True'
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.692909649383465
+      y: 0.2870125742738173
+    - x: 0.2870125742738174
+      y: 0.692909649383465
+    - x: -0.2870125742738173
+      y: 0.692909649383465
+    - x: -0.692909649383465
+      y: 0.28701257427381743
+    - x: -0.6929096493834651
+      y: -0.28701257427381727
+    - x: -0.28701257427381777
+      y: -0.6929096493834649
+    - x: 0.2870125742738169
+      y: -0.6929096493834652
+    - x: 0.6929096493834649
+      y: -0.28701257427381777
+- meta:
+    map: map_2d
+    node: WayPoint2
+    pointset: new_map
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: WayPoint2_WayPoint1
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint1
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: WayPoint2
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: 10.0
+        y: 10.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: 'True'
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.692909649383465
+      y: 0.2870125742738173
+    - x: 0.2870125742738174
+      y: 0.692909649383465
+    - x: -0.2870125742738173
+      y: 0.692909649383465
+    - x: -0.692909649383465
+      y: 0.28701257427381743
+    - x: -0.6929096493834651
+      y: -0.28701257427381727
+    - x: -0.28701257427381777
+      y: -0.6929096493834649
+    - x: 0.2870125742738169
+      y: -0.6929096493834652
+    - x: 0.6929096493834649
+      y: -0.28701257427381777
+pointset: new_map
+transformation:
+  child: topo_map
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0

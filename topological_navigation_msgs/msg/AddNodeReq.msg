@@ -2,5 +2,3 @@ string name
 geometry_msgs/Pose pose
 # Set to true to add nodes which are in close proximity (currently hardcoded to 8m)
 bool add_close_nodes
----
-bool success

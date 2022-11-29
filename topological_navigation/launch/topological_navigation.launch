@@ -7,6 +7,10 @@
   <!-- ### TOPOLOGICAL MAP ARGS ### -->
   <!-- Filename of the topological map. -->
   <arg name="file" default=""/>
+  <!-- Cache the topological map in `.ros/topological_maps` when loading in map manager 2. -->
+  <arg name="cache_topological_maps" default="true"/>
+  <!-- Automatically save changes to the topological map after a service call. -->
+  <arg name="auto_write_topological_maps" default="true"/>
   <!-- Pointset of the topological map (its name in the mongo database). --> 	
   <arg name="pointset" default=""/> 
   <!-- If false load a tmap2 using the map manager 2, else load a tmap using the legacy map manager. -->
@@ -29,6 +33,9 @@
   <!-- ### TOPOLOGICAL NAVIGATION ARGS ### -->
   <!-- The action being used for move_base -->
   <arg name="move_base_name" default="move_base"/>
+  <!-- The goal being used by the move_base_name action. If not set defaults to the goal used by the action in the map else a move base type goal. -->
+  <arg name="move_base_goal" default="$(find topological_navigation)/config/move_base_goal.yaml"/>
+  <rosparam command="load" file="$(arg move_base_goal)"/>
   <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
   <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
   <!-- If the action of the current or next edge in the route is not in this list then the robot must get to the exact pose of the current edge's destination node. -->
@@ -53,6 +60,8 @@
   <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg pointset)" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
 
   <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg file)" respawn="true" unless="$(arg legacy)">
+    <param name="cache_topological_maps" value="$(arg cache_topological_maps)"/>
+    <param name="auto_write_topological_maps" value="$(arg auto_write_topological_maps)"/>
     <param name="convert_to_legacy" value="$(arg convert_to_legacy)"/>
   </node>
 
@@ -86,7 +95,7 @@
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>
 
-  <node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" respawn="true">
+  <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" respawn="true">
     <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>

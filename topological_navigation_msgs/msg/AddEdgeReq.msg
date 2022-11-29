@@ -3,5 +3,3 @@ string destination
 string action
 string action_type
 string edge_id
----
-bool success

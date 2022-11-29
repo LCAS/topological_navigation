@@ -2,6 +2,287 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.4.0 (2022-01-25)
+------------------
+* Merge pull request `#134 <https://github.com/magnucha/topological_navigation/issues/134>`_ from adambinch/melodic-devel
+  Map manager uses multiprocessing to load topomaps to decrease RAM usage.
+* Minor changes
+* minor change
+* Using multiprocessing to yaml load topomap to decrease memory usage
+* Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel
+  Map manager improvements
+* update
+* update
+* clear nodes srv
+* update
+* update
+* update
+* update
+* Adding new msg and srv files
+* update
+* fail policy replanning does not skip the first edge of the new plan.
+* update
+* Merge branch 'master' of https://github.com/LCAS/topological_navigation into melodic-devel
+* Merge pull request `#132 <https://github.com/magnucha/topological_navigation/issues/132>`_ from adambinch/load_with_json
+  Load tmap2s with json to decrease RAM usage
+* update
+* update
+* update
+* update
+* update
+* new params namespaced
+* Separate srv for setting influence zone.
+  Caching the map and auto saving after service calls are both optional via ros params.
+* Service /add_topological_node has option to add node vertices
+* Merge pull request `#131 <https://github.com/magnucha/topological_navigation/issues/131>`_ from adambinch/melodic-devel
+  Fix in map manager 2 when initialising with empty map before switchin…
+* fix in map manager 2 when initialising with empty map before switching to another map
+* Merge pull request `#130 <https://github.com/magnucha/topological_navigation/issues/130>`_ from adambinch/melodic-devel
+  Edge reconfigure when target and origin nodes are the same
+* Edge reconfigure when target and origin nodes are the same
+* Merge pull request `#127 <https://github.com/magnucha/topological_navigation/issues/127>`_ from adambinch/melodic-devel
+  Fix
+* fixed
+* testing...
+* testing
+* Merge pull request `#124 <https://github.com/magnucha/topological_navigation/issues/124>`_ from adambinch/melodic-devel
+  Toponav does not attempt to execute fail policy actions when it is sh…
+* Toponav does not attempt to execute fail policy actions when it is shutdown
+* Merge pull request `#122 <https://github.com/magnucha/topological_navigation/issues/122>`_ from Jailander/quickfix
+  Removing outdated dependency
+* Removing outdated dependency
+* Merge pull request `#121 <https://github.com/magnucha/topological_navigation/issues/121>`_ from adambinch/melodic-devel
+  Fixes toponav breaking when move base is not being used
+* minor change
+* update
+* Fixes toponav breaking when move base is not being used
+* Merge pull request `#118 <https://github.com/magnucha/topological_navigation/issues/118>`_ from adambinch/fix_dependencies
+  Fixing dependencies.
+* restrictions manager moved from `src` to `scripts` and its install target added.
+  navstats logger install target also added
+* fix
+* Fixing dependencies.
+  `topological_map_edition.launch` moved to `topological_utils` package, which depends on `topological_rviz_tools` package.
+  `topological_navigation` package depends on `topological_navigation_msgs` package.
+* Merge pull request `#117 <https://github.com/magnucha/topological_navigation/issues/117>`_ from LCAS/noetic
+  Basic navigation works in ros noetic but not all scripts are converted to python 3
+* python 3 compatible for most parts of toponav but not all!
+* Merge pull request `#116 <https://github.com/magnucha/topological_navigation/issues/116>`_ from adambinch/final_things
+  A few final things.
+* A few final things.
+  Set `advertise_srvs` arg to False when initialising the map manager 2 allows other scripts/nodes to use its functions without advertising 20+ services.
+  Descriptions of fail policy actions added to `UpdateFailPolicy.srv`.
+  Tidying.
+* Merge pull request `#115 <https://github.com/magnucha/topological_navigation/issues/115>`_ from francescodelduchetto/fail_policy_dirty
+  working version of a "quick&dirty" implementation of the fail_policy
+* Merge pull request `#6 <https://github.com/magnucha/topological_navigation/issues/6>`_ from adambinch/fail_policy_dirty
+  Reset fail policy when new goal sent
+* Reset fail policy when new goal sent
+* replan now avoids current edge rather than current next node
+* working version of a quick&dirty implementation of the fail_policy
+* Merge pull request `#114 <https://github.com/magnucha/topological_navigation/issues/114>`_ from adambinch/melodic-devel
+  Corrected inaccurate description of the `not_fluid` arg in `UpdateEdge.srv`
+* minor changes
+* Minor changes
+* Merge pull request `#111 <https://github.com/magnucha/topological_navigation/issues/111>`_ from adambinch/remove_strands_dependencies
+  Removing strands navigation dependencies from topological navigation.
+* Last minor changes
+* Merge branch 'remove_strands_dependencies' of github.com:adambinch/topological_navigation into remove_strands_dependencies
+* minor changes
+* Merge pull request `#4 <https://github.com/magnucha/topological_navigation/issues/4>`_ from francescodelduchetto/adambinch-remove_strands_dependencies
+  fix old imports
+* fix old imports
+* minor change
+* minor changes
+* toponav dies (more) gracefully
+* Merge branch 'master' of github.com:LCAS/topological_navigation into remove_strands_dependencies
+* Merge pull request `#113 <https://github.com/magnucha/topological_navigation/issues/113>`_ from gpdas/fixes
+  Mostly additive.
+  Minor fixes
+* initialise quarternions in markers
+* update
+* strands dependencies removed from topological_rviz_tools
+* strands dependencies removed from `topological_navigation/topological_navigation`
+* Merge branch 'master' of github.com:LCAS/topological_navigation into remove_strands_dependencies
+  # Conflicts:
+  #	topological_navigation/src/topological_navigation/manager2.py
+  #	topological_navigation_msgs/CMakeLists.txt
+* Merge pull request `#112 <https://github.com/magnucha/topological_navigation/issues/112>`_ from adambinch/fail_policy_srvs
+  Services for updating the fail policy.
+* Services for updating the fail policy.
+  Service `/topological_map_manager2/update_edge` now has field for updating the edge's fail policy.
+  New service `/topological_map_manager2/update_fail_policy` for updating the fail policy of every edge in the map.
+* Removing strands dependencies from topological navigation
+* Removing strands dependencies from topological navigation
+* Removing strands nav dependencies from navigation
+* Removing strands nav dependencies from navigation
+* improvements to prints and logs
+* Minor change
+* Publishers all started with `queue_size` arg.
+  Improved prints and logs.
+* Removed strands nav msgs from localisation
+* Merge branch 'master' of github.com:LCAS/topological_navigation into remove_strands_dependencies
+* Merge pull request `#106 <https://github.com/magnucha/topological_navigation/issues/106>`_ from francescodelduchetto/toponav2-restrictions-params
+  removing publishing restricted map in service callback
+* Legacy map manager no longer dependent on strands nav msgs
+* Moving topomap msgs from strands nav to toponav repo. Map manager 2 is now strands independent.
+* Removing strands navigation dependencies from the Toponav repo.
+* Removing strands navigation dependencies from TopoNav.
+  Copying srv definitions used by toponav from strands nav to the toponav repo.
+* Merge pull request `#110 <https://github.com/magnucha/topological_navigation/issues/110>`_ from adambinch/melodic-devel
+  Navigation defaults to using edge reconfigure.
+* minor change
+* minor changes
+* toponav launch update
+* toponav launch runs restrictions manager.
+* Extension for new map is `.tmap2`
+* Option to use restricted map in main toponav launch file.
+* Navigation defaults to using edge reconfigure.
+* Navigation defaults to using edge reconfigure.
+* Merge pull request `#107 <https://github.com/magnucha/topological_navigation/issues/107>`_ from adambinch/node_names
+  Resolves Issue `#90 <https://github.com/magnucha/topological_navigation/issues/90>`_, Adds datum to the tmap meta, and other things.
+* Merge pull request `#3 <https://github.com/magnucha/topological_navigation/issues/3>`_ from francescodelduchetto/adambinch-node_names
+  removing splitting underscore edges for retrieving nodes, using the n…
+* removing splitting underscore edges for retrieving nodes, using the new function
+* Merge branch 'master' of github.com:LCAS/topological_navigation into node_names
+* Merge pull request `#109 <https://github.com/magnucha/topological_navigation/issues/109>`_ from adambinch/faster_route_search
+  Faster route planner.
+* possibly faster route search
+* Added launch file for running the restrictions manager for a multi robot scenario.
+  Some improvements to prints/logs and tidying.
+* Some optimisation of the navigation script.
+* Can now pass properties of the edge's origin node to its goal args in the topological map using `+`
+  (similar to passing properties of the edge's destination node using `$`)
+* Service `/topological_map_manager2/update_edge` replaces `/topological_map_manager2/update_edge_action`
+  setting the same args with an additional boolean arg for setting whether navigation is fluid or not.
+  Uses srv type `topological_navigation_msgs.srv.UpdateEdge`
+* Map manager service for adding GNSS latitude/longitude to the topological map's top-level meta info
+* removing publishing restricted map in service callback
+* Merge branch 'master' of github.com:LCAS/topological_navigation into node_names
+* Merge pull request `#104 <https://github.com/magnucha/topological_navigation/issues/104>`_ from francescodelduchetto/toponav2-restrictions-params
+  restriction manager gets the out_topic for the restricted map and the config file as parameters
+* restriction manager gets the out_topic for the restricted map and the config file as parameters
+* Merge pull request `#78 <https://github.com/magnucha/topological_navigation/issues/78>`_ from francescodelduchetto/toponav2-restrictions
+  Toponav2 restrictions
+* removing obsolete test script for restrictions
+* fix, from pull-request `#5 <https://github.com/magnucha/topological_navigation/issues/5>`_
+* Navigation can handle node names containing underscores
+* Map managers can handle node names containing underscores
+* optimise a bit more obstacleFree
+* making task and robot type restrictions faster
+* adding checks for the coordination config file to the restrictions
+* Merge pull request `#4 <https://github.com/magnucha/topological_navigation/issues/4>`_ from adambinch/toponav2-restrictions
+  Nav script checks for availability of restriction services before att…
+* turn prints to rospy logs
+* Nav script checks for availability of restriction services before attempting to use them.
+  Therefore toponav can run independently of the restrictions manager.
+* adding lost files after the merge; fix few changes
+* Merge branch 'master' of github.com:LCAS/topological_navigation into francescodelduchetto-toponav2-restrictions
+* remove satisfy_runtime_restrictions code and comment some prints
+* refine implementation of obstacleFree restriction with closest_node topic of robots; navigation script checks the runtime restrictions on nodes/edges before executing an action
+* Merge pull request `#102 <https://github.com/magnucha/topological_navigation/issues/102>`_ from adambinch/default_edge_reconf
+  Edge reconfigure defaults to new method.
+* Edge reconfigure defaults to new method.
+* Merge pull request `#101 <https://github.com/magnucha/topological_navigation/issues/101>`_ from adambinch/new_topics
+  New topics
+* small fix, parentesys missing
+* remove startOnNode restriction
+* adding fluid navigation flag in manager2
+* do not call runtime_restriction but rather use an ad-hoc flag for 'fluid_navigation' in the tmap
+* minor changes
+* minor change
+* Better prints and logs from nav script.
+  Both action servers report terminal state aborted if the move action is aborted.
+  Better default move base actions list in toponav launch file.
+* minor change
+* minor improvements.
+* Better prints/logs for go to node.
+* round published dist to closest node to 3dp
+* minor change
+* move action status topic now has std msg type String
+* Status of move action moved from go to node action definition to its own topic /topological_navigation/move_action_status.
+  Msg definition is topological_navigation_msgs/MoveActionStatus
+* improvements
+* Status field of feedback converted to json string.
+* When move action is aborted the toponav feedback reports the route as the current node.
+* improvements
+* Status of current edge action reported as a string.
+* minor change
+* minor change
+* Status of the current action is reported in the feedback of the go-to-node action definition.
+* Distance to closest node published to topic `/closest_node_distance`.
+  This is always the distance to the physically closest node.
+* Merge pull request `#100 <https://github.com/magnucha/topological_navigation/issues/100>`_ from adambinch/toponav2_launch
+  Launch files toponav 2 ready
+* minor change
+* Making launch files toponav 2 ready.
+* minor change
+* Minor change
+* improved description of arg
+* minor improvement.
+* Making launch files toponav 2 ready.
+* Making launch files toponav 2 ready.
+* Making launch files toponav2 ready.
+* Making launch files toponav 2 ready.
+* minor improvement
+* minor change
+* Making launch files toponav 2 ready.
+* Making launch files toponav 2 ready.
+* Making launch files toponav 2 ready.
+* minor change
+* minor improvement
+* Making launch files toponav 2 ready.
+  Improvement to get_edge_vectors function in localisation.
+* navstats_loger.py changed to navstats_logger.py
+* Making launch files toponav 2 ready.
+* Making launch files toponav 2 ready.
+* Making launch files toponav 2 ready.
+  Updated rviz config.
+  Tidying of nav script.
+* Merge branch 'master' of github.com:LCAS/topological_navigation into toponav2_launch
+* Merge pull request `#99 <https://github.com/magnucha/topological_navigation/issues/99>`_ from adambinch/melodic-devel
+  Fix
+* exec policy sets the correct target
+* Improvement to exec policy prints
+* minor change
+* minor change
+* improvements to prints
+* minor change
+* Fix
+* Making launch files toponav 2 ready
+* Merge branch 'master' of github.com:LCAS/topological_navigation into toponav2_launch
+* Merge pull request `#98 <https://github.com/magnucha/topological_navigation/issues/98>`_ from adambinch/faster_route_search2
+  Faster route distance function
+* Faster route distance function
+* Merge pull request `#96 <https://github.com/magnucha/topological_navigation/issues/96>`_ from adambinch/faster_route_search2
+  Faster Route Planner for Toponav 2
+* Navigation now takes advantage of the faster route planner
+* adding possibility of satisfying runtime restrictions, not tested yet
+* Merge branch 'master' of github.com:LCAS/topological_navigation into faster_route_search2
+* tidying
+* Faster Route Search 2
+* Reverted change to navigation script as those will be done in a separate PR.
+* adding services to evaluate single nodes/edges and exactPose restriction
+* Modifying launch files for toponav 2 usage.
+  Bit of tidying of navigation script.
+* up
+* WIP adding runtime restriction for obstacles in path, based on the other robots poses
+* allow topics namespaced
+* correctly publishing topomap2
+* providing restricted tmaps for each robot£
+* restrictions manager auto infer robot state from namespaced topic if state not provided
+* Merge branch 'toponav2-devel-restrictions' of github.com:francescodelduchetto/topological_navigation into toponav2-devel
+* Merge branch 'toponav2-restrictions' of github.com:francescodelduchetto/topological_navigation into toponav2-devel
+* WIP restrictions to ground to specific robot automatically using namespace
+* 'restrictions_manager' to 'topological_restrictions_manager'
+* adding requirement of sympy>=1.5.1
+* restriction manager works with runtime and planning restrictions; test script for testing
+* Merge branch 'melodic-devel' of https://github.com/adambinch/topological_navigation into adam_melodic-devel
+* Merge branch 'master' of https://github.com/adambinch/topological_navigation into adam-master
+* WIP kinda of works
+* WIP restrictions manager
+* Contributors: Adam Binch, Gautham P Das, Jaime Pulido Fentanes, MikHut, adambinch, francescodelduchetto, gpdas
+
 2.3.0 (2021-07-15)
 ------------------
 * Merge pull request `#95 <https://github.com/LCAS/topological_navigation/issues/95>`_ from adambinch/melodic-devel

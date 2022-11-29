@@ -1,4 +1,5 @@
 string filename   # map filename (leave empty to overwrite)
+bool no_alias     # Disables anchors and aliases in generated topological map yaml file
 ---
 bool success
 string message

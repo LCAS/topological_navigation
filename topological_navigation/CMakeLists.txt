@@ -62,12 +62,12 @@ catkin_python_setup()
 #)
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   std_msgs
-   actionlib_msgs
-   sensor_msgs
-)
+#generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   actionlib_msgs
+#   sensor_msgs
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -125,6 +125,7 @@ include_directories(
    scripts/nav_client.py
    scripts/navigation.py
    scripts/visualise_map.py
+   scripts/visualise_map2.py
    scripts/map_manager.py
    scripts/map_manager2.py
    scripts/travel_time_estimator.py

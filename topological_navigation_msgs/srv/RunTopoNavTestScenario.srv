@@ -1,0 +1,9 @@
+---
+bool nav_success
+bool nav_timeout
+bool graceful_fail
+bool human_success
+float64 min_distance_to_human
+float64 mean_speed
+float64 distance_travelled
+float64 travel_time

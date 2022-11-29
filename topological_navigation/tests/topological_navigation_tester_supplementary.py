@@ -2,7 +2,7 @@
 
 import unittest
 import rospy
-from strands_navigation_msgs.srv import LoadTopoNavTestScenario, RunTopoNavTestScenario
+from topological_navigation_msgs.srv import LoadTopoNavTestScenario, RunTopoNavTestScenario
 
 
 PKG = 'topological_navigation'

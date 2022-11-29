@@ -20,26 +20,26 @@ from std_msgs.msg import String
 from nav_msgs.srv import *
 import numpy as np
 
-import strands_navigation_msgs.msg
-from strands_navigation_msgs.msg import TopologicalNode
+import topological_navigation_msgs.msg
+from topological_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
-from strands_navigation_msgs.msg import NavStatistics
-from strands_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.msg import NavStatistics
+from topological_navigation_msgs.msg import TopologicalMap
 
 from topological_navigation.tmap_utils import *
 
-from strands_navigation_msgs.srv import *
+from topological_navigation_msgs.srv import *
 
 
 def usage():
-    print "For using all the available stats use:"
-    print "\t rosrun topological_navigation mean_based_prediction.py"
-    print "For all the stats in a range use:"
-    print "\t rosrun topological_navigation mean_based_prediction.py from_epoch to_epoch"
-    print "For all the stats from a date until now use:"
-    print "\t rosrun topological_navigation mean_based_prediction.py from_epoch -1"
-    print "For all the stats until one date:"
-    print "\t rosrun topological_navigation mean_based_prediction.py 0 to_epoch"
+    print("For using all the available stats use:")
+    print("\t rosrun topological_navigation mean_based_prediction.py")
+    print("For all the stats in a range use:")
+    print("\t rosrun topological_navigation mean_based_prediction.py from_epoch to_epoch")
+    print("For all the stats from a date until now use:")
+    print("\t rosrun topological_navigation mean_based_prediction.py from_epoch -1")
+    print("For all the stats until one date:")
+    print("\t rosrun topological_navigation mean_based_prediction.py 0 to_epoch")
 
 
 class TopologicalMeanPred(object):
@@ -68,14 +68,14 @@ class TopologicalMeanPred(object):
 
         #Creating Action Server
         rospy.loginfo("Creating action server.")
-        self._as = actionlib.SimpleActionServer(action_name, strands_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.build_callback, auto_start = False)
+        self._as = actionlib.SimpleActionServer(action_name, topological_navigation_msgs.msg.BuildTopPredictionAction, execute_cb = self.build_callback, auto_start = False)
         
         rospy.loginfo(" ...starting")
         self._as.start()
         rospy.loginfo(" ...done")
 
 
-        self.predict_srv=rospy.Service('topological_prediction/predict_edges', strands_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
+        self.predict_srv=rospy.Service('topological_prediction/predict_edges', topological_navigation_msgs.srv.PredictEdgeState, self.predict_edge_cb)
         rospy.loginfo("All Done ...")
         rospy.spin()
 
@@ -165,13 +165,13 @@ if __name__ == '__main__':
     rospy.init_node('topological_prediction')
     epochs=[]
     if len(sys.argv) < 2:
-        print "gathering all the stats"        
+        print("gathering all the stats")
         epochs=[0, rospy.get_rostime().to_sec()]
     else:
         if len(sys.argv) == 3:
             epochs.append(int(sys.argv[1]))
             epochs.append(int(sys.argv[2]))
-            print epochs
+            print(epochs)
         else: 
             usage()
             sys.exit(1)

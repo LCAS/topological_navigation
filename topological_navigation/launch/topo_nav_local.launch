@@ -1,23 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
-  <arg name="robot_id"/>
-  <arg name="mon_nav_config_file"  default="" />
-  <arg name="topological_navigation_retries" default="3"/>
-  <arg name="execute_policy_retries" default="3"/>
-  <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROSm Jackal and HSR TrajectoryPlannerROS.  -->
-  <arg name="move_base_planner" default="DWAPlannerROS"/>
-  <group ns="$(arg robot_id)"> 
-    <node pkg="monitored_navigation" type="monitored_nav.py" name="monitored_nav" output="screen" args="$(arg mon_nav_config_file)">
-    </node>
 
+  <arg name="robot_id"/>
+  <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
+
+  <group ns="$(arg robot_id)"> 
     <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true"/>
+
     <node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
-        <param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
-        <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
-    </node>
-    <node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen" respawn="true">
-        <param name="retries" type="int" value="$(arg execute_policy_retries)"/>
-        <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
+      <param name="move_base_planner" type="string" value="$(arg move_base_planner)"/>
     </node>
   </group>
+
 </launch>

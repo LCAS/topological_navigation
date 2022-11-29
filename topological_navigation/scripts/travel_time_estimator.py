@@ -2,8 +2,8 @@
 
 
 import rospy
-from strands_navigation_msgs.msg import TopologicalMap
-from strands_navigation_msgs.srv import EstimateTravelTime
+from topological_navigation_msgs.msg import TopologicalMap
+from topological_navigation_msgs.srv import EstimateTravelTime
 from std_msgs.msg import Duration
 import math
 import threading
@@ -31,7 +31,7 @@ class TravelTimeEstimator(object):
     def estimate_travel_time(self, req):
         self.service_lock.acquire()
 
-        print req
+        print(req)
 
         if req.start not in self.nodes:
             raise Exception('Unknown start node: %s' % req.start)

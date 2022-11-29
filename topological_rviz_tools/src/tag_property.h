@@ -4,7 +4,7 @@
 #include "ros/ros.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/string_property.h"
-#include "strands_navigation_msgs/ModifyTag.h"
+#include "topological_navigation_msgs/ModifyTag.h"
 
 namespace topological_rviz_tools
 {

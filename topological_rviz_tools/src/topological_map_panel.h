@@ -13,9 +13,9 @@
 #include "rviz/properties/property_tree_widget.h"
 #include "std_msgs/Time.h"
 
-#include "strands_navigation_msgs/AddTag.h"
-#include "strands_navigation_msgs/AddEdge.h"
-#include "strands_navigation_msgs/RmvNode.h"
+#include "topological_navigation_msgs/AddTag.h"
+#include "topological_navigation_msgs/AddEdge.h"
+#include "topological_navigation_msgs/RmvNode.h"
 
 class QComboBox;
 class QMessageBox;

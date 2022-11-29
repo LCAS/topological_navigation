@@ -6,7 +6,7 @@ import rospy
 
 
 from topological_navigation.topological_node import *
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalNode
 from mongodb_store.message_store import MessageStoreProxy
 
 from topological_utils.queries import get_nodes

@@ -1,41 +1,108 @@
+<?xml version="1.0" ?>
 <launch>
-	<!-- declare arg to be passed in -->
-	<arg name="map"/>
-	<arg name="mon_nav_config_file"  default="" />
-	<arg name="max_bumper_recoveries" default=".inf"/>
-	<arg name="wait_reset_bumper_duration" default="0.0"/>
-	<arg name="topological_navigation_retries" default="3"/>
-	<arg name="execute_policy_retries" default="3"/>
-	<arg name="machine" default="localhost" />
-	<arg name="user" default="" />
-	<arg name="move_base_reconf_service" default="DWAPlannerROS" />
 
-	<machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
+  <arg name="machine" default="localhost" />
+  <arg name="user" default="" />
 
- 	<node pkg="monitored_navigation" type="monitored_nav.py" name="monitored_nav" output="screen" args="$(arg mon_nav_config_file)">
-		<param name="wait_reset_bumper_duration" value="$(arg wait_reset_bumper_duration)"/>
-		<rosparam param="/monitored_navigation/recover_states/recover_bumper" subst_value="True">[True, $(arg max_bumper_recoveries)]</rosparam>
-	</node>
+  <!-- ### TOPOLOGICAL MAP ARGS ### -->
+  <!-- Filename of the topological map. -->
+  <arg name="file" default=""/>
+  <!-- Cache the topological map in `.ros/topological_maps` when loading in map manager 2. -->
+  <arg name="cache_topological_maps" default="true"/>
+  <!-- Automatically save changes to the topological map after a service call. -->
+  <arg name="auto_write_topological_maps" default="true"/>
+  <!-- Pointset of the topological map (its name in the mongo database). --> 	
+  <arg name="pointset" default=""/> 
+  <!-- If false load a tmap2 using the map manager 2, else load a tmap using the legacy map manager. -->
+  <arg name="legacy" default="false"/> 
+  <!-- If true map manager 2 converts tmap2 (topic: /topological_map_2) to legacy format (topic: /topological_map). -->
+  <arg name="convert_to_legacy" default="true"/> 
+  <!-- Load the map from its file rather than mongodb if using the legacy map manager. -->
+  <arg name="load_map_from_file" default="false" />
 
-	<!-- <node pkg="topological_navigation" type="map_publisher.py" name="topological_map_publisher" args="$(arg map)"/> -->
-	<node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg map)" respawn="true"/>
+  <!-- ### TOPOLOGICAL LOCALISATION ARGS ### -->
+  <!-- Robot base frame. -->
+  <arg name="base_frame" default="base_link" />
+  <!-- Localisation publishes at max 10 hz. Lower the rate to every Nth message. -->
+  <arg name="N" default="3" />
+  <!-- If true localisation publishes only when the closest node/edge changes, and when the current node changes. -->
+  <arg name="only_latched" default="true" />
+  <!-- If true then a node tagged as 'no_go' can be the closest node ONLY when the robot is within it. -->
+  <arg name="localisation_with_tags" default="true" />
 
-	<node pkg="fremenserver" type="fremenserver" name="fremenserver" respawn="true"/>
+  <!-- ### TOPOLOGICAL NAVIGATION ARGS ### -->
+  <!-- The action being used for move_base -->
+  <arg name="move_base_name" default="move_base"/>
+  <!-- The goal being used by the move_base_name action. If not set defaults to the goal used by the action in the map else a move base type goal. -->
+  <arg name="move_base_goal" default="$(find topological_navigation)/config/move_base_goal.yaml"/>
+  <rosparam command="load" file="$(arg move_base_goal)"/>
+  <!-- The planner being used by move_base. STRANDS systems tend to use DWAPlannerROS Jackal and HSR TrajectoryPlannerROS.  -->
+  <arg name="move_base_planner" default="move_base/DWAPlannerROS"/>
+  <!-- If the action of the current or next edge in the route is not in this list then the robot must get to the exact pose of the current edge's destination node. -->
+  <arg name="move_base_actions" default="['move_base', 'human_aware_navigation','han_adapt_speed','han_vc_corridor','han_vc_junction']"/>
+  <!-- Plan from destination node of closest edge if dist from closest edge <= max_dist_to_closest_edge else plan from closest node. -->
+  <arg name="max_dist_to_closest_edge" default="1.0"/>
+  <!-- If true reconfigure parameters according to the config of the current edge. -->
+  <arg name="reconfigure_edges" default="false"/>
+  <!-- If true do edge reconfigure using the server (as in legacy toponav) instead of using the settings in the map. -->
+  <arg name="reconfigure_edges_srv" default="false"/>
+  <!-- Edge reconfigure groups config file used if reconfigure_edges_srv is true. -->
+  <arg name="edge_reconfigure_config" default="$(find topological_navigation/config/sample_edge_reconfig_groups.yaml"/>
+  <!-- If we are using the restricted tmap rather than the normal tmap. Must first publish the restriction e.g. robot type: rostopic pub /type std_msgs/String "data: $ROBOT_TYPE" -->
+  <arg name="use_restrictions" default="false"/>
 
-	<node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true"/>
-	<node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
-		<param name="retries" type="int" value="$(arg topological_navigation_retries)"/>
-		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
-	</node>
-	<node pkg="topological_navigation" name="execute_policy_server" type="execute_policy_server.py" output="screen" respawn="true">
-		<param name="retries" type="int" value="$(arg execute_policy_retries)"/>
-		<param name="move_base_reconf_service" type="str" value="$(arg move_base_reconf_service)"/>
-	</node>
+  <arg name="launch_extras" default="false" />
 
-	<node pkg="topological_navigation" type="visualise_map.py" name="visualise_map" args="$(arg map)" respawn="true"/>
 
-	<node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true"/>
-	<node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" respawn="true"/>
+  <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
+  <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="-f $(arg file)" respawn="true" if="$(eval arg('legacy') and arg('load_map_from_file'))"/>
+  <node pkg="topological_navigation" type="map_manager.py" name="topological_map_manager" args="$(arg pointset)" respawn="true" if="$(eval arg('legacy') and not arg('load_map_from_file'))"/>
+
+  <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager" args="$(arg file)" respawn="true" unless="$(arg legacy)">
+    <param name="cache_topological_maps" value="$(arg cache_topological_maps)"/>
+    <param name="auto_write_topological_maps" value="$(arg auto_write_topological_maps)"/>
+    <param name="convert_to_legacy" value="$(arg convert_to_legacy)"/>
+  </node>
+
+  <node pkg="topological_navigation" name="restrictions_manager" type="restrictions_manager.py" output="screen" respawn="true" if="$(arg use_restrictions)"/>
+
+  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" output="screen" respawn="true" if="$(arg localisation_with_tags)">
+    <param name="base_frame" value="$(arg base_frame)"/>
+    <param name="LocalisationThrottle" value="$(arg N)"/>
+    <param name="OnlyLatched" value="$(arg only_latched)"/>
+  </node>
+
+  <node pkg="topological_navigation" name="topological_localisation" type="localisation.py" args="-notags" output="screen" respawn="true" unless="$(arg localisation_with_tags)">
+    <param name="base_frame" value="$(arg base_frame)"/>
+    <param name="LocalisationThrottle" value="$(arg N)"/>
+    <param name="OnlyLatched" value="$(arg only_latched)"/>
+  </node>
+
+  <include file="$(find topological_navigation)/launch/reconf_at_edges_server.launch" if="$(eval arg('reconfigure_edges') and arg('reconfigure_edges_srv'))">
+    <arg name="config" value="$(arg edge_reconfigure_config)" />
+  </include>
+	
+  <node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
+    <param name="move_base_name" type="str" value="$(arg move_base_name)"/>
+    <param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
+    <param name="max_dist_to_closest_edge" value="$(arg max_dist_to_closest_edge)"/>
+    <param name="reconfigure_edges" value="$(arg reconfigure_edges)"/>
+    <param name="reconfigure_edges_srv" value="$(arg reconfigure_edges_srv)"/>
+    <rosparam param="move_base_actions" subst_value="True">$(arg move_base_actions)</rosparam>
+
+    <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
+    <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
+  </node>
+
+  <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" respawn="true">
+    <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
+    <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
+  </node>
+
+  <node pkg="topological_navigation" type="speed_based_prediction.py" name="speed_based_prediction" output="screen" if="$(arg launch_extras)"/>	
+  <node pkg="topological_navigation" type="travel_time_estimator.py" name="travel_time_estimator" respawn="true" if="$(arg launch_extras)"/>
+  <node pkg="topological_navigation" type="navstats_logger.py" name="topological_navstats_logger" respawn="true" if="$(arg launch_extras)"/>
+  <node pkg="topological_navigation" type="topological_prediction.py" name="topological_prediction" output="screen" if="$(arg launch_extras)"/>
 
 </launch>

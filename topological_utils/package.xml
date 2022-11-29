@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>topological_utils</name>
-  <version>2.1.0</version>
+  <version>2.4.0</version>
   <description>The topological_utils package</description>
 
   <maintainer email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</maintainer>
@@ -18,18 +18,18 @@
   <build_depend>rospy</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>mongodb_store</build_depend>
+  <!--build_depend>mongodb_store</build_depend-->
   <build_depend>visualization_msgs</build_depend>
   <build_depend>topological_navigation</build_depend>
-  <build_depend>strands_navigation_msgs</build_depend>
+  <build_depend>topological_rviz_tools</build_depend>
   
   <run_depend>rospy</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>geometry_msgs</run_depend>
-  <run_depend>mongodb_store</run_depend>
+  <!--run_depend>mongodb_store</run_depend-->
   <run_depend>visualization_msgs</run_depend>
   <run_depend>topological_navigation</run_depend>
-  <run_depend>strands_navigation_msgs</run_depend>
+  <run_depend>topological_rviz_tools</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -3,7 +3,7 @@
 
 import rospy
 from scitos_teleop.msg import action_buttons
-from strands_navigation_msgs.srv import RunTopoNavTestScenario
+from topological_navigation_msgs.srv import RunTopoNavTestScenario
 from std_srvs.srv import Empty
 
 

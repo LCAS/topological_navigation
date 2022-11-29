@@ -1,0 +1,11 @@
+string fail_policy
+---
+bool success
+
+
+# "retry_N"   with N the number of retries, tries again to execute the same action
+# "wait_S_N"  with S the number of seconds and N the number of waits, wait action
+# "replan_N"  with N the number of replans, generates a new plan which does not pass through the same edge where the fail occurred
+# "fail"      fails the entire plan
+
+# can combine fail policy actions e.g "replan_2, fail"

@@ -7,7 +7,7 @@ Outputs a list of available topological maps
 from topological_utils.queries import get_maps
 
 if __name__ == "__main__":
-    for map_name,details in get_maps().iteritems():
+    for map_name,details in get_maps().items():
         print "-" * 50
         print "Name:            ", map_name
         print "Number of nodes: ", details["number_nodes"]

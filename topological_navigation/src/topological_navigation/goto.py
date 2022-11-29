@@ -14,11 +14,9 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import *
 from interactive_markers.interactive_marker_server import *
 
-from strands_navigation_msgs.msg import TopologicalNode
+from topological_navigation_msgs.msg import TopologicalMap, GotoNodeGoal, GotoNodeAction
 from topological_navigation.topological_map import *
-from strands_navigation_msgs.msg import TopologicalMap
 
-import topological_navigation.msg
 
 
 class go_to_controllers(object):
@@ -28,14 +26,14 @@ class go_to_controllers(object):
         #self.timer = Timer(1.0, self.timer_callback)
         #map_name = rospy.get_param('topological_map_name', 'top_map')
         self._goto_server = InteractiveMarkerServer("go_to_node")
-        self.client = actionlib.SimpleActionClient('topological_navigation', topological_navigation.msg.GotoNodeAction)
+        self.client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
         self.client.wait_for_server()
         rospy.Subscriber('topological_map', TopologicalMap, self.MapCallback)
         rospy.loginfo(" ... Go to Initialised")
 
 
     def update_map(self, map_msg) :
-        print "updating goto controllers..."
+        print("updating goto controllers...")
         #self.topo_map = topological_map(map_name)
         self._goto_server.clear()
         for i in map_msg.nodes :
@@ -53,7 +51,7 @@ class go_to_controllers(object):
 
     def makeEmptyMarker(self, dummyBox=True ) :
         int_marker = InteractiveMarker()
-        int_marker.header.frame_id = "/map"
+        int_marker.header.frame_id = "map"
         int_marker.scale = 1
         return int_marker
 
@@ -101,9 +99,9 @@ class go_to_controllers(object):
     def feedback_cb(self, feedback):
         if not self.in_feedback :
             self.in_feedback=True
-            print 'GOTO: '+str(feedback.marker_name)
+            print('GOTO: '+str(feedback.marker_name))
             self.client.cancel_all_goals()
-            navgoal = topological_navigation.msg.GotoNodeGoal()                
+            navgoal = GotoNodeGoal()                
             navgoal.target = feedback.marker_name
             #navgoal.origin = orig
             # Sends the goal to the action server.

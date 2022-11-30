@@ -40,6 +40,7 @@ add_message_files(
   AddNodeReq.msg
   SetInfluenceZoneReq.msg
   UpdateEdgeConfigReq.msg
+  DistanceBetweenNodes.msg
 )
 
 #Generate services in the 'srv' folder
@@ -82,7 +83,7 @@ add_service_files(
   AddNodeArray.srv
   SetInfluenceZoneArray.srv
   UpdateEdgeConfigArray.srv
-  GetDistancesBetweenPoints.srv
+  GetDistancesBetweenNodes.srv
 )
 
 

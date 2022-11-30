@@ -3,11 +3,12 @@
 import sys
 import rospy
 import topological_navigation_msgs.srv
-        
+from  topological_navigation_msgs.msg import DistanceBetweenNodes
+import itertools
 
-class GetDistancesBetweenPointsServer(object):
+class GetDistancesBetweenNodesServer(object):
        
-    def __init__(self) :     
+    def __init__(self) :
 
         # services client
         rospy.loginfo("Waiting for service: get_simple_policy/get_route_between")
@@ -16,38 +17,44 @@ class GetDistancesBetweenPointsServer(object):
         rospy.loginfo("Service get_simple_policy/get_route_between active")
 
         #This service returns any given map
-        rospy.loginfo("Setting get_distances_between_points service")
-        self.get_distances_srv=rospy.Service('get_distances_between_points', topological_navigation_msgs.srv.GetDistancesBetweenPoints, self.get_distances_cb)
+        rospy.loginfo("Setting get_distances_between_nodes service")
+        self.get_distances_srv=rospy.Service('get_distances_between_nodes', topological_navigation_msgs.srv.GetDistancesBetweenNodes, self.get_distances_cb)
         rospy.loginfo("All Done! Ready to receive requests")
         rospy.spin()
 
 
     def get_distances_cb(self, req):
-        print(len(req.points_list))
-        # if len(req.points_list) == 1:
-        #     rospy.loginfo("Error: you need to pass at least 2 points")
-        #     return [],[]
-        # try:
-        #     resp = self.get_route_service(goal_node)
-        #     path = resp.route.source
-        # except:
-        #     rospy.loginfo("Error: The goal is the current robot position or the node name does not exist")
-        #     _result.message = "Error: The goal is the current robot position or the node name does not exist"
-        #     _result.status = 2
-        #     self.goto_as.set_succeeded(_result)
-        #     return
+        rospy.loginfo("Request received with the following nodes:")
+        rospy.loginfo(req.nodes_list)
+        all_distances_message = {'distance_between_nodes': []}
 
+        # check we have at least 2 nodes 
+        if len(req.nodes_list) == 1:
+            rospy.logerr("Error: you need to pass at least 2 points")
+            return {'distance_between_nodes': []}
 
-        print req
+        # go over all the combinations of pairs of nodes and call the service that tells us the travel distance
+        all_combinations = itertools.permutations(req.nodes_list,2)     
+        for c in all_combinations:
+            origin_node = c[0]
+            destination_node = c[1]
 
-        combinations = ['r8','r2']
-        distances = [1,2]
-        return combinations, distances
+            try:
+                resp = self.get_route_service(origin_node, destination_node)
+                distance  = resp.route.distance
+            except:
+                rospy.logerr("Error calling the 'get_simple_policy/get_route_between' service")
+                return {'distance_between_nodes': []}
 
+            distance_between_nodes_msg = DistanceBetweenNodes()
+            distance_between_nodes_msg.orig_node = origin_node
+            distance_between_nodes_msg.dest_node = destination_node
+            distance_between_nodes_msg.distance = distance
 
+            all_distances_message["distance_between_nodes"].append(distance_between_nodes_msg)
 
-
+        return all_distances_message
 
 if __name__ == '__main__':
-    rospy.init_node('get_distances_between_points')
-    distance_server = GetDistancesBetweenPointsServer()
+    rospy.init_node('get_distances_between_nodes')
+    distance_server = GetDistancesBetweenNodesServer()

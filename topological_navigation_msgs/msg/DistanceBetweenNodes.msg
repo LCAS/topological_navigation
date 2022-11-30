@@ -1,0 +1,3 @@
+string orig_node
+string dest_node
+float32 distance

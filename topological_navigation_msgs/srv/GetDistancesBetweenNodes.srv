@@ -1,0 +1,3 @@
+string[] nodes_list
+---
+DistanceBetweenNodes[] distance_between_nodes

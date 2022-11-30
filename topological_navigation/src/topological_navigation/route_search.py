@@ -145,7 +145,7 @@ class TopologicalRouteSearch(object):
                     self.top_map, steps[i].father, steps[i].name)
                 route.source.append(steps[i].father)
                 route.edge_id.append(edg[0].edge_id)
-                route.distance = cdist
+                route.distance = cnte.current_distance
                 #route.append(r)
 
             #print cdist

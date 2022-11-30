@@ -20,7 +20,6 @@ def convert_goal(root_dir, action, action_type):
     
     mm = map_manager_2(advertise_srvs=False)
     for f in tmap_files:
-        print "\n"
         rospy.loginfo("CHANGING THE GOAL IN " + f)
         
         try:
@@ -39,7 +38,7 @@ def convert_goal(root_dir, action, action_type):
 if __name__ == '__main__' :
     
     if "-h" in sys.argv or "--help" in sys.argv or len(sys.argv) < 4:
-        print "usage is goal_converter.py root_directory action action_type"
+        print("usage is goal_converter.py root_directory action action_type")
         sys.exit(1)
     else:
         root_dir = sys.argv[1]

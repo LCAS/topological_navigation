@@ -43,7 +43,7 @@ class GetDistancesBetweenNodesServer(object):
                 resp = self.get_route_service(origin_node, destination_node)
                 distance  = resp.route.distance
             except:
-                rospy.logerr("Error calling the 'get_simple_policy/get_route_between' service")
+                rospy.logerr("Error calling the 'get_simple_policy/get_route_between' service. Check the nodes names.")
                 return {'distance_between_nodes': []}
 
             distance_between_nodes_msg = DistanceBetweenNodes()

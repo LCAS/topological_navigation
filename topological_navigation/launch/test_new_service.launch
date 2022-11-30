@@ -15,6 +15,8 @@
 
  	<node pkg="topological_navigation" type="get_simple_policy.py" name="get_simple_policy" respawn="true"/>
 
+ 	<node pkg="topological_navigation" type="get_distances_between_nodes.py" name="get_distances_between_nodes" respawn="true"/>
+
  	<!-- <node pkg="rviz" type="rviz" name="rviz" respawn="true"/> -->
 
 

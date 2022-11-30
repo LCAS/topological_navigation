@@ -1,4 +1,4 @@
-<package>
+<package format="3">
   <name>topological_rviz_tools</name>
   <version>2.4.0</version>
   <description>
@@ -9,25 +9,14 @@
 
   <author>Michal Staniaszek</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
-
-  <build_depend>qtbase5-dev</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>rviz</build_depend>
-  <build_depend>topological_navigation_msgs</build_depend>
-
-  <run_depend>libqt5-core</run_depend>
-  <run_depend>libqt5-gui</run_depend>
-  <run_depend>libqt5-widgets</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>rviz</run_depend>
-  <run_depend>topological_navigation_msgs</run_depend>
+  <depend>qtbase5-dev</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>rviz2</depend>
+  <depend>topological_navigation_msgs</depend>
+  <depend>libqt5-core</depend>
+  <depend>libqt5-gui</depend>
+  <depend>libqt5-widgets</depend>
 
   <export>
       <rviz plugin="${prefix}/plugin_description.xml"/>

@@ -1,15 +1,20 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8.0)
 project(topological_navigation_msgs)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
-  message_generation 
-  std_msgs 
-  geometry_msgs
-  actionlib_msgs
-)
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+#find_package(actionlib_msgs REQUIRED)
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -23,101 +28,103 @@ find_package(catkin REQUIRED COMPONENTS
 #######################################
 ## Declare ROS messages and services ##
 #######################################
+rosidl_generate_interfaces(${PROJECT_NAME}
+  msg/ClosestEdges.msg
+  msg/TopologicalMap.msg
+  msg/TopologicalNode.msg
+  msg/Vertex.msg
+  msg/Edge.msg
+  msg/NavRoute.msg
+  msg/CurrentEdge.msg
+  msg/NavStatistics.msg
+  msg/TopologicalRoute.msg
+  msg/AddEdgeReq.msg
+  msg/AddNodeReq.msg
+  msg/SetInfluenceZoneReq.msg
+  msg/UpdateEdgeConfigReq.msg
+  DEPENDENCIES std_msgs geometry_msgs
+)
 
 # Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  ClosestEdges.msg
-  TopologicalMap.msg
-  TopologicalNode.msg
-  Vertex.msg
-  Edge.msg
-  NavRoute.msg
-  CurrentEdge.msg
-  NavStatistics.msg
-  TopologicalRoute.msg
-  AddEdgeReq.msg
-  AddNodeReq.msg
-  SetInfluenceZoneReq.msg
-  UpdateEdgeConfigReq.msg
-)
+# add_message_files(
+#   FILES
+#   ClosestEdges.msg
+#   TopologicalMap.msg
+#   TopologicalNode.msg
+#   Vertex.msg
+#   Edge.msg
+#   NavRoute.msg
+#   CurrentEdge.msg
+#   NavStatistics.msg
+#   TopologicalRoute.msg
+#   AddEdgeReq.msg
+#   AddNodeReq.msg
+#   SetInfluenceZoneReq.msg
+#   UpdateEdgeConfigReq.msg
+# )
 
-#Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  WriteTopologicalMap.srv
-  UpdateEdgeConfig.srv
-  UpdateRestrictions.srv
-  UpdateEdge.srv
-  UpdateAction.srv
-  RestrictMap.srv
-  EvaluateNode.srv
-  EvaluateEdge.srv
-  AddDatum.srv
-  GetTaggedNodes.srv
-  GetTags.srv
-  GetNodeTags.srv
-  GetEdgesBetweenNodes.srv
-  AddNode.srv
-  RmvNode.srv
-  AddEdge.srv
-  AddContent.srv
-  UpdateNodeName.srv
-  UpdateNodeTolerance.srv
-  ModifyTag.srv
-  AddTag.srv
-  GetTopologicalMap.srv
-  UpdateEdgeLegacy.srv
-  LocalisePose.srv
-  GetRouteTo.srv
-  GetRouteBetween.srv
-  EstimateTravelTime.srv
-  PredictEdgeState.srv
-  UpdateFailPolicy.srv
-  ReconfAtEdges.srv
-  LoadTopoNavTestScenario.srv
-  RunTopoNavTestScenario.srv
-  SetInfluenceZone.srv
-  AddEdgeArray.srv
-  AddNodeArray.srv
-  SetInfluenceZoneArray.srv
-  UpdateEdgeConfigArray.srv
-)
-
-
-
-find_package(catkin REQUIRED genmsg actionlib_msgs)
-add_action_files(
-	DIRECTORY action 
-	FILES 
-	GotoNode.action
-        ExecutePolicyMode.action
-        BuildTopPrediction.action
-)
+# #Generate services in the 'srv' folder
+# add_service_files(
+#   FILES
+#   WriteTopologicalMap.srv
+#   UpdateEdgeConfig.srv
+#   UpdateRestrictions.srv
+#   UpdateEdge.srv
+#   UpdateAction.srv
+#   RestrictMap.srv
+#   EvaluateNode.srv
+#   EvaluateEdge.srv
+#   AddDatum.srv
+#   GetTaggedNodes.srv
+#   GetTags.srv
+#   GetNodeTags.srv
+#   GetEdgesBetweenNodes.srv
+#   AddNode.srv
+#   RmvNode.srv
+#   AddEdge.srv
+#   AddContent.srv
+#   UpdateNodeName.srv
+#   UpdateNodeTolerance.srv
+#   ModifyTag.srv
+#   AddTag.srv
+#   GetTopologicalMap.srv
+#   UpdateEdgeLegacy.srv
+#   LocalisePose.srv
+#   GetRouteTo.srv
+#   GetRouteBetween.srv
+#   EstimateTravelTime.srv
+#   PredictEdgeState.srv
+#   UpdateFailPolicy.srv
+#   ReconfAtEdges.srv
+#   LoadTopoNavTestScenario.srv
+#   RunTopoNavTestScenario.srv
+#   SetInfluenceZone.srv
+#   AddEdgeArray.srv
+#   AddNodeArray.srv
+#   SetInfluenceZoneArray.srv
+#   UpdateEdgeConfigArray.srv
+# )
 
 
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-  actionlib_msgs 
-)
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES strands_perception_people_msgs
-  CATKIN_DEPENDS message_runtime
-#  DEPENDS system_lib
-)
+# find_package(catkin REQUIRED genmsg actionlib_msgs)
+# add_action_files(
+# 	DIRECTORY action 
+# 	FILES 
+# 	GotoNode.action
+#         ExecutePolicyMode.action
+#         BuildTopPrediction.action
+# )
+
+
+# ## Generate added messages and services with any dependencies listed here
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   geometry_msgs
+#   actionlib_msgs 
+# )
+
 
 ###########
 ## Build ##
@@ -191,3 +198,5 @@ catkin_package(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+ament_package()

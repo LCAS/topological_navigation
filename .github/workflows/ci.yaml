@@ -2,9 +2,9 @@ name: ros CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ humble-dev ]
   pull_request:
-    branches: [ master ]
+    branches: [ humble-dev ]
 
 jobs:
   test_docker: # On Linux, iterates on all ROS 1 and ROS 2 distributions.
@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         ros_distribution:
-          - melodic
+          - humble
 
         # Define the Docker image(s) associated with each ROS distribution.
         # The include syntax allows additional variables to be defined, like
@@ -23,13 +23,9 @@ jobs:
         # https://ros.org/reps/rep-0003.html
         # https://ros.org/reps/rep-2000.html
         include:
-          # Melodic Morenia (May 2018 - May 2023)
-          - docker_image: ubuntu:bionic
-            ros_distribution: melodic
-            ros_version: 1
-          - docker_image: ubuntu:focal
-            ros_distribution: noetic
-            ros_version: 1
+          - docker_image: ubuntu:jammy
+            ros_distribution: humble
+            ros_version: 2
 
     container:
       image: ${{ matrix.docker_image }}

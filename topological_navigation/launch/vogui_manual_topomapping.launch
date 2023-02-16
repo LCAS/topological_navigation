@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<launch>
+
+<arg name="tmap" default=""/>
+<arg name="tmap_file" default=""/>
+<arg name="closest_node_threshold" default="0.5"/>
+<!-- Controller params according to the controller used-->
+<arg name="button_lock_button_ind" default="6"/>
+<arg name="add_node_button_ind" default="2"/>
+<arg name="remove_node_button_ind" default="1"/>
+<arg name="generate_tmap_button_ind" default="3"/>
+
+<node pkg="topological_navigation" type="manual_topomapping.py" name="manual_topomapping" output="screen"> 
+    <param name="tmap"                     type="str"     value="$(arg tmap)"/>
+    <param name="tmap_file"                type="str"     value="$(arg tmap_file)"/>
+    <param name="site_name"                type="str"     value="$(arg tmap)"/>
+    <param name="closest_node_threshold"   type="double"  value="$(arg closest_node_threshold)"/>
+    <param name="button_lock_button_ind"   type="int"     value="$(arg button_lock_button_ind)"/>
+    <param name="add_node_button_ind"      type="int"     value="$(arg add_node_button_ind)"/>
+    <param name="remove_node_button_ind"   type="int"     value="$(arg remove_node_button_ind)"/>
+    <param name="generate_tmap_button_ind" type="int"     value="$(arg generate_tmap_button_ind)"/>
+</node> 
+
+<node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find topological_navigation)/resources/tmapping_config.rviz">
+</node>
+
+</launch>
+

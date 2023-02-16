@@ -1,0 +1,41 @@
+meta:
+  map: map_2d
+  node: NodeName
+  pointset: PointSet
+node:
+  edges: []
+  localise_by_topic: ''
+  name: NodeName
+  parent_frame: map
+  pose:
+    orientation:
+      w: 1.0
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    position:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+  properties:
+    xy_goal_tolerance: 0.3
+    yaw_goal_tolerance: 6.29
+  restrictions_planning: 'True'
+  restrictions_runtime: 'True'
+  verts:
+  - x: 0.689999997616
+    y: 0.287000000477
+  - x: 0.287000000477
+    y: 0.490000009537
+  - x: -0.287000000477
+    y: 0.490000009537
+  - x: -0.689999997616
+    y: 0.287000000477
+  - x: -0.689999997616
+    y: -0.287000000477
+  - x: -0.287000000477
+    y: -0.490000009537
+  - x: 0.287000000477
+    y: -0.490000009537
+  - x: 0.689999997616
+    y: -0.287000000477

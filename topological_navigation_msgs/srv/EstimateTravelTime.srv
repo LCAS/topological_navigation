@@ -1,4 +1,4 @@
 string start
 string target
 ---
-duration travel_time
+builtin_interfaces/Duration travel_time

@@ -1,5 +1,5 @@
-time epoch
+builtin_interfaces/Time epoch
 ---
 string[] edge_ids
 float64[] probs
-duration[] durations
+builtin_interfaces/Duration[] durations

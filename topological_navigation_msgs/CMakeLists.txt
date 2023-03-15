@@ -1,202 +1,128 @@
-cmake_minimum_required(VERSION 3.8.0)
+cmake_minimum_required(VERSION 3.5)
 project(topological_navigation_msgs)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
 
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
+
+############################
+#
+#   DEPENDENCY DEFINITION
+#
+
+# Define build tool dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+
+# Define dependencies for messages
+find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-#find_package(actionlib_msgs REQUIRED)
-
-
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/groovy/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
-rosidl_generate_interfaces(${PROJECT_NAME}
-  msg/ClosestEdges.msg
-  msg/TopologicalMap.msg
-  msg/TopologicalNode.msg
-  msg/Vertex.msg
-  msg/Edge.msg
-  msg/NavRoute.msg
-  msg/CurrentEdge.msg
-  msg/NavStatistics.msg
-  msg/TopologicalRoute.msg
-  msg/AddEdgeReq.msg
-  msg/AddNodeReq.msg
-  msg/SetInfluenceZoneReq.msg
-  msg/UpdateEdgeConfigReq.msg
-  DEPENDENCIES std_msgs geometry_msgs
+find_package(actionlib_msgs REQUIRED)
+set(msg_deps
+  builtin_interfaces
+  std_msgs
+  geometry_msgs
+  actionlib_msgs
 )
 
-# Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   ClosestEdges.msg
-#   TopologicalMap.msg
-#   TopologicalNode.msg
-#   Vertex.msg
-#   Edge.msg
-#   NavRoute.msg
-#   CurrentEdge.msg
-#   NavStatistics.msg
-#   TopologicalRoute.msg
-#   AddEdgeReq.msg
-#   AddNodeReq.msg
-#   SetInfluenceZoneReq.msg
-#   UpdateEdgeConfigReq.msg
-# )
-
-# #Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   WriteTopologicalMap.srv
-#   UpdateEdgeConfig.srv
-#   UpdateRestrictions.srv
-#   UpdateEdge.srv
-#   UpdateAction.srv
-#   RestrictMap.srv
-#   EvaluateNode.srv
-#   EvaluateEdge.srv
-#   AddDatum.srv
-#   GetTaggedNodes.srv
-#   GetTags.srv
-#   GetNodeTags.srv
-#   GetEdgesBetweenNodes.srv
-#   AddNode.srv
-#   RmvNode.srv
-#   AddEdge.srv
-#   AddContent.srv
-#   UpdateNodeName.srv
-#   UpdateNodeTolerance.srv
-#   ModifyTag.srv
-#   AddTag.srv
-#   GetTopologicalMap.srv
-#   UpdateEdgeLegacy.srv
-#   LocalisePose.srv
-#   GetRouteTo.srv
-#   GetRouteBetween.srv
-#   EstimateTravelTime.srv
-#   PredictEdgeState.srv
-#   UpdateFailPolicy.srv
-#   ReconfAtEdges.srv
-#   LoadTopoNavTestScenario.srv
-#   RunTopoNavTestScenario.srv
-#   SetInfluenceZone.srv
-#   AddEdgeArray.srv
-#   AddNodeArray.srv
-#   SetInfluenceZoneArray.srv
-#   UpdateEdgeConfigArray.srv
-# )
 
 
 
-# find_package(catkin REQUIRED genmsg actionlib_msgs)
-# add_action_files(
-# 	DIRECTORY action 
-# 	FILES 
-# 	GotoNode.action
-#         ExecutePolicyMode.action
-#         BuildTopPrediction.action
-# )
+########################
+#
+#   FILE DECLARATION
+#
+
+# Declare the custom message files
+set(msg_files
+  "msg/ClosestEdges.msg"
+  "msg/TopologicalMap.msg"
+  "msg/TopologicalNode.msg"
+  "msg/Vertex.msg"
+  "msg/Edge.msg"
+  "msg/NavRoute.msg"
+  "msg/CurrentEdge.msg"
+  "msg/NavStatistics.msg"
+  "msg/TopologicalRoute.msg"
+  "msg/AddEdgeReq.msg"
+  "msg/AddNodeReq.msg"
+  "msg/SetInfluenceZoneReq.msg"
+  "msg/UpdateEdgeConfigReq.msg"
+)
 
 
-# ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-#   geometry_msgs
-#   actionlib_msgs 
-# )
+# Declare the custom service files
+set(srv_files
+  "srv/WriteTopologicalMap.srv"
+  "srv/UpdateEdgeConfig.srv"
+  "srv/UpdateRestrictions.srv"
+  "srv/UpdateEdge.srv"
+  "srv/UpdateAction.srv"
+  "srv/RestrictMap.srv"
+  "srv/EvaluateNode.srv"
+  "srv/EvaluateEdge.srv"
+  "srv/AddDatum.srv"
+  "srv/GetTaggedNodes.srv"
+  "srv/GetTags.srv"
+  "srv/GetNodeTags.srv"
+  "srv/GetEdgesBetweenNodes.srv"
+  "srv/AddNode.srv"
+  "srv/RmvNode.srv"
+  "srv/AddEdge.srv"
+  "srv/AddContent.srv"
+  "srv/UpdateNodeName.srv"
+  "srv/UpdateNodeTolerance.srv"
+  "srv/ModifyTag.srv"
+  "srv/AddTag.srv"
+  "srv/GetTopologicalMap.srv"
+  "srv/UpdateEdgeLegacy.srv"
+  "srv/LocalisePose.srv"
+  "srv/GetRouteTo.srv"
+  "srv/GetRouteBetween.srv"
+  "srv/EstimateTravelTime.srv"
+  "srv/PredictEdgeState.srv"
+  "srv/UpdateFailPolicy.srv"
+  "srv/ReconfAtEdges.srv"
+  "srv/LoadTopoNavTestScenario.srv"
+  "srv/RunTopoNavTestScenario.srv"
+  "srv/SetInfluenceZone.srv"
+  "srv/AddEdgeArray.srv"
+  "srv/AddNodeArray.srv"
+  "srv/SetInfluenceZoneArray.srv"
+  "srv/UpdateEdgeConfigArray.srv"
+)
 
 
-###########
-## Build ##
-###########
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+#Generate actions in the 'action' folder
+# Declare the custom service files
+set(action_files
+    "action/GotoNode.action"
+    "action/ExecutePolicyMode.action"
+    "action/BuildTopPrediction.action"
+)
 
-## Declare a cpp library
-# add_library(strands_perception_people_msgs
-#   src/${PROJECT_NAME}/strands_perception_people_msgs.cpp
-# )
 
-## Declare a cpp executable
-# add_executable(strands_perception_people_msgs_node src/strands_perception_people_msgs_node.cpp)
 
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-# add_dependencies(strands_perception_people_msgs_node strands_perception_people_msgs_generate_messages_cpp)
+#######################
+#
+#   FILE GENERATION
+#
 
-## Specify libraries to link a library or executable target against
-# target_link_libraries(strands_perception_people_msgs_node
-#   ${catkin_LIBRARIES}
-# )
+# Generate the files
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  ${srv_files}
+  ${action_files}
+  DEPENDENCIES ${msg_deps}
+)
 
-#############
-## Install ##
-#############
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/groovy/api/catkin/html/adv_user_guide/variables.html
+###################################
+#
+#   DOWNSTREAM DEPENDENCY EXPORT
+#
 
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark executables and/or libraries for installation
-# install(TARGETS strands_perception_people_msgs strands_perception_people_msgs_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
-
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_strands_perception_people_msgs.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
-
+# Export information to downstream packages
+ament_export_dependencies(rosidl_default_runtime)
 ament_package()

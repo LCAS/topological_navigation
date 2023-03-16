@@ -1,52 +1,91 @@
-## BEGIN_TUTORIAL
-## This CMakeLists.txt file for rviz_plugin_tutorials builds both the
-## TeleopPanel tutorial and the ImuDisplay tutorial.
-##
-## First start with some standard catkin stuff.
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(topological_rviz_tools)
-find_package(catkin REQUIRED COMPONENTS message_generation rviz roscpp geometry_msgs std_msgs topological_navigation_msgs)
 
-add_service_files(
-  FILES
-  AddEdge.srv
-)
 
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-)
+####################################
+#
+#   DEFINE COMPILER SPECIFICATION
+#
 
-catkin_package()
-include_directories(${catkin_INCLUDE_DIRS})
-link_directories(${catkin_LIBRARY_DIRS})
 
-## This setting causes Qt's "MOC" generation to happen automatically.
-set(CMAKE_AUTOMOC ON)
-
-## This plugin includes Qt widgets, so we must include Qt.
-## We'll use the version that rviz used so they are compatible.
-if(rviz_QT_VERSION VERSION_LESS "5")
-  message(STATUS "Using Qt4 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt4 ${rviz_QT_VERSION} EXACT REQUIRED QtCore QtGui)
-  ## pull in all required include dirs, define QT_LIBRARIES, etc.
-  include(${QT_USE_FILE})
-else()
-  message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
-  ## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
-  set(QT_LIBRARIES Qt5::Widgets)
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 
-## I prefer the Qt signals and slots to avoid defining "emit", "slots",
-## etc because they can conflict with boost signals, so define QT_NO_KEYWORDS here.
-add_definitions(-DQT_NO_KEYWORDS)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 
-## Here we specify the list of source files.
-## The generated MOC files are included automatically as headers.
-set(SRC_FILES
+############################
+#
+#   DEPENDENCY DEFINITION
+#
+
+# Define build tool dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(rclcpp REQUIRED)
+
+# Define dependencies for messages
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(topological_navigation_msgs REQUIRED)
+set(srv_deps
+  std_msgs
+  geometry_msgs
+  topological_navigation_msgs
+)
+
+# Define dependencies for RViz Plugins
+find_package(rviz_common REQUIRED)
+find_package(rviz_default_plugins REQUIRED)
+find_package(rviz_ogre_vendor REQUIRED)
+find_package(rviz_rendering REQUIRED)
+set(rviz_deps
+  rclcpp
+  rviz_common
+  rviz_default_plugins
+  rviz_ogre_vendor
+  rviz_rendering
+)
+
+########################
+#
+#   FILE DECLARATION
+#
+
+# Declare the custom service files
+set(srv_files
+  "srv/AddEdge.srv"
+)
+
+
+
+#######################
+#
+#   FILE GENERATION
+#
+
+# Generate the files
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${srv_files}
+  DEPENDENCIES ${srv_deps}
+)
+
+
+
+
+
+#########################
+#
+#   BUILD RVIZ2 PLUGIN
+#
+
+
+# Declare files to be included under the plugin
+set(rviz_files
   src/topological_edge_tool.cpp
   src/topological_node_tool.cpp
   src/topological_map_panel.cpp
@@ -60,49 +99,67 @@ set(SRC_FILES
   src/tag_property.cpp
 )
 
-## An rviz plugin is just a shared library, so here we declare the
-## library to be called ``${PROJECT_NAME}`` (which is
-## "rviz_plugin_tutorials", or whatever your version of this project
-## is called) and specify the list of source files we collected above
-## in ``${SRC_FILES}``.
-add_library(${PROJECT_NAME} ${SRC_FILES})
 
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+# Construct the library
+add_library(topological_rviz_tools_lib SHARED ${rviz_files})
+ament_target_dependencies(topological_rviz_tools_lib ${rviz_deps})
+target_compile_definitions(topological_rviz_tools_lib
+  PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY"
+)
+set(target_install_binaries topological_rviz_tools_lib)
 
-## Link the myviz executable with whatever Qt libraries have been defined by
-## the ``find_package(Qt4 ...)`` line above, or by the
-## ``set(QT_LIBRARIES Qt5::Widgets)``, and with whatever libraries
-## catkin has included.
-##
-## Although this puts "rviz_plugin_tutorials" (or whatever you have
-## called the project) as the name of the library, cmake knows it is a
-## library and names the actual file something like
-## "librviz_plugin_tutorials.so", or whatever is appropriate for your
-## particular OS.
-target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
-## END_TUTORIAL
 
-## Install rules
+# Register the plugin
+pluginlib_export_plugin_description_file(rviz_default_plugins plugin_description.xml)
 
-install(TARGETS
-  ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(
+  TARGETS ${target_install_binaries}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
+install(
+  FILES plugin_description.xml
+  DESTINATION share/${PROJECT_NAME}
+)
+
+
+
+################################################
+#
+#   INSTALL PYTHON FILES AND OTHER DIRECTORIES
+#
+
+# Install scripts
+install(PROGRAMS
+  scripts/python_topmap_interface.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install directories
 foreach (dir launch images conf)
     install(DIRECTORY ${dir}/
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/${dir})
+        DESTINATION share/${PROJECT_NAME}/${dir}
+    )
 endforeach(dir)
 
 
-install(PROGRAMS
-  scripts/python_topmap_interface.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
 
+###################################
+#
+#   DOWNSTREAM DEPENDENCY EXPORT
+#
 
-install(FILES
-  plugin_description.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+# Export information to downstream packages
+ament_export_dependencies(rosidl_default_runtime)
+ament_export_dependencies(ament_cmake)
+ament_export_dependencies(rclcpp)
+ament_export_dependencies(rviz_common)
+ament_export_dependencies(rviz_default_plugins)
+ament_export_dependencies(rviz_ogre_vendor)
+ament_export_dependencies(rviz_rendering)
+ament_export_dependencies(rviz_rendering_plugins)
+ament_export_include_directories(include)
+ament_export_libraries(${target_install_binaries})
+ament_package()

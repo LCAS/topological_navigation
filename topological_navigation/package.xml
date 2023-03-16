@@ -4,7 +4,6 @@
   <version>2.4.0</version>
   <description>The topological_navigation package</description>
 
-
   <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>
 
   <author>Jaime Pulido Fentanes</author>
@@ -13,14 +12,12 @@
 
   <license>MIT</license>
 
-  <!--   <test_depend>gtest</test_depend> -->
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>actionlib_msgs</depend>
   <depend>visualization_msgs</depend>
-  <!-- <depend>rospy_message_converter</depend> -->
   <depend>topological_navigation_msgs</depend>
   <depend>tf2</depend>
 </package>

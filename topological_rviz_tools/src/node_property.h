@@ -1,7 +1,7 @@
 #ifndef NODE_PROPERTY_H
 #define NODE_PROPERTY_H
 
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 #include "rviz/properties/property.h"
 #include "rviz/properties/string_property.h"
 #include "rviz/properties/float_property.h"

@@ -8,7 +8,7 @@
 #include "tag_property.h"
 #include "edge_property.h"
 #include "node_property.h"
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 
 #include "rviz/properties/property_tree_widget.h"
 #include "std_msgs/Time.h"

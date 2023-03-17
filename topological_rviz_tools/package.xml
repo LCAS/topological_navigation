@@ -31,6 +31,7 @@
   <depend>libqt5-widgets</depend> -->
 
   <depend>rclcpp</depend>
+  <depend>libogre-dev</depend>
   <depend>rviz_common</depend>
   <depend>rviz_default_plugins</depend>
   <depend>rviz_ogre_vendor</depend>

@@ -10,7 +10,7 @@ TopmapManager::TopmapManager(rviz::DisplayContext* context)
   , current_(NULL)
   , render_panel_(NULL)
 {
-  ROS_INFO("Initialising node manager");
+  RCLCPP_INFO("Initialising node manager");
   property_model_->setDragDropClass("node-controller");
   // connect(property_model_, SIGNAL(configChanged()), this, SIGNAL(configChanged()));
   // add(new NodeController, -1);

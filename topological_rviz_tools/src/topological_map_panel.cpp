@@ -23,24 +23,24 @@ TopologicalMapPanel::TopologicalMapPanel(QWidget* parent)
   while(!ros::service::exists("/topological_map_manager/remove_topological_node", true))
   {
     r.sleep();
-    ROS_INFO("Waiting for remove_topological_node service\n");
+    RCLCPP_INFO("Waiting for remove_topological_node service\n");
   }
   while(!ros::service::exists("/topological_map_manager/add_tag_to_node", true))
   {
     r.sleep();
-    ROS_INFO("Waiting for add_tag_to_node service\n");
+    RCLCPP_INFO("Waiting for add_tag_to_node service\n");
   }
 
   while(!ros::service::exists("/topological_map_manager/rm_tag_from_node", true))
   {
     r.sleep();
-    ROS_INFO("Waiting for rm_tag_from_node service\n");
+    RCLCPP_INFO("Waiting for rm_tag_from_node service\n");
   }
 
   while(!ros::service::exists("/topological_map_manager/remove_edge", true))
   {
     r.sleep();
-    ROS_INFO("Waiting for remove_edge service\n");
+    RCLCPP_INFO("Waiting for remove_edge service\n");
   }
   delNodeSrv_ = nh.serviceClient<topological_navigation_msgs::RmvNode>("/topological_map_manager/remove_topological_node", true);
   addTagSrv_ = nh.serviceClient<topological_navigation_msgs::AddTag>("/topological_map_manager/add_tag_to_node", true);
@@ -70,7 +70,7 @@ TopologicalMapPanel::TopologicalMapPanel(QWidget* parent)
 
 void TopologicalMapPanel::onInitialize()
 {
-  ROS_INFO("Topmapmanel::OnInitialise");
+  RCLCPP_INFO("Topmapmanel::OnInitialise");
   setTopmapManager(new TopmapManager(NULL));
   // connect topological map update caller to the nodecontroller so we can
   // update on changes to the nodes
@@ -79,7 +79,7 @@ void TopologicalMapPanel::onInitialize()
 
 void TopologicalMapPanel::setTopmapManager(TopmapManager* topmap_man)
 {
-  ROS_INFO("Setting model");
+  RCLCPP_INFO("Setting model");
   properties_view_->setModel(topmap_man->getPropertyModel());
   topmap_man_ = topmap_man;
 
@@ -122,12 +122,12 @@ void TopologicalMapPanel::onDeleteClicked()
     
     if (delNodeSrv_.call(srv)) {
       if (srv.response.success) {
-	ROS_INFO("Successfully removed node %s", srv.request.name.c_str());
+	RCLCPP_INFO("Successfully removed node %s", srv.request.name.c_str());
       } else {
-	ROS_INFO("Failed to remove node %s", srv.request.name.c_str());
+	RCLCPP_INFO("Failed to remove node %s", srv.request.name.c_str());
       }
     } else {
-      ROS_INFO("Failed to get response from server to remove node %s", srv.request.name.c_str());
+      RCLCPP_INFO("Failed to get response from server to remove node %s", srv.request.name.c_str());
     }
   }
 
@@ -146,12 +146,12 @@ void TopologicalMapPanel::onDeleteClicked()
 
     if (delTagSrv_.call(srv)) {
       if (srv.response.success) {
-	ROS_INFO("Successfully removed tag %s from node %s", srv.request.tag.c_str(), srv.request.node[0].c_str());
+	RCLCPP_INFO("Successfully removed tag %s from node %s", srv.request.tag.c_str(), srv.request.node[0].c_str());
       } else {
-	ROS_INFO("Failed to remove tag %s from node %s", srv.request.tag.c_str(), srv.request.node[0].c_str());
+	RCLCPP_INFO("Failed to remove tag %s from node %s", srv.request.tag.c_str(), srv.request.node[0].c_str());
       }
     } else {
-      ROS_INFO("Failed to get response from server to remove tag %s from node %s", srv.request.tag.c_str(), srv.request.node[0].c_str());
+      RCLCPP_INFO("Failed to get response from server to remove tag %s from node %s", srv.request.tag.c_str(), srv.request.node[0].c_str());
     }
   }
 
@@ -161,13 +161,13 @@ void TopologicalMapPanel::onDeleteClicked()
 
     if (delEdgeSrv_.call(srv)) {
       if (srv.response.success) {
-	ROS_INFO("Successfully removed edge %s", srv.request.edge_id.c_str());
+	RCLCPP_INFO("Successfully removed edge %s", srv.request.edge_id.c_str());
 
       } else {
-	ROS_INFO("Failed to remove edge %s", srv.request.edge_id.c_str());
+	RCLCPP_INFO("Failed to remove edge %s", srv.request.edge_id.c_str());
       }
     } else {
-      ROS_INFO("Failed to get response from server to remove edge %s", srv.request.edge_id.c_str());
+      RCLCPP_INFO("Failed to get response from server to remove edge %s", srv.request.edge_id.c_str());
     }
   }
 
@@ -201,13 +201,13 @@ void TopologicalMapPanel::onAddTagClicked()
 
   if (addTagSrv_.call(srv)) {
     if (srv.response.success) {
-      ROS_INFO("Successfully added tag \"%s\" to %d nodes", srv.request.tag.c_str(), nodes.size());
+      RCLCPP_INFO("Successfully added tag \"%s\" to %d nodes", srv.request.tag.c_str(), nodes.size());
       updateTopMap();
     } else {
-      ROS_INFO("Failed to add tag \"%s\" to %d nodes: %s", srv.request.tag.c_str(), nodes.size(), srv.response.meta.c_str());
+      RCLCPP_INFO("Failed to add tag \"%s\" to %d nodes: %s", srv.request.tag.c_str(), nodes.size(), srv.response.meta.c_str());
     }
   } else {
-    ROS_WARN("Failed to get response from service to add tag \"%s\" to %d nodes", srv.request.tag.c_str(), nodes.size());
+    RCLCPP_WARN("Failed to get response from service to add tag \"%s\" to %d nodes", srv.request.tag.c_str(), nodes.size());
   }
 }
   
@@ -242,14 +242,14 @@ void TopologicalMapPanel::renameSelected()
 void TopologicalMapPanel::onCurrentChanged()
 {
   //QString formatted_class_id = NodeController::formatClassId(topmap_man_->getCurrent()->getClassId());
-  // ROS_INFO("CUrrent changed");
+  // RCLCPP_INFO("CUrrent changed");
   // properties_view_->setAnimated(false);
   // topmap_man_->getCurrent()->expand();
   // properties_view_->setAnimated(true);
 }
 
 void TopologicalMapPanel::updateTopMap(){
-  ROS_INFO("updating topmap");
+  RCLCPP_INFO("updating topmap");
   std_msgs::Time t;
   t.data = ros::Time::now();
   update_map_.publish(t);

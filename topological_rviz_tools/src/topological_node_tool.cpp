@@ -2,7 +2,7 @@
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreEntity.h>
 
-#include <ros/console.h>
+#include <rclcpp/logging.hpp>
 
 #include <rviz/viewport_mouse_event.h>
 #include <rviz/visualization_manager.h>
@@ -56,7 +56,7 @@ void TopmapNodeTool::onInitialize()
   while(!ros::service::exists("/topological_map_manager/add_topological_node", true))
   {
     r.sleep();
-    ROS_INFO("Waiting for add_topological_node service\n");
+    RCLCPP_INFO("Waiting for add_topological_node service\n");
   }
 
   addNodeSrv_ = nh.serviceClient<topological_navigation_msgs::AddNode>("/topological_map_manager/add_topological_node", true);
@@ -116,15 +116,15 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
 
       if (addNodeSrv_.call(srv)){
 	if (srv.response.success) {
-	  ROS_INFO("Successfully added node");
+	  RCLCPP_INFO("Successfully added node");
 	  std_msgs::Time t;
 	  t.data = ros::Time::now();
 	  update_map_.publish(t);
 	} else {
-	  ROS_INFO("Failed to add node");
+	  RCLCPP_INFO("Failed to add node");
 	}
       } else {
-	ROS_WARN("Failed to connect to add node service");
+	RCLCPP_WARN("Failed to connect to add node service");
       }
       return Render | Finished;
     }

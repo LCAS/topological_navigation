@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>topological_utils</name>
   <version>2.4.0</version>
@@ -6,16 +7,28 @@
 
   <maintainer email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</maintainer>
 
-  <license>MIT</license>
-
-  <url type="website">https://github.com/strands-project/strands_navigation</url>
-  
   <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
   <author email="contact@gauthampdas.com">gpdas</author>
 
+  <license>MIT</license>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <depend>ament_cmake</depend>
+
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
   <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
-  <depend>topological_navigation</depend>
+  <depend>topological_navigation_msgs</depend>
   <depend>topological_rviz_tools</depend>
-  
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>  
 </package>

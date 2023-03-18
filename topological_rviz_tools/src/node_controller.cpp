@@ -26,14 +26,14 @@ NodeController::~NodeController()
 }
 
 void NodeController::topmapCallback(const topological_navigation_msgs::TopologicalMap::ConstPtr& msg){
-  ROS_INFO("Updating topological map");
+  RCLCPP_INFO("Updating topological map");
   
   // deep copy (because of const), and then sort the array so we display in
   // alphabetical order of node names
   std::vector<topological_navigation_msgs::TopologicalNode> nodes = msg->nodes;
   std::sort(nodes.begin(), nodes.end(), nodeSort);
 
-  ROS_INFO("%s", nodes[nodes.size()-1].name.c_str());
+  RCLCPP_INFO("%s", nodes[nodes.size()-1].name.c_str());
 
   // If we're the ones who made the change, then we only replace the property
   // for the specific nodes that we changed, otherwise replace everything.
@@ -64,7 +64,7 @@ void NodeController::topmapCallback(const topological_navigation_msgs::Topologic
       // remove only the modified child from the child list
       delete takeChild(modifiedChildren_[toDelete[i].first]);
 
-      // ROS_INFO("Adding node with name %s, which matches %s", msg->nodes[i].name.c_str(), nodeName.c_str());
+      // RCLCPP_INFO("Adding node with name %s, which matches %s", msg->nodes[i].name.c_str(), nodeName.c_str());
       NodeProperty* newProp = new NodeProperty("Node", nodes[toDelete[i].second], "");
       addChild(newProp, toDelete[i].second);
       connect(newProp, SIGNAL(nodeModified(Property*)), this, SLOT(updateModifiedNode(Property*)));
@@ -74,7 +74,7 @@ void NodeController::topmapCallback(const topological_navigation_msgs::Topologic
 }
 
 void NodeController::updateModifiedNode(Property* node){
-  ROS_INFO("Child was modified: %s", node->getValue().toString().toStdString().c_str());
+  RCLCPP_INFO("Child was modified: %s", node->getValue().toString().toStdString().c_str());
   modifiedChildren_.push_back(node);
   Q_EMIT childModified();
 }

@@ -27,27 +27,6 @@ find_package(topological_navigation_msgs REQUIRED)
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME})
 
-# Install Python executables
-#install(PROGRAMS
-#  topological_navigation/scripts/localisation.py
-#  topological_navigation/scripts/nav_client.py
-#  topological_navigation/scripts/navigation.py
-#  topological_navigation/scripts/visualise_map.py
-#  topological_navigation/scripts/visualise_map2.py
-#  topological_navigation/scripts/map_manager.py
-#  topological_navigation/scripts/map_manager2.py
-#  topological_navigation/scripts/travel_time_estimator.py
-#  topological_navigation/scripts/topological_prediction.py
-#  topological_navigation/scripts/get_simple_policy.py
-#  topological_navigation/scripts/manual_edge_predictions.py
-#  topological_navigation/scripts/speed_based_prediction.py
-#  topological_navigation/scripts/reconf_at_edges_server.py
-#  topological_navigation/scripts/topological_transform_publisher.py
-#  topological_navigation/scripts/restrictions_manager.py
-#  topological_navigation/scripts/navstats_logger.py
-#  DESTINATION lib/${PROJECT_NAME}
-#)
-
 # Install the launch directory
 install(DIRECTORY
   launch
@@ -62,18 +41,18 @@ install(DIRECTORY
 #
 
 
-install(DIRECTORY
-  tests
-  DESTINATION bin/${PROKECT_NAME}
-  USE_SOURCE_PERMISSIONS
-)
+#install(DIRECTORY
+#  tests
+#  DESTINATION bin/${PROKECT_NAME}
+#  USE_SOURCE_PERMISSIONS
+#)
 
-if (CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-  #add_rostest(tests/travel_time_estimator.test)
-  add_rostest(tests/map_manager.test)
-  #add_rostest(tests/navigation_scenarios.test)
-endif()
+#if (CATKIN_ENABLE_TESTING)
+#  find_package(rostest REQUIRED)
+#  #add_rostest(tests/travel_time_estimator.test)
+#  add_rostest(tests/map_manager.test)
+#  #add_rostest(tests/navigation_scenarios.test)
+#endif()
 
 
 

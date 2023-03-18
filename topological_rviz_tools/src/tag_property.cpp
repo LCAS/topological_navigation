@@ -33,16 +33,16 @@ void TagProperty::updateTag(){
   
   if (tagUpdate_.call(srv)) {
     if (srv.response.success) {
-      ROS_INFO("Successfully updated tag %s to %s", srv.request.tag.c_str(), srv.request.new_tag.c_str());
+      RCLCPP_INFO("Successfully updated tag %s to %s", srv.request.tag.c_str(), srv.request.new_tag.c_str());
       Q_EMIT tagModified();
       tag_value_ = getString().toStdString();
     } else {
-      ROS_INFO("Failed to update tag %s: %s", srv.request.tag.c_str(), srv.response.meta.c_str());
+      RCLCPP_INFO("Failed to update tag %s: %s", srv.request.tag.c_str(), srv.response.meta.c_str());
       reset_value_ = true;
       setValue(QString::fromStdString(tag_value_));
     }
   } else {
-    ROS_WARN("Failed to get response from service to update tag %s", srv.request.tag.c_str());
+    RCLCPP_WARN("Failed to get response from service to update tag %s", srv.request.tag.c_str());
     reset_value_ = true;
     setValue(QString::fromStdString(tag_value_));
   }

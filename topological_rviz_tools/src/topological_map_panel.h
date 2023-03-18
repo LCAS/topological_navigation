@@ -3,7 +3,7 @@
 
 #include <cstdio>
 
-#include "rviz/panel.h"
+#include "rviz_common/panel.h"
 #include "topmap_manager.h"
 #include "tag_property.h"
 #include "edge_property.h"

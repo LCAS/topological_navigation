@@ -12,7 +12,7 @@ EdgeController::EdgeController(const QString& name,
   : rviz::Property(name, "", description, parent, changed_slot, receiver)
 {
   for (int i = 0; i < default_values.size(); i++) {
-    // ROS_INFO("ADDING EDGE %s", default_values[i].edge_id.c_str());
+    // RCLCPP_INFO("ADDING EDGE %s", default_values[i].edge_id.c_str());
     EdgeProperty* newEdge = new EdgeProperty("Edge", default_values[i], "");
     addChild(newEdge);
     connect(newEdge, SIGNAL(edgeModified()), parent, SLOT(nodePropertyUpdated()));

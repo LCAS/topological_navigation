@@ -82,8 +82,8 @@ ament_python_install_package(${PROJECT_NAME})
 #)
 
 # Install the launch directory
-install(DIRECTORY
-  launch
+install(
+  DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/
 )
 
@@ -97,3 +97,9 @@ install(DIRECTORY
 # Export information to downstream packages
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()
+
+
+
+
+
+

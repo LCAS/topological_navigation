@@ -65,6 +65,7 @@ set(srv_files
   "srv/GetTaggedNodes.srv"
   "srv/GetTags.srv"
   "srv/GetNodeTags.srv"
+  "srv/NodeMetadata.srv"
   "srv/GetEdgesBetweenNodes.srv"
   "srv/AddNode.srv"
   "srv/RmvNode.srv"

@@ -4,8 +4,10 @@
   <name>topological_rviz_tools</name>
   <version>3.0.0</version>
   <description>Topological map construction utilising RViZ</description>
+
   <maintainer email="staniasm@cs.bham.ac.uk">Michal Staniaszek</maintainer>
-  <maintainer email="primordia@live.com">james</maintainer>
+  <author email="staniasm@cs.bham.ac.uk">Michal Staniaszek</author>
+  
   <license>BSD</license>
 
   <test_depend>ament_copyright</test_depend>

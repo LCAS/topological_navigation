@@ -5,11 +5,14 @@
   <version>2.4.0</version>
   <description>The topological_navigation package</description>
 
-  <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>
 
-  <author>Jaime Pulido Fentanes</author>
-  <author>Adam Binch</author>
-  <author>Francesco Del Duchetto</author>
+  <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>
+  <maintainer email="mhanheide@lincoln.ac.uk">Marc Hanheide</maintainer>
+  <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
+
+  <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
+  <author email="abinch@sagarobotics.com">Adam Binch</author>
+  <author email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</author>
 
   <license>MIT</license>
 

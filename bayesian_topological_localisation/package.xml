@@ -6,7 +6,10 @@
   <description>The bayesian_topological_localisation package</description>
 
   <maintainer email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</maintainer>
-  <author>Francesco Del Duchetto</author>
+  <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
+  
+  <author email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</author>
+
   <license>MIT</license>
 
   <test_depend>ament_copyright</test_depend>

@@ -5,8 +5,14 @@
   <version>3.4.0</version>
   <description>The topological_navigation_msgs package</description>
 
+
   <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>
   <maintainer email="jpfentanes@sagarobotics.com">Jaime Pulido Fentanes</maintainer>
+  <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
+
+  <author email="abinch@sagarobotics.com">Adam Binch</author>
+  <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
+
   <license>MIT</license>
 
   <test_depend>ament_copyright</test_depend>

@@ -5,10 +5,13 @@
   <version>2.4.0</version>
   <description>The topological_utils package</description>
 
+
   <maintainer email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</maintainer>
+  <maintainer email="mhanheide@lincoln.ac.uk">Marc Hanheide</maintainer>
+  <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
 
   <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
-  <author email="contact@gauthampdas.com">gpdas</author>
+  <author email="contact@gauthampdas.com">Gautham P Das</author>
 
   <license>MIT</license>
 

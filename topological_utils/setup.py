@@ -4,7 +4,7 @@ package_name = 'topological_utils'
 
 setup(
     name=package_name,
-    version='1.3.0',
+    version='3.0.0',
     packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -13,9 +13,9 @@ setup(
     ],
     install_requires=[''],
     zip_safe=True,
-    maintainer='james',
-    maintainer_email='primordia@live.com',
-    description='TODO: Package description',
+    maintainer='Marc Hanheide',
+    maintainer_email='mhanheide@lincoln.ac.uk',
+    description='The ros2 topological_utils package',
     license='MIT',
     tests_require=['pytest'],
     entry_points={

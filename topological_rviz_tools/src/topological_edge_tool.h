@@ -5,7 +5,7 @@
 #include <rviz/tool.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Pose.h>
-#include "topological_rviz_tools/AddEdge.h"
+#include "topological_navigation_msgs/AddEdgeRviz.h"
 #include "std_msgs/Time.h"
 
 namespace rviz

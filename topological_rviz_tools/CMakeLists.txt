@@ -25,13 +25,8 @@ project(topological_rviz_tools)
 
 # Define build tool dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-
-# Define dependencies for messages
-find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(topological_navigation_msgs REQUIRED)
 
 # Define dependencies for RViz Plugins
@@ -40,39 +35,6 @@ find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(pluginlib REQUIRED)
-
-# Group dependencies for easier referencing
-set(srv_deps
-  std_msgs
-  geometry_msgs
-  topological_navigation_msgs
-)
-
-
-########################
-#
-#   FILE DECLARATION
-#
-
-# Declare the custom service files
-set(srv_files
-  "srv/AddEdge.srv"
-)
-
-
-
-#######################
-#
-#   FILE GENERATION
-#
-
-# Generate the files
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${srv_files}
-  DEPENDENCIES ${srv_deps}
-)
-
-
 
 
 
@@ -200,13 +162,7 @@ set(rviz_deps
 # Export information to downstream packages
 ament_export_dependencies(rosidl_default_runtime)
 ament_export_dependencies(ament_cmake)
-ament_export_dependencies(${srv_deps})
 ament_export_dependencies(${rviz_deps})
 ament_export_include_directories(include)
 ament_export_libraries(${target_install_binaries})
-
-
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-    ament_package()
-endif()
-#ament_package()
+ament_package()

@@ -35,6 +35,10 @@ set(msg_deps
 
 # Declare the custom message files
 set(msg_files
+  "msg/DistributionStamped.msg"
+  "msg/PoseObservation.msg"
+  "msg/LikelihoodObservation.msg"
+  "msg/ParticlesState.msg"
   "msg/ClosestEdges.msg"
   "msg/TopologicalMap.msg"
   "msg/TopologicalNode.msg"
@@ -70,6 +74,7 @@ set(srv_files
   "srv/AddNode.srv"
   "srv/RmvNode.srv"
   "srv/AddEdge.srv"
+  "srv/AddEdgeRviz.srv"
   "srv/AddContent.srv"
   "srv/UpdateNodeName.srv"
   "srv/UpdateNodeTolerance.srv"

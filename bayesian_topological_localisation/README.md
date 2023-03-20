@@ -64,12 +64,12 @@ There are two ways an observation can be provided listed below. Each type of obs
       0  ,   0  ,  0, 0, 0, 0, 
       0  ,   0  ,  0, 0, 0, 0]
    ```
-- **service modality**: Call `/robot_1/update_pose_obs` (srv type `bayesian_topological_localisation/UpdatePoseObservation`), the request parameter `pose` is a `geometry_msgs/PoseWithCovarianceStamped` and has to be filled as for the topic modality.
+- **service modality**: Call `/robot_1/update_pose_obs` (srv type `topological_navigation_msgs/UpdatePoseObservation`), the request parameter `pose` is a `geometry_msgs/PoseWithCovarianceStamped` and has to be filled as for the topic modality.
 
 ### 2. Likelihood
-- **topic modality**: To be published to topic `/robot_1/likelihood_obs` (msg type `bayesian_topological_localisation/DistributionStamped`). The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient.
+- **topic modality**: To be published to topic `/robot_1/likelihood_obs` (msg type `topological_navigation_msgs/DistributionStamped`). The message has to contain a list of nodes names with a list of values for the likelihood, one for each node. The message does not need to contain all the nodes in the map, the one that have a likelihood non-zero are sufficient.
   
-- **service modality**: Call `/robot_1/update_likelihood_obs` (srv type `bayesian_topological_localisation/UpdateLikelihoodObservation`), the request parameter `likelihood` is a `bayesian_topological_localisation/DistributionStamped` and has to be filled as for the topic modality.
+- **service modality**: Call `/robot_1/update_likelihood_obs` (srv type `topological_navigation_msgs/UpdateLikelihoodObservation`), the request parameter `likelihood` is a `topological_navigation_msgs/DistributionStamped` and has to be filled as for the topic modality.
   
 ## Getting localisation result
 
@@ -85,13 +85,13 @@ In order to visualize the localisation result - for agent `robot_1` for example 
 The node provides some services to perform inference into the future, the services work on a copy of the particle filter they therefore do not affect to current state of the localisation.
 
 ### Prediction the future distribution
-Call `/robot_1/predict_stateless` (srv type `bayesian_topological_localisation/Predict`) specifying
+Call `/robot_1/predict_stateless` (srv type `topological_navigation_msgs/Predict`) specifying
    - `secs_from_now`: how many seconds into the future you want to predict 
    - `prediction_rate`: the rate of prediction, if `secs_from_now = 10` and `prediction_rate = 1` the node will perform 10 prediction steps to give the final prediction
    - `return_history`: (default `False`) if `True` returns the prediction result at all prediction steps, rather than just the final prediction at `secs_from_now`.
 
 ### Perform an update step from given prior and likelihood
-Call `/robot_1/update_stateless` (srv type `bayesian_topological_localisation/UpdatePriorLikelihoodObservation`) specifying
+Call `/robot_1/update_stateless` (srv type `topological_navigation_msgs/UpdatePriorLikelihoodObservation`) specifying
    - `prior`: The prior distribution of nodes 
    - `likelihood`: the likelihood ditribution.
 Returns the posterior distribution computed from prior and likelihood and the estimated node.

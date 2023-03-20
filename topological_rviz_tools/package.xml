@@ -3,7 +3,7 @@
 <package format="3">
   <name>topological_rviz_tools</name>
   <version>3.0.0</version>
-  <description>Topological map construction utilising RViZ</description>
+  <description>The ros2 rviz-based topological map construction package</description>
 
   <maintainer email="staniasm@cs.bham.ac.uk">Michal Staniaszek</maintainer>
   <author email="staniasm@cs.bham.ac.uk">Michal Staniaszek</author>

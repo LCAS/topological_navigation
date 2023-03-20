@@ -2,8 +2,8 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>topological_navigation</name>
-  <version>2.4.0</version>
-  <description>The topological_navigation package</description>
+  <version>3.0.0</version>
+  <description>The ros2 topological_navigation package</description>
 
 
   <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>

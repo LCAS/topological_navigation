@@ -4,7 +4,6 @@ import rospy
 import math
 import operator
 from std_msgs.msg import Time
-import topological_rviz_tools.srv
 from topological_navigation_msgs.msg import TopologicalMap
 from topological_navigation_msgs.srv import *
 from geometry_msgs.msg import Pose
@@ -27,7 +26,7 @@ class TopmapInterface(object):
         self.new_nodes = 0
 
         self.topmap_sub = rospy.Subscriber("/topological_map", TopologicalMap, self.topmap_cb)
-        self.add_edge_srv = rospy.Service("~add_edge", topological_rviz_tools.srv.AddEdge, self.add_edge)
+        self.add_edge_srv = rospy.Service("~add_edge", topological_navigation_msgs.srv.AddEdgeRviz, self.add_edge)
 
         self.manager_add_edge = rospy.ServiceProxy("/topological_map_manager/add_edges_between_nodes", topological_navigation_msgs.srv.AddEdge)
 
@@ -62,7 +61,7 @@ class TopmapInterface(object):
             self.manager_add_edge(origin=to_name, destination=from_name, action="move_base")
             message += " (bidirectional)"
 
-        return topological_rviz_tools.srv.AddEdgeResponse(True, message)
+        return topological_navigation_msgs.srv.AddEdgeRvizResponse(True, message)
 
     def topmap_cb(self, msg):
         rospy.loginfo("Topological map was updated via callback.")

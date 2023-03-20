@@ -3,7 +3,7 @@ package_name = 'topological_rviz_tools'
 
 setup(
     name=package_name,
-    version='1.3.0',
+    version='3.0.0',
     packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -12,10 +12,10 @@ setup(
     ],
     install_requires=[''],
     zip_safe=True,
-    maintainer='james',
-    maintainer_email='primordia@live.com',
-    description='TODO: Package description',
-    license='MIT',
+    maintainer='Michal Staniaszek',
+    maintainer_email='staniasm@cs.bham.ac.uk',
+    description='The ros2 rviz-based topological map construction package',
+    license='BSD',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [

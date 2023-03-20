@@ -3,7 +3,7 @@
 <package format="3">
   <name>bayesian_topological_localisation</name>
   <version>3.0.0</version>
-  <description>The bayesian_topological_localisation package</description>
+  <description>The ros2 bayesian_topological_localisation package</description>
 
   <maintainer email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</maintainer>
   <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>

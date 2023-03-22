@@ -1,8 +1,8 @@
 # These define the epoch range for the model to cover. 
 # If left blank the component will use the range it was 
 # previously configured with, either at start-up or in the last call
-time start_range
-time end_range
+builtin_interfaces/Time start_range
+builtin_interfaces/Time end_range
 ---
 bool success
 ---

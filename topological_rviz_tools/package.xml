@@ -1,24 +1,47 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>topological_rviz_tools</name>
-  <version>2.4.0</version>
-  <description>
-    Topological map construction
-  </description>
+  <version>3.0.0</version>
+  <description>The ros2 rviz-based topological map construction package</description>
+
   <maintainer email="staniasm@cs.bham.ac.uk">Michal Staniaszek</maintainer>
+  <author email="staniasm@cs.bham.ac.uk">Michal Staniaszek</author>
+  
   <license>BSD</license>
 
-  <author>Michal Staniaszek</author>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
 
-  <depend>qtbase5-dev</depend>
+  <depend>ament_cmake</depend>
+
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
   <depend>std_msgs</depend>
+  <depend>diagnostic_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>rviz2</depend>
   <depend>topological_navigation_msgs</depend>
+
+<!--  <depend>qtbase5-dev</depend>
+  <depend>rviz2</depend>
   <depend>libqt5-core</depend>
   <depend>libqt5-gui</depend>
-  <depend>libqt5-widgets</depend>
+  <depend>libqt5-widgets</depend> -->
+
+  <depend>rclcpp</depend>
+  <depend>libogre-dev</depend>
+  <depend>rviz_common</depend>
+  <depend>rviz_default_plugins</depend>
+  <depend>rviz_ogre_vendor</depend>
+  <depend>rviz_rendering</depend>
 
   <export>
-      <rviz plugin="${prefix}/plugin_description.xml"/>
+    <build_type>ament_cmake</build_type>
+    <!--<rviz plugin="${prefix}/plugin_description.xml"/>-->
   </export>
 </package>
+

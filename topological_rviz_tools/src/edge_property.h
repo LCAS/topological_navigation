@@ -1,7 +1,7 @@
 #ifndef EDGE_PROPERTY_H
 #define EDGE_PROPERTY_H
 
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 #include "rviz/properties/property.h"
 #include "rviz/properties/string_property.h"
 #include "rviz/properties/float_property.h"

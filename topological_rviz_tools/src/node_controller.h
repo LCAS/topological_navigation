@@ -10,10 +10,10 @@
 #include <QFont>
 #include <QKeyEvent>
 
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 
-#include "rviz/config.h"
-#include "rviz/display_context.h"
+#include "rviz_common/config.hpp"
+#include "rviz_common/display_context.h"
 #include "rviz/frame_manager.h"
 #include "rviz/load_resource.h"
 #include "rviz/ogre_helpers/render_system.h"

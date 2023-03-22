@@ -1,14 +1,27 @@
-#!/usr/bin/env python
+from setuptools import setup
 
-from distutils.core import setup
-from catkin_pkg.python_setup import generate_distutils_setup
+package_name = 'bayesian_topological_localisation'
 
-d = generate_distutils_setup(
-   #  don't do this unless you want a globally visible script
-   # scripts=['bin/myscript'], 
-   packages=['bayesian_topological_localisation'],
-   package_dir={'': 'src'}
+setup(
+    name=package_name,
+    version='3.0.0',
+    packages=[package_name],
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+    ],
+    install_requires=['sympy>=1.5.1'],
+    zip_safe=True,
+    maintainer='Francesco Del Duchetto',
+    maintainer_email='fdelduchetto@lincoln.ac.uk',
+    description='The ros2 bayesian_topological_localisation package',
+    license='MIT',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'localisation_node.py = bayesian_topological_localisation.scripts.localisation_node:main'
+        ],
+    },
+
 )
-
-setup(**d)
-

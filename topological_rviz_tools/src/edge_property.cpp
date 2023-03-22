@@ -43,16 +43,16 @@ void EdgeProperty::updateTopvel(){
   
   if (edgeUpdate_.call(srv)) {
     if (srv.response.success) {
-      ROS_INFO("Successfully updated edge %s topvel to %f", edge_id_->getStdString().c_str(), srv.request.top_vel);
+      RCLCPP_INFO("Successfully updated edge %s topvel to %f", edge_id_->getStdString().c_str(), srv.request.top_vel);
       Q_EMIT edgeModified();
       topvel_value_ = top_vel_->getFloat();
     } else {
-      ROS_INFO("Failed to update xy tolerance of %s: %s", edge_id_->getStdString().c_str(), srv.response.message.c_str());
+      RCLCPP_INFO("Failed to update xy tolerance of %s: %s", edge_id_->getStdString().c_str(), srv.response.message.c_str());
       reset_value_ = true;
       top_vel_->setValue(topvel_value_);
     }
   } else {
-    ROS_WARN("Failed to get response from service to update xy tolerance for node %s", edge_id_->getStdString().c_str());
+    RCLCPP_WARN("Failed to get response from service to update xy tolerance for node %s", edge_id_->getStdString().c_str());
     reset_value_ = true;
     top_vel_->setValue(topvel_value_);
   }
@@ -72,16 +72,16 @@ void EdgeProperty::updateAction(){
   
   if (edgeUpdate_.call(srv)) {
     if (srv.response.success) {
-      ROS_INFO("Successfully updated edge %s action to %s", edge_id_->getStdString().c_str(), srv.request.action.c_str());
+      RCLCPP_INFO("Successfully updated edge %s action to %s", edge_id_->getStdString().c_str(), srv.request.action.c_str());
       Q_EMIT edgeModified();
       action_value_ = action_->getStdString();
     } else {
-      ROS_INFO("Failed to update edge action of %s: %s", edge_id_->getStdString().c_str(), srv.response.message.c_str());
+      RCLCPP_INFO("Failed to update edge action of %s: %s", edge_id_->getStdString().c_str(), srv.response.message.c_str());
       reset_value_ = true;
       action_->setValue(QString::fromStdString(action_value_));
     }
   } else {
-    ROS_WARN("Failed to get response from service to update action for edge %s", edge_id_->getStdString().c_str());
+    RCLCPP_WARN("Failed to get response from service to update action for edge %s", edge_id_->getStdString().c_str());
     reset_value_ = true;
     action_->setValue(QString::fromStdString(action_value_));
   }

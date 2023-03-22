@@ -7,4 +7,4 @@ bool return_history
 bool success
 float64[] secs_from_now
 string[] estimated_node
-bayesian_topological_localisation/DistributionStamped[] prob_dist
+topological_navigation_msgs/DistributionStamped[] prob_dist

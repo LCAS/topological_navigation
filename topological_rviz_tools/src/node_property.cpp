@@ -53,10 +53,10 @@ NodeProperty::NodeProperty(const QString& name,
     if (srv.response.success) {
       node_tags = srv.response.tags;
     } else {
-      ROS_WARN("Failed to get tags for node %s", name_.c_str());
+      RCLCPP_WARN("Failed to get tags for node %s", name_.c_str());
     }
   } else {
-    ROS_WARN("Failed to get response from service to get tags for node %s", name_.c_str());
+    RCLCPP_WARN("Failed to get response from service to get tags for node %s", name_.c_str());
   }
   tag_controller_ = new TagController("Tags", node_tags, "", this);
   if (node_tags.size() == 0) {
@@ -90,16 +90,16 @@ void NodeProperty::updateYawTolerance(){
   
   if (toleranceUpdate_.call(srv)) {
     if (srv.response.success) {
-      ROS_INFO("Successfully updated yaw tolerance for node %s to %f", name_.c_str(), srv.request.yaw_tolerance);
+      RCLCPP_INFO("Successfully updated yaw tolerance for node %s to %f", name_.c_str(), srv.request.yaw_tolerance);
       Q_EMIT nodeModified(this);
       yaw_tol_value_ = yaw_tolerance_->getFloat();
     } else {
-      ROS_INFO("Failed to update yaw tolerance for node %s: %s", name_.c_str(), srv.response.message.c_str());
+      RCLCPP_INFO("Failed to update yaw tolerance for node %s: %s", name_.c_str(), srv.response.message.c_str());
       reset_value_ = true;
       yaw_tolerance_->setValue(yaw_tol_value_);
     }
   } else {
-    ROS_WARN("Failed to get response from service to update yaw tolerance for node %s", name_.c_str());
+    RCLCPP_WARN("Failed to get response from service to update yaw tolerance for node %s", name_.c_str());
     reset_value_ = true;
     yaw_tolerance_->setValue(yaw_tol_value_);
   }
@@ -118,16 +118,16 @@ void NodeProperty::updateXYTolerance(){
   
   if (toleranceUpdate_.call(srv)) {
     if (srv.response.success) {
-      ROS_INFO("Successfully updated tolerance for node %s to %f", name_.c_str(), srv.request.xy_tolerance);
+      RCLCPP_INFO("Successfully updated tolerance for node %s to %f", name_.c_str(), srv.request.xy_tolerance);
       Q_EMIT nodeModified(this);
       xy_tol_value_ = xy_tolerance_->getFloat();
     } else {
-      ROS_INFO("Failed to update xy tolerance of %s: %s", name_.c_str(), srv.response.message.c_str());
+      RCLCPP_INFO("Failed to update xy tolerance of %s: %s", name_.c_str(), srv.response.message.c_str());
       reset_value_ = true;
       xy_tolerance_->setValue(xy_tol_value_);
     }
   } else {
-    ROS_WARN("Failed to get response from service to update xy tolerance for node %s", name_.c_str());
+    RCLCPP_WARN("Failed to get response from service to update xy tolerance for node %s", name_.c_str());
     reset_value_ = true;
     xy_tolerance_->setValue(xy_tol_value_);
   }
@@ -145,16 +145,16 @@ void NodeProperty::updateNodeName(){
   
   if (nameUpdate_.call(srv)) {
     if (srv.response.success) {
-      ROS_INFO("Successfully updated node name %s to %s", name_.c_str(), srv.request.new_name.c_str());
+      RCLCPP_INFO("Successfully updated node name %s to %s", name_.c_str(), srv.request.new_name.c_str());
       Q_EMIT nodeModified(this);
       name_ = getValue().toString().toStdString();
     } else {
-      ROS_INFO("Failed to update node name of %s to %s: %s", name_.c_str(), srv.request.new_name.c_str(), srv.response.message.c_str());
+      RCLCPP_INFO("Failed to update node name of %s to %s: %s", name_.c_str(), srv.request.new_name.c_str(), srv.response.message.c_str());
       reset_value_ = true;
       setValue(QString::fromStdString(name_));
     }
   } else {
-    ROS_WARN("Failed to get response from service to update node %s", name_.c_str());
+    RCLCPP_WARN("Failed to get response from service to update node %s", name_.c_str());
     reset_value_ = true;
     setValue(QString::fromStdString(name_));
   }

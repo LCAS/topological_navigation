@@ -71,10 +71,10 @@ void PoseProperty::positionUpdated()
   srv.request.pose.orientation.w = orientation_w_->getFloat();
   
   if (poseUpdate_.call(srv)) {
-    ROS_INFO("Successfully updated pose for node %s", srv.request.name.c_str());
+    RCLCPP_INFO("Successfully updated pose for node %s", srv.request.name.c_str());
     Q_EMIT poseModified();
   } else {
-    ROS_WARN("Failed to update pose for node %s", srv.request.name.c_str());
+    RCLCPP_WARN("Failed to update pose for node %s", srv.request.name.c_str());
   }
 }
 

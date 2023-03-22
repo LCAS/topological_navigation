@@ -2,7 +2,7 @@
 #define TOPMAP_MANAGER_H
 
 #include "node_controller.h"
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 
 #include <stdio.h>
 #include <sstream>
@@ -11,7 +11,7 @@
 #include <QObject>
 #include <QStringList>
 
-#include "rviz/display_context.h"
+#include "rviz_common/display_context.h"
 #include "rviz/pluginlib_factory.h"
 #include "rviz/properties/enum_property.h"
 #include "rviz/properties/property.h"

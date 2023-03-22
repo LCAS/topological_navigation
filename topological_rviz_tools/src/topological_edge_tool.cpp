@@ -2,7 +2,7 @@
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreEntity.h>
 
-#include <ros/console.h>
+#include <rclcpp/logging.hpp>
 
 #include <rviz/viewport_mouse_event.h>
 #include <rviz/visualization_manager.h>
@@ -69,9 +69,9 @@ void TopmapEdgeTool::onInitialize()
   while(!ros::service::exists("/topmap_interface/add_edge", true))
   {
     r.sleep();
-    ROS_INFO("Waiting for add_edge service\n");
+    RCLCPP_INFO("Waiting for add_edge service\n");
   }
-  addEdgeSrv_ = nh.serviceClient<topological_rviz_tools::AddEdge>("/topmap_interface/add_edge", true);
+  addEdgeSrv_ = nh.serviceClient<topological_navigation_msgs::AddEdgeRviz>("/topmap_interface/add_edge", true);
   markerPub_ = nh.advertise<visualization_msgs::Marker>("edge_tool_marker", 0);
   update_map_ = nh.advertise<std_msgs::Time>("/update_map", 5);
 }
@@ -142,7 +142,7 @@ int TopmapEdgeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
       } else {
 	// On the second click, send the edge to the service to be added to the
 	// map, and then reset the poses.
-	topological_rviz_tools::AddEdge srv;
+	topological_navigation_msgs::AddEdgeRviz srv;
 	srv.request.first = firstClick_;
 	srv.request.second = event_pose;
 	srv.request.max_distance = 5.0; // be relatively accurate with clicks
@@ -151,15 +151,15 @@ int TopmapEdgeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
 
 	if (addEdgeSrv_.call(srv)){
 	  if (srv.response.success) {
-	    ROS_INFO("Successfully added edge: %s", srv.response.message.c_str());
+	    RCLCPP_INFO("Successfully added edge: %s", srv.response.message.c_str());
 	    std_msgs::Time t;
 	    t.data = ros::Time::now();
 	    update_map_.publish(t);
 	  } else {
-	    ROS_INFO("Failed to add edge: %s", srv.response.message.c_str());
+	    RCLCPP_INFO("Failed to add edge: %s", srv.response.message.c_str());
 	  }
 	} else {
-	  ROS_WARN("Failed to add edge: %s", srv.response.message.c_str());
+	  RCLCPP_WARN("Failed to add edge: %s", srv.response.message.c_str());
 	}
 	edgeMarker_.action = visualization_msgs::Marker::DELETE;
 	edgeMarker_.points.clear();

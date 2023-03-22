@@ -9,16 +9,18 @@ import yaml, datetime, json
 import re, uuid, copy, os
 import multiprocessing, math
 import importlib
+import traceback
 
 import rclpy
 from rclpy.parameter import Parameter
 import rosidl_runtime_py
 import tf2_ros
-
+from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy
 
 from topological_navigation_msgs.msg import *
+import topological_navigation_msgs.msg
 import std_msgs.msg
-from geometry_msgs.msg import Vector3, Quaternion, TransformStamped
+from geometry_msgs.msg import Vector3, Quaternion, TransformStamped, Pose
 
 from std_srvs.srv import Trigger, Empty
 import topological_navigation_msgs.srv as tn_srv
@@ -40,7 +42,7 @@ class NoAliasDumper(yaml.SafeDumper):
 class map_manager_2(rclpy.node.Node):
 
     def __init__(self, advertise_srvs=True):
-        super().__init__('map_manager_2')
+        super().__init__('topological_map_manager_2')
 
         self.cache_maps = self.get_parameter_or("~cache_topological_maps", Parameter('bool', Parameter.Type.BOOL, False)).get_parameter_value()
 
@@ -52,7 +54,7 @@ class map_manager_2(rclpy.node.Node):
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
-
+	
         self.goal_mappings = {}
         #package_path = packages.get_package_share_directory('topological_navigation')
         #mb_goal_f = "{}/config/{}".format(package_path, "move_base_goal.yaml")
@@ -162,17 +164,22 @@ class map_manager_2(rclpy.node.Node):
             self.declare_parameter('topological_map2_filename', os.path.split(self.filename)[1])
             self.declare_parameter('topological_map2_path', os.path.split(self.filename)[0])
 
-        self.map_pub = self.create_publisher(std_msgs.msg.String, '/topological_map_2', 1)
-        self.map_pub.publish(std_msgs.msg.String(json.dumps(self.tmap2)))
+
+        qos = QoSProfile(depth=10, 
+                         reliability=ReliabilityPolicy.RELIABLE,
+                         history=HistoryPolicy.KEEP_LAST,
+                         durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.map_pub = self.create_publisher(std_msgs.msg.String, '/topological_map_2', qos)
+        self.map_pub.publish(std_msgs.msg.String(data=json.dumps(self.tmap2)))
         self.names = self.create_list_of_nodes()
 
-        self.broadcaster = tf2_ros.transform_broadcaster.StaticTransformBroadcaster(self)
+        self.broadcaster = tf2_ros.transform_broadcaster.TransformBroadcaster(self)
         self.broadcast_transform()
 
         self.convert_to_legacy = self.get_parameter_or("~convert_to_legacy", Parameter('bool', Parameter.Type.BOOL, True)).get_parameter_value()
         
         if self.tmap2 and self.convert_to_legacy:
-            self.points_pub = self.create_publisher(topological_navigation_msgs.msg.TopologicalMap, '/topological_map', 1)
+            self.points_pub = self.create_publisher(topological_navigation_msgs.msg.TopologicalMap, '/topological_map', qos)
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
 
@@ -278,8 +285,8 @@ class map_manager_2(rclpy.node.Node):
     def broadcast_transform(self):
 
         trans, rot = Vector3(), Quaternion()
-        rosidl_runtime_py.set_message_fields.set_message_fields(trans, self.transformation["translation"])
-        rosidl_runtime_py.set_message_fields.set_message_fields(rot, self.transformation["rotation"])
+        rosidl_runtime_py.set_message_fields(trans, self.transformation["translation"])
+        rosidl_runtime_py.set_message_fields(rot, self.transformation["rotation"])
 
         msg = TransformStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -1466,7 +1473,7 @@ class map_manager_2(rclpy.node.Node):
                 msg.pointset = point_set
 
                 msg.pose = Pose()
-                rosidl_runtime_py.set_message_fields.set_message_fields(msg.pose, node["pose"]["pose"])
+                rosidl_runtime_py.set_message_fields(msg.pose, node["node"]["pose"])
 
                 msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
                 msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]
@@ -1496,8 +1503,8 @@ class map_manager_2(rclpy.node.Node):
                 points.nodes.append(msg)
 
         except Exception as e:
-            self.get_logger().error(
-                "Cannot convert map to the legacy format. The conversion requires all fields of the legacy map to be set.")
+            print(traceback.format_exc())
+            print("Cannot convert map to the legacy format. The conversion requires all fields of the legacy map to be set.")
             points = topological_navigation_msgs.msg.TopologicalMap()
 
         return points

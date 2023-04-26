@@ -36,6 +36,7 @@ set(msg_deps
 # Declare the custom message files
 set(msg_files
   "msg/DistributionStamped.msg"
+  "msg/ExecutePolicyModeGoal.msg"
   "msg/PoseObservation.msg"
   "msg/LikelihoodObservation.msg"
   "msg/ParticlesState.msg"

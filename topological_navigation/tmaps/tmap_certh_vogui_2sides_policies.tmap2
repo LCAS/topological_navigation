@@ -1,0 +1,1782 @@
+meta:
+  last_updated: 2023-03-08_21-15-05
+metric_map: tmap_certh1
+name: tmap_certh1
+nodes:
+- meta:
+    map: tmap_certh1
+    node: c0_p0_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: &id001 []
+      edge_id: c0_p0_a_c0_p1_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p1_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p0_a_c0_p2_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p2_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p0_a_c0_p3_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p3_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p0_a_c0_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p0_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -6.4902220661681
+        y: -1.1516565157102336
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p0_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p0_b_c0_sa
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_sa
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p0_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -6.4902220661681
+        y: -1.1516565157102336
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p1_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p1_a_c0_p2_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p2_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p1_a_c0_p3_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p3_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p1_a_c0_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p1_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -5.990600211158603
+        y: -1.8865568063110014
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p1_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p1_b_c0_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p1_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -5.990600211158603
+        y: -1.8865568063110014
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p2_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p2_a_c0_p3_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p3_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p2_a_c0_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p2_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -5.490978356149106
+        y: -2.621457096911769
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p2_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p2_b_c0_p1_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p1_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p2_b_c0_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p2_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -5.490978356149106
+        y: -2.621457096911769
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p3_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p3_a_c0_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p3_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -4.991356501139609
+        y: -3.356357387512537
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p3_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p3_b_c0_p2_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p2_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p3_b_c0_p1_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p1_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p3_b_c0_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p3_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -4.991356501139609
+        y: -3.356357387512537
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p4_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: /nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p4_a_c0_sb
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_sb
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p4_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -4.491734646130112
+        y: -4.091257678113305
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_p4_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p4_b_c0_p3_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p3_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p4_b_c0_p2_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p2_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p4_b_c0_p1_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p1_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_p4_b_c0_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_p4_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -4.491734646130112
+        y: -4.091257678113305
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_sa
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: /nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_sa_c0_p0_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p0_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: row_change/move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_sa_c1_sa
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_sa
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_sa
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -6.989843921177597
+        y: -0.41675622510946564
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.3
+    restrictions_planning: 'True'
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c0_sb
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: /nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_sb_c0_p4_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_p4_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: row_change/move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c0_sb_c1_sb
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_sb
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c0_sb
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -3.992112791120615
+        y: -4.826157968714073
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.3
+    restrictions_planning: 'True'
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p0_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p0_a_c1_p1_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p1_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p0_a_c1_p2_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p2_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p0_a_c1_p3_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p3_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p0_a_c1_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p0_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -8.167846282129268
+        y: -2.2785014244254427
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p0_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: /nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p0_b_c1_sa
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_sa
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p0_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -8.167846282129268
+        y: -2.2785014244254427
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p1_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p1_a_c1_p2_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p2_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p1_a_c1_p3_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p3_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p1_a_c1_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p1_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -7.615768107747059
+        y: -3.0744625878089407
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p1_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p1_b_c1_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p1_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -7.615768107747059
+        y: -3.0744625878089407
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p2_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p2_a_c1_p3_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p3_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p2_a_c1_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p2_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -7.06368993336485
+        y: -3.870423751192439
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p2_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p2_b_c1_p1_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p1_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p2_b_c1_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p2_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -7.06368993336485
+        y: -3.870423751192439
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p3_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p3_a_c1_p4_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p4_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p3_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -6.5116117589826406
+        y: -4.6663849145759375
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p3_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p3_b_c1_p2_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p2_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p3_b_c1_p1_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p1_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p3_b_c1_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p3_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -6.5116117589826406
+        y: -4.6663849145759375
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p4_a
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: /nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p4_a_c1_sb
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_sb
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p4_a
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -5.959533584600432
+        y: -5.462346077959436
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_p4_b
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p4_b_c1_p3_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p3_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p4_b_c1_p2_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p2_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p4_b_c1_p1_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p1_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_p4_b_c1_p0_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p0_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_p4_b
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -5.959533584600432
+        y: -5.462346077959436
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.1
+    restrictions_planning: ~allowedside_a
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_sa
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: /nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_sa_c1_p0_a
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p0_a
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: row_change/move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_sa_c0_sa
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_sa
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_sa
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.8825357946706653
+        x: 0.0
+        y: 0.0
+        z: -0.4702452244574284
+      position:
+        x: -8.719924456511478
+        y: -1.4825402610419443
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.3
+    restrictions_planning: 'True'
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+- meta:
+    map: tmap_certh1
+    node: c1_sb
+    pointset: tmap_certh1
+  node:
+    edges:
+    - action: /nav_policy_goal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_sb_c1_p4_b
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c1_p4_b
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: row_change/move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: *id001
+      edge_id: c1_sb_c0_sb
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: c0_sb
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: c1_sb
+    parent_frame: map
+    pose:
+      orientation:
+        w: 0.4713595518858964
+        x: 0.0
+        y: 0.0
+        z: 0.8819411391050578
+      position:
+        x: -5.407455410218223
+        y: -6.258307241342934
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.3
+    restrictions_planning: 'True'
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.34645482469465
+      y: 0.143506287138173
+    - x: 0.143506287138174
+      y: 0.34645482469465
+    - x: -0.143506287138173
+      y: 0.34645482469465
+    - x: -0.34645482469465
+      y: 0.1435062871381743
+    - x: -0.346454824694651
+      y: -0.1435062871381743
+    - x: -0.1435062871381777
+      y: -0.346454824694649
+    - x: 0.143506287138169
+      y: -0.346454824694652
+    - x: 0.346454824694649
+      y: -0.1435062871381777
+pointset: tmap_certh1
+transformation:
+  child: topo_map
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0

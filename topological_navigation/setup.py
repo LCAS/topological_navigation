@@ -39,7 +39,10 @@ setup(
             'topological_transform_publisher.py = topological_navigation.scripts.topological_transform_publisher:main',
             'travel_time_estimator.py = topological_navigation.scripts.travel_time_estimator:main',
             'visualise_map2.py = topological_navigation.scripts.visualise_map2:main',
-            'visualise_map.py = topological_navigation.scripts.visualise_map:main'
+            'visualise_map.py = topological_navigation.scripts.visualise_map:main',
+            'visualise_map_ros2.py = topological_navigation.scripts.visualise_map_ros2:main',
+            'topomap_marker.py = topological_navigation.topomap_marker:main',
+            'policy_marker.py = topological_navigation.policy_marker:main'
         ],
     },
 

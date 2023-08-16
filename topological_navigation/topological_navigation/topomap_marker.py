@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
+from std_msgs.msg import String
 from visualization_msgs.msg import *
 from geometry_msgs.msg import Point
 
@@ -15,16 +16,30 @@ class TopologicalVis(Node):
 
     def __init__(self):
         super().__init__('topological_map_markers')
-        self.map = None
+        qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+
+        # Marker Publisher
         self.map_markers = MarkerArray()
         self.topmap_pub = self.create_publisher(MarkerArray, '~/vis', 2)
         self.topmap_pub.publish(self.map_markers)
-        qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+
+        # Rescaller Subscriber
+        self.scale = 1
+        self.rescale_sub = self.create_subscription(String, '~/rescale', self.rescale_callback, qos)
+
+        # Map Subscriber
+        self.map = None
         self.map_sub = self.create_subscription(TopologicalMap, '/topological_map', self.map_callback, qos)
         self.get_logger().info('map visualiser init complete')
 
+
+    def rescale_callback(self, msg):
+        self.get_logger().info('new scale recieved')
+        self.get_logger().info(f'scale: {msg.data}')
+        self.scale = int(msg.data)
+        self.map_callback(self.map)
+
     def map_callback(self, msg):
-        print(dir(msg))
         self.get_logger().info('map callback triggered')
         self.get_logger().info(f'name: {msg.name}')
         self.get_logger().info(f'map: {msg.map}')
@@ -62,6 +77,7 @@ class TopologicalVis(Node):
         for i, marker in enumerate(self.map_markers.markers):
             marker.id = i
         self.topmap_pub.publish(self.map_markers)
+        self.get_logger().info('new map visual published')
 
 
     def get_legend_marker(self, action, col_id):
@@ -74,7 +90,7 @@ class TopologicalVis(Node):
         marker.pose.position.y= 0.0
         marker.pose.position.z= 0.2
         marker.pose.orientation.w= 1.0
-        marker.scale.z = 0.1
+        marker.scale.z = self.scale * 0.1
         marker.color.a = 0.5
         marker.color.r = float(col[0])
         marker.color.g = float(col[1])
@@ -88,7 +104,7 @@ class TopologicalVis(Node):
         marker.type = marker.TEXT_VIEW_FACING
         marker.text= node.name
         marker.pose = node.pose
-        marker.scale.z = 0.12
+        marker.scale.z = self.scale * 0.12
         marker.color.a = 0.9
         marker.color.r = 0.3
         marker.color.g = 0.3
@@ -108,7 +124,7 @@ class TopologicalVis(Node):
         if to_node:
             V2= to_node.pose.position
             marker.pose.orientation.w= 1.0
-            marker.scale.x = 0.1
+            marker.scale.x = self.scale * 0.1
             marker.color.a = 0.5
             marker.color.r = float(col[0])
             marker.color.g = float(col[1])
@@ -125,9 +141,9 @@ class TopologicalVis(Node):
         marker = Marker()
         marker.header.frame_id = "map"
         marker.type = Marker.SPHERE
-        marker.scale.x = 0.2
-        marker.scale.y = 0.2
-        marker.scale.z = 0.2
+        marker.scale.x = self.scale * 0.2
+        marker.scale.y = self.scale * 0.2
+        marker.scale.z = self.scale * 0.2
         marker.color.a = 0.4
         marker.color.r = 0.2
         marker.color.g = 0.2

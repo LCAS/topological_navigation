@@ -36,7 +36,7 @@ class TopologicalVis(Node):
     def rescale_callback(self, msg):
         self.get_logger().info('new scale recieved')
         self.get_logger().info(f'scale: {msg.data}')
-        self.scale = int(msg.data)
+        self.scale = float(msg.data)
         self.map_callback(self.map)
 
     def map_callback(self, msg):
@@ -159,7 +159,7 @@ class TopologicalVis(Node):
         marker.header.frame_id = "map"
         marker.type = marker.LINE_STRIP
         marker.pose.orientation.w= 1.0
-        marker.scale.x = 0.1
+        marker.scale.x = self.scale * 0.1
         marker.color.a = 0.8
         marker.color.r = 0.7
         marker.color.g = 0.1

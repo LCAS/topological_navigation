@@ -25,7 +25,7 @@ def create_cross_map(width, height, nodeSeparation):
     # horizontal nodes
     prevNodeName = ''
     for x in range(-(width/2),(width/2)+1):
-    	if x != 0:
+        if x != 0:
             nodeName = 'h_%s'%x
             node = TopologicalNode(name=nodeName, pose=Pose(position=Point(x * nodeSeparation, yOrigin, 0)))
             nodes[nodeName] = node

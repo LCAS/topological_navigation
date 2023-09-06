@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #########################################################################################################
-import rospy
+import rclpy #rospy
 from topological_navigation.tmap_utils import *
 from topological_navigation_msgs.msg import NavRoute
 

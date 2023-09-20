@@ -3,7 +3,7 @@ import rospy
 import dynamic_reconfigure.client
 import numpy as np
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 from geometry_msgs.msg import Pose, Quaternion
 from topological_navigation.point2line import pnt2line
 from topological_navigation.tmap_utils import *
@@ -18,9 +18,8 @@ from std_msgs.msg import String
 # Here extend the class AbstractRestriction to create a new restriction.
 # Once its defined here it will be automatically imported by the RestrictionsManager.
 ##
-class AbstractRestriction():
+class AbstractRestriction(ABC):
     """ Abstract definition of a restriction """
-    __metaclass__ = ABCMeta
 
     robot_state = {}
     DEFAULT_EVALUATION = True

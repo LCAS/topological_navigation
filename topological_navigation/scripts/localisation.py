@@ -326,6 +326,9 @@ class TopologicalNavLoc(object):
         else:
             self.nogos=[]
 
+        if not self.nogos:
+            self.nogos=[]
+
         rospy.loginfo("Creating localise by topic subscribers...")
 
         for i in self.subscribers:
@@ -484,12 +487,15 @@ class TopologicalNavLoc(object):
         try:
             rospy.wait_for_service('/topological_map_manager2/get_tagged_nodes', timeout=3)
             get_prediction = rospy.ServiceProxy('/topological_map_manager2/get_tagged_nodes', topological_navigation_msgs.srv.GetTaggedNodes)
-                
+            
             resp1 = get_prediction('no_go')
             return resp1.nodes
         
         except rospy.ServiceException as e:
             rospy.logerr("Service call failed: %s"%e)
+
+        except rospy.exceptions.ROSException as e:
+            rospy.logerr("fuck it, idk... Service call failed: %s"%e)
 
 
     def point_in_poly(self,node,pose):

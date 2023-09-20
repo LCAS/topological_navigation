@@ -369,7 +369,7 @@ if __name__ == '__main__':
     clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     for restriction in clsmembers:
         if issubclass(restriction[1], AbstractRestriction) and not inspect.isabstract(restriction[1]):
-            cls_argnames = inspect.getargspec(restriction[1].__init__).args
+            cls_argnames = inspect.getfullargspec(restriction[1].__init__).args
             args = {}
             if "robots" in cls_argnames:
                 args["robots"] = _robots

@@ -915,6 +915,7 @@ class TopologicalNavServer(object):
         """
         print("line 904")
 
+        # Set 
         is_last_edge_in_route = idx >= len(route.edge_id) - 1
         if is_last_edge_in_route:
             print('NODE IS LAST IN ROUTE')
@@ -1005,6 +1006,7 @@ class TopologicalNavServer(object):
                 inc = 1
                 return result, inc
 
+        print(self.robot_odometry)
         self.edge_action_manager.initialise(edge, destination_node, origin_node, is_last_edge_in_route=is_last_edge_in_route, robot_odometry=self.robot_odometry)
         self.edge_action_manager.execute()
         

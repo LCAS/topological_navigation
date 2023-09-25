@@ -156,7 +156,7 @@ class EdgeActionManager(object):
 
         # If initial offset is larger than flipped offset, use the flipped offset as this is more accurate
         if initial_offset > flipped_offset:
-            quart = tf.transformations.quaternion_from_euler(0.0, 0.0, flipped_rot-math.pi)
+            quart = tf.transformations.quaternion_from_euler(0.0, 0.0, flipped_rot)
             goal_args['target_pose']['pose']['orientation']['x'] = quart[0]
             goal_args['target_pose']['pose']['orientation']['y'] = quart[1]
             goal_args['target_pose']['pose']['orientation']['z'] = quart[2]

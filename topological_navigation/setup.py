@@ -42,6 +42,7 @@ setup(
             'visualise_map.py = topological_navigation.scripts.visualise_map:main',
             'visualise_map_ros2.py = topological_navigation.scripts.visualise_map_ros2:main',
             'topomap_marker.py = topological_navigation.topomap_marker:main',
+            'topomap_marker2.py = topological_navigation.topomap_marker2:main',
             'policy_marker.py = topological_navigation.policy_marker:main'
         ],
     },

@@ -31,7 +31,8 @@
   <depend>visualization_msgs</depend>
   <depend>topological_navigation_msgs</depend>
 
-  <depend>tf2</depend>
+  <depend>python-transforms3d-pip</depend>
+  <depend>tf_transformations</depend>
 
   <export>
     <build_type>ament_python</build_type>

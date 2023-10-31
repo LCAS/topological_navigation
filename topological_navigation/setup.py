@@ -1,17 +1,20 @@
+from setuptools import find_packages
 from setuptools import setup
+from glob import glob
 
 package_name = 'topological_navigation'
 
 setup(
     name=package_name,
     version='3.0.0',
-    packages=[package_name],
+    packages=find_packages(),
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/config/', glob('config/*', recursive=True))
     ],
-    install_requires=['sympy>=1.5.1'],
+    install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Adam Binch',
     maintainer_email='abinch@sagarobotics.com',
@@ -48,6 +51,7 @@ setup(
     },
 
 )
+
 
 
 

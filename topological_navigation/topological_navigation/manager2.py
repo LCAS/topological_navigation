@@ -16,7 +16,7 @@ from rclpy.parameter import Parameter
 import rosidl_runtime_py
 import tf2_ros
 from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy
-
+from ament_index_python.packages import get_package_share_directory
 from topological_navigation_msgs.msg import *
 import topological_navigation_msgs.msg
 import std_msgs.msg
@@ -44,23 +44,24 @@ class map_manager_2(rclpy.node.Node):
     def __init__(self, advertise_srvs=True):
         super().__init__('topological_map_manager_2')
 
-        self.cache_maps = self.get_parameter_or("~cache_topological_maps", Parameter('bool', Parameter.Type.BOOL, False)).get_parameter_value()
+        self.cache_maps = self.get_parameter_or("~cache_topological_maps", Parameter('bool', Parameter.Type.BOOL, False)).value
+        self.auto_write = self.get_parameter_or("~auto_write_topological_maps", Parameter('bool', Parameter.Type.BOOL, False)).value
+        
+        package_path = get_package_share_directory('topological_navigation')
+        nav_config = str(os.path.join(package_path, 'config', 'move_base_goal.yaml'))
 
-        self.auto_write = self.get_parameter_or("~auto_write_topological_maps", Parameter('bool', Parameter.Type.BOOL, False)).get_parameter_value()
-
+        self.nav_config = str(self.get_parameter_or("nav_config", Parameter('str', Parameter.Type.STRING, nav_config)).value)
         self.get_logger().info("cache_topological_maps: {}".format(self.cache_maps))
         self.get_logger().info("auto_write_topological_maps: {}".format(self.auto_write))
+        self.get_logger().info("nav config file: {}".format(self.nav_config))
 
         self.cache_dir = os.path.join(os.path.expanduser("~"), ".ros", "topological_maps")
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
 	
         self.goal_mappings = {}
-        #package_path = packages.get_package_share_directory('topological_navigation')
-        #mb_goal_f = "{}/config/{}".format(package_path, "move_base_goal.yaml")
-
-        mb_goal_f = os.path.join(topological_navigation.__path__[0], '..', 'config', 'move_base_goal.yaml')
-        with open(mb_goal_f, "r") as f:
+        
+        with open(self.nav_config, "r") as f:
             self.move_base_goal = yaml.safe_load(f)["topological_navigation/move_base_goal"]
 
         if advertise_srvs:

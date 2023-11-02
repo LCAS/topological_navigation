@@ -184,6 +184,14 @@ class map_manager_2(rclpy.node.Node):
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
 
+        self.create_timer(10.0, self.topnav_map_pub_callback)
+
+
+    def topnav_map_pub_callback(self, ):
+        if self.tmap2: 
+            self.map_pub.publish(std_msgs.msg.String(data=json.dumps(self.tmap2)))
+        else:
+            self.get_logger().warning('there is no topological map...', skip_first=True)
 
     def get_time(self):
         return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -334,17 +342,18 @@ class map_manager_2(rclpy.node.Node):
         return True, json.dumps(self.tmap2)
 
 
-    def get_tagged_cb(self, req):
+    def get_tagged_cb(self, req, res):
         """
         Returns a list of nodes that have a given tag
         """
-        names=[]
+        res.nodes=[]
+        self.get_logger().info("======= tag {} ".format(req.tag))
         for node in self.tmap2["nodes"]:
-            if "tag" in node["meta"]:
-                if req.tag in node["meta"]["tag"]:
-                    names.append(node["node"]["name"])
-
-        return [names]
+            if "name" in node["meta"]:
+                if req.tag in node["meta"]["name"]:
+                    res.nodes.append(node["node"]["name"])
+                    self.get_logger().info("======= adding node info {}".format(node["node"]["name"]))
+        return res 
 
 
     def get_tags_cb(self, req):

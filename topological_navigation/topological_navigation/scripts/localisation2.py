@@ -124,15 +124,15 @@ class TopologicalNavLoc(rclpy.node.Node):
 
         self.subscribers=[]
 
-        self.qos = QoSProfile(depth=10, 
+        self.qos = QoSProfile(depth=1, 
                          reliability=ReliabilityPolicy.RELIABLE,
                          history=HistoryPolicy.KEEP_LAST,
                          durability=DurabilityPolicy.TRANSIENT_LOCAL)
         
-        self.wp_pub = self.create_publisher(String, 'closest_node', 1)
-        self.wd_pub = self.create_publisher(Float32,'closest_node_distance', 1)
-        self.cn_pub = self.create_publisher(String, 'current_node', 1)
-        self.ce_pub = self.create_publisher(ClosestEdges, 'closest_edges', 1)
+        self.wp_pub = self.create_publisher(String, 'closest_node', self.qos)
+        self.wd_pub = self.create_publisher(Float32,'closest_node_distance', self.qos)
+        self.cn_pub = self.create_publisher(String, 'current_node', self.qos)
+        self.ce_pub = self.create_publisher(ClosestEdges, 'closest_edges', self.qos)
 
         self.force_check = True
         self.rec_map = False
@@ -146,12 +146,13 @@ class TopologicalNavLoc(rclpy.node.Node):
 
         self.service_get_tagged_done_event  = Event()
         self.callback_group = ReentrantCallbackGroup()
+        self.callback_localize_pose = ReentrantCallbackGroup()
         self.timer_cb_group = ReentrantCallbackGroup()
 
         self.get_tagged_srv = self.create_service(GetTaggedNodes, '/topological_localisation/get_nodes_with_tag'
                                 ,  self.get_nodes_wtag_cb, callback_group=self.callback_group)
         self.loc_pos_srv = self.create_service(LocalisePose, '/topological_localisation/localise_pose'
-                                               , self.localise_pose_cb, callback_group=self.callback_group)
+                                               , self.localise_pose_cb, callback_group=self.callback_localize_pose)
 
         self.subs_topmap = self.create_subscription(String, '/topological_map_2', self.MapCallback, 1)
         self.subs_topmap  # prevent unused variable warning
@@ -160,9 +161,9 @@ class TopologicalNavLoc(rclpy.node.Node):
         
         self.tf_buffer = Buffer()
         self.listener = TransformListener(self.tf_buffer, self)
-        self.rate = self.create_rate(10.0)
+        self.rate = self.create_rate(20.0)
         
-        self.create_timer(10.0, self.pose_callback, callback_group=self.timer_cb_group)
+        self.create_timer(1.0, self.pose_callback, callback_group=self.timer_cb_group)
 
         
     def get_distances_to_pose(self, pose):
@@ -225,7 +226,6 @@ class TopologicalNavLoc(rclpy.node.Node):
             msg.orientation.w = trans.transform.rotation.w 
             
             self.current_pose = msg   
-                
             if(self.throttle%self.throttle_val==0):
                 self.distances = []
                 self.distances = self.get_distances_to_pose(msg)
@@ -550,9 +550,8 @@ class TopologicalNavLoc(rclpy.node.Node):
 
 
 ###################################################################################################################
-# def main(args=None):
-if __name__ == '__main__':
-    rclpy.init(args=None)
+def main(args=None):
+    rclpy.init(args=args)
     wtags = True
     node = TopologicalNavLoc('topological_localisation', wtags)
     executor = MultiThreadedExecutor()
@@ -564,14 +563,8 @@ if __name__ == '__main__':
     node.destroy_node()
     rclpy.shutdown()
 
-    
-    
-# if __name__ == '__main__':
-#     rclpy.init_node('topological_localisation')
-#     wtags=True
-#     argc = len(sys.argv)
-#     if argc > 1:
-#         if '-notags' in sys.argv:
-#             wtags = False
-#     server = TopologicalNavLoc(rclpy.get_name(), wtags)
-###################################################################################################################    
+
+if __name__ == '__main__' :
+    main()
+
+

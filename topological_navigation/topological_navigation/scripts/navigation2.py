@@ -11,19 +11,20 @@ from topological_navigation_msgs.srv import EvaluateEdge, EvaluateNode
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from topological_navigation_msgs.action import ExecutePolicyMode
 from std_msgs.msg import String
-from actionlib_msgs.msg import GoalStatus
+# https://docs.ros2.org/foxy/api/action_msgs/msg/GoalStatus.html
+from action_msgs.msg import GoalStatus
 
 from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2, get_route_distance
 from topological_navigation.navigation_stats import nav_stats
+from param_processing import ParameterUpdaterNode
+
 from topological_navigation.tmap_utils import *
 from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy, QoSDurabilityPolicy
 from rclpy.action import ActionServer
-# from rcl_interfaces.msg import SetParametersRequest, SetParametersResponse
-from rcl_interfaces.srv import SetParameters, GetParameters, ListParameters
-from rcl_interfaces.msg import ParameterDescriptor, ParameterValue, ParameterType
+
 from rclpy import Parameter 
 from topological_navigation.edge_action_manager2 import EdgeActionManager
-from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManager
+from topological_navigation.edge_reconfigure_manager2 import EdgeReconfigureManager
 
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor 
@@ -44,98 +45,15 @@ DYNPARAM_MAPPING = {
 }
     
 status_mapping = {}
-status_mapping[0] = "PENDING"
-status_mapping[1] = "ACTIVE"
-status_mapping[2] = "PREEMPTED"
-status_mapping[3] = "SUCCEEDED"
-status_mapping[4] = "ABORTED"
-status_mapping[5] = "REJECTED"
-status_mapping[6] = "PREEMPTING"
-status_mapping[7] = "RECALLING"
-status_mapping[8] = "RECALLED"
-status_mapping[9] = "LOST"
+status_mapping[0] = "STATUS_UNKNOWN"
+status_mapping[1] = "STATUS_ACCEPTED"
+status_mapping[2] = "STATUS_EXECUTING"
+status_mapping[3] = "STATUS_CANCELING"
+status_mapping[4] = "STATUS_SUCCEEDED"
+status_mapping[5] = "STATUS_CANCELED"
+status_mapping[6] = "STATUS_ABORTED"
 ###################################################################################################################
-
-
-class ParameterUpdaterNode(rclpy.node.Node):     
-    def __init__(self, server_name):
-        super().__init__('nav2_parameter_setter')
-        self.callback_group = ReentrantCallbackGroup()
-        self.cli_set_param = self.create_client(SetParameters, '/' + server_name + '/set_parameters', callback_group=self.callback_group)
-        self.cli_list_params = self.create_client(ListParameters, '/' + server_name + '/list_parameters' , callback_group=self.callback_group)
-        self.cli_get_params = self.create_client(GetParameters, '/' + server_name + '/get_parameters', callback_group=self.callback_group)
-        while not self.cli_set_param.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warning('service not available, waiting again...')
-        self.get_logger().info('service is available')
-        self.req = SetParameters.Request()
-        self.get_params()
-
-
-    def set_param(self, param_name, param_value):
-        if isinstance(param_value, float):
-            val = ParameterValue(double_value=param_value, type=ParameterType.PARAMETER_DOUBLE)
-        elif isinstance(param_value, int):
-            val = ParameterValue(integer_value=param_value, type=ParameterType.PARAMETER_INTEGER)
-        elif isinstance(param_value, str):
-            val = ParameterValue(string_value=param_value, type=ParameterType.PARAMETER_STRING)
-        elif isinstance(param_value, bool):
-            val = ParameterValue(bool_value=param_value, type=ParameterType.PARAMETER_BOOL)
-        self.req.parameters = [Parameter(name=param_name, value=val)]
-        self.future = self.cli_set_param.call_async(self.req)
-        while rclpy.ok():
-            rclpy.spin_once(self)
-            if self.future.done():
-                try:
-                    response = self.future.result()
-                    if response[0].successful:
-                        return True
-                except Exception as e:
-                    pass
-                return False
-            
-    def list_params(self, ):
-        self.req_list = ListParameters.Request()
-        self.future = self.cli_list_params.call_async(self.req_list)
-        while rclpy.ok():
-            rclpy.spin_once(self)
-            if self.future.done():
-                try:
-                    response = self.future.result().result 
-                    if response:
-                        return response.names
-                except Exception as e:
-                    self.get_logger().error("Error while getting paramer list {}".format(e))
-                    pass
-                return []
-            
-    def get_params(self, ):
-        param_names = self.list_params()
-        param_values = {}
-        params = {}
-        self.req_get = GetParameters.Request()
-        self.req_get.names = param_names 
-        self.future = self.cli_get_params.call_async(self.req_get)
-        while rclpy.ok():
-            rclpy.spin_once(self)
-            if self.future.done():
-                try:
-                    response = self.future.result()
-                    if response:
-                        param_values = response.values
-                        break 
-                except Exception as e:
-                    self.get_logger().error("Error while getting paramer list {}".format(e))
-                    pass
-
-        if param_values:
-            for key, value in zip(param_names, param_values):
-                params[key] = value  
-        return params 
-            
-    def set_params(self, params):
-        for key, value in params:
-            self.set_param(key, value) 
-            
+        
 ###################################################################################################################
 class TopologicalNavServer(rclpy.node.Node):
     
@@ -171,24 +89,23 @@ class TopologicalNavServer(rclpy.node.Node):
         self.navigation_lock = Lock()
 
         move_base_actions = [
-            "move_base",
-            "human_aware_navigation",
-            "han_adapt_speed",
-            "han_vc_corridor",
-            "han_vc_junction",
+            "NavigateToPose",
+            "NavigateThroughPoses",
+            "ComputePathThroughPoses",
+            "SmoothPath",
+            "DriveOnHeading",
         ]
 
         self.declare_parameter('~move_base_name', Parameter.Type.STRING)
         self.declare_parameter('~move_base_actions', Parameter.Type.STRING_ARRAY)
         self.declare_parameter('~move_base_goal', Parameter.Type.STRING_ARRAY)
 
-        self.move_base_name = self.get_parameter_or("~move_base_name", Parameter('str', Parameter.Type.STRING, "move_base")).value
+        self.move_base_name = self.get_parameter_or("~move_base_name", Parameter('str', Parameter.Type.STRING, "NavigateToPose")).value
         self.move_base_actions = self.get_parameter_or("~move_base_actions", Parameter('str', Parameter.Type.STRING_ARRAY, move_base_actions)).value
         if not self.move_base_name in self.move_base_actions:
             self.move_base_actions.append(self.move_base_name)
         
-        self.latching_qos = QoSProfile(depth=1,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         
         self.stats_pub = self.create_publisher(NavStatistics, "topological_navigation/Statistics", qos_profile=self.latching_qos)
         self.route_pub = self.create_publisher(TopologicalRoute, "topological_navigation/Route", qos_profile=self.latching_qos)
@@ -198,7 +115,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self._localization_received = False 
 
         self.callback_group_map = ReentrantCallbackGroup()
-        self.subs_topmap = self.create_subscription(String, '/topological_map_2', self.MapCallback, 1, callback_group=self.callback_group_map)
+        self.subs_topmap = self.create_subscription(String, '/topological_map_2', self.MapCallback, callback_group=self.callback_group_map, qos_profile=self.latching_qos)
         self.get_logger().info("Navigation waiting for the Topological Map...")
 
         # rate = self.create_rate(1)
@@ -227,15 +144,15 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("Subscribing to Localisation Topics...")
         # rclpy.wait_for_message('closest_edges', ClosestEdges, timeout=10)
 
-        self.subs_closest_node = self.create_subscription(String, 'closest_node', self.closestNodeCallback, 1)
+        self.subs_closest_node = self.create_subscription(String, 'closest_node', self.closestNodeCallback, qos_profile=self.latching_qos)
         while rclpy.ok():
             rclpy.spin_once(self)
             if self._localization_received:
                 self.get_logger().info("Navigation received the localisation info")
                 break 
 
-        self.subs_closest_edges = self.create_subscription(ClosestEdges, 'closest_edges', self.closestEdgesCallback, 1)
-        self.subs_current_node = self.create_subscription(String, 'current_node', self.currentNodeCallback, 1)
+        self.subs_closest_edges = self.create_subscription(ClosestEdges, 'closest_edges', self.closestEdgesCallback, qos_profile=self.latching_qos)
+        self.subs_current_node = self.create_subscription(String, 'current_node', self.currentNodeCallback, qos_profile=self.latching_qos)
 
         self.get_logger().info("...done")
         
@@ -393,7 +310,7 @@ class TopologicalNavServer(rclpy.node.Node):
                 break
 
         if not move_base_goal:
-            move_base_goal["action_type"] = "move_base_msgs/MoveBaseGoal"
+            move_base_goal["action_type"] = "geometry_msgs/PoseStamped"
             move_base_goal["goal"] = {}
             move_base_goal["goal"]["target_pose"] = {}
             move_base_goal["goal"]["target_pose"]["pose"] = "$node.pose"
@@ -522,7 +439,6 @@ class TopologicalNavServer(rclpy.node.Node):
 
 
     def currentNodeCallback(self, msg):
-        
         if self.current_node != msg.data:  # is there any change on this topic?
             self.current_node = msg.data  # we are at this new node
             if msg.data != "none":  # are we at a node?
@@ -562,7 +478,7 @@ class TopologicalNavServer(rclpy.node.Node):
                 o_node, the_edge = self.orig_node_from_closest_edge(g_node)
                 self.get_logger().info("Planning from the closest EDGE: {}".format(the_edge["edge_id"]))
                 
-            self.get_logger().info("Navigating From Origin {%s} to Target {%s} ".format(o_node["node"]["name"], target))
+            self.get_logger().info("Navigating From Origin {} to Target {} ".format(o_node["node"]["name"], target))
              
             # Everything is Awesome!!!
             # Target and Origin are not None
@@ -620,14 +536,14 @@ class TopologicalNavServer(rclpy.node.Node):
 
         if succeeded:
             self.get_logger().info("Navigation Finished Successfully")
-            self.publish_feedback_exec_policy(GoalStatus.SUCCEEDED)
+            self.publish_feedback_exec_policy(GoalStatus.STATUS_SUCCEEDED)
         else:
             if self.cancelled and self.preempted:
                 self.get_logger().warning("Fatal Fail")
-                self.publish_feedback_exec_policy(GoalStatus.PREEMPTED)
+                self.publish_feedback_exec_policy(GoalStatus.STATUS_CANCELED)
             elif self.cancelled:
                 self.get_logger().warning("Navigation Failed")
-                self.publish_feedback_exec_policy(GoalStatus.ABORTED)
+                self.publish_feedback_exec_policy(GoalStatus.STATUS_ABORTED)
 
         return succeeded
     
@@ -696,7 +612,7 @@ class TopologicalNavServer(rclpy.node.Node):
             self.get_logger().info("Action not taken, outputting success")
             result=True
             inc=0
-            self.get_logger().info("Navigating Case 2a -> res: %d", inc)
+            self.get_logger().info("Navigating Case 2a -> res: {}".format(inc))
         else:
             self.get_logger().info("Navigating Case 2: Getting to the exact pose of target {}".format(g_node["node"]["name"]))
             self.final_goal = True
@@ -1098,24 +1014,29 @@ class TopologicalNavServer(rclpy.node.Node):
         
         self.edge_action_manager.initialise(edge, destination_node, origin_node)
         self.edge_action_manager.execute()
-        
-        status = self.edge_action_manager.client.get_state()
+        status = self.edge_action_manager.get_state()
+        self.get_logger().info("   client status {} ".format(status))
         self.pub_status(status)
-        while (
-            (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
-            and not self.cancelled
-            and not self.goal_reached
-        ):
-            status = self.edge_action_manager.client.get_state()
-            self.pub_status(status)
-            rospy.sleep(rospy.Duration.from_sec(0.01))
-
+        # while :
+        #     status = self.edge_action_manager.client.get_state()
+        #     self.pub_status(status)
+        #     rospy.sleep(rospy.Duration.from_sec(0.01))
+        while rclpy.ok():
+            rclpy.spin_once(self)
+            if ((status == GoalStatus.STATUS_EXECUTING or status == GoalStatus.STATUS_UNKNOWN) and not self.cancelled and not self.goal_reached):
+                try:
+                    self.get_logger().info(" current status  {} ".format(status_mapping[status]))
+                    self.pub_status(status)
+                except Exception as e:
+                    pass
+                    return False
+            else:
+                return False 
         res = self.edge_action_manager.client.get_result()
-
-        if status != GoalStatus.SUCCEEDED:
+        if status != GoalStatus.STATUS_SUCCEEDED:
             if not self.goal_reached:
                 result = False
-                if status is GoalStatus.PREEMPTED:
+                if status is GoalStatus.STATUS_CANCELED:
                     self.preempted = True
             else:
                 result = True
@@ -1126,7 +1047,7 @@ class TopologicalNavServer(rclpy.node.Node):
             else:
                 inc = 0
 
-        rospy.sleep(rospy.Duration.from_sec(0.5))
+        
         status = self.edge_action_manager.client.get_state()
         self.pub_status(status)
 
@@ -1135,15 +1056,15 @@ class TopologicalNavServer(rclpy.node.Node):
     
     
     def pub_status(self, status):
-        
         if status != self.prev_status:
             d = {}
             d["goal"] = self.edge_action_manager.destination_node["node"]["name"]
             d["final_goal"] = self.final_goal
             d["action"] = self.edge_action_manager.current_action.upper()
             d["status"] = status_mapping[status]
-            
-            self.move_act_pub.publish(String(json.dumps(d)))
+            msg = String()
+            msg.data = json.dumps(d)
+            self.move_act_pub.publish(msg)
         self.prev_status = status
 ###################################################################################################################
         

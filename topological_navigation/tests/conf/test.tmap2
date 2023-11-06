@@ -9,7 +9,7 @@ nodes:
     pointset: new_map
   node:
     edges:
-    - action: move_base
+    - action: NavigateToPose
       action_type: move_base_msgs/MoveBaseGoal
       config: &id001 []
       edge_id: WayPoint1_WayPoint2
@@ -65,7 +65,7 @@ nodes:
     pointset: new_map
   node:
     edges:
-    - action: move_base
+    - action: NavigateToPose
       action_type: move_base_msgs/MoveBaseGoal
       config: *id001
       edge_id: WayPoint2_WayPoint1

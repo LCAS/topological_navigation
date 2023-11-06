@@ -129,10 +129,10 @@ class TopologicalNavLoc(rclpy.node.Node):
                          history=HistoryPolicy.KEEP_LAST,
                          durability=DurabilityPolicy.TRANSIENT_LOCAL)
         
-        self.wp_pub = self.create_publisher(String, 'closest_node', self.qos)
-        self.wd_pub = self.create_publisher(Float32,'closest_node_distance', self.qos)
-        self.cn_pub = self.create_publisher(String, 'current_node', self.qos)
-        self.ce_pub = self.create_publisher(ClosestEdges, 'closest_edges', self.qos)
+        self.wp_pub = self.create_publisher(String, 'closest_node', qos_profile=self.qos)
+        self.wd_pub = self.create_publisher(Float32,'closest_node_distance', qos_profile=self.qos)
+        self.cn_pub = self.create_publisher(String, 'current_node', qos_profile=self.qos)
+        self.ce_pub = self.create_publisher(ClosestEdges, 'closest_edges', qos_profile=self.qos)
 
         self.force_check = True
         self.rec_map = False
@@ -154,7 +154,7 @@ class TopologicalNavLoc(rclpy.node.Node):
         self.loc_pos_srv = self.create_service(LocalisePose, '/topological_localisation/localise_pose'
                                                , self.localise_pose_cb, callback_group=self.callback_localize_pose)
 
-        self.subs_topmap = self.create_subscription(String, '/topological_map_2', self.MapCallback, 1)
+        self.subs_topmap = self.create_subscription(String, '/topological_map_2', self.MapCallback, qos_profile=self.qos)
         self.subs_topmap  # prevent unused variable warning
 
         self.get_logger().info("Localisation waiting for the Topological Map...")

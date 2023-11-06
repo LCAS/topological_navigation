@@ -217,6 +217,11 @@ class TopologicalNavServer(object):
         else:
             cytol = 6.283
 
+        print("NODE NODE NODE, Checking if node is entry 220")
+        if cnode["node"]["name"].endswith("-ca"):
+            print("Setting cytol to 0.1 as this is an entry node, navigation.py line 221")
+            cytol = 0.1
+
         params = {"yaw_goal_tolerance": cytol, "xy_goal_tolerance": cxygtol}
         rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_planner, params))
         print("Intermediate: {}".format(intermediate))
@@ -1005,7 +1010,8 @@ class TopologicalNavServer(object):
                 inc = 1
                 return result, inc
 
-        self.edge_action_manager.initialise(edge, destination_node, origin_node, is_last_edge_in_route=is_last_edge_in_route, robot_odometry=self.robot_odometry)
+        self.edge_action_manager.initialise(edge, destination_node, origin_node, is_last_edge_in_route=is_last_edge_in_route, robot_odometry=self.robot_odometry)     
+
         self.edge_action_manager.execute()
         
         status = self.edge_action_manager.client.get_state()

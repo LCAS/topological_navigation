@@ -51,6 +51,16 @@ status_mapping[9] = "LOST"
 
 ###################################################################################################################
 class TopologicalNavServer(object):
+    """
+WE WANT AN ADDITIONAL FIELD "enforce_tollerance" WHICH IF SET, WILL ENFORCE THE TOLLERANCES DEFINED REGARDLESS OF IF THE NODE IS INTERMEDIATE
+
+if goal.success == True:
+    if cedge['enforce_goal_tolerance'] and is_intermediate_node:
+        return
+    self.nextgoal()
+    return
+
+"""
     
     _feedback = topological_navigation_msgs.msg.GotoNodeFeedback()
     _result = topological_navigation_msgs.msg.GotoNodeResult()
@@ -209,13 +219,15 @@ class TopologicalNavServer(object):
             cxygtol = 0.1
         else:
             cxygtol = cnode["node"]["properties"]["xy_goal_tolerance"]
+        
         if not intermediate:
             if cnode["node"]["properties"]["yaw_goal_tolerance"] <= 0.087266:
                 cytol = 0.087266
             else:
                 cytol = cnode["node"]["properties"]["yaw_goal_tolerance"]
-        else:
-            cytol = 6.283
+        else: # is intermediate
+            # any number larger than 3.2 gets clipped
+            cytol = 3.19
 
         print("NODE NODE NODE, Checking if node is entry 220")
         if cnode["node"]["name"].endswith("-ca"):
@@ -382,14 +394,18 @@ class TopologicalNavServer(object):
             if not self.cancelled and not self.preempted:
                 self._result_exec_policy.success = result
                 if result:
+                    print("navigation.py line 385")
                     self._as_exec_policy.set_succeeded(self._result_exec_policy)
                 else:
+                    print("navigation.py line 388")
                     self._as_exec_policy.set_aborted(self._result_exec_policy)
             else:
                 if not self.preempted:
+                    print("navigation.py line 392")
                     self._result_exec_policy.success = result
                     self._as_exec_policy.set_aborted(self._result_exec_policy)
                 else:
+                    print("navigation.py line 396")
                     self._result_exec_policy.success = False
                     self._as_exec_policy.set_preempted(self._result_exec_policy)
 
@@ -775,6 +791,7 @@ class TopologicalNavServer(object):
             # FIXME: Hardcoding?
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
             self.reconfigure_movebase_params(params)
+            print(str(params) + "navigation.py line 784")
 
             not_fatal = nav_ok
             if self.cancelled:
@@ -798,6 +815,7 @@ class TopologicalNavServer(object):
                 else:
                     rospy.logwarn("Fatal Fail on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
                     self.stat.status = "fatal"
+            print('\n\n\n')
 
             self.publish_stats()
 
@@ -1010,20 +1028,31 @@ class TopologicalNavServer(object):
                 inc = 1
                 return result, inc
 
-        self.edge_action_manager.initialise(edge, destination_node, origin_node, is_last_edge_in_route=is_last_edge_in_route, robot_odometry=self.robot_odometry)     
+        # Default edge['enforce_goal_tolerance'] to False
+        edge['enforce_goal_tolerance'] = False if 'enforce_goal_tolerance' not in edge else edge['enforce_goal_tolerance']
+        if destination_node['node']['name'] == 'WayPoint141': edge['enforce_goal_tolerance'] = True
+        if '-ca' in destination_node['node']['name'] and '-c' not in origin_node['node']['name']: edge['enforce_goal_tolerance'] = True
 
+
+        self.edge_action_manager.initialise(edge, destination_node, origin_node, is_last_edge_in_route=is_last_edge_in_route, robot_odometry=self.robot_odometry)
         self.edge_action_manager.execute()
-        
+
         status = self.edge_action_manager.client.get_state()
         self.pub_status(status)
         while (
-            (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
-            and not self.cancelled
-            and not self.goal_reached
+            (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING) # move_base action server live feedback
+            and not self.cancelled    # tripped to True by (no route, or nodes not in map)
+            and not (self.goal_reached and edge['enforce_goal_tolerance'] == False) # tripped to True by /current_node
         ):
+            # we want on condition of edge['enforce_goal_tolerance'], we dont want self.goal_reached to be a valid trip
+
             status = self.edge_action_manager.client.get_state()
             self.pub_status(status)
             rospy.sleep(rospy.Duration.from_sec(0.01))
+
+        print("status: " + str(status))
+        print("self.cancelled: "+ str(self.cancelled))
+        print("self.goal_reached: " + str(self.goal_reached))
 
         res = self.edge_action_manager.client.get_result()
 

@@ -159,114 +159,42 @@ class EdgeActionManager(object):
         robot_euler_offset_from_flipped_edge_euler = abs(robot_euler - flipped_edge_euler) % (2*math.pi)
         edge_euler_needs_flipping = robot_euler_offset_from_edge_euler > robot_euler_offset_from_flipped_edge_euler
 
-
-        """
-#useless piles of shite
-robot euler
-origin euler
-flipped origin euler
-
-
-destination euler
-edge euler
-
-flipped destination euler
-flipped edge euler
-
-
-#use destination (or flipped)
-
-is intermediate node
-    are we out of row
-        #use edge instead (or flipped)
-
-
-"""
-
-        def set_destination_orientation(euler_angle, flipped_euler_angle, flip_conditional)
+        def set_orientation(euler_angle, flipped_euler_angle, flip_conditional):
+            if flip_conditional:
+                print('| (changing to flipped version)')
             euler = flipped_euler_angle if flip_conditional else euler_angle
             quart = tf.transformations.quaternion_from_euler(0.0, 0.0, euler)
+            orientation = dict()
             orientation['x'] = quart[0]
             orientation['y'] = quart[1]
             orientation['z'] = quart[2]
             orientation['w'] = quart[3]
             return orientation
-        #goal_args['target_pose']['pose']['orientation'] = set_orientation(euler_angle)
 
-
+        print('|---------------------------------------------------------- ')
+        print('| setting goal orientation to the destination node direction')
         goal_args['target_pose']['pose']['orientation'] = set_orientation(dest_euler, flipped_dest_euler, dest_euler_needs_flipping)
 
         # If intermidiate node of route
         if not is_last_edge_in_route:
+            print('| target is not the last edge in the route')
 
             # If node is in row
+            if '-c' in self.destination_node["node"]["name"]:
+                print('| forcing forward direction for the row entry node')
+                goal_args['target_pose']['pose']['orientation'] = set_orientation(dest_euler, flipped_dest_euler, False)
+
             if '-c' not in self.destination_node["node"]["name"]:
+                print('| target is not a row entry node')
+                print('| changing goal orientation to use the edge direction')
                 goal_args['target_pose']['pose']['orientation'] = set_orientation(edge_euler, flipped_edge_euler, edge_euler_needs_flipping)
-
-
-        """
-        # If intermidate node, set orientation to direction of edge
-        if not is_last_edge_in_route:
-            # Calculate orientation of desintation node to orientation node
-            origin_pose = self.origin_node['node']['pose']['position']
-            destin_pose = self.destination_node['node']['pose']['position']
-            angle_radians = math.atan2(destin_pose['y']-origin_pose['y'], destin_pose['x']-origin_pose['x'])
-
-            # Apply Orientation to move_base goal
-            edge_orientation = tf.transformations.quaternion_from_euler(0, 0, angle_radians)
-
-
-
-        # If travelling to a row end
-        if self.destination_node["node"]["name"].endswith('-ca'):
-
-            if '-c' not in self.origin_node["node"]["name"]:
-                # If robot is approaching row, force forwards facing
-                # use original orientation
-                print('ROW ROW ROW, original destination node orientation should be better')
-                goal_args['target_pose']['pose']['orientation'] = self.destination_node['node']['pose']['orientation']
-                pass
-            else:
-                # If robot is leaving row, force backwards facing
-                # use flipped orientation
-                print('ROW ROW ROW, flipped destination node orientation should be better')
-                goal_args['target_pose']['pose']['orientation'] = self.destination_node['node']['pose']['orientation']
-                dest_rot = (dest_euler + math.pi + math.pi) % (2*math.pi)
-                quart = tf.transformations.quaternion_from_euler(0.0, 0.0, dest_rot-math.pi)
-                goal_args['target_pose']['pose']['orientation']['x'] = quart[0]
-                goal_args['target_pose']['pose']['orientation']['y'] = quart[1]
-                goal_args['target_pose']['pose']['orientation']['z'] = quart[2]
-                goal_args['target_pose']['pose']['orientation']['w'] = quart[3]
-                pass
-
-        else:
-            # If initial offset is larger than flipped offset, use the flipped offset as this is more accurate
-            if initial_offset > flipped_offset:
-                print('ROW ROW ROW, flipping edge->robot orientation')
-                flipped_edge_quart = tf.transformations.quaternion_from_euler(0.0, 0.0, flipped_edge_euler)
-                goal_args['target_pose']['pose']['orientation']['x'] = flipped_edge_quart[0]
-                goal_args['target_pose']['pose']['orientation']['y'] = flipped_edge_quart[1]
-                goal_args['target_pose']['pose']['orientation']['z'] = flipped_edge_quart[2]
-                goal_args['target_pose']['pose']['orientation']['w'] = flipped_edge_quart[3]
-                print('Flipping goal to allow ackerman navigation to be fluid')
-                #FIXME: this should be handled by yaw tolerance
-            else:
-                print('ROW ROW ROW, original edge->robot orientation')
-                # Apply edge orientation to move_base goal
-                edge_quart = tf.transformations.quaternion_from_euler(0, 0, edge_euler)
-                goal_args['target_pose']['pose']['orientation']['x'] = edge_quart[0]
-                goal_args['target_pose']['pose']['orientation']['y'] = edge_quart[1]
-                goal_args['target_pose']['pose']['orientation']['z'] = edge_quart[2]
-                goal_args['target_pose']['pose']['orientation']['w'] = edge_quart[3]
-                print('Orientation offset better for current robot alignment so not flipping')
-        """
-
+        print('|---------------------------------------------------------- ')
 
         self.goal = message_converter.convert_dictionary_to_ros_message(action_type, goal_args)
 
     def execute(self):
-        
         rospy.loginfo("Edge Action Manager: Executing the action...")
         self.client.send_goal(self.goal)
         self.current_action = self.action_name
+
 #########################################################################################################

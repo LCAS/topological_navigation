@@ -44,14 +44,7 @@ DYNPARAM_MAPPING = {
     },
 }
     
-status_mapping = {}
-status_mapping[0] = "STATUS_UNKNOWN"
-status_mapping[1] = "STATUS_ACCEPTED"
-status_mapping[2] = "STATUS_EXECUTING"
-status_mapping[3] = "STATUS_CANCELING"
-status_mapping[4] = "STATUS_SUCCEEDED"
-status_mapping[5] = "STATUS_CANCELED"
-status_mapping[6] = "STATUS_ABORTED"
+
 ###################################################################################################################
         
 ###################################################################################################################
@@ -99,6 +92,10 @@ class TopologicalNavServer(rclpy.node.Node):
         self.declare_parameter('~move_base_name', Parameter.Type.STRING)
         self.declare_parameter('~move_base_actions', Parameter.Type.STRING_ARRAY)
         self.declare_parameter('~move_base_goal', Parameter.Type.STRING_ARRAY)
+        self.declare_parameter("~max_dist_to_closest_edge", Parameter.Type.DOUBLE)
+        self.declare_parameter('~reconfigure_edges', Parameter.Type.BOOL)
+        self.declare_parameter('~reconfigure_edges_srv', Parameter.Type.BOOL)
+        self.declare_parameter("~move_base_planner", Parameter.Type.STRING) 
 
         self.move_base_name = self.get_parameter_or("~move_base_name", Parameter('str', Parameter.Type.STRING, "NavigateToPose")).value
         self.move_base_actions = self.get_parameter_or("~move_base_actions", Parameter('str', Parameter.Type.STRING_ARRAY, move_base_actions)).value
@@ -131,8 +128,7 @@ class TopologicalNavServer(rclpy.node.Node):
         
         self.edge_action_manager = EdgeActionManager()
 
-        self.declare_parameter('~reconfigure_edges', Parameter.Type.BOOL)
-        self.declare_parameter('~reconfigure_edges_srv', Parameter.Type.BOOL)
+        
 
         self.edge_reconfigure = self.get_parameter_or("~reconfigure_edges", Parameter('bool', Parameter.Type.BOOL, True)).value
         self.srv_edge_reconfigure = self.get_parameter_or("~reconfigure_edges_srv", Parameter('bool', Parameter.Type.BOOL, False)).value 
@@ -173,7 +169,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
         # this keeps the runtime state of the fail policies that are currently in execution 
         self.executing_fail_policy = {}
-        
+        self.callback_group_gotonode = ReentrantCallbackGroup()
         # Creating Action Server for navigation
         self.get_logger().info("Creating GO-TO-NODE action server...")  
         self._as  =  ActionServer(self, GotoNode, name, execute_callback=self.executeCallback, cancel_callback=self.preemptCallback)
@@ -182,13 +178,14 @@ class TopologicalNavServer(rclpy.node.Node):
         # self._as.register_preempt_callback(self.preemptCallback)
         # self._as.start()
         self.get_logger().info("...done")
-
+   
         # Creating Action Server for execute policy
         self.get_logger().info("Creating EXECUTE POLICY MODE action server...")
         self._as_exec_policy = ActionServer(self, ExecutePolicyMode, "topological_navigation/execute_policy_mode", 
                             execute_callback=self.executeCallbackexecpolicy, cancel_callback=self.preemptCallbackexecpolicy)
         
-        self._as_exec_policy_action_feedback_pub = self.create_publisher(ExecutePolicyMode.Feedback, 'topological_navigation/execute_policy_mode/feedback', self.latching_qos)
+        self._as_exec_policy_action_feedback_pub = self.create_publisher(ExecutePolicyMode.Feedback, 'topological_navigation/execute_policy_mode/feedback'
+                                                                                    , self.latching_qos)
         # self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
         # self._as_exec_policy.start()
         self.get_logger().info("...done")
@@ -205,7 +202,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
     def init_reconfigure(self):
         
-        self.declare_parameter("~move_base_planner", Parameter.Type.STRING) 
+        
         self.move_base_planner  = self.get_parameter_or("~move_base_planner", Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
         planner = self.move_base_planner.split("/")[-1]
         if not planner in DYNPARAM_MAPPING:
@@ -215,7 +212,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.update_params_planner = ParameterUpdaterNode("controller_server") #TODO change the name 
         # self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
-        # self.init_dynparams = self.rcnfclient.get_configuration()
+        self.init_dynparams = self.update_params_planner.get_params()
         
 
     def reconf_movebase(self, cedg, cnode, intermediate):
@@ -268,7 +265,8 @@ class TopologicalNavServer(rclpy.node.Node):
             
 
     def reset_reconf(self):
-        self._do_movebase_reconf(self.init_dynparams)
+        # self.get_logger().info(" {} ".format(self.init_dynparams))
+        self.update_params_planner.set_params(self.init_dynparams)
 
 
     def MapCallback(self, msg):
@@ -323,7 +321,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("Move Base Goal set to {}".format(move_base_goal["action_type"]))
 
 
-    async def executeCallback(self, goal):
+    def executeCallback(self, goal):
         """
         This Functions is called when the topo nav Action Server is called
         """
@@ -331,11 +329,11 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("Processing GO-TO-NODE goal (No Orientation = {})".format(goal.request.no_orientation))
         can_start = False
 
-        with self.navigation_lock:
-            if self.cancel_current_action(timeout_secs=10):
-                # we successfully stopped the previous action, claim the title to activate navigation
-                self.navigation_activated = True
-                can_start = True
+        # with self.navigation_lock:
+        if self.cancel_current_action(timeout_secs=10):
+            # we successfully stopped the previous action, claim the title to activate navigation
+            self.navigation_activated = True
+            can_start = True
 
         if can_start:
 
@@ -351,12 +349,16 @@ class TopologicalNavServer(rclpy.node.Node):
 
         else:
             self.get_logger().warning("Could not cancel current navigation action, GO-TO-NODE goal aborted")
-            self._as.set_aborted()
+            # self._as.set_aborted()
 
         self.navigation_activated = False
+        goal.succeed()
+        self.get_logger().warning("Done processing the nav action....")
+        result = GotoNode.Result()
+        result.success = True 
+        return result 
 
-
-    async def executeCallbackexecpolicy(self, goal):
+    def executeCallbackexecpolicy(self, goal):
         """
         This Function is called when the execute policy Action Server is called
         """
@@ -394,7 +396,7 @@ class TopologicalNavServer(rclpy.node.Node):
             else:
                 result = False
                 self.cancelled = True
-                rospy.logerr("Invalid route in execute policy mode goal")
+                self.get_logger().error("Invalid route in execute policy mode goal")
 
             if not self.cancelled and not self.preempted:
                 self._result_exec_policy.success = result
@@ -454,8 +456,182 @@ class TopologicalNavServer(rclpy.node.Node):
                         and self.current_action in self.move_base_actions
                         and self.fluid_navigation
                     ):
-                        self.get_logger().info("Intermediate node reached: %s", self.current_node)
+                        self.get_logger().info("Intermediate node reached: {}".format(self.current_node))
                         self.goal_reached = True
+
+    def followRoute(self, route, target, exec_policy):
+        """
+        This function follows the chosen route to reach the goal.
+        """
+        self.navigation_activated = True
+        
+        nnodes = len(route.source)
+        Orig = route.source[0]
+        Targ = target
+        self._target = Targ
+
+        self.init_reconfigure()
+
+        self.get_logger().info(" {} Nodes on route".format(nnodes))
+
+        inc = 1
+        rindex = 0
+        nav_ok = True
+        recovering = False
+        replanned = False
+        self.fluid_navigation = True
+
+        o_node = self.rsearch.get_node_from_tmap2(Orig)
+        edge_from_id = get_edge_from_id_tmap2(self.lnodes, route.source[0], route.edge_id[0])
+        if edge_from_id:
+            a = edge_from_id["action"]
+            self.get_logger().info("First action: {}".format(a))
+        else:
+            self.get_logger().error("Failed to get edge from id {}. Invalid route".format(route.edge_id[0]))
+            return False, inc
+        
+        if not self.nav_from_closest_edge:        
+            # If the robot is not on a node or the first action is not move base type
+            # navigate to closest node waypoint (only when first action is not move base)
+            if a not in self.move_base_actions:
+                self.get_logger().info("The action of the first edge in the route is not a move base action")
+                self.get_logger().info("Current node is {}".format(self.current_node))
+                
+            if self.current_node == "none" and a not in self.move_base_actions:
+                self.next_action = a
+                self.get_logger().info("Do {} to origin {}".format(self.move_base_name, o_node["node"]["name"]))
+    
+                # 5 degrees tolerance
+                params = {"yaw_goal_tolerance": 0.087266}
+                self.update_params_planner.set_params(params)
+
+                self.current_target = Orig
+                nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                self.get_logger().info("Navigation Finished Successfully") if nav_ok else self.get_logger().warning("Navigation Failed")
+                
+            elif a not in self.move_base_actions:
+                move_base_act = False
+                for i in o_node["node"]["edges"]:
+                    # Check if there is a move_base action in the edages of this node
+                    # if not is dangerous to move
+                    if i["action"] in self.move_base_actions:
+                        move_base_act = True
+
+                if not move_base_act:
+                    self.get_logger().warning("Could not find a move base action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
+                    self.get_logger().info("Action not taken, outputing success")
+                    nav_ok = True
+                    inc = 0
+                else:
+                    self.get_logger().info("Getting to the exact pose of origin {}".format(o_node["node"]["name"]))
+                    self.current_target = Orig
+                    nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                    self.get_logger().info("Navigation Finished Successfully") if nav_ok else self.get_logger().warning("Navigation Failed")
+                
+
+        while rindex < (len(route.edge_id)) and not self.cancelled and (nav_ok or recovering):
+            
+            cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
+            a = cedg["action"]
+            
+            if rindex < (len(route.edge_id) - 1):
+                nedge = get_edge_from_id_tmap2(self.lnodes, route.source[rindex + 1], route.edge_id[rindex + 1])
+                a1 = nedge["action"]
+                self.fluid_navigation = nedge["fluid_navigation"]
+            else:
+                nedge = None
+                a1 = "none"
+                self.fluid_navigation = False
+                self.final_goal = True
+
+            self.current_action = a
+            self.next_action = a1
+
+            self.get_logger().info("From {} do ({}) to {}".format(route.source[rindex], a, cedg["node"]))
+
+            current_edge = "%s--%s" % (cedg["edge_id"], self.topol_map)
+            self.get_logger().info("Current edge: {}".format(current_edge))
+            msg = String()
+            msg.data = current_edge 
+            self.cur_edge.publish(msg)
+
+            if not exec_policy:
+                self._feedback.route = "%s to %s using %s" % (route.source[rindex], cedg["node"], a)
+                self._as_action_feedback_pub.publish(self._feedback)
+            else:
+                self.publish_feedback_exec_policy()
+
+            cnode = self.rsearch.get_node_from_tmap2(cedg["node"])
+            onode = self.rsearch.get_node_from_tmap2(route.source[rindex])
+
+            # do not care for the orientation of the waypoint if is not the last waypoint AND
+            # the current and following action are move_base or human_aware_navigation
+            # and when the fuild_navigation is true
+            if rindex < len(route.edge_id) - 1 and a1 in self.move_base_actions and a in self.move_base_actions and self.fluid_navigation:
+                self.reconf_movebase(cedg, cnode, True)
+            else:
+                if self.no_orientation:
+                    self.reconf_movebase(cedg, cnode, True)
+                else:
+                    self.reconf_movebase(cedg, cnode, False)
+
+            self.current_target = cedg["node"]
+
+            self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
+            dt_text = self.stat.get_start_time_str()
+
+            self.edge_reconf_start(cedg)
+            if exec_policy:
+                nav_ok, inc = self.execute_action(cedg, cnode, onode)
+            else:
+                nav_ok, inc, recovering, route, replanned = self.execute_action_fail_recovery(cedg, cnode, route, rindex, onode, target)
+            self.edge_reconf_end()
+
+            params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
+            self.update_params_planner.set_params(params)
+
+            not_fatal = nav_ok
+            if self.cancelled:
+                nav_ok = True
+            if self.preempted:
+                not_fatal = False
+                nav_ok = False
+
+            self.stat.set_ended(self.current_node)
+            dt_text=self.stat.get_finish_time_str()
+            operation_time = self.stat.operation_time
+            time_to_wp = self.stat.time_to_wp
+
+            if nav_ok:
+                self.stat.status = "success"
+                self.get_logger().info("Navigation Finished on {} ({}/{})".format(dt_text, operation_time, time_to_wp))
+            else:
+                if not_fatal:
+                    self.get_logger().warning("Navigation Failed on {} ({}/{})".format(dt_text, operation_time, time_to_wp))
+                    self.stat.status = "failed"
+                else:
+                    self.get_logger().warning("Fatal Fail on {} ({}/{})".format(dt_text, operation_time, time_to_wp))
+                    self.stat.status = "fatal"
+
+            self.publish_stats()
+
+            current_edge = "none"
+            msg = String()
+            msg.data = current_edge
+            self.cur_edge.publish(msg)
+
+            self.current_action = "none"
+            self.next_action = "none"
+            
+            if not replanned:
+                rindex = rindex + 1
+
+        self.reset_reconf()
+
+        self.navigation_activated = False
+
+        result = nav_ok
+        return result, inc
 
 
     def navigate(self, target):
@@ -466,7 +642,7 @@ class TopologicalNavServer(rclpy.node.Node):
         result = False
         if not self.cancelled:
             g_node = self.rsearch.get_node_from_tmap2(target)
-            self.declare_parameter("~max_dist_to_closest_edge", Parameter.Type.DOUBLE)
+            
             self.max_dist_to_closest_edge = self.get_parameter_or("~max_dist_to_closest_edge",  Parameter('double', Parameter.Type.DOUBLE, 1.0)).value 
           
             if self.closest_edges.distances and (self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none"):
@@ -490,13 +666,13 @@ class TopologicalNavServer(rclpy.node.Node):
                         self.get_logger().info("Navigating Case 1: Following route")
                         self.publish_route(route, target)
                         result, inc = self.followRoute(route, target, 0)
-                        self.get_logger().info("Navigating Case 1 -> res: %d", inc)
+                        self.get_logger().info("Navigating Case 1 -> res: {}".format(inc))
                     else:
                         self.get_logger().warning("Navigating Case 1a: There is no route from {} to {}. Check your edges.".format(o_node["node"]["name"], target))
                         self.cancelled = True
                         result = False
                         inc = 1
-                        self.get_logger().info("Navigating Case 1a -> res: %d", inc)
+                        self.get_logger().info("Navigating Case 1a -> res: {}".format(inc))
                 else:      
                     if self.nav_from_closest_edge:
                         result, inc = self.to_goal_node(g_node, the_edge)
@@ -507,27 +683,27 @@ class TopologicalNavServer(rclpy.node.Node):
                 self.cancelled = True
                 result = False
                 inc = 1
-                self.get_logger().info("Navigating Case 3 -> res: %d", inc)
+                self.get_logger().info("Navigating Case 3 -> res: {}".format(inc))
         
         if (not self.cancelled) and (not self.preempted):
             self._result.success = result
             if result:
                 self._feedback.route = target
                 self._as_action_feedback_pub.publish(self._feedback)
-                self._as.set_succeeded(self._result)
+                # self._as.set_succeeded(self._result)
             else:
                 self._feedback.route = self.current_node
                 self._as_action_feedback_pub.publish(self._feedback)
-                self._as.set_aborted(self._result)
+                # self._as.set_aborted(self._result)
         else:
             if not self.preempted:
                 self._feedback.route = self.current_node
                 self._as_action_feedback_pub.publish(self._feedback)
                 self._result.success = result
-                self._as.set_aborted(self._result)
+                # self._as.set_aborted(self._result)
             else:
                 self._result.success = False
-                self._as.set_preempted(self._result)
+                # self._as.set_preempted(self._result)
  
 
     def execute_policy(self, route, target):
@@ -629,7 +805,7 @@ class TopologicalNavServer(rclpy.node.Node):
                 inc=1
             else:
                 self.get_logger().info("Navigation Finished Successfully")
-            self.get_logger().info("Navigating Case 2 -> res: %d", inc)
+            self.get_logger().info("Navigating Case 2 -> res: {} ".format(inc))
             
         return result, inc
 
@@ -651,181 +827,6 @@ class TopologicalNavServer(rclpy.node.Node):
                         route.edge_id.insert(0, edge_id)
                         break
         return route
-
-
-    def followRoute(self, route, target, exec_policy):
-        """
-        This function follows the chosen route to reach the goal.
-        """
-        self.navigation_activated = True
-        
-        nnodes = len(route.source)
-        Orig = route.source[0]
-        Targ = target
-        self._target = Targ
-
-        self.init_reconfigure()
-
-        self.get_logger().info("%d Nodes on route" % nnodes)
-
-        inc = 1
-        rindex = 0
-        nav_ok = True
-        recovering = False
-        replanned = False
-        self.fluid_navigation = True
-
-        o_node = self.rsearch.get_node_from_tmap2(Orig)
-        edge_from_id = get_edge_from_id_tmap2(self.lnodes, route.source[0], route.edge_id[0])
-        if edge_from_id:
-            a = edge_from_id["action"]
-            self.get_logger().info("First action: %s" % a)
-        else:
-            rospy.logerr("Failed to get edge from id {}. Invalid route".format(route.edge_id[0]))
-            return False, inc
-        
-        if not self.nav_from_closest_edge:        
-            # If the robot is not on a node or the first action is not move base type
-            # navigate to closest node waypoint (only when first action is not move base)
-            if a not in self.move_base_actions:
-                self.get_logger().info("The action of the first edge in the route is not a move base action")
-                self.get_logger().info("Current node is {}".format(self.current_node))
-                
-            if self.current_node == "none" and a not in self.move_base_actions:
-                self.next_action = a
-                self.get_logger().info("Do %s to origin %s" % (self.move_base_name, o_node["node"]["name"]))
-    
-                # 5 degrees tolerance
-                params = {"yaw_goal_tolerance": 0.087266}
-                self.reconfigure_movebase_params(params)
-
-                self.current_target = Orig
-                nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
-                self.get_logger().info("Navigation Finished Successfully") if nav_ok else self.get_logger().warning("Navigation Failed")
-                
-            elif a not in self.move_base_actions:
-                move_base_act = False
-                for i in o_node["node"]["edges"]:
-                    # Check if there is a move_base action in the edages of this node
-                    # if not is dangerous to move
-                    if i["action"] in self.move_base_actions:
-                        move_base_act = True
-
-                if not move_base_act:
-                    self.get_logger().warning("Could not find a move base action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
-                    self.get_logger().info("Action not taken, outputing success")
-                    nav_ok = True
-                    inc = 0
-                else:
-                    self.get_logger().info("Getting to the exact pose of origin {}".format(o_node["node"]["name"]))
-                    self.current_target = Orig
-                    nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
-                    self.get_logger().info("Navigation Finished Successfully") if nav_ok else self.get_logger().warning("Navigation Failed")
-                
-
-        while rindex < (len(route.edge_id)) and not self.cancelled and (nav_ok or recovering):
-            
-            cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
-            a = cedg["action"]
-            
-            if rindex < (len(route.edge_id) - 1):
-                nedge = get_edge_from_id_tmap2(self.lnodes, route.source[rindex + 1], route.edge_id[rindex + 1])
-                a1 = nedge["action"]
-                self.fluid_navigation = nedge["fluid_navigation"]
-            else:
-                nedge = None
-                a1 = "none"
-                self.fluid_navigation = False
-                self.final_goal = True
-
-            self.current_action = a
-            self.next_action = a1
-
-            self.get_logger().info("From %s do (%s) to %s" % (route.source[rindex], a, cedg["node"]))
-
-            current_edge = "%s--%s" % (cedg["edge_id"], self.topol_map)
-            self.get_logger().info("Current edge: %s" % current_edge)
-            msg = String()
-            msg.data = current_edge
-            self.cur_edge.publish(msg)
-
-            if not exec_policy:
-                self._feedback.route = "%s to %s using %s" % (route.source[rindex], cedg["node"], a)
-                self._as_action_feedback_pub.publish(self._feedback)
-                
-            else:
-                self.publish_feedback_exec_policy()
-
-            cnode = self.rsearch.get_node_from_tmap2(cedg["node"])
-            onode = self.rsearch.get_node_from_tmap2(route.source[rindex])
-
-            # do not care for the orientation of the waypoint if is not the last waypoint AND
-            # the current and following action are move_base or human_aware_navigation
-            # and when the fuild_navigation is true
-            if rindex < len(route.edge_id) - 1 and a1 in self.move_base_actions and a in self.move_base_actions and self.fluid_navigation:
-                self.reconf_movebase(cedg, cnode, True)
-            else:
-                if self.no_orientation:
-                    self.reconf_movebase(cedg, cnode, True)
-                else:
-                    self.reconf_movebase(cedg, cnode, False)
-
-            self.current_target = cedg["node"]
-
-            self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
-            dt_text = self.stat.get_start_time_str()
-
-            self.edge_reconf_start(cedg)
-            if exec_policy:
-                nav_ok, inc = self.execute_action(cedg, cnode, onode)
-            else:
-                nav_ok, inc, recovering, route, replanned = self.execute_action_fail_recovery(cedg, cnode, route, rindex, onode, target)
-            self.edge_reconf_end()
-
-            params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
-            self.reconfigure_movebase_params(params)
-
-            not_fatal = nav_ok
-            if self.cancelled:
-                nav_ok = True
-            if self.preempted:
-                not_fatal = False
-                nav_ok = False
-
-            self.stat.set_ended(self.current_node)
-            dt_text=self.stat.get_finish_time_str()
-            operation_time = self.stat.operation_time
-            time_to_wp = self.stat.time_to_wp
-
-            if nav_ok:
-                self.stat.status = "success"
-                self.get_logger().info("Navigation Finished on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
-            else:
-                if not_fatal:
-                    self.get_logger().warning("Navigation Failed on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
-                    self.stat.status = "failed"
-                else:
-                    self.get_logger().warning("Fatal Fail on %s (%d/%d)" % (dt_text, operation_time, time_to_wp))
-                    self.stat.status = "fatal"
-
-            self.publish_stats()
-
-            current_edge = "none"
-            self.cur_edge.publish(current_edge)
-
-            self.current_action = "none"
-            self.next_action = "none"
-            
-            if not replanned:
-                rindex = rindex + 1
-
-        self.reset_reconf()
-
-        self.navigation_activated = False
-
-        result = nav_ok
-        return result, inc
-
 
     def edge_reconf_start(self, edge):
 
@@ -852,16 +853,18 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("Cancelling current navigation goal, timeout_secs = {}...".format(timeout_secs))
         
         self.edge_action_manager.preempt()
-        self.cancelled = True
 
-        if timeout_secs > 0:
-            stime = self.get_clock().now() 
-            timeout = rclpy.duration.Duration(seconds=timeout_secs)
-            while self.navigation_activated:
-                if (self.get_clock().now() - stime) > timeout:
-                    self.get_logger().info("\t[timeout called]")
-                    break
-                rclpy.spin_once(self, timeout_sec=0.1)
+        self.cancelled = True
+        timeout_secs =  30.0 # TODO need to change late
+        self.navigation_activated = False 
+        # if timeout_secs > 0:
+        #     stime = self.get_clock().now() 
+        #     timeout = rclpy.duration.Duration(seconds=timeout_secs)
+        #     while self.navigation_activated:
+        #         if (self.get_clock().now() - stime) > timeout:
+        #             self.get_logger().info("\t[timeout called]")
+        #             break
+        #         rclpy.spin_once(self, timeout_sec=0.1)
 
         self.get_logger().info("Navigation active: " + str(self.navigation_activated))
         return not self.navigation_activated
@@ -883,7 +886,8 @@ class TopologicalNavServer(rclpy.node.Node):
         pubst.target = self.stat.target
         pubst.topological_map = self.stat.topological_map
         pubst.final_node = self.stat.final_node
-        pubst.time_to_waypoint = self.stat.time_to_wp
+        self.get_logger().info(" {}".format(self.stat.time_to_wp))
+        pubst.time_to_waypoint = float(self.stat.time_to_wp)
         pubst.operation_time = self.stat.operation_time
         pubst.date_started = self.stat.get_start_time_str()
         pubst.date_at_node = self.stat.date_at_node.strftime("%A, %B %d %Y, at %H:%M:%S hours")
@@ -1015,24 +1019,22 @@ class TopologicalNavServer(rclpy.node.Node):
         self.edge_action_manager.initialise(edge, destination_node, origin_node)
         self.edge_action_manager.execute()
         status = self.edge_action_manager.get_state()
-        self.get_logger().info("   client status {} ".format(status))
+        self.get_logger().info(" here  client status {} ".format(status))
         self.pub_status(status)
         # while :
         #     status = self.edge_action_manager.client.get_state()
         #     self.pub_status(status)
         #     rospy.sleep(rospy.Duration.from_sec(0.01))
-        while rclpy.ok():
-            rclpy.spin_once(self)
-            if ((status == GoalStatus.STATUS_EXECUTING or status == GoalStatus.STATUS_UNKNOWN) and not self.cancelled and not self.goal_reached):
-                try:
-                    self.get_logger().info(" current status  {} ".format(status_mapping[status]))
-                    self.pub_status(status)
-                except Exception as e:
-                    pass
-                    return False
-            else:
-                return False 
-        res = self.edge_action_manager.client.get_result()
+        # while rclpy.ok():
+            # rclpy.spin_once(self)
+        if ((status == GoalStatus.STATUS_EXECUTING or status == GoalStatus.STATUS_UNKNOWN) and not self.cancelled and not self.goal_reached):
+            try:
+                self.get_logger().info(" current status  {} ".format(self.edge_action_manager.get_status_msg(status)))
+                self.pub_status(status)
+            except Exception as e:
+                pass
+            
+        res = self.edge_action_manager.get_result()
         if status != GoalStatus.STATUS_SUCCEEDED:
             if not self.goal_reached:
                 result = False
@@ -1048,10 +1050,10 @@ class TopologicalNavServer(rclpy.node.Node):
                 inc = 0
 
         
-        status = self.edge_action_manager.client.get_state()
+        status = self.edge_action_manager.get_state()
         self.pub_status(status)
 
-        self.get_logger().info("move action status: {}, goal reached: {}, inc: {}".format(status_mapping[status], result, inc))
+        self.get_logger().info("move action status: {}, goal reached: {}, inc: {}".format(self.edge_action_manager.get_status_msg(status), result, inc))
         return result, inc
     
     
@@ -1061,7 +1063,7 @@ class TopologicalNavServer(rclpy.node.Node):
             d["goal"] = self.edge_action_manager.destination_node["node"]["name"]
             d["final_goal"] = self.final_goal
             d["action"] = self.edge_action_manager.current_action.upper()
-            d["status"] = status_mapping[status]
+            d["status"] = self.edge_action_manager.get_status_msg(status)
             msg = String()
             msg.data = json.dumps(d)
             self.move_act_pub.publish(msg)

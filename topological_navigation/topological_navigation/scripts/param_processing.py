@@ -17,9 +17,28 @@ class ParameterUpdaterNode(Node):
             self.get_logger().warning('service not available, waiting again... {}'.format('/' + server_name + '/set_parameters'))
         self.get_logger().info('service /{} is available'.format(server_name))
         
-        self.get_params()
 
-
+    def get_parameter_value(self, parameter_value):
+        if parameter_value.type == Parameter.Type.INTEGER:
+            return parameter_value.integer_value
+        elif parameter_value.type == Parameter.Type.DOUBLE:
+            return parameter_value.double_value
+        elif parameter_value.type == Parameter.Type.BOOL:
+            return parameter_value.bool_value
+        elif parameter_value.type == Parameter.Type.STRING:
+            return parameter_value.string_value
+        elif parameter_value.type == Parameter.Type.INTEGER_ARRAY:
+            return parameter_value.integer_array_value
+        elif parameter_value.type == Parameter.Type.DOUBLE_ARRAY:
+            return parameter_value.double_array_value
+        elif parameter_value.type == Parameter.Type.BOOL_ARRAY:
+            return parameter_value.bool_array_value
+        elif parameter_value.type == Parameter.Type.STRING_ARRAY:
+            return parameter_value.string_array_value
+        else:
+            # Handle unsupported or unknown types
+            return None
+    
     def set_params(self, params):
         self.req = SetParameters.Request()
         self.req.parameters = []
@@ -74,7 +93,8 @@ class ParameterUpdaterNode(Node):
                     pass
         if param_values:
             for key, value in zip(param_names, param_values):
-                params[key] = value  
+
+                params[key] = self.get_parameter_value(value)  
         return params 
 
 

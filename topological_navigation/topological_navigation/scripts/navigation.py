@@ -503,12 +503,10 @@ class TopologicalNavServer(object):
             elif self.cancelled:
                 rospy.logwarn("Navigation Failed")
                 self.publish_feedback_exec_policy(GoalStatus.ABORTED)
-
         return succeeded
     
 
     def publish_feedback_exec_policy(self, nav_outcome=None):
-        
         if self.current_node == "none":  # Happens due to lag in fetch system
             rospy.sleep(0.5)
             if self.current_node == "none":

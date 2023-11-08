@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #########################################################################################################
-import rclpy #rospy
+import rclpy
 from topological_navigation.tmap_utils import *
 from topological_navigation_msgs.msg import NavRoute
-
+from rclpy.node import Node
 
 class NodeToExpand(object):
     
@@ -25,8 +25,6 @@ class NodeToExpand(object):
 
 #########################################################################################################
 class TopologicalRouteSearch2(object):
-    
-
     def __init__(self, top_map) :
 
         self.top_map = top_map
@@ -200,54 +198,45 @@ class TopologicalRouteSearch2(object):
 
 
 #########################################################################################################
-class RouteChecker(object):
-    
-    
+class RouteChecker(Node):
     def __init__(self, tmap):
-        
+        super().__init__("route_checker")
         self.edge_dict = {}
         for node in tmap["nodes"]:
             self.edge_dict[node["node"]["name"]] = []
-            
             for edge in node["node"]["edges"]:
                 item = {"node": edge["node"], "edge_id": edge["edge_id"]}
                 self.edge_dict[node["node"]["name"]].append(item)
                 
-                
     def check_route(self, route):
-        
-        rospy.loginfo("Checking Route...")
-
+        self.get_logger().info("Checking Route...")
         N = len(route.source)
         if N < 1 or N != len(route.edge_id):
-            rospy.logerr("Invalid Route: Either the route is empty or the number of nodes do not equal the number of edge ids")
+            self.get_logger().error("Invalid Route: Either the route is empty or the number of nodes do not equal the number of edge ids")
             return False
         
         if "" in route.source or "" in route.edge_id:
-            rospy.logerr("Invalid Route: Empty string found in nodes or edge ids or both")
+            self.get_logger().error("Invalid Route: Empty string found in nodes or edge ids or both")
             return False
         
         for i in range(N-1):
-            
             node = route.source[i]            
             if node not in self.edge_dict:
-                rospy.logerr("Invalid Route: Node {} does not exist".format(node))
+                self.get_logger().error("Invalid Route: Node {} does not exist".format(node))
                 return False
-                
             n = 0
             edge_id = route.edge_id[i]
             next_node = route.source[i+1]  
             for edge in self.edge_dict[node]:
                 if edge["edge_id"] == edge_id and edge["node"] == next_node:
                     n += 1
-                    
             if n != 1:
-                rospy.logerr("Invalid Route: No edge from {} to {} with id {} found or multiple edges found".format(node, next_node, edge_id))
+                self.get_logger().error("Invalid Route: No edge from {} to {} with id {} found or multiple edges found".format(node, next_node, edge_id))
                 return False
         
         final_node = route.source[-1]            
         if final_node not in self.edge_dict:
-            rospy.logerr("Invalid Route: Node {} does not exist".format(final_node))
+            self.get_logger().error("Invalid Route: Node {} does not exist".format(final_node))
             return False
         
         n = 0
@@ -257,10 +246,10 @@ class RouteChecker(object):
                 n += 1
                     
         if n != 1:
-            rospy.logerr("Invalid Route: No edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))
+            self.get_logger().error("Invalid Route: No edge from {} with id {} found or its destination node does not exist or multiple edges found".format(final_node, final_edge_id))
             return False
         
-        rospy.loginfo("Route is Valid")
+        self.get_logger().info("Route is Valid")
         return True
 #########################################################################################################
 

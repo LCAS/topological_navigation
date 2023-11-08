@@ -1,0 +1,8 @@
+topological_navigation/navigation_goal:
+  action_type: geometry_msgs/PoseStamped
+  action: NavigateToPose
+  goal:
+    target_pose:
+      header:
+        frame_id: $node.parent_frame
+      pose: $node.pose

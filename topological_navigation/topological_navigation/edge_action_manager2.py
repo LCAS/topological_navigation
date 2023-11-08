@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Created on Tue Apr 13 22:02:24 2021
-@author: Adam Binch (abinch@sagarobotics.com)
+Created on Tue Nov 5 22:02:24 2023
+@author: Geesara Kulathunga (ggeesara@gmail.com)
 
 """
 #########################################################################################################
@@ -32,8 +32,6 @@ except ImportError:
 
 def _import(location, name):
     mod = __import__(location, fromlist=[name]) 
-    print(mod)
-    print(getattr(mod, name))
     return getattr(mod, name) 
 
 
@@ -91,6 +89,7 @@ class EdgeActionManager(rclpy.node.Node):
         self.future_event_stack = []
         self.goal_execute_executor = SingleThreadedExecutor()
         self.goal_cancle_executor = SingleThreadedExecutor()
+        self.goal_handle = None 
 
     
     def get_nav_action_server_status(self, ):
@@ -136,7 +135,8 @@ class EdgeActionManager(rclpy.node.Node):
         self.action = action 
         # self.client = ActionClient(self, action, self.action_server_name, callback_group=self.callback_group)
         self.client = ActionClient(self, action, self.action_server_name)
-        # self.sub_get_feedback = self.create_subscription(NavigateToPose.Feedback, '/navigate_to_pose/_action/feedback', self.feedback_callback, qos_profile=self.latching_qos)
+        # self.sub_get_feedback = self.create_subscription(NavigateToPose.Feedback, '/navigate_to_pose/_action/feedback'
+        #                                                                 , self.feedback_callback, qos_profile=self.latching_qos)
         
         self.action_status = 0 
 
@@ -144,16 +144,12 @@ class EdgeActionManager(rclpy.node.Node):
         self.construct_goal(action_type, copy.deepcopy(self.edge["goal"]))
     
     def feedback_callback(self, feedback_msg):
-        # Process and print feedback information
-        # self.get_logger().info("Received feedback:")
         self.nav_client_feedback = feedback_msg.feedback
-        # self.get_logger().info("Distance to goal: {} ".format(self.nav_client_feedback))
         # self.get_logger().info("Distance to goal: {} ".format(self.nav_client_feedback.distance_remaining))
         return 
     
     def preempt_feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
-        # self.get_logger().info("Distance to goal: {} ".format(self.nav_client_feedback.distance_remaining))
         return 
 
 
@@ -175,49 +171,38 @@ class EdgeActionManager(rclpy.node.Node):
         
     def preempt(self):
         if self.client is not None:
-            # self.client.async_cancel_goal()
             if self.goal_handle is None:
                 self.get_logger().info("there is no goal to stop, it already cancled with status {}".format(self.action_status))
                 return True 
             cancel_future = self.client._cancel_goal_async(self.goal_handle)
             self.future_event_stack.append(cancel_future)
             self.get_logger().info("wating till terminating current preemption ")
-            
-            # rclpy.wait_for_all_futures(self.future_event_stack)
             while rclpy.ok():
-                # if (self.action_status == 4):
                 try: 
                     rclpy.spin_once(self)
-                    # else:
-                    # rclpy.spin_once(self, executor=self.goal_cancle_executor)
                     if cancel_future.done() and self.goal_get_result_future.done():
                         self.action_status = 5
                         self.get_logger().info(" goal cancle error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
-                        # self.goal_handle = None 
                         return True 
-                    # self.get_logger().info("---------------preempt----------------- {} ".format(self.action_status))
                 except Exception as e:
-                    # self.get_logger().error("---------------preempt----------------- {} ".format(e))
                     pass 
-                    # self.get_logger().info("Wating till terminating current preemption ")
         
     def construct_goal(self, action_type, goal_args):
         paths = self.dt.get_paths_from_nested_dict(goal_args)
-        # self.get_logger().info("   {}".format(paths))
         for item in paths:
             value = item["value"]
-            # self.get_logger().info("  value {}".format(value))
             if isinstance(value, str):
                 if value.startswith("$"):
-                    # self.get_logger().info("  value {}".format(value))
                     _property = self.dt.getFromDict(self.destination_node, value[1:].split("."))
                     goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
                     
                 elif value.startswith("+") and self.origin_node is not None:
                     _property = self.dt.getFromDict(self.origin_node, value[1:].split("."))
                     goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
-        self.goal = goal_args #TODO need to convert to correct message type for other message types 
+        self.goal = goal_args
         self.get_logger().info("  goal {} ".format(self.goal))
+
+        #TODO need to add other types 
         if(self.action_name == "NavigateToPose"):
             self.nav_goal = NavigateToPose.Goal()
             header = Header()
@@ -267,16 +252,7 @@ class EdgeActionManager(rclpy.node.Node):
                     self.current_action = self.action_name
                     self.goal_resposne = self.goal_get_result_future.result() 
                     return True 
-                # if self.action_status == 5:
-                #     self.get_logger().warning("-----1")
-                #     self.goal_get_result_future.cancel()
-                #     self.get_logger().warning("-----2")
-                #     self.get_logger().info("Edge Action Manager: Executing the action respose  with status {}".format(self.get_status_msg(self.action_status)))  
-                #     self.current_action = self.action_name
-                #     self.goal_resposne = None
-                #     return True 
-                # self.get_logger().info("---------------back--1------------------ {} ".format(self.action_status))
             except Exception as e:
-                        self.get_logger().error("---------------execute----------------- {} ".format(e))
+                pass 
                             
 #########################################################################################################

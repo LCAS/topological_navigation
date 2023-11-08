@@ -1,34 +1,28 @@
 #!/usr/bin/env python
+"""
+Created on Tue Nov 5 22:02:24 2023
+@author: Geesara Kulathunga (ggeesara@gmail.com)
+
+"""
 
 import rclpy, json
-# import dynamic_reconfigure.client
-
-# import topological_navigation_msgs.msg
 from topological_navigation_msgs.msg import NavStatistics, CurrentEdge, ClosestEdges, TopologicalRoute
 from topological_navigation_msgs.srv import EvaluateEdge, EvaluateNode
-# from topological_navigation_msgs.srv import EvaluateEdgeRequest, EvaluateNodeRequest
-
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from topological_navigation_msgs.action import ExecutePolicyMode
 from std_msgs.msg import String
-# https://docs.ros2.org/foxy/api/action_msgs/msg/GoalStatus.html
 from action_msgs.msg import GoalStatus
-
 from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2, get_route_distance
 from topological_navigation.navigation_stats import nav_stats
 from param_processing import ParameterUpdaterNode
-
 from topological_navigation.tmap_utils import *
 from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy, QoSDurabilityPolicy
 from rclpy.action import ActionServer
-
 from rclpy import Parameter 
 from topological_navigation.edge_action_manager2 import EdgeActionManager
 from topological_navigation.edge_reconfigure_manager2 import EdgeReconfigureManager
-
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor 
-
 from threading import Lock
 
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
@@ -58,8 +52,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
     def __init__(self, name, mode):
         super().__init__(name)
-        # rospy.on_shutdown(self._on_node_shutdown)
-        
+        rclpy.get_default_context().on_shutdown(self._on_node_shutdown)
         self.node_by_node = False
         self.cancelled = False
         self.preempted = False
@@ -115,11 +108,6 @@ class TopologicalNavServer(rclpy.node.Node):
         self.subs_topmap = self.create_subscription(String, '/topological_map_2', self.MapCallback, callback_group=self.callback_group_map, qos_profile=self.latching_qos)
         self.get_logger().info("Navigation waiting for the Topological Map...")
 
-        # rate = self.create_rate(1)
-        # while rclpy.ok() and not self._map_received:
-        #     rate.sleep()
-        # self.get_logger().info("Navigation received the Topological Map")
-
         while rclpy.ok():
             rclpy.spin_once(self)
             if self._map_received:
@@ -127,8 +115,6 @@ class TopologicalNavServer(rclpy.node.Node):
                 break 
         
         self.edge_action_manager = EdgeActionManager()
-
-        
 
         self.edge_reconfigure = self.get_parameter_or("~reconfigure_edges", Parameter('bool', Parameter.Type.BOOL, True)).value
         self.srv_edge_reconfigure = self.get_parameter_or("~reconfigure_edges_srv", Parameter('bool', Parameter.Type.BOOL, False)).value 
@@ -138,8 +124,6 @@ class TopologicalNavServer(rclpy.node.Node):
             self.get_logger().warn("Edge Reconfigure Unavailable")
 
         self.get_logger().info("Subscribing to Localisation Topics...")
-        # rclpy.wait_for_message('closest_edges', ClosestEdges, timeout=10)
-
         self.subs_closest_node = self.create_subscription(String, 'closest_node', self.closestNodeCallback, qos_profile=self.latching_qos)
         while rclpy.ok():
             rclpy.spin_once(self)
@@ -174,44 +158,34 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("Creating GO-TO-NODE action server...")  
         self._as  =  ActionServer(self, GotoNode, name, execute_callback=self.executeCallback, cancel_callback=self.preemptCallback)
         self._as_action_feedback_pub = self.create_publisher(GotoNode.Feedback, name + '/feedback', self.latching_qos)
-        # self._as = actionlib.SimpleActionServer(name, GotoNodeAction, execute_cb=self.executeCallback, auto_start=False)
-        # self._as.register_preempt_callback(self.preemptCallback)
-        # self._as.start()
         self.get_logger().info("...done")
    
         # Creating Action Server for execute policy
         self.get_logger().info("Creating EXECUTE POLICY MODE action server...")
         self._as_exec_policy = ActionServer(self, ExecutePolicyMode, "topological_navigation/execute_policy_mode", 
                             execute_callback=self.executeCallbackexecpolicy, cancel_callback=self.preemptCallbackexecpolicy)
-        
         self._as_exec_policy_action_feedback_pub = self.create_publisher(ExecutePolicyMode.Feedback, 'topological_navigation/execute_policy_mode/feedback'
                                                                                     , self.latching_qos)
-        # self._as_exec_policy.register_preempt_callback(self.preemptCallbackexecpolicy)
-        # self._as_exec_policy.start()
+        
+        self.update_params_planner = ParameterUpdaterNode("controller_server") #TODO change the name 
+
         self.get_logger().info("...done")
         self.get_logger().info("All Done.")
         
         
         
     def _on_node_shutdown(self):
-        with self.navigation_lock:
-            if self.navigation_activated:
-                self.preempted = True
-                self.cancel_current_action(timeout_secs=2)
+        if self.navigation_activated:
+            self.preempted = True
+            self.cancel_current_action(timeout_secs=2)
 
 
     def init_reconfigure(self):
-        
-        
         self.move_base_planner  = self.get_parameter_or("~move_base_planner", Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
         planner = self.move_base_planner.split("/")[-1]
         if not planner in DYNPARAM_MAPPING:
             DYNPARAM_MAPPING[planner] = {}
-        
         self.get_logger().info("Creating reconfigure client for {}".format(self.move_base_planner))
-
-        self.update_params_planner = ParameterUpdaterNode("controller_server") #TODO change the name 
-        # self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
         self.init_dynparams = self.update_params_planner.get_params()
         
 
@@ -232,42 +206,10 @@ class TopologicalNavServer(rclpy.node.Node):
         params = {"FollowPath.yaw_goal_tolerance": cytol, "FollowPath.xy_goal_tolerance": cxygtol}
         self.get_logger().info("Reconfiguring %s with %s" % (self.move_base_planner, params))
         print("Intermediate: {}".format(intermediate))
-        # self.reconfigure_movebase_params(params)
-        self.update_params_planner.set_params(params)
-        
-
-    # def reconfigure_movebase_params(self, params):
-
-    #     self.init_dynparams = self.rcnfclient.get_configuration()
-        
-    #     key = self.move_base_planner[self.move_base_planner.rfind("/") + 1 :]
-    #     translation = DYNPARAM_MAPPING[key]
-        
-    #     translated_params = {}
-    #     for k, v in params.items():
-    #         if k in translation:
-    #             if rospy.has_param(self.move_base_planner + "/" + translation[k]):
-    #                 translated_params[translation[k]] = v
-    #             else:
-    #                 self.get_logger().warning("%s has no parameter %s" % (self.move_base_planner, translation[k]))
-    #         else:
-    #             self.get_logger().warning("%s has no dynparam translation for %s" % (self.move_base_planner, k))
-                
-        # self._do_movebase_reconf(translated_params)
-        
-
-    # def _do_movebase_reconf(self, params):
-        
-    #     try:
-    #         self.rcnfclient.update_configuration(params)
-    #     except rospy.ServiceException as exc:
-    #         self.get_logger().warning("Could not reconfigure move_base parameters. Caught service exception: %s. Will continue with previous parameters", exc)
-            
+        self.update_params_planner.set_params(params)     
 
     def reset_reconf(self):
-        # self.get_logger().info(" {} ".format(self.init_dynparams))
         self.update_params_planner.set_params(self.init_dynparams)
-
 
     def MapCallback(self, msg):
         """
@@ -286,16 +228,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.move_base_edge = {}
         self.move_base_edge["action"] = self.move_base_name
         self.move_base_edge["edge_id"] = "move_base_edge"
-
-        # self.declare_parameter('~move_base_name', Parameter.Type.STRING)
-        # fromove_base_goal = rospy.get_param("~move_base_goal", {})
-        # self.declare_parameter('~move_base_actions', Parameter.Type.STRING_ARRAY)
-
-        # self.move_base_name = self.get_parameter_or("~move_base_name", Parameter('str', Parameter.Type.STRING, "move_base")).value
-      
-
         move_base_goal = {}
-
         if not move_base_goal:
             for node in self.lnodes["nodes"]:
                 for edge in node["node"]["edges"]:
@@ -306,7 +239,6 @@ class TopologicalNavServer(rclpy.node.Node):
                 else:
                     continue
                 break
-
         if not move_base_goal:
             move_base_goal["action_type"] = "geometry_msgs/PoseStamped"
             move_base_goal["goal"] = {}
@@ -317,7 +249,6 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.move_base_edge["action_type"] = move_base_goal["action_type"]
         self.move_base_edge["goal"] = move_base_goal["goal"]
-
         self.get_logger().info("Move Base Goal set to {}".format(move_base_goal["action_type"]))
 
 
@@ -328,28 +259,21 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("\n####################################################################################################")
         self.get_logger().info("Processing GO-TO-NODE goal (No Orientation = {})".format(goal.request.no_orientation))
         can_start = False
-
-        # with self.navigation_lock:
         if self.cancel_current_action(timeout_secs=10):
             # we successfully stopped the previous action, claim the title to activate navigation
             self.navigation_activated = True
             can_start = True
-
         if can_start:
-
             self.cancelled = False
             self.preempted = False
             self.final_goal = False
             self.no_orientation = goal.request.no_orientation
             self.executing_fail_policy = {}
-            
             self._feedback.route = "Starting..."
             self._as_action_feedback_pub.publish(self._feedback)
             self.navigate(goal.request.target)
-
         else:
             self.get_logger().warning("Could not cancel current navigation action, GO-TO-NODE goal aborted")
-            # self._as.set_aborted()
 
         self.navigation_activated = False
         goal.succeed()
@@ -365,12 +289,10 @@ class TopologicalNavServer(rclpy.node.Node):
         print("\n####################################################################################################")
         self.get_logger().info("Processing EXECUTE POLICY MODE goal")
         can_start = False
-
-        with self.navigation_lock:
-            if self.cancel_current_action(timeout_secs=10):
-                # we successfully stopped the previous action, claim the title to activate navigation
-                self.navigation_activated = True
-                can_start = True
+        if self.cancel_current_action(timeout_secs=10):
+            # we successfully stopped the previous action, claim the title to activate navigation
+            self.navigation_activated = True
+            can_start = True
 
         if can_start:
 
@@ -378,14 +300,13 @@ class TopologicalNavServer(rclpy.node.Node):
             self.preempted = False
             self.final_goal = False
             
-            self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
-            
+            self.max_dist_to_closest_edge = self.get_parameter_or("~max_dist_to_closest_edge",  Parameter('double', Parameter.Type.DOUBLE, 1.0)).value 
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
                 self.nav_from_closest_edge = False
             else:
                 self.nav_from_closest_edge = True
             
-            route = goal.route
+            route = goal.request.route
             valid_route = self.route_checker.check_route(route)
             
             if valid_route and (route.source[0] == self.current_node or route.source[0] == self.closest_node):
@@ -400,23 +321,28 @@ class TopologicalNavServer(rclpy.node.Node):
 
             if not self.cancelled and not self.preempted:
                 self._result_exec_policy.success = result
-                if result:
-                    self._as_exec_policy.set_succeeded(self._result_exec_policy)
-                else:
-                    self._as_exec_policy.set_aborted(self._result_exec_policy)
+                # if result:
+                #     # self._as_exec_policy.set_succeeded(self._result_exec_policy)
+                # else:
+                #     # self._as_exec_policy.set_aborted(self._result_exec_policy)
             else:
                 if not self.preempted:
                     self._result_exec_policy.success = result
-                    self._as_exec_policy.set_aborted(self._result_exec_policy)
+                    # self._as_exec_policy.set_aborted(self._result_exec_policy)
                 else:
                     self._result_exec_policy.success = False
-                    self._as_exec_policy.set_preempted(self._result_exec_policy)
+                    # self._as_exec_policy.set_preempted(self._result_exec_policy)
 
         else: 
             self.get_logger().warning("Could not cancel current navigation action, EXECUTE POLICY MODE goal aborted.")
-            self._as_exec_policy.set_aborted()
+            # self._as_exec_policy.set_aborted()
 
         self.navigation_activated = False
+        goal.succeed()
+        self.get_logger().warning("Done processing the nav action....")
+        result = ExecutePolicyMode.Result()
+        result.success = self._result_exec_policy.success 
+        return result
 
 
     def preemptCallback(self, goal_handle):
@@ -471,7 +397,6 @@ class TopologicalNavServer(rclpy.node.Node):
         self._target = Targ
 
         self.init_reconfigure()
-
         self.get_logger().info(" {} Nodes on route".format(nnodes))
 
         inc = 1
@@ -528,6 +453,9 @@ class TopologicalNavServer(rclpy.node.Node):
                     nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
                     self.get_logger().info("Navigation Finished Successfully") if nav_ok else self.get_logger().warning("Navigation Failed")
                 
+                
+
+        
 
         while rindex < (len(route.edge_id)) and not self.cancelled and (nav_ok or recovering):
             
@@ -707,9 +635,7 @@ class TopologicalNavServer(rclpy.node.Node):
  
 
     def execute_policy(self, route, target):
-        
         succeeded, inc = self.followRoute(route, target, 1)
-
         if succeeded:
             self.get_logger().info("Navigation Finished Successfully")
             self.publish_feedback_exec_policy(GoalStatus.STATUS_SUCCEEDED)
@@ -720,14 +646,11 @@ class TopologicalNavServer(rclpy.node.Node):
             elif self.cancelled:
                 self.get_logger().warning("Navigation Failed")
                 self.publish_feedback_exec_policy(GoalStatus.STATUS_ABORTED)
-
         return succeeded
     
 
     def publish_feedback_exec_policy(self, nav_outcome=None):
-        
         if self.current_node == "none":  # Happens due to lag in fetch system
-            rospy.sleep(0.5)
             if self.current_node == "none":
                 self._feedback_exec_policy.current_wp = self.closest_node
             else:
@@ -736,7 +659,7 @@ class TopologicalNavServer(rclpy.node.Node):
             self._feedback_exec_policy.current_wp = self.current_node
         if nav_outcome is not None:
             self._feedback_exec_policy.status = nav_outcome
-        self._as_exec_policy.publish_feedback(self._feedback_exec_policy)
+        self._as_exec_policy_action_feedback_pub.publish(self._feedback_exec_policy)
         
         
     def orig_node_from_closest_edge(self, g_node):
@@ -759,7 +682,6 @@ class TopologicalNavServer(rclpy.node.Node):
             d2 = get_route_distance(self.lnodes, o_node_2, g_node)
         else: # Use the destination node of the closest edge.
             d1 = 0; d2 = 1
-        
         if d1 <= d2:
             return o_node_1, edge_1
         else:
@@ -770,7 +692,6 @@ class TopologicalNavServer(rclpy.node.Node):
         
         self.get_logger().info("Target and Origin Nodes are the same")
         self.current_target = g_node["node"]["name"]
-        
         if the_edge is None:
             # Check if there is a move_base action in the edges of this node and choose the earliest one in the 
             # list of move_base actions. If not is dangerous to move.
@@ -782,7 +703,6 @@ class TopologicalNavServer(rclpy.node.Node):
                     if c_ind < act_ind:
                         act_ind = c_ind
                         the_edge = i
-
         if the_edge is None:
             self.get_logger().warning("Navigating Case 2a: Could not find a move base action in the edges of target {}. Unsafe to move".format(g_node["node"]["name"]))
             self.get_logger().info("Action not taken, outputting success")
@@ -806,7 +726,6 @@ class TopologicalNavServer(rclpy.node.Node):
             else:
                 self.get_logger().info("Navigation Finished Successfully")
             self.get_logger().info("Navigating Case 2 -> res: {} ".format(inc))
-            
         return result, inc
 
 
@@ -840,10 +759,8 @@ class TopologicalNavServer(rclpy.node.Node):
 
 
     def edge_reconf_end(self):
-
         if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
             self.edgeReconfigureManager._reset()
-            rospy.sleep(rospy.Duration.from_sec(0.3))
 
 
     def cancel_current_action(self, timeout_secs=-1):
@@ -851,12 +768,20 @@ class TopologicalNavServer(rclpy.node.Node):
         Cancels the action currently in execution. Returns True if the current goal is correctly ended.
         """
         self.get_logger().info("Cancelling current navigation goal, timeout_secs = {}...".format(timeout_secs))
-        
         self.edge_action_manager.preempt()
-
         self.cancelled = True
-        timeout_secs =  30.0 # TODO need to change late
         self.navigation_activated = False 
+        self.navigation_activated = False 
+        # if timeout_secs > 0:
+        #     stime = self.get_clock().now() 
+        #     timeout = rclpy.duration.Duration(seconds=timeout_secs)
+        #     while self.navigation_activated:
+        #         if (self.get_clock().now() - stime) > timeout:
+        #             self.get_logger().info("\t[timeout called]")
+        #             break
+        #         rclpy.spin_once(self, timeout_sec=0.1)
+
+        self.navigation_activated = False
         # if timeout_secs > 0:
         #     stime = self.get_clock().now() 
         #     timeout = rclpy.duration.Duration(seconds=timeout_secs)
@@ -932,11 +857,9 @@ class TopologicalNavServer(rclpy.node.Node):
         The fail policy sometimes modifies the current route by including the recovery action
         """
         nav_ok, inc = self.execute_action(edge, destination_node, origin_node)
-
         new_route = route
         recovering = False
         replanned = False
-
         # this means the action is aborted -> execute the fail policy
         # make sure that if the goal is cancelled by the client we don't enter here
         if not nav_ok and not self.preempted:
@@ -947,7 +870,6 @@ class TopologicalNavServer(rclpy.node.Node):
                 if state < len(policy):
                     rec_action = policy[state]
                     self.get_logger().info(">> EXECUTING FAIL POLICY ACTION: {}.".format(rec_action))
-
                     if rec_action[0] == "retry":
                         new_route.source.insert(idx+1, route.source[idx]) 
                         new_route.edge_id.insert(idx+1, route.edge_id[idx])
@@ -959,17 +881,11 @@ class TopologicalNavServer(rclpy.node.Node):
                         recovering = False
                         replanned = False
                     elif rec_action[0] == "wait":
-                        secs = 1
-                        if len(rec_action) > 1:
-                            secs = int(rec_action[-1])
-                        rospy.sleep(secs)
                         recovering = True
                         replanned = False
                     elif rec_action[0] == "replan":
                         _route = self.rsearch.search_route(origin_node["node"]["name"], target, avoid_edges=[edge["edge_id"]])
                         _route = self.enforce_navigable_route(_route, target)
-
-                        # build the new route
                         new_route.source = route.source[:idx] + _route.source
                         new_route.edge_id = route.edge_id[:idx] + _route.edge_id
                         route_updated = True

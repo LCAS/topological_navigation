@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Created on Wed Feb 10 15:58:34 2021
+Created on Tue Nov 5 22:02:24 2023
+@author: Geesara Kulathunga (ggeesara@gmail.com)
 
-@author: Adam Binch (abinch@sagarobotics.com)
 """
 #############################################################################################################
 import rclpy
@@ -24,7 +24,6 @@ class EdgeReconfigureManager(rclpy.node.Node):
         self.edge_groups = self.get_parameter_or("/edge_nav_reconfig_groups", Parameter('str', Parameter.Type.STRING_ARRAY, [])).value
         self.callback_group = ReentrantCallbackGroup()
         self.reconf_at_edges = self.create_client(ReconfAtEdges, '/reconf_at_edges')
-        # self.reconf_at_edges = self.create_client(ReconfAtEdges, '/reconf_at_edges', callback_group=self.callback_group)
 
         
     def register_edge(self, edge):
@@ -45,13 +44,9 @@ class EdgeReconfigureManager(rclpy.node.Node):
         self.edge_config = {}
         for namespace in self.namespaces:
             self.get_logger().info("Edge Reconfigure Manager: Getting initial configuration for {}".format(namespace))
-            # client = dynamic_reconfigure.client.Client(namespace, timeout=2.0)
-            #TODO check the logic 
             client = ParameterUpdaterNode(namespace)
             try:
-                # config = client.get_configuration()
                 config = client.get_params()
-                
             except Exception as e:
                 self.get_logger().warning("Edge Reconfigure Manager: Caught service exception: {}".format(e))
                 continue
@@ -88,13 +83,10 @@ class EdgeReconfigureManager(rclpy.node.Node):
                 
                 
     def update(self, namespace, params):
-        
-        # client = dynamic_reconfigure.client.Client(namespace, timeout=2.0)
         client = ParameterUpdaterNode(namespace)
         try:
             client.get_params()
             client.set_params(params)
-            
         except Exception as e:
             self.get_logger().warning("Edge Reconfigure Manager: Caught service exception: {}".format(e))
                     
@@ -130,17 +122,5 @@ class EdgeReconfigureManager(rclpy.node.Node):
                     except Exception as e:
                         self.get_logger().error("Error while reconfiguring the edge {}".format(e))
                         pass
-            self.get_logger().info("-------")
-
-
-            # try:
-            #     rospy.wait_for_service("reconf_at_edges", timeout=3)
-            #     reconf_at_edges = rospy.ServiceProxy("reconf_at_edges", ReconfAtEdges)
-            #     resp1 = reconf_at_edges(edge_id)
-            #     self.get_logger().info(resp1.success)
-            #     if resp1.success:
-            #         self.current_edge_group = edge_group
-            # except Exception as e:
-            #     rospy.logerr("Service call failed: %s" % e)
         
 ############################################################################################################# 

@@ -48,7 +48,7 @@ class map_manager_2(rclpy.node.Node):
         self.auto_write = self.get_parameter_or("~auto_write_topological_maps", Parameter('bool', Parameter.Type.BOOL, False)).value
         
         package_path = get_package_share_directory('topological_navigation')
-        nav_config = str(os.path.join(package_path, 'config', 'move_base_goal.yaml'))
+        nav_config = str(os.path.join(package_path, 'config', 'navigation_goal.yaml'))
 
         self.nav_config = str(self.get_parameter_or("nav_config", Parameter('str', Parameter.Type.STRING, nav_config)).value)
         self.get_logger().info("cache_topological_maps: {}".format(self.cache_maps))
@@ -62,7 +62,7 @@ class map_manager_2(rclpy.node.Node):
         self.goal_mappings = {}
         
         with open(self.nav_config, "r") as f:
-            self.move_base_goal = yaml.safe_load(f)["topological_navigation/move_base_goal"]
+            self.move_base_goal = yaml.safe_load(f)["topological_navigation/navigation_goal"]
 
         if advertise_srvs:
             self.advertise()
@@ -593,6 +593,7 @@ class map_manager_2(rclpy.node.Node):
 
         edge = {}
         edge["action"] = action
+
 
         if edge_id == "default":
             edge["edge_id"] = origin + "_" + destination

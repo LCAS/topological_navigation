@@ -17,7 +17,6 @@ class ParameterUpdaterNode(Node):
             self.get_logger().warning('service not available, waiting again... {}'.format('/' + server_name + '/set_parameters'))
         self.get_logger().info('service /{} is available'.format(server_name))
         
-
     def get_parameter_value(self, parameter_value):
         if parameter_value.type == Parameter.Type.INTEGER:
             return parameter_value.integer_value
@@ -98,11 +97,11 @@ class ParameterUpdaterNode(Node):
         return params 
 
 
-if __name__ == '__main__':
-    rclpy.init(args=None)
-    try_params = ParameterUpdaterNode("controller_server")
-    # params = try_params.get_params()
-    # try_params.get_logger().info(" {}".format(params))
+# if __name__ == '__main__':
+#     rclpy.init(args=None)
+#     try_params = ParameterUpdaterNode("controller_server")
+#     # params = try_params.get_params()
+#     # try_params.get_logger().info(" {}".format(params))
 
-    params = {'FollowPath.xy_goal_tolerance': 0.3}
-    try_params.set_params(params)
+#     params = {'FollowPath.xy_goal_tolerance': 0.3}
+#     try_params.set_params(params)

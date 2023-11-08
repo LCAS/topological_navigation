@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+Created on Tue Nov 5 22:02:24 2023
+@author: Geesara Kulathunga (ggeesara@gmail.com)
+
+"""
 ###################################################################################################################
 import sys, json, numpy as np
 import rclpy, tf2_ros
@@ -18,83 +23,6 @@ import time
 from threading import Thread, Event 
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor 
-
-
-class LocaliseByTopicSubscriber(object):
-    """
-    Helper class for localise by topic subcription. Callable to start subsriber
-    thread.
-    """
-    def __init__(self, topic, callback, callback_args):
-        
-        self.topic = rclpy.get_namespace() + topic
-        self.callback = callback
-        self.callback_args = callback_args
-        self.sub = None
-        self.t = None
-        
-
-
-    def get_topic_type(self, topic, blocking=False):
-        """
-        Get the topic type.
-        !!! Overriden from rostopic !!!
-
-        :param topic: topic name, ``str``
-        :param blocking: (default False) block until topic becomes available, ``bool``
-
-        :returns: topic type, real topic name and fn to evaluate the message instance
-          if the topic points to a field within a topic, e.g. /rosout/msg. fn is None otherwise. ``(str, str, fn)``
-        :raises: :exc:`ROSTopicException` If master cannot be contacted
-        """
-        topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
-        if topic_type:
-            return topic_type, real_topic, msg_eval
-        elif blocking:
-            sys.stderr.write("WARNING: topic [%s] does not appear to be published yet\n"%topic)
-            while not rclpy.is_shutdown():
-                topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
-                if topic_type:
-                    return topic_type, real_topic, msg_eval
-                else:
-                    rostopic._sleep(10.) # Change! Waiting for 10 seconds instead of 0.1 to reduce load
-                    
-        return None, None, None
-
-
-    def __call__(self):
-        """
-        When called start a new thread that waits for the topic type and then
-        subscribes. This is therefore non blocking and waits in the background.
-        """
-        self.t = Thread(target=self.subscribe)
-        self.t.start()
-
-
-    def subscribe(self):
-        """
-        Get the topic type and subscribe to topic. Subscriber is kept alive as
-        long as the instance of the class is alive.
-        """
-        rostopic.get_topic_type = self.get_topic_type # Monkey patch
-        topic_type = rostopic.get_topic_class(self.topic, True)[0]
-        self.get_logger().info("Subscribing to %s" % self.topic)
-        self.sub = rclpy.Subscriber(
-            name=self.topic,
-            data_class=topic_type,
-            callback=self.callback,
-            callback_args=self.callback_args
-        )
-
-
-    def close(self):
-        self.sub.unregister()
-        
-
-    def __del__(self):
-        self.close()
-###################################################################################################################    
-
 
 ###################################################################################################################    
 class TopologicalNavLoc(rclpy.node.Node):
@@ -213,6 +141,8 @@ class TopologicalNavLoc(rclpy.node.Node):
             else:
                 self.nogos=[]
             self.get_logger().info("NO GO NODES: %s" %self.nogos)
+            self.get_logger().info("NODES BY TOPIC: %s" %self.names_by_topic)
+            self.get_logger().info("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
 
         try:
             trans = self.tf_buffer.lookup_transform(self.tmap_frame, self.base_frame, rclpy.time.Time())
@@ -285,7 +215,6 @@ class TopologicalNavLoc(rclpy.node.Node):
                 self.throttle +=1
         except TransformException as ex:
             self.get_logger().error(f'Could not transform {self.tmap_frame} to {self.base_frame}: {ex}')
-            self.rate.sleep()
             pass  
         
 
@@ -354,18 +283,15 @@ class TopologicalNavLoc(rclpy.node.Node):
             for i in self.subscribers:
                 del i
             self.subscribers = []
-            for j in self.nodes_by_topic:
-                # Append to list to keep the instance alive and the subscriber active.
-                self.subscribers.append(LocaliseByTopicSubscriber(
-                    topic=j['topic'],
-                    callback=self.Callback,
-                    callback_args=j
-                ))
-                # Calling instance of class to start subsribing thread.
-                self.subscribers[-1]()
-            
-            self.get_logger().info("NODES BY TOPIC: %s" %self.names_by_topic)
-            self.get_logger().info("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
+            # for j in self.nodes_by_topic:
+            #     # Append to list to keep the instance alive and the subscriber active.
+            #     self.subscribers.append(LocaliseByTopicSubscriber(
+            #         topic=j['topic'],
+            #         callback=self.Callback,
+            #         callback_args=j
+            #     ))
+            #     # Calling instance of class to start subsribing thread.
+            #     self.subscribers[-1]()
             self.rec_map = True
             
             
@@ -547,6 +473,81 @@ class TopologicalNavLoc(rclpy.node.Node):
             
         return inside
 ###################################################################################################################        
+
+# class LocaliseByTopicSubscriber(object):
+#     """
+#     Helper class for localise by topic subcription. Callable to start subsriber
+#     thread.
+#     """
+#     def __init__(self, topic, callback, callback_args):
+        
+#         self.topic = rclpy.get_namespace() + topic
+#         self.callback = callback
+#         self.callback_args = callback_args
+#         self.sub = None
+#         self.t = None
+        
+
+
+#     def get_topic_type(self, topic, blocking=False):
+#         """
+#         Get the topic type.
+#         !!! Overriden from rostopic !!!
+
+#         :param topic: topic name, ``str``
+#         :param blocking: (default False) block until topic becomes available, ``bool``
+
+#         :returns: topic type, real topic name and fn to evaluate the message instance
+#           if the topic points to a field within a topic, e.g. /rosout/msg. fn is None otherwise. ``(str, str, fn)``
+#         :raises: :exc:`ROSTopicException` If master cannot be contacted
+#         """
+#         topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
+#         if topic_type:
+#             return topic_type, real_topic, msg_eval
+#         elif blocking:
+#             sys.stderr.write("WARNING: topic [%s] does not appear to be published yet\n"%topic)
+#             while not rclpy.is_shutdown():
+#                 topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
+#                 if topic_type:
+#                     return topic_type, real_topic, msg_eval
+#                 else:
+#                     rostopic._sleep(10.) # Change! Waiting for 10 seconds instead of 0.1 to reduce load
+                    
+#         return None, None, None
+
+
+#     def __call__(self):
+#         """
+#         When called start a new thread that waits for the topic type and then
+#         subscribes. This is therefore non blocking and waits in the background.
+#         """
+#         self.t = Thread(target=self.subscribe)
+#         self.t.start()
+
+
+#     def subscribe(self):
+#         """
+#         Get the topic type and subscribe to topic. Subscriber is kept alive as
+#         long as the instance of the class is alive.
+#         """
+#         rostopic.get_topic_type = self.get_topic_type # Monkey patch
+#         topic_type = rostopic.get_topic_class(self.topic, True)[0]
+#         self.get_logger().info("Subscribing to %s" % self.topic)
+#         self.sub = rclpy.Subscriber(
+#             name=self.topic,
+#             data_class=topic_type,
+#             callback=self.callback,
+#             callback_args=self.callback_args
+#         )
+
+
+#     def close(self):
+#         self.sub.unregister()
+        
+
+#     def __del__(self):
+#         self.close()
+# ###################################################################################################################    
 
 
 ###################################################################################################################

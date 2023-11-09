@@ -75,23 +75,37 @@ class TopologicalNavLoc(rclpy.node.Node):
         self.service_get_tagged_done_event  = Event()
         self.callback_group = ReentrantCallbackGroup()
         self.callback_localize_pose = ReentrantCallbackGroup()
-        self.timer_cb_group = ReentrantCallbackGroup()
+        self.timer_map_group = ReentrantCallbackGroup()
 
         self.get_tagged_srv = self.create_service(GetTaggedNodes, '/topological_localisation/get_nodes_with_tag'
                                 ,  self.get_nodes_wtag_cb, callback_group=self.callback_group)
         self.loc_pos_srv = self.create_service(LocalisePose, '/topological_localisation/localise_pose'
                                                , self.localise_pose_cb, callback_group=self.callback_localize_pose)
 
-        self.subs_topmap = self.create_subscription(String, '/topological_map_2', self.MapCallback, qos_profile=self.qos)
+        self.subs_topmap = self.create_subscription(String, '/topological_map_2'
+                                , self.MapCallback, qos_profile=self.qos, callback_group=self.timer_map_group)
         self.subs_topmap  # prevent unused variable warning
 
         self.get_logger().info("Localisation waiting for the Topological Map...")
-        
+        while rclpy.ok():
+            rclpy.spin_once(self)
+            if(self.rec_map):
+                if self.with_tags:
+                    self.nogos = self.get_no_go_nodes()
+                    self.set_nogos = True 
+                else:
+                    self.nogos=[]
+                self.get_logger().info("NO GO NODES: %s" %self.nogos)
+                self.get_logger().info("NODES BY TOPIC: %s" %self.names_by_topic)
+                self.get_logger().info("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
+                break 
+            self.get_logger().warning("Wating for the topological map")
+
         self.tf_buffer = Buffer()
         self.listener = TransformListener(self.tf_buffer, self)
         self.rate = self.create_rate(20.0)
         
-        self.create_timer(1.0, self.pose_callback, callback_group=self.timer_cb_group)
+        self.create_timer(1.0, self.pose_callback)
 
         
     def get_distances_to_pose(self, pose):
@@ -131,19 +145,6 @@ class TopologicalNavLoc(rclpy.node.Node):
         This function receives the topo_map to base_link tf transform and localises 
         the robot in topological space
         """
-        if(self.rec_map is False):
-            self.get_logger().warning("Wating for the topological map")
-            return 
-        elif self.set_nogos is False:
-            if self.with_tags:
-                self.nogos = self.get_no_go_nodes()
-                self.set_nogos = True 
-            else:
-                self.nogos=[]
-            self.get_logger().info("NO GO NODES: %s" %self.nogos)
-            self.get_logger().info("NODES BY TOPIC: %s" %self.names_by_topic)
-            self.get_logger().info("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
-
         try:
             trans = self.tf_buffer.lookup_transform(self.tmap_frame, self.base_frame, rclpy.time.Time())
             msg = Pose()
@@ -167,7 +168,7 @@ class TopologicalNavLoc(rclpy.node.Node):
                     closest_edges = closest_edges[:2]
                     edge_dists = edge_dists[:2]
                 
-                not_loc=True
+                not_loc = True
                 if self.loc_by_topic:
                     for i in self.loc_by_topic:
                         if not_loc:
@@ -261,6 +262,7 @@ class TopologicalNavLoc(rclpy.node.Node):
         self.closest_edge_ids = closest_edge_ids
         self.closest_edge_dists = closest_edge_dists
         
+
 
     def MapCallback(self, msg):
         """
@@ -440,13 +442,14 @@ class TopologicalNavLoc(rclpy.node.Node):
         This function gets the list of No go nodes
         """
         cli = self.create_client(GetTaggedNodes, '/topological_map_manager2/get_tagged_nodes')
-        # while not self.cli.wait_for_service(timeout_sec=3.0):
         if not cli.wait_for_service(timeout_sec=3.0):
             self.get_logger().warning('/topological_map_manager2/get_tagged_nodes service not available')
             return []
         else:
             cli_req = GetTaggedNodes.Request()
-            get_prediction = cli.call(cli_req)
+            future = cli.call_async(cli_req)
+            rclpy.spin_until_future_complete(self, future)
+            get_prediction = future.result()
             return get_prediction.nodes
 
     def point_in_poly(self,node,pose):

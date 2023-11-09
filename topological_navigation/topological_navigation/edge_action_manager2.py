@@ -17,7 +17,6 @@ from geometry_msgs.msg import PoseStamped
 # from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import Header 
 from builtin_interfaces.msg import Time
-# https://docs.ros2.org/foxy/api/action_msgs/msg/GoalStatus.html
 from action_msgs.msg import GoalStatus
 from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy, QoSDurabilityPolicy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
@@ -129,15 +128,9 @@ class EdgeActionManager(rclpy.node.Node):
         action = _import(package, action_spec)
 
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        
-        # self.callback_group = ReentrantCallbackGroup()
         self.get_logger().info("Edge Action Manager: Creating a {} client".format(self.action_server_name))
         self.action = action 
-        # self.client = ActionClient(self, action, self.action_server_name, callback_group=self.callback_group)
         self.client = ActionClient(self, action, self.action_server_name)
-        # self.sub_get_feedback = self.create_subscription(NavigateToPose.Feedback, '/navigate_to_pose/_action/feedback'
-        #                                                                 , self.feedback_callback, qos_profile=self.latching_qos)
-        
         self.action_status = 0 
 
         self.get_logger().info("Edge Action Manager: Constructing the goal")
@@ -151,7 +144,6 @@ class EdgeActionManager(rclpy.node.Node):
     def preempt_feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
         return 
-
 
     def count_action_server_name(self, action_name):
         action_topic = ""
@@ -172,17 +164,17 @@ class EdgeActionManager(rclpy.node.Node):
     def preempt(self):
         if self.client is not None:
             if self.goal_handle is None:
-                self.get_logger().info("there is no goal to stop, it already cancled with status {}".format(self.action_status))
+                self.get_logger().info("There is no goal to stop it is already cancelled with status {}".format(self.action_status))
                 return True 
             cancel_future = self.client._cancel_goal_async(self.goal_handle)
             self.future_event_stack.append(cancel_future)
-            self.get_logger().info("wating till terminating current preemption ")
+            self.get_logger().info("Waiting till terminating the current preemption")
             while rclpy.ok():
                 try: 
                     rclpy.spin_once(self)
                     if cancel_future.done() and self.goal_get_result_future.done():
                         self.action_status = 5
-                        self.get_logger().info(" goal cancle error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
+                        self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                         return True 
                 except Exception as e:
                     pass 
@@ -220,8 +212,7 @@ class EdgeActionManager(rclpy.node.Node):
             target_pose.pose.orientation.z = desired_target_pose["orientation"]["z"]
             self.nav_goal.pose = target_pose
 
-        self.goal = self.nav_goal 
-        self.goal_uuid = UUID()
+        self.goal = self.nav_goal
         
     def get_result(self, ):
         return self.goal_resposne
@@ -235,20 +226,20 @@ class EdgeActionManager(rclpy.node.Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
         if not self.goal_handle.accepted:
-            self.get_logger().error('goal rejected')
+            self.get_logger().error('The goal rejected')
             return False
 
-        self.get_logger().info('goal accepted')
+        self.get_logger().info('The goal accepted')
         self.goal_get_result_future = self.goal_handle.get_result_async()
         self.future_event_stack.append(self.goal_get_result_future)
-        self.get_logger().info("waiting for {} action to complete".format(self.action_server_name))
+        self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
         while rclpy.ok():
             try:
                 rclpy.spin_once(self)
                 if self.goal_get_result_future.done():
                     status = self.goal_get_result_future.result().status
                     self.action_status = status
-                    self.get_logger().info("Edge Action Manager: Executing the action respose  with status {}".format(self.get_status_msg(self.action_status)))
+                    self.get_logger().info("Edge Action Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
                     self.current_action = self.action_name
                     self.goal_resposne = self.goal_get_result_future.result() 
                     return True 

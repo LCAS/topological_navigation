@@ -74,7 +74,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.navigation_activated = False
         self.navigation_lock = Lock()
 
-        move_base_actions = [
+        navigation_actions = [
             "NavigateToPose",
             "NavigateThroughPoses",
             "ComputePathThroughPoses",
@@ -82,18 +82,18 @@ class TopologicalNavServer(rclpy.node.Node):
             "DriveOnHeading",
         ]
 
-        self.declare_parameter('~move_base_name', Parameter.Type.STRING)
-        self.declare_parameter('~move_base_actions', Parameter.Type.STRING_ARRAY)
-        self.declare_parameter('~move_base_goal', Parameter.Type.STRING_ARRAY)
+        self.declare_parameter('~navigation_action_name', Parameter.Type.STRING)
+        self.declare_parameter('~navigation_actions', Parameter.Type.STRING_ARRAY)
+        self.declare_parameter('~navigation_action_goal', Parameter.Type.STRING_ARRAY)
         self.declare_parameter("~max_dist_to_closest_edge", Parameter.Type.DOUBLE)
         self.declare_parameter('~reconfigure_edges', Parameter.Type.BOOL)
         self.declare_parameter('~reconfigure_edges_srv', Parameter.Type.BOOL)
-        self.declare_parameter("~move_base_planner", Parameter.Type.STRING) 
+        self.declare_parameter("~nav_planner", Parameter.Type.STRING) 
 
-        self.move_base_name = self.get_parameter_or("~move_base_name", Parameter('str', Parameter.Type.STRING, "NavigateToPose")).value
-        self.move_base_actions = self.get_parameter_or("~move_base_actions", Parameter('str', Parameter.Type.STRING_ARRAY, move_base_actions)).value
-        if not self.move_base_name in self.move_base_actions:
-            self.move_base_actions.append(self.move_base_name)
+        self.navigation_action_name = self.get_parameter_or("~navigation_action_name", Parameter('str', Parameter.Type.STRING, "NavigateToPose")).value
+        self.navigation_actions = self.get_parameter_or("~navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, navigation_actions)).value
+        if not self.navigation_action_name in self.navigation_actions:
+            self.navigation_actions.append(self.navigation_action_name)
         
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         
@@ -181,11 +181,11 @@ class TopologicalNavServer(rclpy.node.Node):
 
 
     def init_reconfigure(self):
-        self.move_base_planner  = self.get_parameter_or("~move_base_planner", Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
-        planner = self.move_base_planner.split("/")[-1]
+        self.nav_planner  = self.get_parameter_or("~nav_planner", Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
+        planner = self.nav_planner.split("/")[-1]
         if not planner in DYNPARAM_MAPPING:
             DYNPARAM_MAPPING[planner] = {}
-        self.get_logger().info("Creating reconfigure client for {}".format(self.move_base_planner))
+        self.get_logger().info("Creating reconfigure client for {}".format(self.nav_planner))
         self.init_dynparams = self.update_params_planner.get_params()
         
 
@@ -204,7 +204,7 @@ class TopologicalNavServer(rclpy.node.Node):
             cytol = 6.283
 
         params = {"FollowPath.yaw_goal_tolerance": cytol, "FollowPath.xy_goal_tolerance": cxygtol}
-        self.get_logger().info("Reconfiguring %s with %s" % (self.move_base_planner, params))
+        self.get_logger().info("Reconfiguring %s with %s" % (self.nav_planner, params))
         print("Intermediate: {}".format(intermediate))
         self.update_params_planner.set_params(params)     
 
@@ -219,37 +219,37 @@ class TopologicalNavServer(rclpy.node.Node):
         self.topol_map = self.lnodes["pointset"]
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self.route_checker = RouteChecker(self.lnodes)
-        self.make_move_base_edge()
+        self.make_navigation_edge()
         self._map_received = True
 
 
-    def make_move_base_edge(self):
+    def make_navigation_edge(self):
 
-        self.move_base_edge = {}
-        self.move_base_edge["action"] = self.move_base_name
-        self.move_base_edge["edge_id"] = "move_base_edge"
-        move_base_goal = {}
-        if not move_base_goal:
+        self.navigation_action_edge = {}
+        self.navigation_action_edge["action"] = self.navigation_action_name
+        self.navigation_action_edge["edge_id"] = "navigation_action_edge"
+        navigation_action_goal = {}
+        if not navigation_action_goal:
             for node in self.lnodes["nodes"]:
                 for edge in node["node"]["edges"]:
-                    if edge["action"] == self.move_base_name:
-                        move_base_goal["action_type"] = edge["action_type"]
-                        move_base_goal["goal"] = edge["goal"]
+                    if edge["action"] == self.navigation_action_name:
+                        navigation_action_goal["action_type"] = edge["action_type"]
+                        navigation_action_goal["goal"] = edge["goal"]
                         break
                 else:
                     continue
                 break
-        if not move_base_goal:
-            move_base_goal["action_type"] = "geometry_msgs/PoseStamped"
-            move_base_goal["goal"] = {}
-            move_base_goal["goal"]["target_pose"] = {}
-            move_base_goal["goal"]["target_pose"]["pose"] = "$node.pose"
-            move_base_goal["goal"]["target_pose"]["header"] = {}
-            move_base_goal["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
+        if not navigation_action_goal:
+            navigation_action_goal["action_type"] = "geometry_msgs/PoseStamped"
+            navigation_action_goal["goal"] = {}
+            navigation_action_goal["goal"]["target_pose"] = {}
+            navigation_action_goal["goal"]["target_pose"]["pose"] = "$node.pose"
+            navigation_action_goal["goal"]["target_pose"]["header"] = {}
+            navigation_action_goal["goal"]["target_pose"]["header"]["frame_id"] = "$node.parent_frame"
 
-        self.move_base_edge["action_type"] = move_base_goal["action_type"]
-        self.move_base_edge["goal"] = move_base_goal["goal"]
-        self.get_logger().info("Move Base Goal set to {}".format(move_base_goal["action_type"]))
+        self.navigation_action_edge["action_type"] = navigation_action_goal["action_type"]
+        self.navigation_action_edge["goal"] = navigation_action_goal["goal"]
+        self.get_logger().info("Move Base Goal set to {}".format(navigation_action_goal["action_type"]))
 
 
     def executeCallback(self, goal):
@@ -378,8 +378,8 @@ class TopologicalNavServer(rclpy.node.Node):
                     if (
                         self.current_node == self.current_target
                         and self._target != self.current_target
-                        and self.next_action in self.move_base_actions
-                        and self.current_action in self.move_base_actions
+                        and self.next_action in self.navigation_actions
+                        and self.current_action in self.navigation_actions
                         and self.fluid_navigation
                     ):
                         self.get_logger().info("Intermediate node reached: {}".format(self.current_node))
@@ -418,31 +418,31 @@ class TopologicalNavServer(rclpy.node.Node):
         if not self.nav_from_closest_edge:        
             # If the robot is not on a node or the first action is not move base type
             # navigate to closest node waypoint (only when first action is not move base)
-            if a not in self.move_base_actions:
+            if a not in self.navigation_actions:
                 self.get_logger().info("The action of the first edge in the route is not a move base action")
                 self.get_logger().info("Current node is {}".format(self.current_node))
                 
-            if self.current_node == "none" and a not in self.move_base_actions:
+            if self.current_node == "none" and a not in self.navigation_actions:
                 self.next_action = a
-                self.get_logger().info("Do {} to origin {}".format(self.move_base_name, o_node["node"]["name"]))
+                self.get_logger().info("Do {} to origin {}".format(self.navigation_action_name, o_node["node"]["name"]))
     
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
                 self.update_params_planner.set_params(params)
 
                 self.current_target = Orig
-                nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                nav_ok, inc = self.execute_action(self.navigation_action_edge, o_node)
                 self.get_logger().info("Navigation Finished Successfully") if nav_ok else self.get_logger().warning("Navigation Failed")
                 
-            elif a not in self.move_base_actions:
-                move_base_act = False
+            elif a not in self.navigation_actions:
+                navigation_action_act = False
                 for i in o_node["node"]["edges"]:
-                    # Check if there is a move_base action in the edages of this node
+                    # Check if there is a navigation action in the edages of this node
                     # if not is dangerous to move
-                    if i["action"] in self.move_base_actions:
-                        move_base_act = True
+                    if i["action"] in self.navigation_actions:
+                        navigation_action_act = True
 
-                if not move_base_act:
+                if not navigation_action_act:
                     self.get_logger().warning("Could not find a move base action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
                     self.get_logger().info("Action not taken, outputing success")
                     nav_ok = True
@@ -450,13 +450,9 @@ class TopologicalNavServer(rclpy.node.Node):
                 else:
                     self.get_logger().info("Getting to the exact pose of origin {}".format(o_node["node"]["name"]))
                     self.current_target = Orig
-                    nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
+                    nav_ok, inc = self.execute_action(self.navigation_action_edge, o_node)
                     self.get_logger().info("Navigation Finished Successfully") if nav_ok else self.get_logger().warning("Navigation Failed")
                 
-                
-
-        
-
         while rindex < (len(route.edge_id)) and not self.cancelled and (nav_ok or recovering):
             
             cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
@@ -493,9 +489,9 @@ class TopologicalNavServer(rclpy.node.Node):
             onode = self.rsearch.get_node_from_tmap2(route.source[rindex])
 
             # do not care for the orientation of the waypoint if is not the last waypoint AND
-            # the current and following action are move_base or human_aware_navigation
+            # the current and following action are navigation or human_aware_navigation
             # and when the fuild_navigation is true
-            if rindex < len(route.edge_id) - 1 and a1 in self.move_base_actions and a in self.move_base_actions and self.fluid_navigation:
+            if rindex < len(route.edge_id) - 1 and a1 in self.navigation_actions and a in self.navigation_actions and self.fluid_navigation:
                 self.reconf_movebase(cedg, cnode, True)
             else:
                 if self.no_orientation:
@@ -693,13 +689,13 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("Target and Origin Nodes are the same")
         self.current_target = g_node["node"]["name"]
         if the_edge is None:
-            # Check if there is a move_base action in the edges of this node and choose the earliest one in the 
-            # list of move_base actions. If not is dangerous to move.
+            # Check if there is a navigation  action in the edges of this node and choose the earliest one in the 
+            # list of navigation actions. If not is dangerous to move.
             act_ind = 100
             for i in g_node["node"]["edges"]:
                 c_action_server = i["action"]
-                if c_action_server in self.move_base_actions:
-                    c_ind = self.move_base_actions.index(c_action_server)
+                if c_action_server in self.navigation_actions:
+                    c_ind = self.navigation_actions.index(c_action_server)
                     if c_ind < act_ind:
                         act_ind = c_ind
                         the_edge = i
@@ -908,7 +904,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.goal_reached = False
         self.prev_status = None
 
-        if self.using_restrictions and edge["edge_id"] != "move_base_edge":
+        if self.using_restrictions and edge["edge_id"] != "navigation_action_edge":
             self.get_logger().info("Evaluating restrictions on edge {}".format(edge["edge_id"]))
             ev_edge_msg = EvaluateEdge()
             ev_edge_msg.edge = edge["edge_id"]
@@ -931,21 +927,14 @@ class TopologicalNavServer(rclpy.node.Node):
                 inc = 1
                 return result, inc
 
-        
         self.edge_action_manager.initialise(edge, destination_node, origin_node)
         self.edge_action_manager.execute()
         status = self.edge_action_manager.get_state()
-        self.get_logger().info(" here  client status {} ".format(status))
         self.pub_status(status)
-        # while :
-        #     status = self.edge_action_manager.client.get_state()
-        #     self.pub_status(status)
-        #     rospy.sleep(rospy.Duration.from_sec(0.01))
-        # while rclpy.ok():
-            # rclpy.spin_once(self)
+        
         if ((status == GoalStatus.STATUS_EXECUTING or status == GoalStatus.STATUS_UNKNOWN) and not self.cancelled and not self.goal_reached):
             try:
-                self.get_logger().info(" current status  {} ".format(self.edge_action_manager.get_status_msg(status)))
+                self.get_logger().info(" Current status  {} ".format(self.edge_action_manager.get_status_msg(status)))
                 self.pub_status(status)
             except Exception as e:
                 pass
@@ -965,11 +954,10 @@ class TopologicalNavServer(rclpy.node.Node):
             else:
                 inc = 0
 
-        
         status = self.edge_action_manager.get_state()
         self.pub_status(status)
 
-        self.get_logger().info("move action status: {}, goal reached: {}, inc: {}".format(self.edge_action_manager.get_status_msg(status), result, inc))
+        self.get_logger().info("Navigation action status: {}, goal reached: {}, inc: {}".format(self.edge_action_manager.get_status_msg(status), result, inc))
         return result, inc
     
     
@@ -986,35 +974,10 @@ class TopologicalNavServer(rclpy.node.Node):
         self.prev_status = status
 ###################################################################################################################
         
-
-# ###################################################################################################################
-# if __name__ == "__main__":
-#     rospy.init_node("topological_navigation")
-#     mode = "normal"
-#     server = TopologicalNavServer(rospy.get_name(), mode)
-#     rospy.spin()
-
-#     self.get_logger().info("Exiting.")
-# ###################################################################################################################
-
-
-# if __name__ == '__main__':
-#     rclpy.init(args=None)
-#     wtags = True
-#     node = ParameterUpdaterNode('controller_server')
-#     executor = MultiThreadedExecutor()
-#     executor.add_node(node)
-#     try:
-#         executor.spin()
-#     except KeyboardInterrupt:
-#         node.get_logger().info('shutting down localisation node\n')
-#     node.destroy_node()
-#     rclpy.shutdown()
-
 if __name__ == '__main__':
     rclpy.init(args=None)
     wtags = True
-    node = TopologicalNavServer('navigation_manager', wtags)
+    node = TopologicalNavServer('topological_navigation', wtags)
     executor = MultiThreadedExecutor()
     executor.add_node(node)
     try:

@@ -53,6 +53,8 @@ set(msg_files
   "msg/AddNodeReq.msg"
   "msg/SetInfluenceZoneReq.msg"
   "msg/UpdateEdgeConfigReq.msg"
+  "msg/GotoNodeFeedback.msg"
+  "msg/ExecutePolicyModeFeedback.msg"
 )
 
 

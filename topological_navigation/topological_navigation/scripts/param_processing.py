@@ -3,6 +3,7 @@ from rcl_interfaces.msg import ParameterDescriptor, ParameterValue, ParameterTyp
 from rclpy import Parameter 
 import rclpy 
 from rclpy.node import Node
+from rclpy.executors import SingleThreadedExecutor 
 
 from rclpy.callback_groups import ReentrantCallbackGroup 
 
@@ -16,6 +17,7 @@ class ParameterUpdaterNode(Node):
         while not self.cli_set_param.wait_for_service(timeout_sec=1.0):
             self.get_logger().warning('service not available, waiting again... {}'.format('/' + server_name + '/set_parameters'))
         self.get_logger().info('service /{} is available'.format(server_name))
+        self.internal_executor = SingleThreadedExecutor()
         
     def get_parameter_value(self, parameter_value):
         if parameter_value.type == Parameter.Type.INTEGER:
@@ -46,7 +48,7 @@ class ParameterUpdaterNode(Node):
             self.req.parameters.append(Parameter(name=param_name, value=param_value).to_parameter_msg())
         self.future = self.cli_set_param.call_async(self.req)
         while rclpy.ok():
-            rclpy.spin_once(self)
+            rclpy.spin_once(self, executor=self.internal_executor)
             if self.future.done():
                 try:
                     response = self.future.result().results
@@ -61,7 +63,7 @@ class ParameterUpdaterNode(Node):
         self.req_list = ListParameters.Request()
         self.future = self.cli_list_params.call_async(self.req_list)
         while rclpy.ok():
-            rclpy.spin_once(self)
+            rclpy.spin_once(self, executor=self.internal_executor)
             if self.future.done():
                 try:
                     response = self.future.result().result 
@@ -80,7 +82,7 @@ class ParameterUpdaterNode(Node):
         self.req_get.names = param_names 
         self.future = self.cli_get_params.call_async(self.req_get)
         while rclpy.ok():
-            rclpy.spin_once(self)
+            rclpy.spin_once(self, executor=self.internal_executor)
             if self.future.done():
                 try:
                     response = self.future.result()

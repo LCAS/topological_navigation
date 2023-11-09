@@ -6,7 +6,7 @@ Created on Tue Nov 5 22:02:24 2023
 """
 
 import rclpy, json
-from topological_navigation_msgs.msg import NavStatistics, CurrentEdge, ClosestEdges, TopologicalRoute
+from topological_navigation_msgs.msg import NavStatistics, CurrentEdge, ClosestEdges, TopologicalRoute, GotoNodeFeedback, ExecutePolicyModeFeedback
 from topological_navigation_msgs.srv import EvaluateEdge, EvaluateNode
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from topological_navigation_msgs.action import ExecutePolicyMode
@@ -44,10 +44,10 @@ DYNPARAM_MAPPING = {
 ###################################################################################################################
 class TopologicalNavServer(rclpy.node.Node):
     
-    _feedback = GotoNode.Feedback()
+    _feedback = GotoNodeFeedback()
     _result = GotoNode.Result()
 
-    _feedback_exec_policy = ExecutePolicyMode.Feedback()
+    _feedback_exec_policy = ExecutePolicyModeFeedback()
     _result_exec_policy = ExecutePolicyMode.Result()
 
     def __init__(self, name, mode):
@@ -154,18 +154,21 @@ class TopologicalNavServer(rclpy.node.Node):
         # this keeps the runtime state of the fail policies that are currently in execution 
         self.executing_fail_policy = {}
         self.callback_group_gotonode = ReentrantCallbackGroup()
+        self.callback_group_policy = ReentrantCallbackGroup()
         # Creating Action Server for navigation
         self.get_logger().info("Creating GO-TO-NODE action server...")  
-        self._as  =  ActionServer(self, GotoNode, name, execute_callback=self.executeCallback, cancel_callback=self.preemptCallback)
-        self._as_action_feedback_pub = self.create_publisher(GotoNode.Feedback, name + '/feedback', self.latching_qos)
+        self._as  =  ActionServer(self, GotoNode, name, execute_callback=self.executeCallback
+                                  , cancel_callback=self.preemptCallback, callback_group=self.callback_group_gotonode)
+        self._as_action_feedback_pub = self.create_publisher(GotoNodeFeedback, name + '/feedback', qos_profile=self.latching_qos)
         self.get_logger().info("...done")
    
         # Creating Action Server for execute policy
         self.get_logger().info("Creating EXECUTE POLICY MODE action server...")
         self._as_exec_policy = ActionServer(self, ExecutePolicyMode, "topological_navigation/execute_policy_mode", 
-                            execute_callback=self.executeCallbackexecpolicy, cancel_callback=self.preemptCallbackexecpolicy)
-        self._as_exec_policy_action_feedback_pub = self.create_publisher(ExecutePolicyMode.Feedback, 'topological_navigation/execute_policy_mode/feedback'
-                                                                                    , self.latching_qos)
+                            execute_callback=self.executeCallbackexecpolicy, cancel_callback=self.preemptCallbackexecpolicy
+                            , callback_group=self.callback_group_policy)
+        self._as_exec_policy_action_feedback_pub = self.create_publisher(ExecutePolicyModeFeedback, 'topological_navigation/execute_policy_mode/feedback'
+                                                                                    , qos_profile=self.latching_qos)
         
         self.update_params_planner = ParameterUpdaterNode("controller_server") #TODO change the name 
 
@@ -767,26 +770,6 @@ class TopologicalNavServer(rclpy.node.Node):
         self.edge_action_manager.preempt()
         self.cancelled = True
         self.navigation_activated = False 
-        self.navigation_activated = False 
-        # if timeout_secs > 0:
-        #     stime = self.get_clock().now() 
-        #     timeout = rclpy.duration.Duration(seconds=timeout_secs)
-        #     while self.navigation_activated:
-        #         if (self.get_clock().now() - stime) > timeout:
-        #             self.get_logger().info("\t[timeout called]")
-        #             break
-        #         rclpy.spin_once(self, timeout_sec=0.1)
-
-        self.navigation_activated = False
-        # if timeout_secs > 0:
-        #     stime = self.get_clock().now() 
-        #     timeout = rclpy.duration.Duration(seconds=timeout_secs)
-        #     while self.navigation_activated:
-        #         if (self.get_clock().now() - stime) > timeout:
-        #             self.get_logger().info("\t[timeout called]")
-        #             break
-        #         rclpy.spin_once(self, timeout_sec=0.1)
-
         self.get_logger().info("Navigation active: " + str(self.navigation_activated))
         return not self.navigation_activated
 
@@ -909,7 +892,12 @@ class TopologicalNavServer(rclpy.node.Node):
             ev_edge_msg = EvaluateEdge()
             ev_edge_msg.edge = edge["edge_id"]
             ev_edge_msg.runtime = True
-            resp = self.evaluate_edge_srv.call(ev_edge_msg)
+            future = self.evaluate_edge_srv.call_async(ev_edge_msg)
+            while rclpy.ok():
+                rclpy.spin_once(self,)
+                if future.done():
+                    resp = future.result()
+                    break 
             if resp.success and resp.evaluation:
                 self.get_logger().warning("The edge is restricted, stopping navigation")
                 result = False
@@ -920,7 +908,12 @@ class TopologicalNavServer(rclpy.node.Node):
             ev_node_msg = EvaluateNode()
             ev_node_msg.node = destination_node["node"]["name"]
             ev_node_msg.runtime = True
-            resp = self.evaluate_node_srv.call(ev_node_msg)
+            future = self.evaluate_node_srv.call_async(ev_node_msg)
+            while rclpy.ok():
+                rclpy.spin_once(self,)
+                if future.done():
+                    resp = future.result()
+                    break 
             if resp.success and resp.evaluation:
                 self.get_logger().warning("The node is restricted, stopping navigation")
                 result = False

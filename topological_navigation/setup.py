@@ -20,7 +20,7 @@ setup(
     maintainer_email='abinch@sagarobotics.com',
     description='The ros2 topological_navigation package',
     license='MIT',
-    tests_require=['pytest'],
+    tests_require=['pytest', 'launch-pytest'],
     entry_points={
         'console_scripts': [
             'get_simple_policy.py = topological_navigation.scripts.get_simple_policy:main',

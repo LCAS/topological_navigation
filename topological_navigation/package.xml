@@ -34,7 +34,7 @@
 
   <depend>python-transforms3d-pip</depend>
   <depend>tf_transformations</depend>
-  <depend>launch-pytest</depend>
+  <depend>launch_pytest</depend>
   
   <export>
     <build_type>ament_python</build_type>

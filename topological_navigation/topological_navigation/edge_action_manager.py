@@ -5,11 +5,11 @@ Created on Tue Apr 13 22:02:24 2021
 
 """
 #########################################################################################################
-import rospy, actionlib, json, yaml
+import json, yaml
 import operator, collections, copy
 
 from functools import reduce  # forward compatibility for Python 3
-from rospy_message_converter import message_converter
+# from rospy_message_converter import message_converter
 from actionlib_msgs.msg import GoalStatus
 
 

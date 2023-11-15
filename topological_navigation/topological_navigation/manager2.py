@@ -48,7 +48,7 @@ class map_manager_2(rclpy.node.Node):
         self.auto_write = self.get_parameter_or("~auto_write_topological_maps", Parameter('bool', Parameter.Type.BOOL, False)).value
         
         package_path = get_package_share_directory('topological_navigation')
-        nav_config = str(os.path.join(package_path, 'config', 'move_base_goal.yaml'))
+        nav_config = str(os.path.join(package_path, 'config', 'navigation_goal.yaml'))
 
         self.nav_config = str(self.get_parameter_or("nav_config", Parameter('str', Parameter.Type.STRING, nav_config)).value)
         self.get_logger().info("cache_topological_maps: {}".format(self.cache_maps))
@@ -62,7 +62,7 @@ class map_manager_2(rclpy.node.Node):
         self.goal_mappings = {}
         
         with open(self.nav_config, "r") as f:
-            self.move_base_goal = yaml.safe_load(f)["topological_navigation/move_base_goal"]
+            self.move_base_goal = yaml.safe_load(f)["topological_navigation/navigation_goal"]
 
         if advertise_srvs:
             self.advertise()
@@ -184,6 +184,14 @@ class map_manager_2(rclpy.node.Node):
             self.tmap2_to_tmap()
             self.points_pub.publish(self.points)
 
+        # self.create_timer(10.0, self.topnav_map_pub_callback)
+
+
+    # def topnav_map_pub_callback(self, ):
+    #     if self.tmap2: 
+    #         self.map_pub.publish(std_msgs.msg.String(data=json.dumps(self.tmap2)))
+    #     else:
+    #         self.get_logger().warning('there is no topological map...', skip_first=True)
 
     def get_time(self):
         return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -334,17 +342,16 @@ class map_manager_2(rclpy.node.Node):
         return True, json.dumps(self.tmap2)
 
 
-    def get_tagged_cb(self, req):
+    def get_tagged_cb(self, req, res):
         """
         Returns a list of nodes that have a given tag
         """
-        names=[]
+        res.nodes=[]
         for node in self.tmap2["nodes"]:
             if "tag" in node["meta"]:
                 if req.tag in node["meta"]["tag"]:
-                    names.append(node["node"]["name"])
-
-        return [names]
+                    res.nodes.append(node["node"]["name"])
+        return res
 
 
     def get_tags_cb(self, req):
@@ -586,6 +593,7 @@ class map_manager_2(rclpy.node.Node):
 
         edge = {}
         edge["action"] = action
+
 
         if edge_id == "default":
             edge["edge_id"] = origin + "_" + destination

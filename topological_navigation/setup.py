@@ -20,11 +20,11 @@ setup(
     maintainer_email='abinch@sagarobotics.com',
     description='The ros2 topological_navigation package',
     license='MIT',
-    tests_require=['pytest'],
+    tests_require=['pytest', 'launch-pytest'],
     entry_points={
         'console_scripts': [
             'get_simple_policy.py = topological_navigation.scripts.get_simple_policy:main',
-            'localisation.py = topological_navigation.scripts.localisation:main',
+            'localisation2.py = topological_navigation.scripts.localisation2:main',
             'manual_edge_predictions.py = topological_navigation.scripts.manual_edge_predictions:main',
             'map_manager2.py = topological_navigation.scripts.map_manager2:main',
             'map_manager.py = topological_navigation.scripts.map_manager:main',

@@ -1,5 +1,5 @@
-#include "edge_controller.h"
 
+#include <topological_rviz_tools/edge_controller.hpp>
 
 namespace topological_rviz_tools
 {
@@ -52,6 +52,7 @@ QString EdgeController::formatClassId(const QString& class_id)
     return id_parts[ 1 ] + " (" + id_parts[ 0 ] + ")";
   }
 }
+
 
 void EdgeController::emitConfigChanged()
 {

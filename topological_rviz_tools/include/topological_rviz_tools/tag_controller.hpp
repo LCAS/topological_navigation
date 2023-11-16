@@ -2,10 +2,10 @@
 #define TAG_CONTROLLER_H
 
 #include "rclcpp/rclcpp.hpp"
-#include "rviz/properties/property.h"
-#include "rviz/properties/string_property.h"
-#include "tag_property.h"
-#include "node_property.h"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/properties/string_property.hpp"
+#include "tag_property.hpp"
+#include "node_property.hpp"
 
 namespace topological_rviz_tools
 {

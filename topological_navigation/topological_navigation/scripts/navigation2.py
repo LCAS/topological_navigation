@@ -280,7 +280,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.navigation_activated = False
         goal.succeed()
-        self.get_logger().warning("Done processing the nav action....")
+        self.get_logger().warning("Done processing the nav action GO-TO-NODE....")
         result = GotoNode.Result()
         result.success = True 
         return result 
@@ -342,7 +342,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.navigation_activated = False
         goal.succeed()
-        self.get_logger().warning("Done processing the nav action....")
+        self.get_logger().warning("Done processing the nav action EXECUTE POLICY MODE....")
         result = ExecutePolicyMode.Result()
         result.success = self._result_exec_policy.success 
         return result

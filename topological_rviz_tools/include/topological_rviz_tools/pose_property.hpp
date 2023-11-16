@@ -2,11 +2,11 @@
 #define POSE_PROPERTY_H
 
 #include "rclcpp/rclcpp.hpp"
-#include "topological_navigation_msgs/AddNode.h"
-#include "geometry_msgs/Pose.h"
-#include "rviz/properties/property.h"
-#include "rviz/properties/float_property.h"
-#include "rviz/properties/string_property.h"
+#include "topological_navigation_msgs/srv/add_node.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/properties/float_property.hpp"
+#include "rviz_common/properties/string_property.hpp"
 
 namespace topological_rviz_tools
 {

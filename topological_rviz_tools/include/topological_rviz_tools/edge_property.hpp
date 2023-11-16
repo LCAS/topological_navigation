@@ -2,11 +2,11 @@
 #define EDGE_PROPERTY_H
 
 #include "rclcpp/rclcpp.hpp"
-#include "rviz/properties/property.h"
-#include "rviz/properties/string_property.h"
-#include "rviz/properties/float_property.h"
-#include "topological_navigation_msgs/Edge.h"
-#include "topological_navigation_msgs/UpdateEdgeLegacy.h"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/properties/string_property.hpp"
+#include "rviz_common/properties/float_property.hpp"
+#include "topological_navigation_msgs/msg/edge.hpp"
+#include "topological_navigation_msgs/srv/update_edge_legacy.hpp"
 
 namespace topological_rviz_tools
 {

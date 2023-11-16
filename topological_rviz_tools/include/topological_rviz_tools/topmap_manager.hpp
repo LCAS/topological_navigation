@@ -1,7 +1,7 @@
 #ifndef TOPMAP_MANAGER_H
 #define TOPMAP_MANAGER_H
 
-#include "node_controller.h"
+#include "node_controller.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 #include <stdio.h>
@@ -11,12 +11,12 @@
 #include <QObject>
 #include <QStringList>
 
-#include "rviz_common/display_context.h"
-#include "rviz/pluginlib_factory.h"
-#include "rviz/properties/enum_property.h"
-#include "rviz/properties/property.h"
-#include "rviz/properties/property_tree_model.h"
-#include "rviz/render_panel.h"
+#include "rviz_common/display_context.hpp"
+#include "rviz_common/factory/pluginlib_factory.hpp"
+#include "rviz_common/properties/enum_property.hpp"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/properties/property_tree_model.hpp"
+#include "rviz_common/render_panel.hpp"
 
 namespace topological_rviz_tools
 {

@@ -1,12 +1,12 @@
 #ifndef TOPMAP_EDGE_TOOL_H
 #define TOPMAP_EDGE_TOOL_H
 
-#include <ros/ros.h>
-#include <rviz/tool.h>
-#include <visualization_msgs/Marker.h>
-#include <geometry_msgs/Pose.h>
-#include "topological_navigation_msgs/AddEdgeRviz.h"
-#include "std_msgs/Time.h"
+#include <rclcpp/rclcpp.hpp>
+#include "rviz_common/tool.hpp"
+#include <visualization_msgs/msg/marker.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include "topological_navigation_msgs/srv/add_edge_rviz.hpp"
+#include "std_msgs/msg/header.hpp"
 
 namespace rviz
 {

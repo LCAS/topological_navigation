@@ -3,19 +3,19 @@
 
 #include <cstdio>
 
-#include "rviz_common/panel.h"
-#include "topmap_manager.h"
-#include "tag_property.h"
-#include "edge_property.h"
-#include "node_property.h"
+#include "rviz_common/panel.hpp"
+#include "topmap_manager.hpp"
+#include "tag_property.hpp"
+#include "edge_property.hpp"
+#include "node_property.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-#include "rviz/properties/property_tree_widget.h"
-#include "std_msgs/Time.h"
+#include "rviz_common/properties/property_tree_widget.hpp"
+#include "std_msgs/msg/header.hpp"
 
-#include "topological_navigation_msgs/AddTag.h"
-#include "topological_navigation_msgs/AddEdge.h"
-#include "topological_navigation_msgs/RmvNode.h"
+#include "topological_navigation_msgs/srv/add_tag.hpp"
+#include "topological_navigation_msgs/srv/add_edge.hpp"
+#include "topological_navigation_msgs/srv/rmv_node.hpp"
 
 class QComboBox;
 class QMessageBox;

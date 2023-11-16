@@ -1,11 +1,11 @@
 #ifndef TOPMAP_NODE_TOOL_H
 #define TOPMAP_NODE_TOOL_H
 
-#include <ros/ros.h>
-#include <rviz/tool.h>
-#include "geometry_msgs/Pose.h"
-#include "std_msgs/Time.h"
-#include "topological_navigation_msgs/AddNode.h"
+#include <rclcpp/rclcpp.hpp>
+#include "rviz_common/tool.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "std_msgs/msg/header.hpp"
+#include "topological_navigation_msgs/srv/add_node.hpp"
 
 namespace rviz
 {

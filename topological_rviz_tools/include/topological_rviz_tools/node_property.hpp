@@ -2,16 +2,16 @@
 #define NODE_PROPERTY_H
 
 #include "rclcpp/rclcpp.hpp"
-#include "rviz/properties/property.h"
-#include "rviz/properties/string_property.h"
-#include "rviz/properties/float_property.h"
-#include "topological_navigation_msgs/TopologicalNode.h"
-#include "topological_navigation_msgs/GetNodeTags.h"
-#include "topological_navigation_msgs/UpdateNodeName.h"
-#include "topological_navigation_msgs/UpdateNodeTolerance.h"
-#include "pose_property.h"
-#include "edge_controller.h"
-#include "tag_controller.h"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/properties/string_property.hpp"
+#include "rviz_common/properties/float_property.hpp"
+#include "topological_navigation_msgs/msg/topological_node.hpp"
+#include "topological_navigation_msgs/srv/get_node_tags.hpp"
+#include "topological_navigation_msgs/srv/update_node_name.hpp"
+#include "topological_navigation_msgs/srv/update_node_tolerance.hpp"
+#include "pose_property.hpp"
+#include "edge_controller.hpp"
+#include "tag_controller.hpp"
 
 namespace topological_rviz_tools
 {

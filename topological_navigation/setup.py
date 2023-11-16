@@ -23,7 +23,7 @@ setup(
     tests_require=['pytest', 'launch-pytest'],
     entry_points={
         'console_scripts': [
-            'get_simple_policy.py = topological_navigation.scripts.get_simple_policy:main',
+            'get_simple_policy2.py = topological_navigation.scripts.get_simple_policy2:main',
             'localisation2.py = topological_navigation.scripts.localisation2:main',
             'manual_edge_predictions.py = topological_navigation.scripts.manual_edge_predictions:main',
             'map_manager2.py = topological_navigation.scripts.map_manager2:main',

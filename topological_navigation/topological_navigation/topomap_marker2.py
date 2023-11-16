@@ -95,7 +95,7 @@ class TopologicalVis(Node):
         marker.header.frame_id = "map"
         marker.type = marker.TEXT_VIEW_FACING
         marker.text=action
-        marker.pose.position.x= 1.0+(0.12*col_id)
+        marker.pose.position.x= 1.0+(0.12*(self.scale*col_id))
         marker.pose.position.y= 0.0
         marker.pose.position.z= 0.2
         marker.pose.orientation.w= 1.0

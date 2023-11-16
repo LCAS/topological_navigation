@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<launch>
+    <arg name="tmap_file" value="$(env CONFIG_PKG_PATH)/config/tmaps/tmap.tmap2"/>
+
+    <!-- Launch the full map systems -->
+    <node pkg="topological_navigation" type="map_manager2.py" name="topological_map_manager2" args="$(arg tmap_file)" respawn="true"/>
+    <node pkg="topological_navigation" name="topological_transform_publisher" type="topological_transform_publisher.py" output="screen" respawn="true"/>
+    <node pkg="topological_navigation" type="visualise_map2.py" name="visualise_map" args="-e" respawn="false" />
+
+
+    <!-- Launch the map restriction systems -->
+    <group ns="restricted_maps">
+
+        <!-- Add restrictions for a short map -->
+        <group ns="short_map">
+            <!-- Launch the restriction filtering system to reduce the map -->
+            <node pkg="topological_navigation" name="$(anon restriction_handler)" type="restriction_handler.py" output="screen" respawn="true" >
+                <param name="initial_restriction" type="str" value="'robot_short' in '$' or '$' == 'True'"/> <!-- Retain nodes where the restriction (in place of $) evals to True -->
+                <param name="enable_eval_sub" type="bool" value="False" /> <!-- Dont listen to changes in the restriction condition -->
+                <remap from="topological_map_2" to="/topological_map_2" /> <!-- Change local reference of tmap to global reference -->
+                <remap from="restricted_topological_map_2" to="res_tmap_2" /> <!-- Rename local reference of restricted tmap to tmap -->
+            </node>
+            <!-- Launch the transform publisher to set the map frame transform -->
+            <node pkg="topological_navigation" name="topological_transform_publisher" type="topological_transform_publisher.py" output="screen" respawn="true">
+                <remap from="topological_map_2" to="res_tmap_2"/> <!-- Rename local reference of tmap to the restricted tmap from above -->
+            </node>
+            <!-- Launch the visualiser to display the map (shouldnt this be map_markers.py?) -->
+            <node pkg="topological_navigation" type="visualise_map2.py" name="topological_visualisation" output="screen">
+                <remap from="topological_map_2" to="res_tmap_2"/> <!-- Rename local reference of tmap to the restricted tmap from above -->
+                <remap from="topological_map_zones/feedback" to="/topological_map_zones/feedback" />
+                <remap from="topological_map_visualisation" to="res_tmap_vis" />
+            </node>
+        </group>
+
+        <!-- Add restrictions for a tall map -->
+        <group ns="tall_map">
+            <!-- Launch the restriction filtering system to reduce the map -->
+            <node pkg="topological_navigation" name="$(anon restriction_handler)" type="restriction_handler.py" output="screen" respawn="true" >
+                <param name="initial_restriction" type="str" value="'robot_tall' in '$' or '$' == 'True'"/> <!-- Retain nodes where the restriction (in place of $) evals to True -->
+                <param name="enable_eval_sub" type="bool" value="False" /> <!-- Dont listen to changes in the restriction condition -->
+                <remap from="topological_map_2" to="/topological_map_2" /> <!-- Change local reference of tmap to global reference -->
+                <remap from="restricted_topological_map_2" to="res_tmap_2" /> <!-- Rename local reference of restricted tmap to tmap -->
+            </node>
+            <!-- Launch the transform publisher to set the map frame transform -->
+            <node pkg="topological_navigation" name="topological_transform_publisher" type="topological_transform_publisher.py" output="screen" respawn="true">
+                <remap from="topological_map_2" to="res_tmap_2"/> <!-- Rename local reference of tmap to the restricted tmap from above -->
+            </node>
+            <!-- Launch the visualiser to display the map (shouldnt this be map_markers.py?) -->
+            <node pkg="topological_navigation" type="visualise_map2.py" name="topological_visualisation" output="screen">
+                <remap from="topological_map_2" to="res_tmap_2"/> <!-- Rename local reference of tmap to the restricted tmap from above -->
+                <remap from="topological_map_zones/feedback" to="/topological_map_zones/feedback" />
+                <remap from="topological_map_visualisation" to="res_tmap_vis" />
+            </node>
+        </group>
+
+    </group>
+</launch>

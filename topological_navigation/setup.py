@@ -34,6 +34,7 @@ setup(
             'navigation.py = topological_navigation.scripts.navigation:main',
             'navstats_logger.py = topological_navigation.scripts.navstats_logger:main',
             'reconf_at_edges_server.py = topological_navigation.scripts.reconf_at_edges_server:main',
+            'restrictions_handler.py = topological_navigation.scripts.restrictions_handler:main',
             'restrictions_manager.py = topological_navigation.scripts.restrictions_manager:main',
             'search_route.py = topological_navigation.scripts.search_route:main',
             'speed_based_prediction.py = topological_navigation.scripts.speed_based_prediction:main',

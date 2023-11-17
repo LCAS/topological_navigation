@@ -126,7 +126,11 @@ class EdgeActionManager(rclpy.node.Node):
         action_spec = self.action_name
         self.action_server_name = self.count_action_server_name(self.action_name)
         self.get_logger().info("Edge Action Manager: Importing {} from {}".format(action_spec, package))
-        action = _import(package, action_spec)
+        try:
+            action = _import(package, action_spec)
+        except Exception as e:
+            self.get_logger().error("Edge Action Manager: Still does not support actin type: {}".format(action_spec))
+            return False 
 
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.get_logger().info("Edge Action Manager: Creating a {} client".format(self.action_server_name))
@@ -136,6 +140,7 @@ class EdgeActionManager(rclpy.node.Node):
 
         self.get_logger().info("Edge Action Manager: Constructing the goal")
         self.construct_goal(action_type, copy.deepcopy(self.edge["goal"]))
+        return True 
     
     def feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
@@ -173,11 +178,11 @@ class EdgeActionManager(rclpy.node.Node):
                 return True
             
             if self.goal_handle is None:
-                self.get_logger().info("There is no goal to stop it is already cancelled with status {}".format(self.action_status))
+                self.get_logger().info("Edge Action Manager: There is no goal to stop it is already cancelled with status {}".format(self.action_status))
                 return True 
              
             cancel_future = self.client._cancel_goal_async(self.goal_handle)
-            self.get_logger().info("Waiting till terminating the current preemption")
+            self.get_logger().info("Edge Action Manager: Waiting till terminating the current preemption")
             while rclpy.ok():
                 try: 
                     rclpy.spin_once(self)
@@ -249,12 +254,12 @@ class EdgeActionManager(rclpy.node.Node):
                 pass 
 
         if not self.goal_handle.accepted:
-            self.get_logger().error('The goal rejected')
+            self.get_logger().error('Edge Action Manager: The goal rejected')
             return False
 
-        self.get_logger().info('The goal accepted')
+        self.get_logger().info('Edge Action Manager: The goal accepted')
         self.goal_get_result_future = self.goal_handle.get_result_async()
-        self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
+        self.get_logger().info("Edge Action Manager: Waiting for {} action to complete".format(self.action_server_name))
         while rclpy.ok():
             try:
                 rclpy.spin_once(self)

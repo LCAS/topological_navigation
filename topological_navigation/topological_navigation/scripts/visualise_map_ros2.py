@@ -4,7 +4,7 @@ import rclpy
 import json
 import sys
 import math
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
 from time import sleep
 from threading import Timer
 from geometry_msgs.msg import Pose
@@ -21,26 +21,41 @@ from topological_navigation_msgs.msg import TopologicalRoute
 from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy, QoSDurabilityPolicy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
 from builtin_interfaces.msg import Duration
-# from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2, get_route_distance
+from rclpy.task import Future
+import threading
+
 def get_node(nodes_list, name):
     for i in nodes_list:
         if i['node']['name'] == name:
             return i['node']
+       
+class InteractiveMarkerServerHandlerNode(rclpy.node.Node):
+    def __init__(self, name):
+        super().__init__(name)
+        self._goto_server = InteractiveMarkerServer(self, "go_to_node")
+    
+    def getInteractiveMarkerServer(self,):
+        return self._goto_server
+    
 
 class TopoMap2Vis(rclpy.node.Node):
     _pallete=[[0.0,0.0,0.0],[1.0,0.0,0.0],[0.0,0.0,1.0],[0.0,1.0,0.0],[1.0,1.0,0.0],[1.0,0.0,1.0],[0.0,1.0,1.0],[1.0,1.0,1.0]]
-    def __init__(self, name) :
+    def __init__(self, name, interactive_marker_server) :
         super().__init__(name)
         self.declare_parameter('~no_goto', rclpy.Parameter.Type.BOOL) 
+        self.declare_parameter('~publish_map', rclpy.Parameter.Type.BOOL) 
+
         self.no_go = self.get_parameter_or("~no_goto", rclpy.Parameter('bool', rclpy.Parameter.Type.BOOL, False)).value
-    
+        self.publish_map = self.get_parameter_or("~publish_map", rclpy.Parameter('bool', rclpy.Parameter.Type.BOOL, True)).value
         self.no_goto = self.no_go
-        self.get_logger().info("===============no_goto========== {} ".format(self.no_goto))
         self.killall=False
+        self._goto_server = interactive_marker_server.getInteractiveMarkerServer()
         self.topological_map = None
         self.map_markers = MarkerArray()
         self.map_markers.markers=[]
         self.in_feedback=False
+        self._map_received = False 
+        self.early_terminate_is_required = False 
         self.action_status = 0 
         self.status_mapping = {}
         self.status_mapping[0] = "STATUS_UNKNOWN"
@@ -59,25 +74,27 @@ class TopoMap2Vis(rclpy.node.Node):
         rclpy.get_default_context().on_shutdown(self._on_node_shutdown)
 
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self.get_logger().info("Waiting for topo_map")
         self.goal_handle =  None 
-
+        self.go_to_node_exe_task = False 
+        self.timer_set_mission = False 
         self.callback_group_map = ReentrantCallbackGroup()
         self.callback_goto_client = ReentrantCallbackGroup()
+        self.callback_goto_subs = ReentrantCallbackGroup()
+        self.executor_goto_client = SingleThreadedExecutor()
+        self.executor_goto_client_check = SingleThreadedExecutor()
+        self.goto_node_executor = None  
 
         self.topmap_pub = self.create_publisher(MarkerArray, 'topological_map_visualisation', qos_profile=self.latching_qos)
         self.routevis_pub = self.create_publisher(MarkerArray, 'topological_route_visualisation', qos_profile=self.latching_qos)
-        self.topo_map_sub = self.create_subscription(String, "/topological_map_2", self.topo_map_cb, qos_profile=self.latching_qos, callback_group=self.callback_group_map)
-        self.topo_route_sub = self.create_subscription(TopologicalRoute, "topological_navigation/Route", self.route_cb, qos_profile=self.latching_qos)
-
+        self.future_task = None 
+        self.current_target_node = None 
         if not self.no_goto:
-            self.get_logger().info("==============o========== {} ".format(1))
             self.action_server_name = '/topological_navigation'
-            self._goto_server = InteractiveMarkerServer(self, "go_to_node")
+            
             self.client = ActionClient(self, GotoNode, self.action_server_name, callback_group=self.callback_goto_client)
             while rclpy.ok():
                 try:
-                    rclpy.spin_once(self)
+                    rclpy.spin_once(self, timeout_sec=0.1)
                     if not self.client.server_is_ready():
                         self.get_logger().info("Visulize Manager: Waiting for the action server  {}...".format(self.action_server_name))
                         self.client.wait_for_server(timeout_sec=1)
@@ -87,45 +104,40 @@ class TopoMap2Vis(rclpy.node.Node):
                 except Exception as e:
                     self.get_logger().error("  {} ".format(e))
                     pass 
-        while rclpy.ok():
-            try:
-                rclpy.spin_once(self)
-                if self.topological_map is not None:
-                    self.get_logger().info("Start generating map...")
-                    self.create_map_marker()
-                    self.get_logger().info("End map map...")
-                    break 
-            except Exception as e:
-                self.get_logger().error("  {} ".format(e))
-                pass   
-        
-       
 
+        self.topo_map_sub = self.create_subscription(String, "/topological_map_2", self.topo_map_cb, qos_profile=self.latching_qos, callback_group=self.callback_group_map)
+
+        while rclpy.ok():
+            rclpy.spin_once(self, timeout_sec=0.1)
+            if self._map_received:
+                self.get_logger().info("Visulize Manager:  received the Topological Map")
+                if self.topological_map is not None:
+                    self.get_logger().info("Visulize Manager: Start generating map...")
+                    self.create_map_marker()
+                    self.get_logger().info("Visulize Manager: End generating map...")
+                break 
+
+        self.topo_route_sub = self.create_subscription(TopologicalRoute, "topological_navigation/Route"
+                                                        , self.route_cb, qos_profile=self.latching_qos, callback_group=self.callback_goto_subs)
         self.get_logger().info("All Done ...")
 
     def topo_map_cb(self, msg):
         self.topological_map = json.loads(msg.data)
-        self.get_logger().info("Received new topo_map")
-        self.get_logger().info(self.topological_map['name'])
-        # self.lnodes = self.topological_map
-        # self.topol_map = self.lnodes["pointset"]
-        # self.rsearch = TopologicalRouteSearch2(self.lnodes)
-        # self.route_checker = RouteChecker(self.lnodes)
-        # self.get_logger().info("==============o========== {} ".format(2))
-        # self.create_map_marker()
-
+        self.get_logger().info("Visulize Manager: {}".format(self.topological_map['name']))
+        self._map_received = True  
 
     def route_cb(self, msg):
         self.clear_route() # clear the last route
         self.route_marker = MarkerArray()
         self.route_marker.markers=[]
-        idn=0
-        for i in range(1,len(msg.nodes)):
-            self.route_marker.markers.append(self.get_route_marker(msg.nodes[i-1], msg.nodes[i], idn))
-            idn+=1
-        self.routevis_pub.publish(self.route_marker)
-        
-        
+        idn = 0
+        if self.topological_map is not None:
+            for i in range(1,len(msg.nodes)):
+                marker = self.get_route_marker(msg.nodes[i-1], msg.nodes[i], idn)
+                self.route_marker.markers.append(marker)
+                idn+=1
+            self.routevis_pub.publish(self.route_marker)
+
     def clear_route(self):
         self.route_marker = MarkerArray()
         self.route_marker.markers=[]
@@ -157,36 +169,30 @@ class TopoMap2Vis(rclpy.node.Node):
         marker.color.b = 0.55
         marker.points.append(V1)
         marker.points.append(V2)
-        marker.lifetime.sec = 2 
-        marker.ns='/route'
+        # marker.lifetime.sec = 2 
+        marker.ns='/route_pathg'
         return marker
 
 
     def create_map_marker(self):
-        # self.get_logger().info("==============o========== {} ".format(3))
         del self.map_markers
         self.map_markers = MarkerArray()
         self.map_markers.markers=[]
         self.actions=[]
         idn=0
         for i in self.topological_map['nodes']:
-            # self.get_logger().info("==============o========== {} ".format(i))
             self.map_markers.markers.append(self.get_node_marker(i['node'], idn))
             idn+=1
             self.map_markers.markers.append(self.get_name_marker(i['node'], idn))
             idn+=1
             self.map_markers.markers.append(self.get_zone_marker(i['node'], idn))
             idn+=1
-            # self.get_logger().info("==============o111========== {} ".format(4))
             for j in i['node']['edges']:
-                # self.get_logger().info("==============o========== {} ".format(6))
                 self.update_actions(j['action'])
-                # self.get_logger().info("==============o========== {} ".format(7))
                 marker = self.get_edge_marker(i['node'], j, idn)
                 if marker:
                     self.map_markers.markers.append(marker)
                     idn += 1
-                # self.get_logger().info("==============o========== {} ".format(8))
         
         if not self.no_goto:
             for i in self.topological_map['nodes']:
@@ -198,7 +204,8 @@ class TopoMap2Vis(rclpy.node.Node):
             self.map_markers.markers.append(marker)
             idn += 1
             legend+=1
-        self.topmap_pub.publish(self.map_markers)
+        if self.publish_map:
+            self.topmap_pub.publish(self.map_markers)
 
 
     def create_goto_marker(self, node):
@@ -230,7 +237,6 @@ class TopoMap2Vis(rclpy.node.Node):
 
     def makeArrow(self, scale):
         marker = Marker()
-
         marker.type = Marker.ARROW
         marker.scale.x = scale * 0.5
         marker.scale.y = scale * 0.25
@@ -260,13 +266,13 @@ class TopoMap2Vis(rclpy.node.Node):
                 return True 
              
             cancel_future = self.client._cancel_goal_async(self.goal_handle)
-            self.get_logger().info("Waiting till terminating the current preemption")
+            self.get_logger().info("Visulize Manager: Waiting till terminating the current preemption")
             while rclpy.ok():
                 try: 
-                    rclpy.spin_once(self)
+                    rclpy.spin_once(self, executor=self.executor_goto_client)
                     if cancel_future.done() and self.goal_get_result_future.done():
                         self.action_status = 5
-                        self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
+                        self.get_logger().info("Visulize Manager: The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                         return True 
                 except Exception as e:
                     pass 
@@ -275,32 +281,54 @@ class TopoMap2Vis(rclpy.node.Node):
         try:
             return self.goal_cancle_error_codes[status_code]
         except Exception as e:
-            self.get_logger().error("Goal cancle code {}".format(status_code))
+            self.get_logger().error("Visulize Manager: Goal cancle code {}".format(status_code))
             return self.goal_cancle_error_codes[0]
-        
-    def goto_feedback_cb(self, feedback):
-        self.get_logger().info("====================goto_feedback_cb=================================")
-        if not self.in_feedback:
-            self.in_feedback=True
-            self.get_logger().info('GOTO: '+str(feedback.marker_name))
-            self.preempt_action()
 
+    def go_to_node_task(self, ):
+        self.preempt_action()
+        self.execute()
+        self.in_feedback = False 
+        self.early_terminate_is_required = False 
+        
+       
+    def goto_feedback_cb(self, feedback):
+        if(self.current_target_node is not None):
+            if(self.current_target_node != feedback.marker_name):
+                self.in_feedback = False 
+                self.early_terminate_is_required = True 
+            else:
+                self.in_feedback = True
+
+        self.get_logger().warning('Visulize Manager: GOTO: '+str(self.early_terminate_is_required) + ' ')
+        self.get_logger().warning('Visulize Manager: GOTO: self.goto_node_executor {}  self.in_feedback {} self.early_terminate_is_required {}'.format(self.goto_node_executor, self.in_feedback, self.early_terminate_is_required))
+        if ((self.goto_node_executor is not None) and self.goto_node_executor.is_alive()) and self.in_feedback:
+            self.get_logger().warning('Visulize Manager: GOTO: '+str(feedback.marker_name) + ' is not enable yet')
+            return     
+        else:
+            self.in_feedback = True
+            self.current_target_node = feedback.marker_name
+            self.get_logger().info('Visulize Manager: GOTO: '+str(feedback.marker_name))
             navgoal = GotoNode.Goal()
             navgoal.target = feedback.marker_name
             self.goal = navgoal
-            self.execute()
+            self.go_to_node_exe_task = True 
+            self.goto_node_executor = threading.Thread(target=self.go_to_node_task)
+            self.goto_node_executor.start() 
             return 
-            #navgoal.origin = orig
-            # Sends the goal to the action server.
-            # self.client.send_goal(navgoal)
-            # rospy.Timer(rospy.Duration(1.0), self.timer_cb, oneshot=True)    # This is needed so the callback is only triggered once
 
-
+            
     def feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
-        self.get_logger().info("Distance to goal: {} ".format(self.nav_client_feedback))
+        self.get_logger().info("Visulize Manager: feedback: {} ".format(self.nav_client_feedback))
         return 
     
+    def get_status_msg(self, status_code):
+        try:
+            return self.status_mapping[status_code]
+        except Exception as e:
+            self.get_logger().error("Visulize Manager: Status code is invalid {}".format(status_code))
+            return self.status_mapping[0]
+        
     def execute(self):     
         if not self.client.server_is_ready():
             self.get_logger().info("Visulize Manager: Waiting for the action server  {}...".format(self.action_server_name))
@@ -314,38 +342,35 @@ class TopoMap2Vis(rclpy.node.Node):
         send_goal_future = self.client.send_goal_async(self.goal,  feedback_callback=self.feedback_callback)
         while rclpy.ok():
             try:
-                rclpy.spin_once(self)
+                rclpy.spin_once(self, executor=self.executor_goto_client)
                 if send_goal_future.done():
                     self.goal_handle = send_goal_future.result()
                     break
-                self.get_logger().info("=========================== tryiiiii")
             except Exception as e:
-                self.get_logger().error(" Error while executing go to node policy {} ".format(e))
                 pass 
 
         if not self.goal_handle.accepted:
-            self.get_logger().error('The goal rejected')
+            self.get_logger().error('Visulize Manager: GOTO action is rejected')
             return False
 
-        self.get_logger().info('The goal accepted')
+        self.get_logger().info('Visulize Manager: The goal accepted')
         self.goal_get_result_future = self.goal_handle.get_result_async()
-        self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
+        self.get_logger().info("Visulize Manager: Waiting for {} action to complete".format(self.action_server_name))
         while rclpy.ok():
             try:
-                rclpy.spin_once(self)
+                rclpy.spin_once(self, timeout_sec=0.1)
+                if(self.early_terminate_is_required):
+                   self.get_logger().warning("Visulize Manager: Not going to wait till finish on going task, early termination is required ") 
+                   return False 
                 if self.goal_get_result_future.done():
                     status = self.goal_get_result_future.result().status
                     self.action_status = status
                     self.get_logger().info("Visulize Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
-                    self.current_action = self.action_name
-                    self.goal_resposne = self.goal_get_result_future.result() 
                     return True 
+                # self.get_logger().warning("Visulize Manager: outside ") 
             except Exception as e:
+                self.get_logger().error("Visulize Manager: Error while executing go to node policy {} ".format(e))
                 pass 
-
-    # def timer_cb(self, event) :
-    #     self.in_feedback = False
-
 
     def get_colour(self, number):
         """
@@ -392,7 +417,6 @@ class TopoMap2Vis(rclpy.node.Node):
         V1.z += 0.1
         to_node=get_node(self.topological_map['nodes'], edge['node'])
         col=self.get_colour(self.actions.index(edge['action']))
-        #self.get_logger().info col
         if to_node:
             V2= self.node2pose(to_node['pose']).position
             V2.z += 0.1
@@ -407,7 +431,7 @@ class TopoMap2Vis(rclpy.node.Node):
             marker.ns='/edges'
             return marker
         else:
-            self.get_logger().warning("No node %s found" %edge.node)
+            self.get_logger().warning("Visulize Manager: No node %s found" %edge.node)
             return None
 
 
@@ -493,18 +517,23 @@ class TopoMap2Vis(rclpy.node.Node):
         """
         self.clear_route()
         self.killall=True
-        self.get_logger().info("See you later")
+        self.get_logger().info("Visulize Manager: See you later")
 
 def main():
     rclpy.init(args=None)
-    server = TopoMap2Vis('topomap2_visualisation')
+    inter_marker_server = InteractiveMarkerServerHandlerNode("topomap2_interactive_marker_server")
+    vis_manager = TopoMap2Vis('topomap2_visualisation', inter_marker_server)
     executor = MultiThreadedExecutor()
-    executor.add_node(server)
+    executor.add_node(vis_manager)
+    executor.add_node(inter_marker_server)
+    
     try:
         executor.spin()
     except KeyboardInterrupt:
-        server.get_logger().info('shutting down topomap2_visualisation node\n')
-    server.destroy_node()
+        vis_manager.get_logger().info('Visulize Manager: Shutting down topomap2_visualisation node\n')
+        inter_marker_server.get_logger().info('Shutting down topomap2_interactive_marker_server node\n')
+    vis_manager.destroy_node()
+    inter_marker_server.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__' :

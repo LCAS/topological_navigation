@@ -367,7 +367,6 @@ class TopoMap2Vis(rclpy.node.Node):
                     self.action_status = status
                     self.get_logger().info("Visulize Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
                     return True 
-                # self.get_logger().warning("Visulize Manager: outside ") 
             except Exception as e:
                 self.get_logger().error("Visulize Manager: Error while executing go to node policy {} ".format(e))
                 pass 

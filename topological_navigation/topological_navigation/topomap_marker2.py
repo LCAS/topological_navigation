@@ -22,16 +22,16 @@ class TopologicalVis(Node):
 
         # Marker Publisher
         self.map_markers = MarkerArray()
-        self.topmap_pub = self.create_publisher(MarkerArray, '~/vis', 2)
+        self.topmap_pub = self.create_publisher(MarkerArray, '~/vis', qos_profile=qos)
         self.topmap_pub.publish(self.map_markers)
 
         # Rescaller Subscriber
         self.scale = 1
-        self.rescale_sub = self.create_subscription(String, '~/rescale', self.rescale_callback, qos)
+        self.rescale_sub = self.create_subscription(String, '~/rescale', self.rescale_callback, qos_profile=qos)
 
         # Map Subscriber
         self.map = None
-        self.map_sub = self.create_subscription(String, '/topological_map_2', self.map_callback, qos)
+        self.map_sub = self.create_subscription(String, '/topological_map_2', self.map_callback, qos_profile=qos)
         self.get_logger().info('map visualiser init complete')
 
 

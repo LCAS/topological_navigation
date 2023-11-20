@@ -2,9 +2,9 @@
 #define TAG_PROPERTY_H
 
 #include "rclcpp/rclcpp.hpp"
-#include "rviz/properties/property.h"
-#include "rviz/properties/string_property.h"
-#include "topological_navigation_msgs/ModifyTag.h"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/properties/string_property.hpp"
+#include "topological_navigation_msgs/srv/modify_tag.hpp"
 
 namespace topological_rviz_tools
 {

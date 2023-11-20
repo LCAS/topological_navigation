@@ -280,7 +280,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.navigation_activated = False
         goal.succeed()
-        self.get_logger().warning("Done processing the nav action....")
+        self.get_logger().warning("Done processing the nav action GO-TO-NODE....")
         result = GotoNode.Result()
         result.success = True 
         return result 
@@ -342,7 +342,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.navigation_activated = False
         goal.succeed()
-        self.get_logger().warning("Done processing the nav action....")
+        self.get_logger().warning("Done processing the nav action EXECUTE POLICY MODE....")
         result = ExecutePolicyMode.Result()
         result.success = self._result_exec_policy.success 
         return result
@@ -715,10 +715,11 @@ class TopologicalNavServer(rclpy.node.Node):
             origin_name,_ = get_node_names_from_edge_id_2(self.lnodes, the_edge["edge_id"])
             origin_node = self.rsearch.get_node_from_tmap2(origin_name)
 
-            self.edge_reconf_start(the_edge)
-            result, inc = self.execute_action(the_edge, g_node, origin_node)
-            self.edge_reconf_end()
-
+            if(self.edge_reconf_start(the_edge)):
+                result, inc = self.execute_action(the_edge, g_node, origin_node)
+                self.edge_reconf_end()
+            else:
+                result = False 
             if not result:
                 self.get_logger().warning("Navigation Failed")
                 inc=1
@@ -751,10 +752,12 @@ class TopologicalNavServer(rclpy.node.Node):
         if self.edge_reconfigure:
             if not self.srv_edge_reconfigure:
                 self.edgeReconfigureManager.register_edge(edge)
-                self.edgeReconfigureManager.initialise()
+                if (not self.edgeReconfigureManager.initialise()):
+                    return False 
                 self.edgeReconfigureManager.reconfigure()
             else:
                 self.edgeReconfigureManager.srv_reconfigure(edge["edge_id"])
+        return True 
 
 
     def edge_reconf_end(self):

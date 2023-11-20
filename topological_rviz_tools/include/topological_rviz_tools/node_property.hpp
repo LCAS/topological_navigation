@@ -19,12 +19,12 @@ namespace topological_rviz_tools
 class TagController;
 
 /** @brief Property specialized to provide getter for booleans. */
-class NodeProperty: public rviz::Property
+class NodeProperty: public rviz_common::properties::Property
 {
 Q_OBJECT
 public:
   NodeProperty(const QString& name = QString(),
-               const topological_navigation_msgs::TopologicalNode& default_value = topological_navigation_msgs::TopologicalNode(),
+               const topological_navigation_msgs::msg::TopologicalNode& default_value = topological_navigation_msgs::msg::TopologicalNode(),
                const QString& description = QString(),
                Property* parent = 0,
                const char *changed_slot = 0,
@@ -44,17 +44,17 @@ Q_SIGNALS:
 void nodeModified(Property* node);
 
 private:
-  const topological_navigation_msgs::TopologicalNode& node_;
+  const topological_navigation_msgs::msg::TopologicalNode& node_;
   
   ros::ServiceClient nameUpdate_;
   ros::ServiceClient toleranceUpdate_;
 
-  rviz::StringProperty* node_name_;
-  rviz::StringProperty* map_;
-  rviz::StringProperty* pointset_;
-  rviz::StringProperty* localise_;
-  rviz::FloatProperty* yaw_tolerance_;
-  rviz::FloatProperty* xy_tolerance_;
+  rviz_common::properties::StringProperty* node_name_;
+  rviz_common::properties::StringProperty* map_;
+  rviz_common::properties::StringProperty* pointset_;
+  rviz_common::properties::StringProperty* localise_;
+  rviz_common::properties::FloatProperty* yaw_tolerance_;
+  rviz_common::properties::FloatProperty* xy_tolerance_;
   // Store the name so that we can refer to it to change the node name in the
   // map - once it changes in the property we won't know its previous value
   // otherwise.
@@ -67,6 +67,7 @@ private:
   PoseProperty* pose_;
   EdgeController* edge_controller_;
   TagController* tag_controller_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // end namespace topological_rviz_tools

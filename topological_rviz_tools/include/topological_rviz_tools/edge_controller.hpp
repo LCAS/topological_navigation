@@ -28,14 +28,14 @@
 class QKeyEvent;
 
 namespace topological_rviz_tools {
-class EdgeController: public rviz::Property
+class EdgeController: public rviz_common::properties::Property
 {
 Q_OBJECT
 public:
   EdgeController(const QString& name = QString(),
-		 const std::vector<topological_navigation_msgs::Edge>& default_values = std::vector<topological_navigation_msgs::Edge>(),
+		 const std::vector<topological_navigation_msgs::msg::Edge>& default_values = std::vector<topological_navigation_msgs::msg::Edge>(),
 		 const QString& description = QString(),
-		 rviz::Property* parent = 0,
+		 rviz_common::properties::Property* parent = 0,
 		 const char *changed_slot = 0,
 		 QObject* receiver = 0);
   virtual ~EdgeController();
@@ -57,9 +57,9 @@ public:
    * Typically this will be set by the factory object which created it. */
   virtual void setClassId( const QString& class_id ) { class_id_ = class_id; }
 
-  virtual void load(const rviz::Config& config);
-  virtual void save(rviz::Config config) const;
-  bool addEdge(const topological_navigation_msgs::Edge& edge);
+  virtual void load(const rviz_common::Config& config);
+  virtual void save(rviz_common::Config config) const;
+  bool addEdge(const topological_navigation_msgs::msg::Edge& edge);
 Q_SIGNALS:
   void configChanged();
 
@@ -71,6 +71,7 @@ protected:
 private:
   QString class_id_;
   std::vector<EdgeProperty*> edges_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // end namespace topological_rviz_tools

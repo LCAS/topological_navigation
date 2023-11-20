@@ -34,7 +34,7 @@
 class QKeyEvent;
 
 namespace topological_rviz_tools {
-class NodeController: public rviz::Property
+class NodeController: public rviz_common::properties::Property
 {
 Q_OBJECT
 public:
@@ -50,8 +50,8 @@ public:
   /** @brief Subclasses should call this whenever a change is made which would change the results of toString(). */
   void emitConfigChanged();
 
-  virtual void load(const rviz::Config& config);
-  virtual void save(rviz::Config config) const;
+  virtual void load(const rviz_common::Config& config);
+  virtual void save(rviz_common::Config config) const;
 
   // required by something that initialises this class
   QString formatClassId(const QString& class_id);
@@ -78,21 +78,22 @@ protected:
    * Default implementation does nothing. */
   virtual void onInitialize() {}
 
-  void addModifiedChild(rviz::Property* modifiedChild){ modifiedChildren_.push_back(modifiedChild); }
+  void addModifiedChild(rviz_common::properties::Property* modifiedChild){ modifiedChildren_.push_back(modifiedChild); }
 
 private:
   void topmapCallback(const topological_navigation_msgs::TopologicalMap::ConstPtr& msg);
 
   QString class_id_;
   ros::Subscriber top_sub_;
-  std::vector<rviz::Property*> modifiedChildren_;
+  std::vector<rviz_common::properties::Property*> modifiedChildren_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 
-  /* bool sortNodes(topological_navigation_msgs::TopologicalNode a, topological_navigation_msgs::TopologicalNode b) { return a.name.compare(b.name) < 0; } */
+  /* bool sortNodes(topological_navigation_msgs::msg::TopologicalNode a, topological_navigation_msgs::msg::TopologicalNode b) { return a.name.compare(b.name) < 0; } */
 
   struct NodeSorter {
 
-    bool operator() (topological_navigation_msgs::TopologicalNode a,
-                     topological_navigation_msgs::TopologicalNode b) {
+    bool operator() (topological_navigation_msgs::msg::TopologicalNode a,
+                     topological_navigation_msgs::msg::TopologicalNode b) {
       std::string an = a.name;
       std::string bn = b.name;
       std::transform(an.begin(), an.end(), an.begin(), ::tolower);

@@ -30,7 +30,6 @@ namespace topological_rviz_tools {
  */
 class TopologicalMapPanel: public rviz::Panel
 {
-Q_OBJECT
 public:
   TopologicalMapPanel(QWidget* parent = 0);
   virtual ~TopologicalMapPanel() {}
@@ -51,10 +50,10 @@ public:
   TopmapManager* getTopmapManager() const { return topmap_man_; }
 
   /** @brief Load configuration data, specifically the PropertyTreeWidget view settings. */
-  virtual void load(const rviz::Config& config);
+  virtual void load(const rviz_common::Config& config);
 
   /** @brief Save configuration data, specifically the PropertyTreeWidget view settings. */
-  virtual void save(rviz::Config config) const;
+  virtual void save(rviz_common::Config config) const;
 
 private Q_SLOTS:
   void onDeleteClicked();
@@ -71,6 +70,7 @@ private:
 
   TopmapManager* topmap_man_;
   rviz::PropertyTreeWidget* properties_view_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // namespace topological_rviz_tools

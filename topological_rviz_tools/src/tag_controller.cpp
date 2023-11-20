@@ -1,4 +1,4 @@
-#include "tag_controller.h"
+#include "topological_rviz_tools/tag_controller.hpp"
 
 namespace topological_rviz_tools
 {
@@ -8,7 +8,7 @@ TagController::TagController(const QString& name,
 			     NodeProperty* parent,
 			     const char *changed_slot,
 			     QObject* receiver)
-  : rviz::Property(name, "", description, parent, changed_slot, receiver)
+  : rviz_common::properties::Property(name, "", description, parent, changed_slot, receiver)
 {
   for (int i = 0; i < default_values.size(); i++) {
     TagProperty* newTag = new TagProperty("Tag", QString(QString::fromStdString(default_values[i])), "", QString::fromStdString(parent->getNodeName()));
@@ -53,7 +53,7 @@ void TagController::emitConfigChanged()
   Q_EMIT configChanged();
 }
 
-void TagController::load(const rviz::Config& config)
+void TagController::load(const rviz_common::Config& config)
 {
   // // Load the name by hand.
   // QString name;
@@ -62,15 +62,15 @@ void TagController::load(const rviz::Config& config)
   //   setName(name);
   // }
   // // Load all sub-properties the same way the base class does.
-  // rviz::Property::load(config);
+  // rviz_common::properties::Property::load(config);
 }
 
-void TagController::save(rviz::Config config) const
+void TagController::save(rviz_common::Config config) const
 {
   // config.mapSetValue("Class", getClassId());
   // config.mapSetValue("Name", getName());
 
-  // rviz::Property::save(config);
+  // rviz_common::properties::Property::save(config);
 }
 
 } // end namespace topological_rviz_tools

@@ -1,16 +1,16 @@
-#include "topmap_manager.h"
+#include "topological_rviz_tools/topmap_manager.hpp"
 
 namespace topological_rviz_tools
 {
-TopmapManager::TopmapManager(rviz::DisplayContext* context)
+TopmapManager::TopmapManager(rviz_common::DisplayContext* context)
   : context_(context)
   , root_property_(new NodeController)
-  , property_model_(new rviz::PropertyTreeModel(root_property_))
-  , factory_(new rviz::PluginlibFactory<NodeController>("topological_rviz_tools", "topological_rviz_tools::NodeController"))
+  , property_model_(new rviz_common::properties::PropertyTreeModel(root_property_))
+  , factory_(new rviz_common::PluginlibFactory<NodeController>("topological_rviz_tools", "topological_rviz_tools::NodeController"))
   , current_(NULL)
   , render_panel_(NULL)
 {
-  RCLCPP_INFO("Initialising node manager");
+  RCLCPP_INFO(logger_, "Initialising node manager");
   property_model_->setDragDropClass("node-controller");
   // connect(property_model_, SIGNAL(configChanged()), this, SIGNAL(configChanged()));
   // add(new NodeController, -1);
@@ -174,9 +174,9 @@ NodeController* TopmapManager::takeAt(int index)
   // return qobject_cast<NodeController*>(root_property_->takeChildAt(index + 1));
 }
 
-void TopmapManager::load(const rviz::Config& config)
+void TopmapManager::load(const rviz_common::Config& config)
 {
-  // rviz::Config current_config = config.mapGetChild("Current");
+  // rviz_common::Config current_config = config.mapGetChild("Current");
   // QString class_id;
   // if(current_config.mapGetString("Class", &class_id))
   // {
@@ -185,12 +185,12 @@ void TopmapManager::load(const rviz::Config& config)
   //   setCurrent(new_current, false);
   // }
 
-  // rviz::Config saved_views_config = config.mapGetChild("Saved");
+  // rviz_common::Config saved_views_config = config.mapGetChild("Saved");
   // root_property_->removeChildren(1);
   // int num_saved = saved_views_config.listLength();
   // for(int i = 0; i < num_saved; i++)
   // {
-  //   rviz::Config view_config = saved_views_config.listChildAt(i);
+  //   rviz_common::Config view_config = saved_views_config.listChildAt(i);
     
   //   if(view_config.mapGetString("Class", &class_id))
   //   {
@@ -201,11 +201,11 @@ void TopmapManager::load(const rviz::Config& config)
   // }
 }
 
-void TopmapManager::save(rviz::Config config) const
+void TopmapManager::save(rviz_common::Config config) const
 {
   // getCurrent()->save(config.mapMakeChild("Current"));
 
-  // rviz::Config saved_views_config = config.mapMakeChild("Saved");
+  // rviz_common::Config saved_views_config = config.mapMakeChild("Saved");
   // for(int i = 0; i < getNumViews(); i++)
   // {
   //   getViewAt(i)->save(saved_views_config.listAppendNew());
@@ -214,7 +214,7 @@ void TopmapManager::save(rviz::Config config) const
 
 NodeProperty* TopmapManager::copy(NodeProperty* source)
 {
-  // rviz::Config config;
+  // rviz_common::Config config;
   // source->save(config);
 
   // NodeController* copy_of_source = create(source->getClassId());

@@ -9,9 +9,9 @@
 
 namespace rviz
 {
-class VectorProperty;
-class VisualizationManager;
-class ViewportMouseEvent;
+  class VectorProperty;
+  class VisualizationManager;
+  class ViewportMouseEvent;
 }
 
 namespace topological_rviz_tools
@@ -23,7 +23,6 @@ namespace topological_rviz_tools
 // rviz::Tool.
 class TopmapNodeTool: public rviz::Tool
 {
-Q_OBJECT
 public:
   TopmapNodeTool();
   ~TopmapNodeTool();
@@ -37,6 +36,7 @@ public:
 private:
   ros::ServiceClient addNodeSrv_;
   ros::Publisher update_map_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 } // end namespace topological_rviz_tools
 

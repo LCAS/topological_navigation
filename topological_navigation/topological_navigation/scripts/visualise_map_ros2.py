@@ -42,11 +42,11 @@ class TopoMap2Vis(rclpy.node.Node):
     _pallete=[[0.0,0.0,0.0],[1.0,0.0,0.0],[0.0,0.0,1.0],[0.0,1.0,0.0],[1.0,1.0,0.0],[1.0,0.0,1.0],[0.0,1.0,1.0],[1.0,1.0,1.0]]
     def __init__(self, name, interactive_marker_server) :
         super().__init__(name)
-        self.declare_parameter('~no_goto', rclpy.Parameter.Type.BOOL) 
-        self.declare_parameter('~publish_map', rclpy.Parameter.Type.BOOL) 
+        self.declare_parameter('no_goto', rclpy.Parameter.Type.BOOL) 
+        self.declare_parameter('publish_map', rclpy.Parameter.Type.BOOL) 
 
-        self.no_go = self.get_parameter_or("~no_goto", rclpy.Parameter('bool', rclpy.Parameter.Type.BOOL, False)).value
-        self.publish_map = self.get_parameter_or("~publish_map", rclpy.Parameter('bool', rclpy.Parameter.Type.BOOL, True)).value
+        self.no_go = self.get_parameter_or("no_goto", rclpy.Parameter('bool', rclpy.Parameter.Type.BOOL, False)).value
+        self.publish_map = self.get_parameter_or("publish_map", rclpy.Parameter('bool', rclpy.Parameter.Type.BOOL, True)).value
         self.no_goto = self.no_go
         self.killall=False
         self._goto_server = interactive_marker_server.getInteractiveMarkerServer()
@@ -96,10 +96,10 @@ class TopoMap2Vis(rclpy.node.Node):
                 try:
                     rclpy.spin_once(self, timeout_sec=0.1)
                     if not self.client.server_is_ready():
-                        self.get_logger().info("Visulize Manager: Waiting for the action server  {}...".format(self.action_server_name))
+                        self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
                         self.client.wait_for_server(timeout_sec=1)
                     if self.client.server_is_ready():
-                        self.get_logger().info("Visulize Manager: the action server  {} is avaible ".format(self.action_server_name))
+                        self.get_logger().info("the action server  {} is avaible ".format(self.action_server_name))
                         break
                 except Exception as e:
                     self.get_logger().error("  {} ".format(e))
@@ -110,11 +110,11 @@ class TopoMap2Vis(rclpy.node.Node):
         while rclpy.ok():
             rclpy.spin_once(self, timeout_sec=0.1)
             if self._map_received:
-                self.get_logger().info("Visulize Manager:  received the Topological Map")
+                self.get_logger().info(" received the Topological Map")
                 if self.topological_map is not None:
-                    self.get_logger().info("Visulize Manager: Start generating map...")
+                    self.get_logger().info("Start generating map...")
                     self.create_map_marker()
-                    self.get_logger().info("Visulize Manager: End generating map...")
+                    self.get_logger().info("End generating map...")
                 break 
 
         self.topo_route_sub = self.create_subscription(TopologicalRoute, "topological_navigation/Route"
@@ -123,7 +123,7 @@ class TopoMap2Vis(rclpy.node.Node):
 
     def topo_map_cb(self, msg):
         self.topological_map = json.loads(msg.data)
-        self.get_logger().info("Visulize Manager: {}".format(self.topological_map['name']))
+        self.get_logger().info("{}".format(self.topological_map['name']))
         self._map_received = True  
 
     def route_cb(self, msg):
@@ -254,25 +254,25 @@ class TopoMap2Vis(rclpy.node.Node):
     def preempt_action(self):
         if self.client is not None:
             if not self.client.server_is_ready():
-                self.get_logger().info("Visulize Manager: Waiting for the action server  {}...".format(self.action_server_name))
+                self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
                 self.client.wait_for_server(timeout_sec=2)
             
             if not self.client.server_is_ready():
-                self.get_logger().info("Visulize Manager: action server  {} not responding ... can not perform any action".format(self.action_server_name))
+                self.get_logger().info("action server  {} not responding ... can not perform any action".format(self.action_server_name))
                 return True
             
             if self.goal_handle is None:
-                self.get_logger().info("Visulize Manager: there is no goal to stop it is already cancelled with status {}".format(self.action_status))
+                self.get_logger().info("there is no goal to stop it is already cancelled with status {}".format(self.action_status))
                 return True 
              
             cancel_future = self.client._cancel_goal_async(self.goal_handle)
-            self.get_logger().info("Visulize Manager: Waiting till terminating the current preemption")
+            self.get_logger().info("Waiting till terminating the current preemption")
             while rclpy.ok():
                 try: 
                     rclpy.spin_once(self, executor=self.executor_goto_client)
                     if cancel_future.done() and self.goal_get_result_future.done():
                         self.action_status = 5
-                        self.get_logger().info("Visulize Manager: The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
+                        self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                         return True 
                 except Exception as e:
                     pass 
@@ -281,7 +281,7 @@ class TopoMap2Vis(rclpy.node.Node):
         try:
             return self.goal_cancle_error_codes[status_code]
         except Exception as e:
-            self.get_logger().error("Visulize Manager: Goal cancle code {}".format(status_code))
+            self.get_logger().error("Goal cancle code {}".format(status_code))
             return self.goal_cancle_error_codes[0]
 
     def go_to_node_task(self, ):
@@ -299,17 +299,18 @@ class TopoMap2Vis(rclpy.node.Node):
             else:
                 self.in_feedback = True
 
-        self.get_logger().warning('Visulize Manager: GOTO: '+str(self.early_terminate_is_required) + ' ')
-        self.get_logger().warning('Visulize Manager: GOTO: self.goto_node_executor {}  self.in_feedback {} self.early_terminate_is_required {}'.format(self.goto_node_executor, self.in_feedback, self.early_terminate_is_required))
+        self.get_logger().warning('GOTO: '+str(self.early_terminate_is_required) + ' ')
+        self.get_logger().warning('GOTO: self.goto_node_executor {}  self.in_feedback {} self.early_terminate_is_required {}'.format(self.goto_node_executor, self.in_feedback, self.early_terminate_is_required))
         if ((self.goto_node_executor is not None) and self.goto_node_executor.is_alive()) and self.in_feedback:
-            self.get_logger().warning('Visulize Manager: GOTO: '+str(feedback.marker_name) + ' is not enable yet')
+            self.get_logger().warning('GOTO: '+str(feedback.marker_name) + ' is not enable yet')
             return     
         else:
             self.in_feedback = True
             self.current_target_node = feedback.marker_name
-            self.get_logger().info('Visulize Manager: GOTO: '+str(feedback.marker_name))
+            self.get_logger().info('GOTO: '+str(feedback.marker_name))
             navgoal = GotoNode.Goal()
             navgoal.target = feedback.marker_name
+            navgoal.no_orientation = True 
             self.goal = navgoal
             self.go_to_node_exe_task = True 
             self.goto_node_executor = threading.Thread(target=self.go_to_node_task)
@@ -319,26 +320,26 @@ class TopoMap2Vis(rclpy.node.Node):
             
     def feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
-        self.get_logger().info("Visulize Manager: feedback: {} ".format(self.nav_client_feedback))
+        self.get_logger().info("feedback: {} ".format(self.nav_client_feedback))
         return 
     
     def get_status_msg(self, status_code):
         try:
             return self.status_mapping[status_code]
         except Exception as e:
-            self.get_logger().error("Visulize Manager: Status code is invalid {}".format(status_code))
+            self.get_logger().error("Status code is invalid {}".format(status_code))
             return self.status_mapping[0]
         
     def execute(self):     
         if not self.client.server_is_ready():
-            self.get_logger().info("Visulize Manager: Waiting for the action server  {}...".format(self.action_server_name))
+            self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
             self.client.wait_for_server(timeout_sec=2)
         
         if not self.client.server_is_ready():
-            self.get_logger().info("Visulize Manager: action server  {} not responding ... can not perform any action".format(self.action_server_name))
+            self.get_logger().info("action server  {} not responding ... can not perform any action".format(self.action_server_name))
             return 
         
-        self.get_logger().info("Visulize Manager: Executing the action...")
+        self.get_logger().info("Executing the action...")
         send_goal_future = self.client.send_goal_async(self.goal,  feedback_callback=self.feedback_callback)
         while rclpy.ok():
             try:
@@ -350,25 +351,25 @@ class TopoMap2Vis(rclpy.node.Node):
                 pass 
 
         if not self.goal_handle.accepted:
-            self.get_logger().error('Visulize Manager: GOTO action is rejected')
+            self.get_logger().error('GOTO action is rejected')
             return False
 
-        self.get_logger().info('Visulize Manager: The goal accepted')
+        self.get_logger().info('The goal accepted')
         self.goal_get_result_future = self.goal_handle.get_result_async()
-        self.get_logger().info("Visulize Manager: Waiting for {} action to complete".format(self.action_server_name))
+        self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
         while rclpy.ok():
             try:
                 rclpy.spin_once(self, timeout_sec=0.1)
                 if(self.early_terminate_is_required):
-                   self.get_logger().warning("Visulize Manager: Not going to wait till finish on going task, early termination is required ") 
+                   self.get_logger().warning("Not going to wait till finish on going task, early termination is required ") 
                    return False 
                 if self.goal_get_result_future.done():
                     status = self.goal_get_result_future.result().status
                     self.action_status = status
-                    self.get_logger().info("Visulize Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
+                    self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
                     return True 
             except Exception as e:
-                self.get_logger().error("Visulize Manager: Error while executing go to node policy {} ".format(e))
+                self.get_logger().error("Error while executing go to node policy {} ".format(e))
                 pass 
 
     def get_colour(self, number):
@@ -430,7 +431,7 @@ class TopoMap2Vis(rclpy.node.Node):
             marker.ns='/edges'
             return marker
         else:
-            self.get_logger().warning("Visulize Manager: No node %s found" %edge.node)
+            self.get_logger().warning("No node %s found" %edge.node)
             return None
 
 
@@ -516,7 +517,7 @@ class TopoMap2Vis(rclpy.node.Node):
         """
         self.clear_route()
         self.killall=True
-        self.get_logger().info("Visulize Manager: See you later")
+        self.get_logger().info("See you later")
 
 def main():
     rclpy.init(args=None)
@@ -529,7 +530,7 @@ def main():
     try:
         executor.spin()
     except KeyboardInterrupt:
-        vis_manager.get_logger().info('Visulize Manager: Shutting down topomap2_visualisation node\n')
+        vis_manager.get_logger().info('Shutting down topomap2_visualisation node\n')
         inter_marker_server.get_logger().info('Shutting down topomap2_interactive_marker_server node\n')
     vis_manager.destroy_node()
     inter_marker_server.destroy_node()

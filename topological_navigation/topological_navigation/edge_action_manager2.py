@@ -11,7 +11,7 @@ import rclpy
 from functools import reduce  # forward compatibility for Python 3
 from rclpy.action import ActionClient 
 from action_msgs.msg import GoalStatus
-from nav2_msgs.action import NavigateToPose
+from nav2_msgs.action import NavigateThroughPoses, NavigateToPose, FollowWaypoints, ComputePathToPose, ComputePathThroughPoses
 from geometry_msgs.msg import PoseStamped
 # from rospy_message_converter import message_converter
 # from actionlib_msgs.msg import GoalStatus
@@ -87,6 +87,7 @@ class EdgeActionManager(rclpy.node.Node):
         self.goal_cancle_error_codes[3] = "ERROR_GOAL_TERMINATED"
         self.goal_handle = None 
         self.internal_executor = SingleThreadedExecutor()
+        self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
     
     def get_nav_action_server_status(self, ):
@@ -106,41 +107,61 @@ class EdgeActionManager(rclpy.node.Node):
             self.get_logger().error("Goal cancle code {}".format(status_code))
             return self.goal_cancle_error_codes[0]
         
-    def initialise(self, edge, destination_node, origin_node=None):
+    def initialise(self, edge, destination_node, origin_node=None
+                                , action_name=None, package="nav2_msgs.action", bt_tree=None):
         
-        self.edge = yaml.safe_load(json.dumps(edge)) # no unicode in edge
-        self.destination_node = destination_node
-        self.origin_node = origin_node
-        self.get_logger().info("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
-        
-        self.action_name = self.edge["action"]
+        if(action_name is not None):
+            self.action_name = action_name
+            self.bt_tree = bt_tree
+        else:
+            self.edge = yaml.safe_load(json.dumps(edge)) # no unicode in edge
+            self.action_name = self.edge["action"]
+
         if self.action_name == "row_traversal":
-            self.action_name = "NavigateToPose"
+            self.action_name = "NavigateToPose" #TODO change this to actual  
 
         if self.action_name != self.current_action:
             self.preempt()
 
-        action_type = self.edge["action_type"]
-        package = "nav2_msgs.action" # TODO change this 
-
-        action_spec = self.action_name
-        self.action_server_name = self.count_action_server_name(self.action_name)
-        self.get_logger().info("Edge Action Manager: Importing {} from {}".format(action_spec, package))
-        try:
-            action = _import(package, action_spec)
-        except Exception as e:
-            self.get_logger().error("Edge Action Manager: Still does not support actin type: {}".format(action_spec))
-            return False 
-
-        self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self.get_logger().info("Edge Action Manager: Creating a {} client".format(self.action_server_name))
-        self.action = action 
-        self.client = ActionClient(self, action, self.action_server_name)
+        self.package = package
+        self.set_nav_client()
         self.action_status = 0 
 
-        self.get_logger().info("Edge Action Manager: Constructing the goal")
-        self.construct_goal(action_type, copy.deepcopy(self.edge["goal"]))
+        if self.action_name == "NavigateToPose":
+            self.destination_node = destination_node
+            self.origin_node = origin_node
+            self.get_logger().info("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
+            self.get_logger().info("Edge Action Manager: Constructing the goal")
+            self.get_logger().info("  edge {}".format(self.edge))
+            self.get_logger().info("  destination_node {}".format(destination_node))
+            target_pose = self.construct_goal(copy.deepcopy(edge["goal"]), destination_node, origin_node)
+            self.goal = self.construct_navigate_to_pose_goal(target_pose)
+
+        if self.action_name == "NavigateThroughPoses":
+            poses = []
+            for edge_i, dest_i, origin_i in zip(edge, destination_node, origin_node):
+                edge_i = yaml.safe_load(json.dumps(edge_i)) # no unicode in edge
+                self.get_logger().info("Edge Action Manager: Processing edge {}".format(edge_i["edge_id"]))
+                intermediate_goal = self.construct_goal(copy.deepcopy(edge_i["goal"]), dest_i, origin_i)
+                self.get_logger().info("Edge Action Manager: Constructing intermediate goal")
+                poses.append(intermediate_goal)
+            self.destination_node = destination_node[-1]
+            self.goal = self.construct_navigate_through_poses_goal(poses)
+
         return True 
+    
+    def set_nav_client(self):
+        self.action_server_name = self.get_action_server_name(self.action_name)
+        self.get_logger().info("Edge Action Manager: Importing {} from {}".format(self.action_name, self.package))
+        try:
+            action = _import(self.package, self.action_name)
+        except Exception as e:
+            self.get_logger().error("Edge Action Manager: Still does not support actin type: {}".format(self.action_name))
+            return False 
+
+        self.get_logger().info("Edge Action Manager: Creating a {} client".format(self.action_server_name))
+        self.action = action 
+        self.client = ActionClient(self, self.action, self.action_server_name)
     
     def feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
@@ -151,7 +172,7 @@ class EdgeActionManager(rclpy.node.Node):
         self.nav_client_feedback = feedback_msg.feedback
         return 
 
-    def count_action_server_name(self, action_name):
+    def get_action_server_name(self, action_name):
         action_topic = ""
         for char in action_name:
             if char.isupper():
@@ -193,41 +214,64 @@ class EdgeActionManager(rclpy.node.Node):
                 except Exception as e:
                     pass 
         
-    def construct_goal(self, action_type, goal_args):
+    def construct_goal(self, goal_args, destination_node, origin_node):
         paths = self.dt.get_paths_from_nested_dict(goal_args)
+        self.get_logger().info("  paths {} ".format(paths))
+        self.get_logger().info("  goal args {} ".format(goal_args))
+
         for item in paths:
             value = item["value"]
             if isinstance(value, str):
                 if value.startswith("$"):
-                    _property = self.dt.getFromDict(self.destination_node, value[1:].split("."))
+                    _property = self.dt.getFromDict(destination_node, value[1:].split("."))
                     goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
                     
-                elif value.startswith("+") and self.origin_node is not None:
-                    _property = self.dt.getFromDict(self.origin_node, value[1:].split("."))
+                elif value.startswith("+") and origin_node is not None:
+                    _property = self.dt.getFromDict(origin_node, value[1:].split("."))
                     goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
-        self.goal = goal_args
-        self.get_logger().info("  goal {} ".format(self.goal))
+        goal = goal_args
+        self.get_logger().info("  goal {} ".format(goal))
+        return goal 
+    
+    def construct_navigate_to_pose_goal(self, goal):
+            goal = self.get_navigate_to_pose_goal(goal["target_pose"]["header"]["frame_id"], goal["target_pose"]["pose"])
+            return goal 
+    
+    def get_navigate_to_pose_goal(self, frame_id, goal):
+        nav_goal = NavigateToPose.Goal()
+        target_pose = self.crete_pose_stamped_msg(frame_id, goal)
+        nav_goal.pose = target_pose 
+        return nav_goal
+    
+    def construct_navigate_through_poses_goal(self, goals):
+        goal = self.get_navigate_through_poses_goal(goals)
+        return goal 
 
-        #TODO need to add other types 
-        if(self.action_name == "NavigateToPose"):
-            self.nav_goal = NavigateToPose.Goal()
-            header = Header()
-            header.stamp = self.get_clock().now().to_msg()
-            header.frame_id = self.goal["target_pose"]["header"]["frame_id"]
-            target_pose = PoseStamped()
-            target_pose.header = header 
-            desired_target_pose = self.goal["target_pose"]["pose"]
-            target_pose.pose.position.x = desired_target_pose["position"]["x"]
-            target_pose.pose.position.y = desired_target_pose["position"]["y"]
-            target_pose.pose.position.z = desired_target_pose["position"]["z"]
-            target_pose.pose.orientation.w = desired_target_pose["orientation"]["w"]
-            target_pose.pose.orientation.x = desired_target_pose["orientation"]["x"]
-            target_pose.pose.orientation.y = desired_target_pose["orientation"]["y"]
-            target_pose.pose.orientation.z = desired_target_pose["orientation"]["z"]
-            self.nav_goal.pose = target_pose
-
-        self.goal = self.nav_goal
+    def get_navigate_through_poses_goal(self, poses):
+        nav_goal = NavigateThroughPoses.Goal()
+        if(self.bt_tree is not None):
+            nav_goal.behavior_tree = self.bt_tree
+        for pose in poses:
+            target_pose = self.crete_pose_stamped_msg(pose["target_pose"]["header"]["frame_id"], pose["target_pose"]["pose"])
+            nav_goal.poses.append(target_pose)
+        return nav_goal 
         
+    def crete_pose_stamped_msg(self, frame_id, goal):
+        header = Header()
+        header.stamp = self.get_clock().now().to_msg()
+        header.frame_id = frame_id
+        target_pose = PoseStamped()
+        target_pose.header = header 
+        desired_target_pose = goal 
+        target_pose.pose.position.x = desired_target_pose["position"]["x"]
+        target_pose.pose.position.y = desired_target_pose["position"]["y"]
+        target_pose.pose.position.z = desired_target_pose["position"]["z"]
+        target_pose.pose.orientation.w = desired_target_pose["orientation"]["w"]
+        target_pose.pose.orientation.x = desired_target_pose["orientation"]["x"]
+        target_pose.pose.orientation.y = desired_target_pose["orientation"]["y"]
+        target_pose.pose.orientation.z = desired_target_pose["orientation"]["z"]
+        return target_pose 
+
     def get_result(self, ):
         return self.goal_resposne
 

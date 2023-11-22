@@ -285,10 +285,16 @@ class TopologicalNavServer(rclpy.node.Node):
             self.get_logger().warning("Could not cancel current navigation action, GO-TO-NODE goal aborted")
 
         self.navigation_activated = False
-        goal.succeed()
+        nav_current_state = self.edge_action_manager.get_state()
+        if (nav_current_state == GoalStatus.STATUS_SUCCEEDED):
+            goal.succeed()
+        else: 
+            goal.abort()
+
         self.get_logger().warning("Done processing the nav action GO-TO-NODE....")
         result = GotoNode.Result()
-        result.success = True 
+        result.success = self._result.success 
+        
         return result 
 
     def executeCallbackexecpolicy(self, goal):
@@ -653,9 +659,8 @@ class TopologicalNavServer(rclpy.node.Node):
 
             self.current_action = a
             self.next_action = a1
-            self.get_logger().info("From {} do ({}) to {}".format(route.source[rindex], a, cedg["node"]))
             current_edge = "%s--%s" % (cedg["edge_id"], self.topol_map)
-            self.get_logger().info("Current edge: {}".format(current_edge))
+            self.get_logger().info("From {} do ({}) to {} from edge {}".format(route.source[rindex], a, cedg["node"], current_edge))
             # msg = String()
             # msg.data = current_edge 
             # self.cur_edge.publish(msg)
@@ -685,7 +690,7 @@ class TopologicalNavServer(rclpy.node.Node):
             rindex = rindex + 1
 
         
-        nav_ok, inc = self.execute_actions(route_edges, route_dests, route_origins, action_name="NavigateThroughPoses", bt_tree=bt_tree)
+        nav_ok, inc, status  = self.execute_actions(route_edges, route_dests, route_origins, action_name="NavigateThroughPoses", bt_tree=bt_tree)
         self.stat.set_ended(self.current_node)
         dt_text = self.stat.get_finish_time_str()
         operation_time = self.stat.operation_time
@@ -711,7 +716,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.reset_reconf()
         self.navigation_activated = False
         result = nav_ok
-        return result, inc
+        return result, inc, status 
     
     def navigate(self, target):
         """
@@ -745,7 +750,7 @@ class TopologicalNavServer(rclpy.node.Node):
                         self.get_logger().info("Navigating Case 1: Following route")
                         self.publish_route(route, target)
                         if(self.use_nav2_follow_route):
-                            result, inc = self.navigate_to_poses(route, target, 0, self.bt_for_nav2_follow_route)
+                            result, inc, status = self.navigate_to_poses(route, target, 0, self.bt_for_nav2_follow_route)
                         else:
                             result, inc = self.followRoute(route, target, 0)
                         self.get_logger().info("Navigating Case 1 -> res: {}".format(inc))
@@ -786,6 +791,7 @@ class TopologicalNavServer(rclpy.node.Node):
             else:
                 self._result.success = False
                 # self._as.set_preempted(self._result)
+        
  
 
     def execute_policy(self, route, target):
@@ -1075,7 +1081,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.pub_status(status)
 
         self.get_logger().info("Navigation action status: {}, goal reached: {}, inc: {}".format(self.edge_action_manager.get_status_msg(status), result, inc))
-        return result, inc
+        return result, inc, status 
     
     def execute_action(self, edge, destination_node, origin_node=None):
 

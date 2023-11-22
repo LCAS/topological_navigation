@@ -132,8 +132,8 @@ class EdgeActionManager(rclpy.node.Node):
             self.origin_node = origin_node
             self.get_logger().info("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
             self.get_logger().info("Edge Action Manager: Constructing the goal")
-            self.get_logger().info("  edge {}".format(self.edge))
-            self.get_logger().info("  destination_node {}".format(destination_node))
+            # self.get_logger().info("  edge {}".format(self.edge))
+            # self.get_logger().info("  destination_node {}".format(destination_node))
             target_pose = self.construct_goal(copy.deepcopy(edge["goal"]), destination_node, origin_node)
             self.goal = self.construct_navigate_to_pose_goal(target_pose)
 
@@ -216,9 +216,6 @@ class EdgeActionManager(rclpy.node.Node):
         
     def construct_goal(self, goal_args, destination_node, origin_node):
         paths = self.dt.get_paths_from_nested_dict(goal_args)
-        self.get_logger().info("  paths {} ".format(paths))
-        self.get_logger().info("  goal args {} ".format(goal_args))
-
         for item in paths:
             value = item["value"]
             if isinstance(value, str):
@@ -230,7 +227,7 @@ class EdgeActionManager(rclpy.node.Node):
                     _property = self.dt.getFromDict(origin_node, value[1:].split("."))
                     goal_args = self.dt.setInDict(goal_args, item["keys"], _property)
         goal = goal_args
-        self.get_logger().info("  goal {} ".format(goal))
+        # self.get_logger().info("  goal {} ".format(goal))
         return goal 
     
     def construct_navigate_to_pose_goal(self, goal):

@@ -1,17 +1,17 @@
-#include "pose_property.h"
+#include "topological_rviz_tools/pose_property.hpp"
 
 namespace topological_rviz_tools
 {
 
 PoseProperty::PoseProperty(const QString& name,
-			   const geometry_msgs::Pose& default_value,
+			   const geometry_msgs::msg::Pose& default_value,
 			   const QString& description,
-			   rviz::Property* parent,
+			   rviz_common::properties::Property* parent,
 			   const char *changed_slot,
 			   QObject* receiver)
   // We set the default value sent to the base property to the empty string,
   // rather than trying to put in the geometry msgs pose
-  : rviz::Property(name, "", description, parent, changed_slot, receiver),
+  : rviz_common::properties::Property(name, "", description, parent, changed_slot, receiver),
     pose_(default_value)
 {
   connect(this, SIGNAL(poseModified()), parent, SLOT(nodePropertyUpdated()));
@@ -22,11 +22,11 @@ PoseProperty::PoseProperty(const QString& name,
   // new message
   poseUpdate_ = nh.serviceClient<topological_navigation_msgs::AddNode>("/topological_map_manager/update_node_pose", true);
 
-  orientation_ = new rviz::StringProperty("Orientation", "", "", this);
-  orientation_w_ = new rviz::FloatProperty("w", pose_.orientation.w, "",  orientation_);
-  orientation_x_ = new rviz::FloatProperty("x", pose_.orientation.x, "",  orientation_);
-  orientation_y_ = new rviz::FloatProperty("y", pose_.orientation.y, "",  orientation_);
-  orientation_z_ = new rviz::FloatProperty("z", pose_.orientation.z, "",  orientation_);
+  orientation_ = new rviz_common::properties::StringProperty("Orientation", "", "", this);
+  orientation_w_ = new rviz_common::properties::FloatProperty("w", pose_.orientation.w, "",  orientation_);
+  orientation_x_ = new rviz_common::properties::FloatProperty("x", pose_.orientation.x, "",  orientation_);
+  orientation_y_ = new rviz_common::properties::FloatProperty("y", pose_.orientation.y, "",  orientation_);
+  orientation_z_ = new rviz_common::properties::FloatProperty("z", pose_.orientation.z, "",  orientation_);
   // Don't allow messing around with the quaternion from here - can be done
   // using the interactive marker.
   orientation_->setReadOnly(true);
@@ -35,10 +35,10 @@ PoseProperty::PoseProperty(const QString& name,
   orientation_y_->setReadOnly(true);
   orientation_z_->setReadOnly(true);
 
-  position_ = new rviz::StringProperty("Position", "", "", this);
-  position_x_ = new rviz::FloatProperty("x", pose_.position.x, "",  position_, SLOT(positionUpdated()), this);
-  position_y_ = new rviz::FloatProperty("y", pose_.position.y, "",  position_, SLOT(positionUpdated()), this);
-  position_z_ = new rviz::FloatProperty("z", pose_.position.z, "",  position_);
+  position_ = new rviz_common::properties::StringProperty("Position", "", "", this);
+  position_x_ = new rviz_common::properties::FloatProperty("x", pose_.position.x, "",  position_, SLOT(positionUpdated()), this);
+  position_y_ = new rviz_common::properties::FloatProperty("y", pose_.position.y, "",  position_, SLOT(positionUpdated()), this);
+  position_z_ = new rviz_common::properties::FloatProperty("z", pose_.position.z, "",  position_);
 
   // Don't allow modification of z position of the node
   position_->setReadOnly(true);
@@ -71,10 +71,10 @@ void PoseProperty::positionUpdated()
   srv.request.pose.orientation.w = orientation_w_->getFloat();
   
   if (poseUpdate_.call(srv)) {
-    RCLCPP_INFO("Successfully updated pose for node %s", srv.request.name.c_str());
+    RCLCPP_INFO(logger_, "Successfully updated pose for node %s", srv.request.name.c_str());
     Q_EMIT poseModified();
   } else {
-    RCLCPP_WARN("Failed to update pose for node %s", srv.request.name.c_str());
+    RCLCPP_WARN(logger_, "Failed to update pose for node %s", srv.request.name.c_str());
   }
 }
 

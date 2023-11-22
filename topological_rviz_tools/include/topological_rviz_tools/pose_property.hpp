@@ -12,14 +12,14 @@ namespace topological_rviz_tools
 {
 
 /** @brief Property specialized to provide getter for booleans. */
-class PoseProperty: public rviz::Property
+class PoseProperty: public rviz_common::properties::Property
 {
-Q_OBJECT
+
 public:
  PoseProperty(const QString& name = QString(),
-	      const geometry_msgs::Pose& default_value = geometry_msgs::Pose(),
+	      const geometry_msgs::msg::Pose& default_value = geometry_msgs::msg::Pose(),
 	      const QString& description = QString(),
-	      rviz::Property* parent = 0,
+	      rviz_common::properties::Property* parent = 0,
 	      const char *changed_slot = 0,
 	      QObject* receiver = 0);
 
@@ -32,16 +32,17 @@ Q_SIGNALS:
   void poseModified();
 
 private:
-  const geometry_msgs::Pose& pose_;
-  rviz::StringProperty* orientation_;
-  rviz::FloatProperty* orientation_w_;
-  rviz::FloatProperty* orientation_x_;
-  rviz::FloatProperty* orientation_y_;
-  rviz::FloatProperty* orientation_z_;
-  rviz::StringProperty* position_;
-  rviz::FloatProperty* position_x_;
-  rviz::FloatProperty* position_y_;
-  rviz::FloatProperty* position_z_;
+  const geometry_msgs::msg::Pose& pose_;
+  rviz_common::properties::StringProperty* orientation_;
+  rviz_common::properties::FloatProperty* orientation_w_;
+  rviz_common::properties::FloatProperty* orientation_x_;
+  rviz_common::properties::FloatProperty* orientation_y_;
+  rviz_common::properties::FloatProperty* orientation_z_;
+  rviz_common::properties::StringProperty* position_;
+  rviz_common::properties::FloatProperty* position_x_;
+  rviz_common::properties::FloatProperty* position_y_;
+  rviz_common::properties::FloatProperty* position_z_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 
   ros::ServiceClient poseUpdate_;
 };

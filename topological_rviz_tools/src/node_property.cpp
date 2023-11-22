@@ -1,15 +1,15 @@
-#include "node_property.h"
+#include "topological_rviz_tools/node_property.hpp"
 
 namespace topological_rviz_tools
 {
 
 NodeProperty::NodeProperty(const QString& name,
-			   const topological_navigation_msgs::TopologicalNode& default_value,
+			   const topological_navigation_msgs::msg::TopologicalNode& default_value,
 			   const QString& description,
 			   Property* parent,
 			   const char *changed_slot,
 			   QObject* receiver)
-  : rviz::Property(name, default_value.name.c_str(), description, parent, changed_slot, this)
+  : rviz_common::properties::Property(name, default_value.name.c_str(), description, parent, changed_slot, this)
   , node_(default_value)
   , name_(default_value.name)
   , xy_tol_value_(default_value.xy_goal_tolerance)
@@ -25,21 +25,21 @@ NodeProperty::NodeProperty(const QString& name,
   nameUpdate_ = nh.serviceClient<topological_navigation_msgs::UpdateNodeName>("/topological_map_manager/update_node_name", true);
   toleranceUpdate_ = nh.serviceClient<topological_navigation_msgs::UpdateNodeTolerance>("/topological_map_manager/update_node_tolerance", true);
 
-  map_ = new rviz::StringProperty("Map", node_.map.c_str(), "", this);
+  map_ = new rviz_common::properties::StringProperty("Map", node_.map.c_str(), "", this);
   map_->setReadOnly(true);
 
-  pointset_ = new rviz::StringProperty("Pointset", node_.pointset.c_str(), "", this);
+  pointset_ = new rviz_common::properties::StringProperty("Pointset", node_.pointset.c_str(), "", this);
   pointset_->setReadOnly(true);
 
-  localise_ = new rviz::StringProperty("Localise by topic", node_.localise_by_topic.c_str(), "", this);
+  localise_ = new rviz_common::properties::StringProperty("Localise by topic", node_.localise_by_topic.c_str(), "", this);
   localise_->setReadOnly(true);
 
-  yaw_tolerance_ = new rviz::FloatProperty("Yaw Tolerance", node_.yaw_goal_tolerance,
+  yaw_tolerance_ = new rviz_common::properties::FloatProperty("Yaw Tolerance", node_.yaw_goal_tolerance,
 					   "The robot is facing the right direction if the"
 					   " difference between the current yaw and the node's"
 					   " orientation is less than this value.",
 					   this, SLOT(updateYawTolerance()), this);
-  xy_tolerance_ = new rviz::FloatProperty("XY Tolerance", node_.xy_goal_tolerance,
+  xy_tolerance_ = new rviz_common::properties::FloatProperty("XY Tolerance", node_.xy_goal_tolerance,
 					  "The robot is at the goal if the difference"
 					  " between its current position and the node's"
 					  " position is less than this value.",
@@ -53,10 +53,10 @@ NodeProperty::NodeProperty(const QString& name,
     if (srv.response.success) {
       node_tags = srv.response.tags;
     } else {
-      RCLCPP_WARN("Failed to get tags for node %s", name_.c_str());
+      RCLCPP_WARN(logger_, "Failed to get tags for node %s", name_.c_str());
     }
   } else {
-    RCLCPP_WARN("Failed to get response from service to get tags for node %s", name_.c_str());
+    RCLCPP_WARN(logger_, "Failed to get response from service to get tags for node %s", name_.c_str());
   }
   tag_controller_ = new TagController("Tags", node_tags, "", this);
   if (node_tags.size() == 0) {
@@ -90,16 +90,16 @@ void NodeProperty::updateYawTolerance(){
   
   if (toleranceUpdate_.call(srv)) {
     if (srv.response.success) {
-      RCLCPP_INFO("Successfully updated yaw tolerance for node %s to %f", name_.c_str(), srv.request.yaw_tolerance);
+      RCLCPP_INFO(logger_, "Successfully updated yaw tolerance for node %s to %f", name_.c_str(), srv.request.yaw_tolerance);
       Q_EMIT nodeModified(this);
       yaw_tol_value_ = yaw_tolerance_->getFloat();
     } else {
-      RCLCPP_INFO("Failed to update yaw tolerance for node %s: %s", name_.c_str(), srv.response.message.c_str());
+      RCLCPP_INFO(logger_, "Failed to update yaw tolerance for node %s: %s", name_.c_str(), srv.response.message.c_str());
       reset_value_ = true;
       yaw_tolerance_->setValue(yaw_tol_value_);
     }
   } else {
-    RCLCPP_WARN("Failed to get response from service to update yaw tolerance for node %s", name_.c_str());
+    RCLCPP_WARN(logger_, "Failed to get response from service to update yaw tolerance for node %s", name_.c_str());
     reset_value_ = true;
     yaw_tolerance_->setValue(yaw_tol_value_);
   }
@@ -118,16 +118,16 @@ void NodeProperty::updateXYTolerance(){
   
   if (toleranceUpdate_.call(srv)) {
     if (srv.response.success) {
-      RCLCPP_INFO("Successfully updated tolerance for node %s to %f", name_.c_str(), srv.request.xy_tolerance);
+      RCLCPP_INFO(logger_, "Successfully updated tolerance for node %s to %f", name_.c_str(), srv.request.xy_tolerance);
       Q_EMIT nodeModified(this);
       xy_tol_value_ = xy_tolerance_->getFloat();
     } else {
-      RCLCPP_INFO("Failed to update xy tolerance of %s: %s", name_.c_str(), srv.response.message.c_str());
+      RCLCPP_INFO(logger_, "Failed to update xy tolerance of %s: %s", name_.c_str(), srv.response.message.c_str());
       reset_value_ = true;
       xy_tolerance_->setValue(xy_tol_value_);
     }
   } else {
-    RCLCPP_WARN("Failed to get response from service to update xy tolerance for node %s", name_.c_str());
+    RCLCPP_WARN(logger_, "Failed to get response from service to update xy tolerance for node %s", name_.c_str());
     reset_value_ = true;
     xy_tolerance_->setValue(xy_tol_value_);
   }
@@ -145,16 +145,16 @@ void NodeProperty::updateNodeName(){
   
   if (nameUpdate_.call(srv)) {
     if (srv.response.success) {
-      RCLCPP_INFO("Successfully updated node name %s to %s", name_.c_str(), srv.request.new_name.c_str());
+      RCLCPP_INFO(logger_, "Successfully updated node name %s to %s", name_.c_str(), srv.request.new_name.c_str());
       Q_EMIT nodeModified(this);
       name_ = getValue().toString().toStdString();
     } else {
-      RCLCPP_INFO("Failed to update node name of %s to %s: %s", name_.c_str(), srv.request.new_name.c_str(), srv.response.message.c_str());
+      RCLCPP_INFO(logger_, "Failed to update node name of %s to %s: %s", name_.c_str(), srv.request.new_name.c_str(), srv.response.message.c_str());
       reset_value_ = true;
       setValue(QString::fromStdString(name_));
     }
   } else {
-    RCLCPP_WARN("Failed to get response from service to update node %s", name_.c_str());
+    RCLCPP_WARN(logger_, "Failed to get response from service to update node %s", name_.c_str());
     reset_value_ = true;
     setValue(QString::fromStdString(name_));
   }

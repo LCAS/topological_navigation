@@ -4,12 +4,12 @@
 namespace topological_rviz_tools
 {
 EdgeController::EdgeController(const QString& name,
-			       const std::vector<topological_navigation_msgs::Edge>& default_values,
+			       const std::vector<topological_navigation_msgs::msg::Edge>& default_values,
 			       const QString& description,
-			       rviz::Property* parent,
+			       rviz_common::properties::Property* parent,
 			       const char *changed_slot,
 			       QObject* receiver)
-  : rviz::Property(name, "", description, parent, changed_slot, receiver)
+  : rviz_common::properties::Property(name, "", description, parent, changed_slot, receiver)
 {
   for (int i = 0; i < default_values.size(); i++) {
     // RCLCPP_INFO("ADDING EDGE %s", default_values[i].edge_id.c_str());
@@ -59,7 +59,7 @@ void EdgeController::emitConfigChanged()
   Q_EMIT configChanged();
 }
 
-void EdgeController::load(const rviz::Config& config)
+void EdgeController::load(const rviz_common::Config& config)
 {
   // // Load the name by hand.
   // QString name;
@@ -68,15 +68,15 @@ void EdgeController::load(const rviz::Config& config)
   //   setName(name);
   // }
   // // Load all sub-properties the same way the base class does.
-  // rviz::Property::load(config);
+  // rviz_common::properties::Property::load(config);
 }
 
-void EdgeController::save(rviz::Config config) const
+void EdgeController::save(rviz_common::Config config) const
 {
   // config.mapSetValue("Class", getClassId());
   // config.mapSetValue("Name", getName());
 
-  // rviz::Property::save(config);
+  // rviz_common::properties::Property::save(config);
 }
 
 } // end namespace topological_rviz_tools

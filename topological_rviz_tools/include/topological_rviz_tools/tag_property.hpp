@@ -9,9 +9,9 @@
 namespace topological_rviz_tools
 {
 
-class TagProperty: public rviz::StringProperty
+class TagProperty: public rviz_common::properties::StringProperty
 {
-Q_OBJECT
+
 public:
   TagProperty(const QString& name = QString(),
 	      const QString& default_value = QString(),
@@ -35,6 +35,7 @@ private:
   std::string tag_value_; // keep value so it's not lost if we fail to update
   bool reset_value_;
   std::string node_name_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // end namespace topological_rviz_tools

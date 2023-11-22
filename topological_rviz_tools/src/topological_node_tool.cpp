@@ -10,7 +10,7 @@
 #include <rviz/geometry.h>
 #include <rviz/properties/vector_property.h>
 
-#include "topological_node_tool.h"
+#include "topological_rviz_tools/topological_node_tool.hpp"
 
 namespace topological_rviz_tools
 {
@@ -56,7 +56,7 @@ void TopmapNodeTool::onInitialize()
   while(!ros::service::exists("/topological_map_manager/add_topological_node", true))
   {
     r.sleep();
-    RCLCPP_INFO("Waiting for add_topological_node service\n");
+    RCLCPP_INFO(logger_, "Waiting for add_topological_node service\n");
   }
 
   addNodeSrv_ = nh.serviceClient<topological_navigation_msgs::AddNode>("/topological_map_manager/add_topological_node", true);
@@ -99,7 +99,7 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
     bool right = event.rightDown();
 
     if (right || left) {
-      geometry_msgs::Pose clicked = geometry_msgs::Pose();
+      geometry_msgs::msg::Pose clicked = geometry_msgs::msg::Pose();
       clicked.position.x = intersection.x;
       clicked.position.y = intersection.y;
       clicked.position.z = intersection.z;
@@ -116,15 +116,15 @@ int TopmapNodeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
 
       if (addNodeSrv_.call(srv)){
 	if (srv.response.success) {
-	  RCLCPP_INFO("Successfully added node");
+	  RCLCPP_INFO(logger_, "Successfully added node");
 	  std_msgs::Time t;
 	  t.data = ros::Time::now();
 	  update_map_.publish(t);
 	} else {
-	  RCLCPP_INFO("Failed to add node");
+	  RCLCPP_INFO(logger_, "Failed to add node");
 	}
       } else {
-	RCLCPP_WARN("Failed to connect to add node service");
+	RCLCPP_WARN(logger_, "Failed to connect to add node service");
       }
       return Render | Finished;
     }

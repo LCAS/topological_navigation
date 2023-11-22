@@ -12,12 +12,12 @@ namespace topological_rviz_tools
 {
 
 /** @brief Property specialized to provide getter for booleans. */
-class EdgeProperty: public rviz::Property
+class EdgeProperty: public rviz_common::properties::Property
 {
 Q_OBJECT
 public:
   EdgeProperty(const QString& name = QString(),
-               const topological_navigation_msgs::Edge& default_value = topological_navigation_msgs::Edge(),
+               const topological_navigation_msgs::msg::Edge& default_value = topological_navigation_msgs::msg::Edge(),
                const QString& description = QString(),
                Property* parent = 0,
                const char *changed_slot = 0,
@@ -34,7 +34,7 @@ Q_SIGNALS:
   void edgeModified();
 
 private:
-  const topological_navigation_msgs::Edge& edge_;
+  const topological_navigation_msgs::msg::Edge& edge_;
   
   // keep track of changing values to ensure that they are redisplayed correctly
   // when we fail to update.
@@ -44,12 +44,13 @@ private:
   bool reset_value_;
   ros::ServiceClient edgeUpdate_;
 
-  rviz::StringProperty* edge_id_;
-  rviz::StringProperty* node_;
-  rviz::StringProperty* action_;
-  rviz::StringProperty* map_2d_;
-  rviz::FloatProperty* inflation_radius_;
-  rviz::FloatProperty* top_vel_;
+  rviz_common::properties::StringProperty* edge_id_;
+  rviz_common::properties::StringProperty* node_;
+  rviz_common::properties::StringProperty* action_;
+  rviz_common::properties::StringProperty* map_2d_;
+  rviz_common::properties::FloatProperty* inflation_radius_;
+  rviz_common::properties::FloatProperty* top_vel_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // end namespace topological_rviz_tools

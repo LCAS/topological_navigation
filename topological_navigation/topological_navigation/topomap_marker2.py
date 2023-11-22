@@ -39,6 +39,9 @@ class TopologicalVis(Node):
         self.get_logger().info('new scale recieved')
         self.get_logger().info(f'scale: {msg.data}')
         self.scale = float(msg.data)
+        if self.map == None:
+            self.get_logger().warn(f'map not recieved')
+            return
         self.map_callback(self.map)
 
     def map_callback(self, msg):

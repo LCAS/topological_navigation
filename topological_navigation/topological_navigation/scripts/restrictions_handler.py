@@ -13,6 +13,8 @@ from pprint import pprint
 # ROS2 imports
 import rclpy
 from rclpy.node import Node
+from rclpy import Parameter
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 # Msg imports
 from std_msgs.msg import String
@@ -25,31 +27,37 @@ class Restrictor(Node):
     def __init__(self):
         super().__init__('restriction_handler')
 
-        # Set initial eval restriction
+        # Declare Parameters
+        self.declare_parameter('initial_restriction', "")
+        self.declare_parameter('enable_eval_sub', True)
         ir = Parameter('str', Parameter.Type.STRING, "")
-        initial_restriction = self.get_parameter_or("~initial_restriction", ir).value
-        self.eval = Str(initial_restriction) if initial_restriction else None
-        self.logger.info(f"restrictor launched with initial restriction as: {initial_restriction}")
+        es = Parameter('bool', Parameter.Type.BOOL, True)
+
+        # Set initial eval restriction
+        initial_restriction = self.get_parameter_or("initial_restriction", ir).value
+        self.eval = str(initial_restriction) if initial_restriction else None
+        self.get_logger().info(f"restrictor launched with initial restriction as: {self.eval}")
 
         # Setup publisher for map
-        self.res_tmap2_pub = self.create_publisher(String, '~restricted_topological_map_2', 2)
+        self.res_tmap2_pub = self.create_publisher(String, '~/restricted_topological_map_2', 2)
 
         # Check if eval subscriber is needed to enable changes to eval restriction condition
-        es = Parameter('bool', Parameter.Type.BOOL, True)
-        enable_eval_sub = self.get_parameter_or("~enable_eval_sub", es).value
+        enable_eval_sub = self.get_parameter_or("~/enable_eval_sub", es).value
         if enable_eval_sub:
-            self.res_eval_sub = self.create_subscription(String, '~restriction_evalator', self.py_eval)
+            qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+            self.res_eval_sub = self.create_subscription(String, '~/restriction_evalator', self.py_eval, qos)
 
         # Subscribe to map
         self.tmap = None
-        self.tmap2_sub = self.create_subscription(String, '~topological_map_2', self.tmap_cb)
+        qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.tmap2_sub = self.create_subscription(String, '/topological_map_2', self.tmap_cb, qos)
 
     def tmap_cb(self, msg):
         #Recieve and decode map, and send through filter is evaluation paramaters are already set
         self.tmap = yaml.safe_load(msg.data)
-        self.logger.info(f"map recieved with {len(self.tmap['nodes'])} nodes")
+        self.get_logger().info(f"map recieved with {len(self.tmap['nodes'])} nodes")
         if self.eval:
-            self.py_eval(self.eval)
+            self.py_eval(String(data=self.eval))
 
 
     def py_eval(self, msg):
@@ -59,12 +67,12 @@ class Restrictor(Node):
              | eval( "'short' in $".replace('$', node.restriction) )
              | eval( "'short' in ['short', 'tall']" ) = True
         """
-        self.logger.info(f"py_eval: {msg.data}")
+        self.get_logger().info(f"py_eval: {msg.data}")
 
         # Early exit for if tmap not available
         if not self.tmap:
             self.eval = msg
-            self.logger.info("tmap not recieved, will apply eval once map arrives")
+            self.get_logger().info("tmap not recieved, will apply eval once map arrives")
             return
         tmap = self.tmap
         nodes_to_keep = []
@@ -74,20 +82,36 @@ class Restrictor(Node):
         self.condition_results = {True:[], False:[]}
 
         # Filter nodes
+        self.get_logger().info('\n\n\n')
+
+        total_nodes = len(tmap['nodes'])
         tmap['nodes'] = [n for n in tmap['nodes'] if self.check_outcome(condition, n['node']['restrictions_planning'])]
-        self.logger.info(f"filter removed {len(self.tmap['nodes'])-len(tmap['nodes'])} nodes")
+        remaining_nodes = len(tmap['nodes'])
+        self.get_logger().info(f"filter removed {total_nodes - remaining_nodes} nodes")
 
         # Filter edges
         kept_nodes = [n['node']['name'] for n in tmap['nodes']]
+        total_edges = sum([len(n['node']['edges']) for n in tmap['nodes']])
+
         for node in tmap['nodes']:
             if 'edges' in node['node']:
+                # Only allow edges which go to a kept node
                 node['node']['edges'] = [e for e in node['node']['edges'] if e['node'] in kept_nodes]
-                node['node']['edges'] = [e for e in node['node']['edges'] if check_outcome(condition, e['restrictions_planning'])]
+                # Only allow edges which match the condition
+                node['node']['edges'] = [e for e in node['node']['edges'] if self.check_outcome(condition, e['restrictions_planning'])]
+
+        remaining_edges = sum([len(n['node']['edges']) for n in tmap['nodes']])
+        self.get_logger().info(f"filter removed {total_edges-remaining_edges} edges")
+
+        # Output results of each restriction evaluation
+        self.get_logger().info("Restriction evaluations:")
+        for c in self.condition_results[True]: self.get_logger().info(f"     True: {c}")
+        for c in self.condition_results[False]: self.get_logger().info(f"    False: {c}")
 
         # Save and publish new map
         self.tmap = tmap
         s = json.dumps(self.tmap)
-        self.res_tmap2_pub.publish(Str(s))
+        self.res_tmap2_pub.publish(String(data=s))
 
 
     def check_outcome(self, query, restriction):
@@ -100,6 +124,7 @@ class Restrictor(Node):
 
         # Process check condition
         result = eval(check)
+        self.get_logger().info(f"checking: {check} = {result}")
 
         # Save result for early exit
         self.condition_results[result] += [check]
@@ -110,8 +135,8 @@ class Restrictor(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    r = Restrictor(initial_restriction=ir, enable_eval_sub=es):
 
+    R = Restrictor()
     rclpy.spin(R)
 
     R.destroy_node()
@@ -141,7 +166,7 @@ def example(args=None):
 
     print('Example 3:')
     node_restriction = "'True'"
-    msg_data = "'robot_short' in $ or $ == 'True'"
+    msg_data = "'robot_short' in '$' or '$' == 'True'"
     query = msg_data.replace('$', node_restriction)
     print('restriction', node_restriction)
     print('condition', msg_data)

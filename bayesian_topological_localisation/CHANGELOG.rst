@@ -2,8 +2,8 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-3.0.0 (2023-11-23)
-------------------
+Forthcoming
+-----------
 * Merge pull request `#148 <https://github.com/LCAS/topological_navigation/issues/148>`_ from gpdas/localisation_node_fix
   localisation_node waits for topomap before starting services and also fixes a "list object does not have shape" error.
 * localisation_node waits for topomap before starting services

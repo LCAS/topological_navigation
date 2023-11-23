@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-3.0.0 (2023-11-23)
-------------------
+Forthcoming
+-----------
 * Merge pull request `#159 <https://github.com/LCAS/topological_navigation/issues/159>`_ from laurencejbelliott/simulation_mode
   Added ros param 'simulation_mode' to 'navigation.py' to allow abstracted navigation between nodes in simulation
 * ROS param for 'simulation_mode'. Works with 'move_base_abstract' from github.com/laurencejbelliott/move_base_abstract

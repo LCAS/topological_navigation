@@ -281,7 +281,7 @@ class EdgeActionManager(rclpy.node.Node):
             nav_goal = NavigateThroughPoses.Goal()
             action = actions[seg_i][0]
             actions_execute.append(action)
-            self.get_logger().info("===== seg_i, action ====  {}   {}".format(seg_i, action))
+            self.get_logger().info("Edge Action Manager: ===== seg: {}, action: {} ===== ".format(seg_i, action))
             if(action == self.ACTIONS.ROW_TRAVERSAL and self.bt_tree_in_row is not None):
                 nav_goal.behavior_tree = self.bt_tree_in_row
             if(((action == self.ACTIONS.NAVIGATE_TO_POSE) or (action == self.ACTIONS.ROW_CHANGE)) and self.bt_tree is not None):

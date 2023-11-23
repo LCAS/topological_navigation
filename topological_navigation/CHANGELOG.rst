@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.1 (2023-11-23)
+------------------
 * Merge pull request `#171 <https://github.com/LCAS/topological_navigation/issues/171>`_ from GPrathap/humble-dev
   adding different bt tree for row navigation
 * adding row_traversal action type

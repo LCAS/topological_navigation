@@ -2,8 +2,8 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.1 (2023-11-23)
+------------------
 * Merge pull request `#160 <https://github.com/LCAS/topological_navigation/issues/160>`_ from Iranaphor/humble-dev
   ROS 2 / Humble - porting
 * Centralising topological_navigation stack messages to msgs package. (+version number sync across packages to 3.0.0)

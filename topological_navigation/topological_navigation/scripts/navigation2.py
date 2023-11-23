@@ -92,13 +92,18 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.declare_parameter('use_nav2_follow_route', Parameter.Type.BOOL)
         self.declare_parameter('bt_for_nav2_follow_route', Parameter.Type.STRING)
+        self.declare_parameter('bt_for_nav2_follow_in_row_route', Parameter.Type.STRING)
+
+
 
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, "NavigateToPose")).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, navigation_actions)).value
 
         self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, False)).value
         self.bt_for_nav2_follow_route =  self.get_parameter_or("bt_for_nav2_follow_route", Parameter('str', Parameter.Type.STRING, "config/go_through_poses_bt.xml")).value
+        self.bt_for_nav2_follow_in_row_route =  self.get_parameter_or("bt_for_nav2_follow_in_row_route", Parameter('str', Parameter.Type.STRING, "config/go_through_poses_bt.xml")).value
 
+        
         if not self.navigation_action_name in self.navigation_actions:
             self.navigation_actions.append(self.navigation_action_name)
         
@@ -563,7 +568,7 @@ class TopologicalNavServer(rclpy.node.Node):
         result = nav_ok
         return result, inc
 
-    def navigate_to_poses(self, route, target, exec_policy, bt_tree=None):
+    def navigate_to_poses(self, route, target, exec_policy, bt_tree=None, bt_tree_in_row=None):
         """
         This function follows the chosen route to reach the goal.
         """
@@ -635,11 +640,12 @@ class TopologicalNavServer(rclpy.node.Node):
         route_edges = []
         route_dests = []
         route_origins = []
+        route_actions_list = []
 
         while rindex < (len(route.edge_id)):
-            
             cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
             a = cedg["action"]
+            route_actions_list.append(a)
             if(rindex == 0):
                 self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
                 dt_text = self.stat.get_start_time_str()
@@ -689,8 +695,9 @@ class TopologicalNavServer(rclpy.node.Node):
             # self.update_params_planner.set_params(params)
             rindex = rindex + 1
 
-        
-        nav_ok, inc, status  = self.execute_actions(route_edges, route_dests, route_origins, action_name="NavigateThroughPoses", bt_tree=bt_tree)
+        self.get_logger().info(" ========== Action list {} ".format(route_actions_list))
+        nav_ok, inc, status  = self.execute_actions(route_edges, route_dests, route_origins
+                    , action_name="NavigateThroughPoses", bt_tree=bt_tree, bt_tree_in_row=bt_tree_in_row)
         self.stat.set_ended(self.current_node)
         dt_text = self.stat.get_finish_time_str()
         operation_time = self.stat.operation_time
@@ -750,7 +757,8 @@ class TopologicalNavServer(rclpy.node.Node):
                         self.get_logger().info("Navigating Case 1: Following route")
                         self.publish_route(route, target)
                         if(self.use_nav2_follow_route):
-                            result, inc, status = self.navigate_to_poses(route, target, 0, self.bt_for_nav2_follow_route)
+                            result, inc, status = self.navigate_to_poses(route, target, 0
+                                                            , bt_tree=self.bt_for_nav2_follow_route, bt_tree_in_row=self.bt_for_nav2_follow_in_row_route)
                         else:
                             result, inc = self.followRoute(route, target, 0)
                         self.get_logger().info("Navigating Case 1 -> res: {}".format(inc))
@@ -1043,14 +1051,15 @@ class TopologicalNavServer(rclpy.node.Node):
             self.get_logger().info("\t>> new route: {}".format(new_route))
         return nav_ok, inc, recovering, new_route, replanned
     
-    def execute_actions(self, edges, destination_nodes, origin_nodes=None,  action_name=None, bt_tree=None):
+    def execute_actions(self, edges, destination_nodes, origin_nodes=None,  action_name=None, bt_tree=None, bt_tree_in_row=None):
 
         inc = 0
         result = True
         self.goal_reached = False
         self.prev_status = None
 
-        self.edge_action_manager.initialise(edges, destination_nodes, origin_nodes, action_name=action_name, bt_tree=bt_tree)
+        self.edge_action_manager.initialise(edges, destination_nodes, origin_nodes, action_name=action_name
+                                            , bt_tree=bt_tree, bt_tree_in_row=bt_tree_in_row)
         self.edge_action_manager.execute()
         status = self.edge_action_manager.get_state()
         self.pub_status(status)

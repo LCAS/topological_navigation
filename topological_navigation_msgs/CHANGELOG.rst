@@ -2,23 +2,6 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
-* Merge pull request `#154 <https://github.com/LCAS/topological_navigation/issues/154>`_ from adambinch/lcas
-  Auto set goal when adding an edge to the topological map
-* Auto set goal when adding an edge to the topological map
-  If a file e.g. thorvald_navigation_actions/config/inrownavGoal.yaml exists then the map manager will automatically set the goal of the action to the goal specified in that file, when the add edge function/service is called with arg action_type set to thorvald_navigation_actions/inrownavGoal. If that arg is not set or the file does not exist then a move base type goal is assumed.
-* Merge pull request `#146 <https://github.com/LCAS/topological_navigation/issues/146>`_ from adambinch/lcas
-  Option to disable anchors and aliases in generated topological map ya…
-* Option to disable anchors and aliases in generated topological map yaml file
-* Merge pull request `#139 <https://github.com/LCAS/topological_navigation/issues/139>`_ from SAGARobotics/lcas
-  Update LCAS branch with SAGA branch
-* Additional edge reconfigure functionality.
-  By default edge reconfigure resets the param back to its original value after the edge is traversed.
-  This behaviour is now optional and can be disabled in the topological map edge config by setting `reset: false` for a given param.
-  Updated map manager services accordingly.
-* Contributors: Adam Binch
-
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel

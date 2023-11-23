@@ -2,6 +2,95 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#159 <https://github.com/LCAS/topological_navigation/issues/159>`_ from laurencejbelliott/simulation_mode
+  Added ros param 'simulation_mode' to 'navigation.py' to allow abstracted navigation between nodes in simulation
+* ROS param for 'simulation_mode'. Works with 'move_base_abstract' from github.com/laurencejbelliott/move_base_abstract
+* Merge pull request `#156 <https://github.com/LCAS/topological_navigation/issues/156>`_ from LCAS/python3_marc_greg
+  Some Python3 and multi-robot fixes
+* another prefix bug relevant for multi-robot
+* fixed wrong prefix for closest_edges intialisation
+* Merge pull request `#154 <https://github.com/LCAS/topological_navigation/issues/154>`_ from adambinch/lcas
+  Auto set goal when adding an edge to the topological map
+* Goal mapping config can be set as a param
+* Auto set goal when adding an edge to the topological map
+  If a file e.g. thorvald_navigation_actions/config/inrownavGoal.yaml exists then the map manager will automatically set the goal of the action to the goal specified in that file, when the add edge function/service is called with arg action_type set to thorvald_navigation_actions/inrownavGoal. If that arg is not set or the file does not exist then a move base type goal is assumed.
+* Merge pull request `#153 <https://github.com/LCAS/topological_navigation/issues/153>`_ from adambinch/lcas
+  Add visualise_map2.py as install target
+* Add visualise_map2.py as install target
+* Merge pull request `#150 <https://github.com/LCAS/topological_navigation/issues/150>`_ from gpdas/lcas
+  exec policy mode fix
+* Merge pull request `#149 <https://github.com/LCAS/topological_navigation/issues/149>`_ from adambinch/lcas
+  fix exec pol.
+* start exec policy from closest or current nodes only
+* fix exec pol
+* Merge pull request `#147 <https://github.com/LCAS/topological_navigation/issues/147>`_ from adambinch/lcas
+  Wait for closest edges before creating action servers.
+* Wait for closest edges before creating action servers.
+* Merge pull request `#146 <https://github.com/LCAS/topological_navigation/issues/146>`_ from adambinch/lcas
+  Option to disable anchors and aliases in generated topological map ya…
+* Option to disable anchors and aliases in generated topological map yaml file
+* Merge pull request `#145 <https://github.com/LCAS/topological_navigation/issues/145>`_ from adambinch/lcas
+  Initialise class variable
+* Checks that closest edges are there in nav script. Also removed msg dependencies from cmakelists as all msgs are generated in topological_navigation_msgs
+* Initialise class variable
+* Merge pull request `#142 <https://github.com/LCAS/topological_navigation/issues/142>`_ from adambinch/exec_pol_nav_from_edge
+  Navigating from the edge works with exec policy.
+* Navigating from the edge works with exec policy.
+  Also topic `topological_navigation/move_action_status` reports whether the goal
+  of the current action is the final (toponav) goal (or not).
+* Merge pull request `#141 <https://github.com/LCAS/topological_navigation/issues/141>`_ from adambinch/remove_movebase_dep
+  Removed move base as dependency
+* Removed move base as dependency
+  tf is a run depend, not a test depend.
+* Removed move base as dependency
+  tf is a run depend, not a test depend.
+* Merge pull request `#140 <https://github.com/LCAS/topological_navigation/issues/140>`_ from SAGARobotics/lcas
+  Updating credentials
+* Merge pull request `#9 <https://github.com/LCAS/topological_navigation/issues/9>`_ from adambinch/lcas
+  updating credentials
+* updating credentials
+* Merge pull request `#139 <https://github.com/LCAS/topological_navigation/issues/139>`_ from SAGARobotics/lcas
+  Update LCAS branch with SAGA branch
+* Map manager unit test.
+  One test which tests:
+  1) If the topomap is received by a subscriber.
+  2) That the `get_edges_between_nodes` service is advertised.
+  3) Whether the service returns the 2 edges in the topomap.
+* map manager improvements
+* Additional edge reconfigure functionality.
+  By default edge reconfigure resets the param back to its original value after the edge is traversed.
+  This behaviour is now optional and can be disabled in the topological map edge config by setting `reset: false` for a given param.
+  Updated map manager services accordingly.
+* update
+* marker lifetime set to half hour
+* Fix no goto marker mode
+* fix
+* clear route markers for previous route
+* adding route visualisation
+* adding go to node markers and some visual improvements
+* toponav launch files use new map visualiser
+* Map Visualiser Based on toponav 2
+* update
+* update
+* Removing mongodb as a dependency.
+  Removed from `topological_navigation` and `topological_utils` packages.
+* Merge pull request `#136 <https://github.com/LCAS/topological_navigation/issues/136>`_ from adambinch/melodic-devel
+  New param `topological_navigation/move_base_goal` sets the goal type …
+* update
+* update
+* update
+* minor change
+* New param `topological_navigation/move_base_goal` sets the goal type of the default action `move_base_name`.
+  Defaults to standard move base goal type if not set.
+  This will stop toponav breaking if the `move_base_name` action does not use move base type goals.
+  Also an improvement to the add/remove edge param srvs.
+* Merge pull request `#135 <https://github.com/LCAS/topological_navigation/issues/135>`_ from adambinch/melodic-devel
+  Create action servers at end of initialisation.
+* Create action servers at end of initialisation.
+* Contributors: Adam Binch, Gautham P Das, Jaime Pulido Fentanes, Laurence Roberts-Elliott, Marc Hanheide, gpdas
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#134 <https://github.com/magnucha/topological_navigation/issues/134>`_ from adambinch/melodic-devel

@@ -22,7 +22,7 @@ from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPo
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
 from unique_identifier_msgs.msg import UUID
 from rclpy.executors import SingleThreadedExecutor
-
+from topological_navigation.scripts.actions_bt import ActionsType 
 
 try:
     from collections.abc import Mapping
@@ -63,17 +63,7 @@ class dict_tools(object):
         return dataDict
 #########################################################################################################
 
-class ActionsType:
-    def __init__(self):
-        self.ROW_TRAVERSAL = "row_traversal"
-        self.NAVIGATE_TO_POSE = "NavigateToPose"
-        self.NAVIGATE_THROUGH_POSES = "NavigateThroughPoses"
-        self.ROW_CHANGE = "row_change"
-        self.actions_types = {}
-        self.actions_types[0] = self.ROW_TRAVERSAL
-        self.actions_types[1] = self.NAVIGATE_TO_POSE
-        self.actions_types[2] = self.NAVIGATE_THROUGH_POSES
-        self.actions_types[3] = self.ROW_CHANGE
+
         
 #########################################################################################################
 class EdgeActionManager(rclpy.node.Node):
@@ -83,51 +73,37 @@ class EdgeActionManager(rclpy.node.Node):
         self.client = None        
         self.current_action = "none"
         self.dt = dict_tools()
-        self.status_mapping = {}
-        self.status_mapping[0] = "STATUS_UNKNOWN"
-        self.status_mapping[1] = "STATUS_ACCEPTED"
-        self.status_mapping[2] = "STATUS_EXECUTING"
-        self.status_mapping[3] = "STATUS_CANCELING"
-        self.status_mapping[4] = "STATUS_SUCCEEDED"
-        self.status_mapping[5] = "STATUS_CANCELED"
-        self.status_mapping[6] = "STATUS_ABORTED"
-        self.goal_cancle_error_codes = {} 
-        self.goal_cancle_error_codes[0] = "ERROR_NONE"
-        self.goal_cancle_error_codes[1] = "ERROR_REJECTED"
-        self.goal_cancle_error_codes[2] = "ERROR_UNKNOWN_GOAL_ID"
-        self.goal_cancle_error_codes[3] = "ERROR_GOAL_TERMINATED"
         self.ACTIONS = ActionsType()
-
         self.goal_handle = None 
         self.goal_resposne = None 
         self.internal_executor = SingleThreadedExecutor()
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.bt_trees =  {}
 
     
     def get_nav_action_server_status(self, ):
-        return self.status_mapping 
+        return self.ACTIONS.status_mapping 
     
     def get_status_msg(self, status_code):
         try:
-            return self.status_mapping[status_code]
+            return self.ACTIONS.status_mapping[status_code]
         except Exception as e:
             self.get_logger().error("Status code is invalid {}".format(status_code))
-            return self.status_mapping[0]
+            return self.ACTIONS.status_mapping[0]
         
     def get_goal_cancle_error_msg(self, status_code):
         try:
-            return self.goal_cancle_error_codes[status_code]
+            return self.ACTIONS.goal_cancle_error_codes[status_code]
         except Exception as e:
             self.get_logger().error("Goal cancle code {}".format(status_code))
-            return self.goal_cancle_error_codes[0]
+            return self.ACTIONS.goal_cancle_error_codes[0]
         
     def initialise(self, edge, destination_node, origin_node=None
-                                , action_name=None, package="nav2_msgs.action", bt_tree=None, bt_tree_in_row=None):
+                                , action_name=None, package="nav2_msgs.action", bt_trees=None):
         
         if(action_name is not None):
             self.action_name = action_name
-            self.bt_tree = bt_tree
-            self.bt_tree_in_row = bt_tree_in_row
+            self.bt_trees = bt_trees
         else:
             self.edge = yaml.safe_load(json.dumps(edge)) # no unicode in edge
             self.action_name = self.edge["action"]
@@ -147,8 +123,6 @@ class EdgeActionManager(rclpy.node.Node):
             self.origin_node = origin_node
             self.get_logger().info("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
             self.get_logger().info("Edge Action Manager: Constructing the goal")
-            # self.get_logger().info("  edge {}".format(self.edge))
-            # self.get_logger().info("  destination_node {}".format(destination_node))
             target_pose = self.construct_goal(copy.deepcopy(edge["goal"]), destination_node, origin_node)
             self.goal, self.actions = self.construct_navigate_to_pose_goal(target_pose)
 
@@ -157,29 +131,41 @@ class EdgeActionManager(rclpy.node.Node):
             actions = {}
             segment = 0
             previous_action = ""
+            current_action = ""
             for edge_i, dest_i, origin_i in zip(edge, destination_node, origin_node):
                 edge_i = yaml.safe_load(json.dumps(edge_i)) # no unicode in edge
-                self.get_logger().info("Edge Action Manager: Processing edge {}".format(edge_i["edge_id"]))
+                current_action = edge_i["action"]
+                current_action = self.get_goal_align_if(edge_i["edge_id"], current_action)
+                self.get_logger().info("Edge Action Manager: -----> Processing edge {} action {}  goal {}".format(edge_i["edge_id"], current_action, edge_i["action"]))
                 intermediate_goal = self.construct_goal(copy.deepcopy(edge_i["goal"]), dest_i, origin_i)
                 self.get_logger().info("Edge Action Manager: Constructing intermediate goal")
-                if (previous_action != edge_i["action"]):
+                if (previous_action != current_action):
                     segment = segment + 1
 
                 if segment in poses:
                     poses[segment].append(intermediate_goal)
-                    actions[segment].append(edge_i["action"])
+                    actions[segment].append(current_action)
                 else:
                     poses[segment] = []
                     actions[segment] = []
                     poses[segment].append(intermediate_goal)
-                    actions[segment].append(edge_i["action"])
-                previous_action = edge_i["action"]
-
+                    actions[segment].append(current_action)
+                previous_action = current_action
             self.destination_node = destination_node[-1]
             self.goal, self.actions = self.construct_navigate_through_poses_goal(poses, actions)
 
         return True 
     
+    def get_goal_align_if(self, edge_id, current_action):
+        edges = edge_id.split("_")
+        if len(edges) == 2:
+            goal = edges[1]
+            goal_stage = goal.split("-")
+            if len(goal_stage) == 2:
+                if goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX:
+                    return self.ACTIONS.GOAL_ALIGN 
+        return current_action
+
     def set_nav_client(self):
         self.action_server_name = self.get_action_server_name(self.action_name)
         self.get_logger().info("Edge Action Manager: Importing {} from {}".format(self.action_name, self.package))
@@ -282,10 +268,15 @@ class EdgeActionManager(rclpy.node.Node):
             action = actions[seg_i][0]
             actions_execute.append(action)
             self.get_logger().info("Edge Action Manager: ===== seg: {}, action: {} ===== ".format(seg_i, action))
-            if(action == self.ACTIONS.ROW_TRAVERSAL and self.bt_tree_in_row is not None):
-                nav_goal.behavior_tree = self.bt_tree_in_row
-            if(((action == self.ACTIONS.NAVIGATE_TO_POSE) or (action == self.ACTIONS.ROW_CHANGE)) and self.bt_tree is not None):
-                nav_goal.behavior_tree = self.bt_tree
+            if(action == self.ACTIONS.ROW_TRAVERSAL):
+                if(self.ACTIONS.ROW_TRAVERSAL in self.bt_trees):
+                    nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.ROW_TRAVERSAL]
+            if((action == self.ACTIONS.NAVIGATE_TO_POSE) or (action == self.ACTIONS.ROW_CHANGE)):
+               if(self.ACTIONS.NAVIGATE_TO_POSE in self.bt_trees):
+                    nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE]
+            if(action == self.ACTIONS.GOAL_ALIGN):
+               if(self.ACTIONS.GOAL_ALIGN in self.bt_trees):
+                    nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.GOAL_ALIGN]
             for pose in nodes:
                 target_pose = self.crete_pose_stamped_msg(pose["target_pose"]["header"]["frame_id"], pose["target_pose"]["pose"])
                 nav_goal.poses.append(target_pose)
@@ -347,7 +338,7 @@ class EdgeActionManager(rclpy.node.Node):
                     if self.goal_get_result_future.done():
                         status = self.goal_get_result_future.result().status
                         self.action_status = status
-                        self.get_logger().info("Edge Action Manager: -----? Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
+                        self.get_logger().info("Edge Action Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
                         self.current_action = self.action_name
                         self.goal_resposne = self.goal_get_result_future.result() 
                         break 

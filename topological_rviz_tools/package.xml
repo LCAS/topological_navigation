@@ -1,6 +1,6 @@
 <package>
   <name>topological_rviz_tools</name>
-  <version>2.4.0</version>
+  <version>3.0.0</version>
   <description>
     Topological map construction
   </description>

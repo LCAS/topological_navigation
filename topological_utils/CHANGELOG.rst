@@ -2,8 +2,8 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2023-11-23)
+------------------
 * Merge pull request `#156 <https://github.com/LCAS/topological_navigation/issues/156>`_ from LCAS/python3_marc_greg
   Some Python3 and multi-robot fixes
 * python 3 fix for goal converter

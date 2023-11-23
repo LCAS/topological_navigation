@@ -2,8 +2,8 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2023-11-23)
+------------------
 * Merge pull request `#154 <https://github.com/LCAS/topological_navigation/issues/154>`_ from adambinch/lcas
   Auto set goal when adding an edge to the topological map
 * Auto set goal when adding an edge to the topological map

@@ -63,7 +63,18 @@ class dict_tools(object):
         return dataDict
 #########################################################################################################
 
-
+class ActionsType:
+    def __init__(self):
+        self.ROW_TRAVERSAL = "row_traversal"
+        self.NAVIGATE_TO_POSE = "NavigateToPose"
+        self.NAVIGATE_THROUGH_POSES = "NavigateThroughPoses"
+        self.ROW_CHANGE = "row_change"
+        self.actions_types = {}
+        self.actions_types[0] = self.ROW_TRAVERSAL
+        self.actions_types[1] = self.NAVIGATE_TO_POSE
+        self.actions_types[2] = self.NAVIGATE_THROUGH_POSES
+        self.actions_types[3] = self.ROW_CHANGE
+        
 #########################################################################################################
 class EdgeActionManager(rclpy.node.Node):
     
@@ -85,7 +96,10 @@ class EdgeActionManager(rclpy.node.Node):
         self.goal_cancle_error_codes[1] = "ERROR_REJECTED"
         self.goal_cancle_error_codes[2] = "ERROR_UNKNOWN_GOAL_ID"
         self.goal_cancle_error_codes[3] = "ERROR_GOAL_TERMINATED"
+        self.ACTIONS = ActionsType()
+
         self.goal_handle = None 
+        self.goal_resposne = None 
         self.internal_executor = SingleThreadedExecutor()
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
@@ -108,17 +122,18 @@ class EdgeActionManager(rclpy.node.Node):
             return self.goal_cancle_error_codes[0]
         
     def initialise(self, edge, destination_node, origin_node=None
-                                , action_name=None, package="nav2_msgs.action", bt_tree=None):
+                                , action_name=None, package="nav2_msgs.action", bt_tree=None, bt_tree_in_row=None):
         
         if(action_name is not None):
             self.action_name = action_name
             self.bt_tree = bt_tree
+            self.bt_tree_in_row = bt_tree_in_row
         else:
             self.edge = yaml.safe_load(json.dumps(edge)) # no unicode in edge
             self.action_name = self.edge["action"]
 
-        if self.action_name == "row_traversal":
-            self.action_name = "NavigateToPose" #TODO change this to actual  
+        if (self.action_name == self.ACTIONS.ROW_TRAVERSAL or self.action_name == self.ACTIONS.ROW_CHANGE):
+            self.action_name = self.ACTIONS.NAVIGATE_TO_POSE #TODO change this to actual  
 
         if self.action_name != self.current_action:
             self.preempt()
@@ -127,7 +142,7 @@ class EdgeActionManager(rclpy.node.Node):
         self.set_nav_client()
         self.action_status = 0 
 
-        if self.action_name == "NavigateToPose":
+        if self.action_name == self.ACTIONS.NAVIGATE_TO_POSE:
             self.destination_node = destination_node
             self.origin_node = origin_node
             self.get_logger().info("Edge Action Manager: Processing edge {}".format(self.edge["edge_id"]))
@@ -135,18 +150,33 @@ class EdgeActionManager(rclpy.node.Node):
             # self.get_logger().info("  edge {}".format(self.edge))
             # self.get_logger().info("  destination_node {}".format(destination_node))
             target_pose = self.construct_goal(copy.deepcopy(edge["goal"]), destination_node, origin_node)
-            self.goal = self.construct_navigate_to_pose_goal(target_pose)
+            self.goal, self.actions = self.construct_navigate_to_pose_goal(target_pose)
 
-        if self.action_name == "NavigateThroughPoses":
-            poses = []
+        if self.action_name == self.ACTIONS.NAVIGATE_THROUGH_POSES:
+            poses = {}
+            actions = {}
+            segment = 0
+            previous_action = ""
             for edge_i, dest_i, origin_i in zip(edge, destination_node, origin_node):
                 edge_i = yaml.safe_load(json.dumps(edge_i)) # no unicode in edge
                 self.get_logger().info("Edge Action Manager: Processing edge {}".format(edge_i["edge_id"]))
                 intermediate_goal = self.construct_goal(copy.deepcopy(edge_i["goal"]), dest_i, origin_i)
                 self.get_logger().info("Edge Action Manager: Constructing intermediate goal")
-                poses.append(intermediate_goal)
+                if (previous_action != edge_i["action"]):
+                    segment = segment + 1
+
+                if segment in poses:
+                    poses[segment].append(intermediate_goal)
+                    actions[segment].append(edge_i["action"])
+                else:
+                    poses[segment] = []
+                    actions[segment] = []
+                    poses[segment].append(intermediate_goal)
+                    actions[segment].append(edge_i["action"])
+                previous_action = edge_i["action"]
+
             self.destination_node = destination_node[-1]
-            self.goal = self.construct_navigate_through_poses_goal(poses)
+            self.goal, self.actions = self.construct_navigate_through_poses_goal(poses, actions)
 
         return True 
     
@@ -192,7 +222,7 @@ class EdgeActionManager(rclpy.node.Node):
         if self.client is not None:
             if not self.client.server_is_ready():
                 self.get_logger().info("Edge Action Manager: Waiting for the action server  {}...".format(self.action_server_name))
-                self._action_client.wait_for_server(timeout_sec=2)
+                self.client.wait_for_server(timeout_sec=2)
             
             if not self.client.server_is_ready():
                 self.get_logger().info("Edge Action Manager: action server  {} not responding ... can not perform any action".format(self.action_server_name))
@@ -231,27 +261,36 @@ class EdgeActionManager(rclpy.node.Node):
         return goal 
     
     def construct_navigate_to_pose_goal(self, goal):
-            goal = self.get_navigate_to_pose_goal(goal["target_pose"]["header"]["frame_id"], goal["target_pose"]["pose"])
-            return goal 
+            goal, action = self.get_navigate_to_pose_goal(goal["target_pose"]["header"]["frame_id"], goal["target_pose"]["pose"])
+            return goal, action
     
     def get_navigate_to_pose_goal(self, frame_id, goal):
         nav_goal = NavigateToPose.Goal()
         target_pose = self.crete_pose_stamped_msg(frame_id, goal)
         nav_goal.pose = target_pose 
-        return nav_goal
+        return [nav_goal], [self.ACTIONS.NAVIGATE_TO_POSE]
     
-    def construct_navigate_through_poses_goal(self, goals):
-        goal = self.get_navigate_through_poses_goal(goals)
-        return goal 
+    def construct_navigate_through_poses_goal(self, goals, actions):
+        goal, actions = self.get_navigate_through_poses_goal(goals, actions)
+        return goal, actions  
 
-    def get_navigate_through_poses_goal(self, poses):
-        nav_goal = NavigateThroughPoses.Goal()
-        if(self.bt_tree is not None):
-            nav_goal.behavior_tree = self.bt_tree
-        for pose in poses:
-            target_pose = self.crete_pose_stamped_msg(pose["target_pose"]["header"]["frame_id"], pose["target_pose"]["pose"])
-            nav_goal.poses.append(target_pose)
-        return nav_goal 
+    def get_navigate_through_poses_goal(self, poses, actions):
+        goals = []
+        actions_execute = []
+        for seg_i, nodes in poses.items():
+            nav_goal = NavigateThroughPoses.Goal()
+            action = actions[seg_i][0]
+            actions_execute.append(action)
+            self.get_logger().info("===== seg_i, action ====  {}   {}".format(seg_i, action))
+            if(action == self.ACTIONS.ROW_TRAVERSAL and self.bt_tree_in_row is not None):
+                nav_goal.behavior_tree = self.bt_tree_in_row
+            if(((action == self.ACTIONS.NAVIGATE_TO_POSE) or (action == self.ACTIONS.ROW_CHANGE)) and self.bt_tree is not None):
+                nav_goal.behavior_tree = self.bt_tree
+            for pose in nodes:
+                target_pose = self.crete_pose_stamped_msg(pose["target_pose"]["header"]["frame_id"], pose["target_pose"]["pose"])
+                nav_goal.poses.append(target_pose)
+            goals.append(nav_goal)
+        return goals, actions_execute
         
     def crete_pose_stamped_msg(self, frame_id, goal):
         header = Header()
@@ -277,41 +316,43 @@ class EdgeActionManager(rclpy.node.Node):
         
         if not self.client.server_is_ready():
             self.get_logger().info("Edge Action Manager: Waiting for the action server  {}...".format(self.action_server_name))
-            self._action_client.wait_for_server(timeout_sec=2)
+            self.client.wait_for_server(timeout_sec=2)
         
         if not self.client.server_is_ready():
             self.get_logger().info("Edge Action Manager: action server  {} not responding ... can not perform any action".format(self.action_server_name))
             return 
         
-        self.get_logger().info("Edge Action Manager: Executing the action...")
-        send_goal_future = self.client.send_goal_async(self.goal,  feedback_callback=self.feedback_callback)
-        while rclpy.ok():
-            try:
-                rclpy.spin_once(self)
-                if send_goal_future.done():
-                    self.goal_handle = send_goal_future.result()
-                    break
-            except Exception as e:
-                pass 
+        for target_goal, target_action in zip(self.goal, self.actions):
+            self.get_logger().info("========  Edge Action Manager: Executing action : {} =============".format(target_action))
+            send_goal_future = self.client.send_goal_async(target_goal,  feedback_callback=self.feedback_callback)
+            while rclpy.ok():
+                try:
+                    rclpy.spin_once(self)
+                    if send_goal_future.done():
+                        self.goal_handle = send_goal_future.result()
+                        break
+                except Exception as e:
+                    pass 
 
-        if not self.goal_handle.accepted:
-            self.get_logger().error('Edge Action Manager: The goal rejected')
-            return False
+            if not self.goal_handle.accepted:
+                self.get_logger().error('Edge Action Manager: The goal rejected')
+                return False
 
-        self.get_logger().info('Edge Action Manager: The goal accepted')
-        self.goal_get_result_future = self.goal_handle.get_result_async()
-        self.get_logger().info("Edge Action Manager: Waiting for {} action to complete".format(self.action_server_name))
-        while rclpy.ok():
-            try:
-                rclpy.spin_once(self)
-                if self.goal_get_result_future.done():
-                    status = self.goal_get_result_future.result().status
-                    self.action_status = status
-                    self.get_logger().info("Edge Action Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
-                    self.current_action = self.action_name
-                    self.goal_resposne = self.goal_get_result_future.result() 
-                    return True 
-            except Exception as e:
-                pass 
+            self.get_logger().info('Edge Action Manager: The goal accepted')
+            self.goal_get_result_future = self.goal_handle.get_result_async()
+            self.get_logger().info("Edge Action Manager: Waiting for {} action to complete".format(self.action_server_name))
+            while rclpy.ok():
+                try:
+                    rclpy.spin_once(self)
+                    if self.goal_get_result_future.done():
+                        status = self.goal_get_result_future.result().status
+                        self.action_status = status
+                        self.get_logger().info("Edge Action Manager: -----? Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
+                        self.current_action = self.action_name
+                        self.goal_resposne = self.goal_get_result_future.result() 
+                        break 
+                except Exception as e:
+                    pass 
+        return True 
                             
 #########################################################################################################

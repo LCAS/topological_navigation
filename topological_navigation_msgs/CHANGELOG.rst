@@ -2,8 +2,8 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.3 (2023-11-24)
+------------------
 * missing dep
 * Contributors: Marc Hanheide
 

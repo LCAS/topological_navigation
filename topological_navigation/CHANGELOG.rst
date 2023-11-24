@@ -2,6 +2,13 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#174 <https://github.com/LCAS/topological_navigation/issues/174>`_ from Iranaphor/humble-dev-dependencies
+  removal of pip dependency
+* removal of pip dependency
+* Contributors: James R Heselden, Marc Hanheide
+
 3.0.1 (2023-11-23)
 ------------------
 * Merge pull request `#171 <https://github.com/LCAS/topological_navigation/issues/171>`_ from GPrathap/humble-dev

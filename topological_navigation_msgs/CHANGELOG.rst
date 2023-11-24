@@ -2,6 +2,9 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.0.1 (2023-11-23)
 ------------------
 * Merge pull request `#165 <https://github.com/LCAS/topological_navigation/issues/165>`_ from GPrathap/humble-dev

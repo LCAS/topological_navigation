@@ -2,6 +2,9 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.0.2 (2023-11-24)
 ------------------
 

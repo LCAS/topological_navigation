@@ -11,6 +11,7 @@ from topological_navigation_msgs.srv import EvaluateEdge, EvaluateNode
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from topological_navigation_msgs.action import ExecutePolicyMode
 from std_msgs.msg import String
+import os 
 from action_msgs.msg import GoalStatus
 from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2, get_route_distance
 from topological_navigation.navigation_stats import nav_stats
@@ -24,6 +25,8 @@ from topological_navigation.edge_reconfigure_manager2 import EdgeReconfigureMana
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor 
 from threading import Lock
+
+from ament_index_python.packages import get_package_share_directory
 from topological_navigation.scripts.actions_bt import ActionsType 
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
 # If not listed then the param is not sent, e.g. TrajectoryPlannerROS doesn't have tolerances.
@@ -93,10 +96,17 @@ class TopologicalNavServer(rclpy.node.Node):
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value
 
         self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, False)).value
+        
+        bt_tree_default = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_default.xml')
+        bt_tree_in_row = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_in_row.xml')
+        bt_tree_goal_align = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_goal_align.xml')
         self.bt_trees = {}
-        self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE] =  self.get_parameter_or(self.ACTIONS.BT_DEFAULT, Parameter('str', Parameter.Type.STRING, "config/go_through_poses_bt.xml")).value
-        self.bt_trees[self.ACTIONS.ROW_TRAVERSAL] =   self.get_parameter_or(self.ACTIONS.BT_IN_ROW, Parameter('str', Parameter.Type.STRING, "config/go_through_poses_bt.xml")).value
-        self.bt_trees[self.ACTIONS.GOAL_ALIGN] =   self.get_parameter_or(self.ACTIONS.BT_GOAL_ALIGN, Parameter('str', Parameter.Type.STRING, "config/go_through_poses_bt.xml")).value
+        self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE] =  self.get_parameter_or(self.ACTIONS.BT_DEFAULT, Parameter('str'
+                                       , Parameter.Type.STRING, bt_tree_default)).value
+        self.bt_trees[self.ACTIONS.ROW_TRAVERSAL] =   self.get_parameter_or(self.ACTIONS.BT_IN_ROW
+                                        , Parameter('str', Parameter.Type.STRING, bt_tree_in_row)).value
+        self.bt_trees[self.ACTIONS.GOAL_ALIGN] =   self.get_parameter_or(self.ACTIONS.BT_GOAL_ALIGN
+                                        , Parameter('str', Parameter.Type.STRING, bt_tree_goal_align)).value
 
         if not self.navigation_action_name in self.navigation_actions:
             self.navigation_actions.append(self.navigation_action_name)

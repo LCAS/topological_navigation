@@ -1,16 +1,19 @@
 
 class ActionsType:
     def __init__(self):
-        self.ROW_TRAVERSAL = "row_traversal"
+
         self.NAVIGATE_TO_POSE = "NavigateToPose"
         self.NAVIGATE_THROUGH_POSES = "NavigateThroughPoses"
         self.DRIVE_ON_HEADING = "DriveOnHeading"
+
+        self.ROW_TRAVERSAL = "row_traversal"
         self.ROW_CHANGE = "row_change"
         self.GOAL_ALIGN = "goal_align"
         self.GOAL_ALIGN_INDEX = ["cb"]
-        self.BT_IN_ROW = "bt_tree_in_row"
+
         self.BT_DEFAULT = "bt_tree_default"
-        self.BT_GOAL_ALIGN = "bt_goal_align"
+        self.BT_IN_ROW = "bt_tree_in_row"
+        self.BT_GOAL_ALIGN = "bt_tree_goal_align"
         
         self.navigation_actions = [
             self.NAVIGATE_TO_POSE,
@@ -19,7 +22,9 @@ class ActionsType:
         ]
 
         self.bt_tree_types = [
-            self.BT_IN_ROW, self.BT_DEFAULT, self.BT_GOAL_ALIGN
+            self.BT_IN_ROW,
+            self.BT_DEFAULT,
+            self.BT_GOAL_ALIGN
         ]
 
         self.bt_tree_with_actions = {}

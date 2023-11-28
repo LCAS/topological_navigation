@@ -280,6 +280,7 @@ class EdgeActionManager(rclpy.node.Node):
             for pose in nodes:
                 target_pose = self.crete_pose_stamped_msg(pose["target_pose"]["header"]["frame_id"], pose["target_pose"]["pose"])
                 nav_goal.poses.append(target_pose)
+            # self.get_logger().info("Edge Action Manager: ===== action {}  bt_tree : {} ===== ".format(action, nav_goal.behavior_tree))
             goals.append(nav_goal)
         return goals, actions_execute
         

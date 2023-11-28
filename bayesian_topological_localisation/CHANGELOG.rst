@@ -2,6 +2,26 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.3 (2023-11-24)
+------------------
+
+3.0.2 (2023-11-24)
+------------------
+
+3.0.1 (2023-11-23)
+------------------
+* Merge pull request `#160 <https://github.com/LCAS/topological_navigation/issues/160>`_ from Iranaphor/humble-dev
+  ROS 2 / Humble - porting
+* Centralising topological_navigation stack messages to msgs package. (+version number sync across packages to 3.0.0)
+* Updates to Maintainers and Authors
+* full build working for topological_utils
+* Compilation of message files and restructuring heirarchy for ros2 compatibility
+* initial work towards a working ros2 toponav
+* Merge pull request `#148 <https://github.com/LCAS/topological_navigation/issues/148>`_ from gpdas/localisation_node_fix
+  localisation_node waits for topomap before starting services and also fixes a "list object does not have shape" error.
+* localisation_node waits for topomap before starting services
+* Contributors: Gautham P Das, James Heselden, JamesH, Marc Hanheide, mobile_server
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#117 <https://github.com/magnucha/topological_navigation/issues/117>`_ from LCAS/noetic

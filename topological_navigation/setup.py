@@ -6,7 +6,7 @@ package_name = 'topological_navigation'
 
 setup(
     name=package_name,
-    version='3.0.0',
+    version='3.0.3',
     packages=find_packages(),
     data_files=[
         ('share/ament_index/resource_index/packages',

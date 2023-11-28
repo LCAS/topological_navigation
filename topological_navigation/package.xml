@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>topological_navigation</name>
-  <version>3.0.0</version>
+  <version>3.0.3</version>
   <description>The ros2 topological_navigation package</description>
 
 
@@ -32,7 +32,6 @@
   <depend>visualization_msgs</depend>
   <depend>topological_navigation_msgs</depend>
 
-  <depend>python-transforms3d-pip</depend>
   <depend>tf_transformations</depend>
   <depend>launch_pytest</depend>
   

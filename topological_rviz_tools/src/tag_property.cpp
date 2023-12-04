@@ -1,4 +1,4 @@
-#include "tag_property.h"
+#include "topological_rviz_tools/tag_property.hpp"
 
 namespace topological_rviz_tools
 {
@@ -10,7 +10,7 @@ TagProperty::TagProperty(const QString& name,
 			 Property* parent,
 			 const char *changed_slot,
 			 QObject* receiver)
-  : rviz::StringProperty(name, default_value, description, parent, changed_slot, receiver)
+  : rviz_common::properties::StringProperty(name, default_value, description, parent, changed_slot, receiver)
   , tag_value_(default_value.toStdString())
   , reset_value_(false)
   , node_name_(node_name.toStdString())
@@ -33,16 +33,16 @@ void TagProperty::updateTag(){
   
   if (tagUpdate_.call(srv)) {
     if (srv.response.success) {
-      RCLCPP_INFO("Successfully updated tag %s to %s", srv.request.tag.c_str(), srv.request.new_tag.c_str());
+      RCLCPP_INFO(logger_, "Successfully updated tag %s to %s", srv.request.tag.c_str(), srv.request.new_tag.c_str());
       Q_EMIT tagModified();
       tag_value_ = getString().toStdString();
     } else {
-      RCLCPP_INFO("Failed to update tag %s: %s", srv.request.tag.c_str(), srv.response.meta.c_str());
+      RCLCPP_INFO(logger_, "Failed to update tag %s: %s", srv.request.tag.c_str(), srv.response.meta.c_str());
       reset_value_ = true;
       setValue(QString::fromStdString(tag_value_));
     }
   } else {
-    RCLCPP_WARN("Failed to get response from service to update tag %s", srv.request.tag.c_str());
+    RCLCPP_WARN(logger_, "Failed to get response from service to update tag %s", srv.request.tag.c_str());
     reset_value_ = true;
     setValue(QString::fromStdString(tag_value_));
   }

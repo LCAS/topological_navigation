@@ -6,7 +6,7 @@ package_name = 'topological_navigation'
 
 setup(
     name=package_name,
-    version='3.0.0',
+    version='3.0.3',
     packages=find_packages(),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -32,6 +32,7 @@ setup(
             'mean_based_prediction.py = topological_navigation.scripts.mean_based_prediction:main',
             'nav_client.py = topological_navigation.scripts.nav_client:main',
             'navigation.py = topological_navigation.scripts.navigation:main',
+            'navigation2.py = topological_navigation.scripts.navigation2:main',
             'navstats_logger.py = topological_navigation.scripts.navstats_logger:main',
             'reconf_at_edges_server.py = topological_navigation.scripts.reconf_at_edges_server:main',
             'restrictions_handler.py = topological_navigation.scripts.restrictions_handler:main',

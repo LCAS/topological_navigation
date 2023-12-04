@@ -3,19 +3,19 @@
 
 #include <cstdio>
 
-#include "rviz_common/panel.h"
-#include "topmap_manager.h"
-#include "tag_property.h"
-#include "edge_property.h"
-#include "node_property.h"
+#include "rviz_common/panel.hpp"
+#include "topmap_manager.hpp"
+#include "tag_property.hpp"
+#include "edge_property.hpp"
+#include "node_property.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-#include "rviz/properties/property_tree_widget.h"
-#include "std_msgs/Time.h"
+#include "rviz_common/properties/property_tree_widget.hpp"
+#include "std_msgs/msg/header.hpp"
 
-#include "topological_navigation_msgs/AddTag.h"
-#include "topological_navigation_msgs/AddEdge.h"
-#include "topological_navigation_msgs/RmvNode.h"
+#include "topological_navigation_msgs/srv/add_tag.hpp"
+#include "topological_navigation_msgs/srv/add_edge.hpp"
+#include "topological_navigation_msgs/srv/rmv_node.hpp"
 
 class QComboBox;
 class QMessageBox;
@@ -30,7 +30,6 @@ namespace topological_rviz_tools {
  */
 class TopologicalMapPanel: public rviz::Panel
 {
-Q_OBJECT
 public:
   TopologicalMapPanel(QWidget* parent = 0);
   virtual ~TopologicalMapPanel() {}
@@ -51,10 +50,10 @@ public:
   TopmapManager* getTopmapManager() const { return topmap_man_; }
 
   /** @brief Load configuration data, specifically the PropertyTreeWidget view settings. */
-  virtual void load(const rviz::Config& config);
+  virtual void load(const rviz_common::Config& config);
 
   /** @brief Save configuration data, specifically the PropertyTreeWidget view settings. */
-  virtual void save(rviz::Config config) const;
+  virtual void save(rviz_common::Config config) const;
 
 private Q_SLOTS:
   void onDeleteClicked();
@@ -71,6 +70,7 @@ private:
 
   TopmapManager* topmap_man_;
   rviz::PropertyTreeWidget* properties_view_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // namespace topological_rviz_tools

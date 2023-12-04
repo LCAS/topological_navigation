@@ -1,10 +1,10 @@
-#include "node_controller.h"
+#include "topological_rviz_tools/node_controller.hpp"
 
 
 namespace topological_rviz_tools
 {
 NodeController::NodeController()
-  : rviz::Property()
+  : rviz_common::properties::Property()
 {
   ros::NodeHandle nh_;
   top_sub_ = nh_.subscribe("topological_map", 1, &NodeController::topmapCallback, this);
@@ -26,14 +26,14 @@ NodeController::~NodeController()
 }
 
 void NodeController::topmapCallback(const topological_navigation_msgs::TopologicalMap::ConstPtr& msg){
-  RCLCPP_INFO("Updating topological map");
+  RCLCPP_INFO(logger_, "Updating topological map");
   
   // deep copy (because of const), and then sort the array so we display in
   // alphabetical order of node names
-  std::vector<topological_navigation_msgs::TopologicalNode> nodes = msg->nodes;
+  std::vector<topological_navigation_msgs::msg::TopologicalNode> nodes = msg->nodes;
   std::sort(nodes.begin(), nodes.end(), nodeSort);
 
-  RCLCPP_INFO("%s", nodes[nodes.size()-1].name.c_str());
+  RCLCPP_INFO(logger_, "%s", nodes[nodes.size()-1].name.c_str());
 
   // If we're the ones who made the change, then we only replace the property
   // for the specific nodes that we changed, otherwise replace everything.
@@ -74,7 +74,7 @@ void NodeController::topmapCallback(const topological_navigation_msgs::Topologic
 }
 
 void NodeController::updateModifiedNode(Property* node){
-  RCLCPP_INFO("Child was modified: %s", node->getValue().toString().toStdString().c_str());
+  RCLCPP_INFO(logger_, "Child was modified: %s", node->getValue().toString().toStdString().c_str());
   modifiedChildren_.push_back(node);
   Q_EMIT childModified();
 }
@@ -95,7 +95,7 @@ QString NodeController::formatClassId(const QString& class_id)
   }
 }
 
-void NodeController::load(const rviz::Config& config)
+void NodeController::load(const rviz_common::Config& config)
 {
   // Load the name by hand.
   QString name;
@@ -104,15 +104,15 @@ void NodeController::load(const rviz::Config& config)
     setName(name);
   }
   // Load all sub-properties the same way the base class does.
-  rviz::Property::load(config);
+  rviz_common::properties::Property::load(config);
 }
 
-void NodeController::save(rviz::Config config) const
+void NodeController::save(rviz_common::Config config) const
 {
   config.mapSetValue("Class", getClassId());
   config.mapSetValue("Name", getName());
 
-  rviz::Property::save(config);
+  rviz_common::properties::Property::save(config);
 }
 
 } // end namespace topological_rviz_tools

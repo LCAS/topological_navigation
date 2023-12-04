@@ -2,6 +2,44 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.3 (2023-11-24)
+------------------
+* missing dep
+* Contributors: Marc Hanheide
+
+3.0.2 (2023-11-24)
+------------------
+
+3.0.1 (2023-11-23)
+------------------
+* Merge pull request `#165 <https://github.com/LCAS/topological_navigation/issues/165>`_ from GPrathap/humble-dev
+  Adding the following core functionalities
+* adding feedback messages
+* Merge pull request `#162 <https://github.com/LCAS/topological_navigation/issues/162>`_ from Iranaphor/GoalMsg_Testing
+  Development work toward a working ROS2 version
+* inclusion of goal msg so as to echo ~/goal
+* Merge pull request `#160 <https://github.com/LCAS/topological_navigation/issues/160>`_ from Iranaphor/humble-dev
+  ROS 2 / Humble - porting
+* Centralising topological_navigation stack messages to msgs package. (+version number sync across packages to 3.0.0)
+* Updates to Maintainers and Authors
+* full build working for topological_utils
+* topological_navigation_msgs fully updated to ROS2
+* initial work towards a working ros2 toponav
+* Merge pull request `#154 <https://github.com/LCAS/topological_navigation/issues/154>`_ from adambinch/lcas
+  Auto set goal when adding an edge to the topological map
+* Auto set goal when adding an edge to the topological map
+  If a file e.g. thorvald_navigation_actions/config/inrownavGoal.yaml exists then the map manager will automatically set the goal of the action to the goal specified in that file, when the add edge function/service is called with arg action_type set to thorvald_navigation_actions/inrownavGoal. If that arg is not set or the file does not exist then a move base type goal is assumed.
+* Merge pull request `#146 <https://github.com/LCAS/topological_navigation/issues/146>`_ from adambinch/lcas
+  Option to disable anchors and aliases in generated topological map ya…
+* Option to disable anchors and aliases in generated topological map yaml file
+* Merge pull request `#139 <https://github.com/LCAS/topological_navigation/issues/139>`_ from SAGARobotics/lcas
+  Update LCAS branch with SAGA branch
+* Additional edge reconfigure functionality.
+  By default edge reconfigure resets the param back to its original value after the edge is traversed.
+  This behaviour is now optional and can be disabled in the topological map edge config by setting `reset: false` for a given param.
+  Updated map manager services accordingly.
+* Contributors: Adam Binch, GPrathap, James Heselden, JamesH, Marc Hanheide
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel

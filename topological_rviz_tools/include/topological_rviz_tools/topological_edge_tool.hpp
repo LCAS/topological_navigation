@@ -1,12 +1,12 @@
 #ifndef TOPMAP_EDGE_TOOL_H
 #define TOPMAP_EDGE_TOOL_H
 
-#include <ros/ros.h>
-#include <rviz/tool.h>
-#include <visualization_msgs/Marker.h>
-#include <geometry_msgs/Pose.h>
-#include "topological_navigation_msgs/AddEdgeRviz.h"
-#include "std_msgs/Time.h"
+#include <rclcpp/rclcpp.hpp>
+#include "rviz_common/tool.hpp"
+#include <visualization_msgs/msg/marker.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include "topological_navigation_msgs/srv/add_edge_rviz.hpp"
+#include "std_msgs/msg/header.hpp"
 
 namespace rviz
 {
@@ -24,7 +24,6 @@ namespace topological_rviz_tools
 // rviz::Tool.
 class TopmapEdgeTool: public rviz::Tool
 {
-Q_OBJECT
 public:
   TopmapEdgeTool();
   ~TopmapEdgeTool();
@@ -36,12 +35,13 @@ public:
 
   virtual int processMouseEvent(rviz::ViewportMouseEvent& event);
 private:
-  ros::Publisher markerPub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr markerPub_;
   ros::Publisher update_map_;
   ros::ServiceClient addEdgeSrv_;
   bool noClick_; // true if nothing clicked yet
-  geometry_msgs::Pose firstClick_;
-  visualization_msgs::Marker edgeMarker_;
+  geometry_msgs::msg::Pose firstClick_;
+  visualization_msgs::msg::Marker edgeMarker_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 
 };
 } // end namespace topological_rviz_tools

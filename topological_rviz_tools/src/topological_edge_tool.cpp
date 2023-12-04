@@ -4,13 +4,14 @@
 
 #include <rclcpp/logging.hpp>
 
+
 #include <rviz/viewport_mouse_event.h>
 #include <rviz/visualization_manager.h>
 #include <rviz/mesh_loader.h>
 #include <rviz/geometry.h>
 #include <rviz/properties/vector_property.h>
 
-#include "topological_edge_tool.h"
+#include "topological_rviz_tools/topological_edge_tool.hpp"
 
 namespace topological_rviz_tools
 {
@@ -33,7 +34,7 @@ TopmapEdgeTool::TopmapEdgeTool()
   edgeMarker_.header.frame_id = "map";
   edgeMarker_.ns = "edge_tool_markers";
   edgeMarker_.id = 0;
-  edgeMarker_.type = visualization_msgs::Marker::ARROW;
+  edgeMarker_.type = visualization_msgs::msg::Marker::ARROW;
   edgeMarker_.scale.x = 0.1;
   edgeMarker_.scale.y = 0.15;
   edgeMarker_.scale.z = 0.2;
@@ -69,10 +70,10 @@ void TopmapEdgeTool::onInitialize()
   while(!ros::service::exists("/topmap_interface/add_edge", true))
   {
     r.sleep();
-    RCLCPP_INFO("Waiting for add_edge service\n");
+    RCLCPP_INFO(logger_, "Waiting for add_edge service\n");
   }
   addEdgeSrv_ = nh.serviceClient<topological_navigation_msgs::AddEdgeRviz>("/topmap_interface/add_edge", true);
-  markerPub_ = nh.advertise<visualization_msgs::Marker>("edge_tool_marker", 0);
+  markerPub_ = nh.advertise<visualization_msgs::msg::Marker>("edge_tool_marker", 0);
   update_map_ = nh.advertise<std_msgs::Time>("/update_map", 5);
 }
 
@@ -90,7 +91,7 @@ void TopmapEdgeTool::activate()
 void TopmapEdgeTool::deactivate()
 {
   noClick_ = true;
-  edgeMarker_.action = visualization_msgs::Marker::DELETE;
+  edgeMarker_.action = visualization_msgs::msg::Marker::DELETE;
   edgeMarker_.points.clear();
   edgeMarker_.header.stamp = ros::Time();
   markerPub_.publish(edgeMarker_);
@@ -115,7 +116,7 @@ int TopmapEdgeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
     bool left = event.leftDown();
     bool right = event.rightDown();
 
-    geometry_msgs::Pose event_pose = geometry_msgs::Pose();
+    geometry_msgs::msg::Pose event_pose = geometry_msgs::msg::Pose();
     event_pose.position.x = intersection.x;
     event_pose.position.y = intersection.y;
     event_pose.position.z = intersection.z;
@@ -130,7 +131,7 @@ int TopmapEdgeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
       // If the first click happened, then we update the endpoint of the arrow each time the mouse moves.
       edgeMarker_.points.push_back(event_pose.position);
       edgeMarker_.header.stamp = ros::Time();
-      edgeMarker_.action = visualization_msgs::Marker::ADD;
+      edgeMarker_.action = visualization_msgs::msg::Marker::ADD;
       markerPub_.publish(edgeMarker_);
     }
 
@@ -151,17 +152,17 @@ int TopmapEdgeTool::processMouseEvent(rviz::ViewportMouseEvent& event)
 
 	if (addEdgeSrv_.call(srv)){
 	  if (srv.response.success) {
-	    RCLCPP_INFO("Successfully added edge: %s", srv.response.message.c_str());
+	    RCLCPP_INFO(logger_, "Successfully added edge: %s", srv.response.message.c_str());
 	    std_msgs::Time t;
 	    t.data = ros::Time::now();
 	    update_map_.publish(t);
 	  } else {
-	    RCLCPP_INFO("Failed to add edge: %s", srv.response.message.c_str());
+	    RCLCPP_INFO(logger_, "Failed to add edge: %s", srv.response.message.c_str());
 	  }
 	} else {
-	  RCLCPP_WARN("Failed to add edge: %s", srv.response.message.c_str());
+	  RCLCPP_WARN(logger_, "Failed to add edge: %s", srv.response.message.c_str());
 	}
-	edgeMarker_.action = visualization_msgs::Marker::DELETE;
+	edgeMarker_.action = visualization_msgs::msg::Marker::DELETE;
 	edgeMarker_.points.clear();
 	edgeMarker_.header.stamp = ros::Time();
 	markerPub_.publish(edgeMarker_);

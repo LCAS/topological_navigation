@@ -2,6 +2,41 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.3 (2023-11-24)
+------------------
+
+3.0.2 (2023-11-24)
+------------------
+
+3.0.1 (2023-11-23)
+------------------
+* Merge pull request `#160 <https://github.com/LCAS/topological_navigation/issues/160>`_ from Iranaphor/humble-dev
+  ROS 2 / Humble - porting
+* Centralising topological_navigation stack messages to msgs package. (+version number sync across packages to 3.0.0)
+* Updates to Maintainers and Authors
+* full build working for topological_utils
+* CMakeLists changes + restructuring for topological_utils
+* initial work towards a working ros2 toponav
+* Merge pull request `#156 <https://github.com/LCAS/topological_navigation/issues/156>`_ from LCAS/python3_marc_greg
+  Some Python3 and multi-robot fixes
+* python 3 fix for goal converter
+* map_converter py3 compatible
+* Merge pull request `#154 <https://github.com/LCAS/topological_navigation/issues/154>`_ from adambinch/lcas
+  Auto set goal when adding an edge to the topological map
+* Auto set goal when adding an edge to the topological map
+  If a file e.g. thorvald_navigation_actions/config/inrownavGoal.yaml exists then the map manager will automatically set the goal of the action to the goal specified in that file, when the add edge function/service is called with arg action_type set to thorvald_navigation_actions/inrownavGoal. If that arg is not set or the file does not exist then a move base type goal is assumed.
+* Merge pull request `#152 <https://github.com/LCAS/topological_navigation/issues/152>`_ from adambinch/lcas
+  Goal Converter
+* update with saga
+* Merge pull request `#139 <https://github.com/LCAS/topological_navigation/issues/139>`_ from SAGARobotics/lcas
+  Update LCAS branch with SAGA branch
+* clear route markers for previous route
+* toponav launch files use new map visualiser
+* update
+* Removing mongodb as a dependency.
+  Removed from `topological_navigation` and `topological_utils` packages.
+* Contributors: Adam Binch, James Heselden, JamesH, Marc Hanheide, adambinch
+
 2.4.0 (2022-01-25)
 ------------------
 * Merge pull request `#133 <https://github.com/magnucha/topological_navigation/issues/133>`_ from adambinch/melodic-devel

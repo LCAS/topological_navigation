@@ -9,35 +9,33 @@
 #include <QKeyEvent>
 
 #include "rviz_common/config.hpp"
-#include "rviz_common/display_context.h"
-#include "rviz/frame_manager.h"
-#include "rviz/load_resource.h"
-#include "rviz/ogre_helpers/render_system.h"
-#include "rviz/properties/bool_property.h"
-#include "rviz/properties/enum_property.h"
-#include "rviz/properties/float_property.h"
-#include "rviz/properties/property.h"
-#include "rviz/render_panel.h"
-#include "rviz/selection/selection_manager.h"
-#include "rviz/viewport_mouse_event.h"
-#include "rviz/window_manager_interface.h"
-
-#include "topological_navigation_msgs/Edge.h"
-#include "geometry_msgs/Pose.h"
-
-#include "edge_property.h"
+#include "rviz_common/display_context.hpp"
+#include "rviz_common/frame_manager_iface.hpp"
+#include "rviz_common/load_resource.hpp"
+#include "rviz_rendering/render_system.hpp"
+#include "rviz_common/properties/bool_property.hpp"
+#include "rviz_common/properties/enum_property.hpp"
+#include "rviz_common/properties/float_property.hpp"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/render_panel.hpp"
+#include "rviz_common/interaction/selection_manager.hpp"
+#include "rviz_common/viewport_mouse_event.hpp"
+#include "rviz_common/window_manager_interface.hpp"
+#include "topological_navigation_msgs/msg/edge.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "edge_property.hpp"
 
 class QKeyEvent;
 
 namespace topological_rviz_tools {
-class EdgeController: public rviz::Property
+class EdgeController: public rviz_common::properties::Property
 {
 Q_OBJECT
 public:
   EdgeController(const QString& name = QString(),
-		 const std::vector<topological_navigation_msgs::Edge>& default_values = std::vector<topological_navigation_msgs::Edge>(),
+		 const std::vector<topological_navigation_msgs::msg::Edge>& default_values = std::vector<topological_navigation_msgs::msg::Edge>(),
 		 const QString& description = QString(),
-		 rviz::Property* parent = 0,
+		 rviz_common::properties::Property* parent = 0,
 		 const char *changed_slot = 0,
 		 QObject* receiver = 0);
   virtual ~EdgeController();
@@ -59,9 +57,9 @@ public:
    * Typically this will be set by the factory object which created it. */
   virtual void setClassId( const QString& class_id ) { class_id_ = class_id; }
 
-  virtual void load(const rviz::Config& config);
-  virtual void save(rviz::Config config) const;
-  bool addEdge(const topological_navigation_msgs::Edge& edge);
+  virtual void load(const rviz_common::Config& config);
+  virtual void save(rviz_common::Config config) const;
+  bool addEdge(const topological_navigation_msgs::msg::Edge& edge);
 Q_SIGNALS:
   void configChanged();
 
@@ -73,6 +71,7 @@ protected:
 private:
   QString class_id_;
   std::vector<EdgeProperty*> edges_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // end namespace topological_rviz_tools

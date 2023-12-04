@@ -2,10 +2,10 @@
 #define TAG_CONTROLLER_H
 
 #include "rclcpp/rclcpp.hpp"
-#include "rviz/properties/property.h"
-#include "rviz/properties/string_property.h"
-#include "tag_property.h"
-#include "node_property.h"
+#include "rviz_common/properties/property.hpp"
+#include "rviz_common/properties/string_property.hpp"
+#include "tag_property.hpp"
+#include "node_property.hpp"
 
 namespace topological_rviz_tools
 {
@@ -13,9 +13,9 @@ namespace topological_rviz_tools
 class NodeProperty;
   
 /** @brief Property specialized to provide getter for booleans. */
-class TagController: public rviz::Property
+class TagController: public rviz_common::properties::Property
 {
-Q_OBJECT
+
 public:
   TagController(const QString& name = QString(),
 		const std::vector<std::string>& default_value = std::vector<std::string>(),
@@ -34,8 +34,8 @@ public:
   /** @brief Subclasses should call this whenever a change is made which would change the results of toString(). */
   void emitConfigChanged();
 
-  virtual void load(const rviz::Config& config);
-  virtual void save(rviz::Config config) const;
+  virtual void load(const rviz_common::Config& config);
+  virtual void save(rviz_common::Config config) const;
 
   // required by something that initialises this class
   QString formatClassId(const QString& class_id);
@@ -55,6 +55,7 @@ Q_SIGNALS:
 private:
 
   QString class_id_;
+  rclcpp::Logger logger_{rclcpp::get_logger("rviz2")};
 };
 
 } // end namespace topological_rviz_tools

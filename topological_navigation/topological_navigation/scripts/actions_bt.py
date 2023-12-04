@@ -9,7 +9,7 @@ class ActionsType:
         self.ROW_TRAVERSAL = "row_traversal"
         self.ROW_CHANGE = "row_change"
         self.GOAL_ALIGN = "goal_align"
-        self.GOAL_ALIGN_INDEX = ["cb"]
+        self.GOAL_ALIGN_INDEX = ["ca"]
 
         self.BT_DEFAULT = "bt_tree_default"
         self.BT_IN_ROW = "bt_tree_in_row"
@@ -47,3 +47,20 @@ class ActionsType:
         self.goal_cancle_error_codes[1] = "ERROR_REJECTED"
         self.goal_cancle_error_codes[2] = "ERROR_UNKNOWN_GOAL_ID"
         self.goal_cancle_error_codes[3] = "ERROR_GOAL_TERMINATED"
+
+        self.planner_with_goal_checker_config = {
+            "dwb_core::DWBLocalPlanner": {
+                "goal_checker.xy_goal_tolerance": 0.78,
+                "goal_checker.yaw_goal_tolerance": 0.25,
+            },
+            "teb_local_planner::TebLocalPlannerROS": {
+                "goal_checker.xy_goal_tolerance": 0.1,
+                "goal_checker.yaw_goal_tolerance": 0.05,
+            },
+        }
+
+        self.bt_tree_with_control_server_config = {}
+        self.bt_tree_with_control_server_config[self.ROW_TRAVERSAL] = "dwb_core::DWBLocalPlanner"
+        self.bt_tree_with_control_server_config[self.NAVIGATE_THROUGH_POSES] = "dwb_core::DWBLocalPlanner"
+        self.bt_tree_with_control_server_config[self.NAVIGATE_TO_POSE] = "dwb_core::DWBLocalPlanner"
+        self.bt_tree_with_control_server_config[self.GOAL_ALIGN] = "teb_local_planner::TebLocalPlannerROS"

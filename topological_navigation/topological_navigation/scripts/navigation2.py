@@ -30,16 +30,7 @@ from ament_index_python.packages import get_package_share_directory
 from topological_navigation.scripts.actions_bt import ActionsType 
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
 # If not listed then the param is not sent, e.g. TrajectoryPlannerROS doesn't have tolerances.
-DYNPARAM_MAPPING = {
-    "dwb_core::DWBLocalPlanner": {
-        "FollowPath.yaw_goal_tolerance": "FollowPath.yaw_goal_tolerance",
-        "FollowPath.xy_goal_tolerance": "FollowPath.xy_goal_tolerance",
-    },
-    "TebLocalPlannerROS": {
-        "FollowPath.yaw_goal_tolerance": "FollowPath.yaw_goal_tolerance",
-        "FollowPath.xy_goal_tolerance": "FollowPath.xy_goal_tolerance",
-    },
-}
+
     
 
 ###################################################################################################################
@@ -186,7 +177,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self._as_exec_policy_action_feedback_pub = self.create_publisher(ExecutePolicyModeFeedback, 'topological_navigation/execute_policy_mode/feedback'
                                                                                     , qos_profile=self.latching_qos)
         
-        self.update_params_planner = ParameterUpdaterNode("controller_server") #TODO change the name 
+        self.update_params_control_server = ParameterUpdaterNode("controller_server") #TODO change the name 
 
         self.get_logger().info("...done")
         self.get_logger().info("All Done.")
@@ -202,10 +193,10 @@ class TopologicalNavServer(rclpy.node.Node):
     def init_reconfigure(self):
         self.nav_planner  = self.get_parameter_or("nav_planner", Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
         planner = self.nav_planner.split("/")[-1]
-        if not planner in DYNPARAM_MAPPING:
-            DYNPARAM_MAPPING[planner] = {}
+        if not planner in self.ACTIONS.planner_with_goal_checker_config:
+            self.ACTIONS.planner_with_goal_checker_config[planner] = {}
         self.get_logger().info("Creating reconfigure client for {}".format(self.nav_planner))
-        self.init_dynparams = self.update_params_planner.get_params()
+        self.init_dynparams = self.update_params_control_server.get_params()
         
 
     def reconf_movebase(self, cedg, cnode, intermediate):
@@ -224,10 +215,10 @@ class TopologicalNavServer(rclpy.node.Node):
         params = {"FollowPath.yaw_goal_tolerance": cytol, "FollowPath.xy_goal_tolerance": cxygtol}
         self.get_logger().info("Reconfiguring %s with %s" % (self.nav_planner, params))
         print("Intermediate: {}".format(intermediate))
-        self.update_params_planner.set_params(params)     
+        self.update_params_control_server.set_params(params)     
 
     def reset_reconf(self):
-        self.update_params_planner.set_params(self.init_dynparams)
+        self.update_params_control_server.set_params(self.init_dynparams)
 
     def MapCallback(self, msg):
         """
@@ -444,7 +435,7 @@ class TopologicalNavServer(rclpy.node.Node):
     
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
-                self.update_params_planner.set_params(params)
+                self.update_params_control_server.set_params(params)
 
                 self.current_target = Orig
                 nav_ok, inc = self.execute_action(self.navigation_action_edge, o_node)
@@ -527,7 +518,7 @@ class TopologicalNavServer(rclpy.node.Node):
             self.edge_reconf_end()
 
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
-            self.update_params_planner.set_params(params)
+            self.update_params_control_server.set_params(params)
 
             not_fatal = nav_ok
             if self.cancelled:
@@ -615,7 +606,7 @@ class TopologicalNavServer(rclpy.node.Node):
     
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
-                self.update_params_planner.set_params(params)
+                self.update_params_control_server.set_params(params)
 
                 self.current_target = Orig
                 nav_ok, inc = self.execute_action(self.navigation_action_edge, o_node)
@@ -645,15 +636,15 @@ class TopologicalNavServer(rclpy.node.Node):
         route_dests = []
         route_origins = []
         route_actions_list = []
+        cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
+        self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
+        dt_text = self.stat.get_start_time_str()
 
         while rindex < (len(route.edge_id)):
             cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
             a = cedg["action"]
             route_actions_list.append(a)
-            if(rindex == 0):
-                self.stat = nav_stats(route.source[rindex], cedg["node"], self.topol_map, cedg["edge_id"])
-                dt_text = self.stat.get_start_time_str()
-
+                
             if(rindex == (len(route.edge_id)-1)):
                 self.stat.target = cedg["edge_id"]
 
@@ -696,7 +687,7 @@ class TopologicalNavServer(rclpy.node.Node):
             route_dests.append(cnode)
             route_origins.append(onode)
             # params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
-            # self.update_params_planner.set_params(params)
+            # self.update_params_control_server.set_params(params)
             rindex = rindex + 1
 
         self.get_logger().info(" ========== Action list {} ".format(route_actions_list))
@@ -724,6 +715,8 @@ class TopologicalNavServer(rclpy.node.Node):
             else:
                 self.get_logger().warning("Fatal Fail on {} ({}/{})".format(dt_text, operation_time, time_to_wp))
                 self.stat.status = "fatal"
+
+
         self.publish_stats()
         self.reset_reconf()
         self.navigation_activated = False

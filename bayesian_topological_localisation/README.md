@@ -3,7 +3,7 @@ Bayesian Topological Localisation
 
 This package provides support for localising agents in a topological map, based on `topological_navigation`. 
 
-It uses particle filter for performing state estimation. This code is based on https://ras.papercept.net/proceedings/IROS20/0879.pdf. 
+It uses particle filter for performing state estimation. This code is based on https://eprints.lincoln.ac.uk/45627/1/topoNBS.pdf. 
 
 The code exploits the fact that generally a topological map nodes are sparsely connected - particles can only jump from a node to another if they are connected through an edge - to perform the computation efficiently.  
 

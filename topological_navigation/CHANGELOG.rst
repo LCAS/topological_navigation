@@ -2,6 +2,18 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#176 <https://github.com/LCAS/topological_navigation/issues/176>`_ from GPrathap/humble-dev
+  adding server config for each action
+* adding server config for each action
+* Merge pull request `#172 <https://github.com/LCAS/topological_navigation/issues/172>`_ from GPrathap/humble-dev
+  extending the functionality of bt trees to all action types
+* Merge branch 'humble-dev' of github.com:LCAS/topological_navigation into humble-dev
+* adding default config files
+* extending the functionality of bt trees to all action types
+* Contributors: GPrathap, James Heselden
+
 3.0.3 (2023-11-24)
 ------------------
 

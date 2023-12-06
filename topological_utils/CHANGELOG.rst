@@ -2,6 +2,11 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'humble-dev' of github.com:LCAS/topological_navigation into humble-dev
+* Contributors: GPrathap
+
 3.0.3 (2023-11-24)
 ------------------
 

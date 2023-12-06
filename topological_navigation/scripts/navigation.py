@@ -21,6 +21,8 @@ from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManag
 
 from threading import Lock
 
+simulation_mode = False
+
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
 # If not listed then the param is not sent, e.g. TrajectoryPlannerROS doesn't have tolerances.
 DYNPARAM_MAPPING = {
@@ -90,6 +92,11 @@ class TopologicalNavServer(object):
             "han_vc_junction",
         ]
 
+        global simulation_mode
+        simulation_mode = rospy.get_param('~simulation_mode', False)  # Set True if you want to use abstracted navigation (i.e. teleporting between nodes)
+        if simulation_mode:
+            rospy.loginfo("Topological navigation is running in simulation mode")
+        
         self.move_base_actions = rospy.get_param("~move_base_actions", move_base_actions)
 
         # what service are we using as move_base?
@@ -121,7 +128,7 @@ class TopologicalNavServer(object):
             rospy.logwarn("Edge Reconfigure Unavailable")
 
         rospy.loginfo("Subscribing to Localisation Topics...")
-        rospy.wait_for_message('/closest_edges', ClosestEdges, timeout=10)
+        rospy.wait_for_message('closest_edges', ClosestEdges, timeout=10)
         rospy.Subscriber("closest_node", String, self.closestNodeCallback)
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
@@ -198,9 +205,11 @@ class TopologicalNavServer(object):
             cytol = 6.283
 
         params = {"yaw_goal_tolerance": cytol, "xy_goal_tolerance": cxygtol}
-        rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_planner, params))
+
+        if not simulation_mode:
+            rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_planner, params))
+            self.reconfigure_movebase_params(params)
         print("Intermediate: {}".format(intermediate))
-        self.reconfigure_movebase_params(params)
         
 
     def reconfigure_movebase_params(self, params):
@@ -623,7 +632,8 @@ class TopologicalNavServer(object):
         Targ = target
         self._target = Targ
 
-        self.init_reconfigure()
+        if not simulation_mode:
+            self.init_reconfigure()
 
         rospy.loginfo("%d Nodes on route" % nnodes)
 
@@ -656,7 +666,9 @@ class TopologicalNavServer(object):
     
                 # 5 degrees tolerance
                 params = {"yaw_goal_tolerance": 0.087266}
-                self.reconfigure_movebase_params(params)
+                
+                if not simulation_mode:
+                    self.reconfigure_movebase_params(params)
 
                 self.current_target = Orig
                 nav_ok, inc = self.execute_action(self.move_base_edge, o_node)
@@ -739,7 +751,9 @@ class TopologicalNavServer(object):
             self.edge_reconf_end()
 
             params = {"yaw_goal_tolerance": 0.087266, "xy_goal_tolerance": 0.1}
-            self.reconfigure_movebase_params(params)
+            
+            if not simulation_mode:
+                self.reconfigure_movebase_params(params)
 
             not_fatal = nav_ok
             if self.cancelled:
@@ -775,7 +789,8 @@ class TopologicalNavServer(object):
             if not replanned:
                 rindex = rindex + 1
 
-        self.reset_reconf()
+        if not simulation_mode:
+            self.reset_reconf()
 
         self.navigation_activated = False
 

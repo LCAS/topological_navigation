@@ -2,8 +2,8 @@
 Changelog for package topological_navigation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.4 (2023-12-06)
+------------------
 * Merge pull request `#176 <https://github.com/LCAS/topological_navigation/issues/176>`_ from GPrathap/humble-dev
   adding server config for each action
 * adding server config for each action

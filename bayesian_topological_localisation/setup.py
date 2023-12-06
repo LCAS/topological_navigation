@@ -4,7 +4,7 @@ package_name = 'bayesian_topological_localisation'
 
 setup(
     name=package_name,
-    version='3.0.3',
+    version='3.0.4',
     packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',

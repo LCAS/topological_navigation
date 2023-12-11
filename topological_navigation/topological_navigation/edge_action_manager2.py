@@ -23,6 +23,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from unique_identifier_msgs.msg import UUID
 from rclpy.executors import SingleThreadedExecutor
 from topological_navigation.scripts.actions_bt import ActionsType 
+from topological_navigation.scripts.param_processing import ParameterUpdaterNode
 
 try:
     from collections.abc import Mapping
@@ -79,6 +80,8 @@ class EdgeActionManager(rclpy.node.Node):
         self.internal_executor = SingleThreadedExecutor()
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.bt_trees =  {}
+        self.control_server_configs = []
+        self.update_params_control_server = ParameterUpdaterNode("controller_server")
 
     
     def get_nav_action_server_status(self, ):
@@ -152,7 +155,7 @@ class EdgeActionManager(rclpy.node.Node):
                     actions[segment].append(current_action)
                 previous_action = current_action
             self.destination_node = destination_node[-1]
-            self.goal, self.actions = self.construct_navigate_through_poses_goal(poses, actions)
+            self.goal, self.actions, self.control_server_configs = self.construct_navigate_through_poses_goal(poses, actions)
 
         return True 
     
@@ -257,32 +260,44 @@ class EdgeActionManager(rclpy.node.Node):
         return [nav_goal], [self.ACTIONS.NAVIGATE_TO_POSE]
     
     def construct_navigate_through_poses_goal(self, goals, actions):
-        goal, actions = self.get_navigate_through_poses_goal(goals, actions)
-        return goal, actions  
+        goal, actions, control_server_configs = self.get_navigate_through_poses_goal(goals, actions)
+        return goal, actions, control_server_configs 
 
     def get_navigate_through_poses_goal(self, poses, actions):
         goals = []
         actions_execute = []
+        control_server_configs = {}
         for seg_i, nodes in poses.items():
             nav_goal = NavigateThroughPoses.Goal()
             action = actions[seg_i][0]
             actions_execute.append(action)
             self.get_logger().info("Edge Action Manager: ===== seg: {}, action: {} ===== ".format(seg_i, action))
             if(action == self.ACTIONS.ROW_TRAVERSAL):
+                controller_plugin = self.ACTIONS.bt_tree_with_control_server_config[self.ACTIONS.ROW_TRAVERSAL]
+                control_server_configs[self.ACTIONS.ROW_TRAVERSAL] = self.ACTIONS.planner_with_goal_checker_config[controller_plugin] 
                 if(self.ACTIONS.ROW_TRAVERSAL in self.bt_trees):
                     nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.ROW_TRAVERSAL]
+                    
             if((action == self.ACTIONS.NAVIGATE_TO_POSE) or (action == self.ACTIONS.ROW_CHANGE)):
+               controller_plugin = self.ACTIONS.bt_tree_with_control_server_config[self.ACTIONS.NAVIGATE_TO_POSE]
+               control_server_configs[self.ACTIONS.NAVIGATE_TO_POSE] = self.ACTIONS.planner_with_goal_checker_config[controller_plugin] 
                if(self.ACTIONS.NAVIGATE_TO_POSE in self.bt_trees):
                     nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE]
+                    
             if(action == self.ACTIONS.GOAL_ALIGN):
+               controller_plugin = self.ACTIONS.bt_tree_with_control_server_config[self.ACTIONS.GOAL_ALIGN]
+               control_server_configs[self.ACTIONS.GOAL_ALIGN] = self.ACTIONS.planner_with_goal_checker_config[controller_plugin] 
                if(self.ACTIONS.GOAL_ALIGN in self.bt_trees):
                     nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.GOAL_ALIGN]
+                    
             for pose in nodes:
                 target_pose = self.crete_pose_stamped_msg(pose["target_pose"]["header"]["frame_id"], pose["target_pose"]["pose"])
                 nav_goal.poses.append(target_pose)
-            # self.get_logger().info("Edge Action Manager: ===== action {}  bt_tree : {} ===== ".format(action, nav_goal.behavior_tree))
+            self.get_logger().info("Edge Action Manager: ===== action {}  bt_tree : {} ===== ".format(action, nav_goal.behavior_tree))
             goals.append(nav_goal)
-        return goals, actions_execute
+           
+
+        return goals, actions_execute, control_server_configs
         
     def crete_pose_stamped_msg(self, frame_id, goal):
         header = Header()
@@ -316,6 +331,11 @@ class EdgeActionManager(rclpy.node.Node):
         
         for target_goal, target_action in zip(self.goal, self.actions):
             self.get_logger().info("========  Edge Action Manager: Executing action : {} =============".format(target_action))
+
+            if target_action in self.control_server_configs:
+                control_server_config = self.control_server_configs[target_action]
+                self.update_params_control_server.set_params(control_server_config)
+
             send_goal_future = self.client.send_goal_async(target_goal,  feedback_callback=self.feedback_callback)
             while rclpy.ok():
                 try:

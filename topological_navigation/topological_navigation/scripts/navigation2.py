@@ -86,8 +86,9 @@ class TopologicalNavServer(rclpy.node.Node):
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, self.ACTIONS.NAVIGATE_TO_POSE)).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value
 
-        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, False)).value
+        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, True)).value
         
+        self.get_logger().error("=============self.use_nav2_follow_route==================== {}".format(self.use_nav2_follow_route))
         bt_tree_default = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_default.xml')
         bt_tree_in_row = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_in_row.xml')
         bt_tree_goal_align = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_goal_align.xml')
@@ -426,7 +427,7 @@ class TopologicalNavServer(rclpy.node.Node):
             # If the robot is not on a node or the first action is not move base type
             # navigate to closest node waypoint (only when first action is not move base)
             if a not in self.navigation_actions:
-                self.get_logger().info("The action of the first edge in the route is not a move base action")
+                self.get_logger().info("The action of the first edge in the route is not a navigate to pose action")
                 self.get_logger().info("Current node is {}".format(self.current_node))
                 
             if self.current_node == "none" and a not in self.navigation_actions:
@@ -597,7 +598,7 @@ class TopologicalNavServer(rclpy.node.Node):
             # If the robot is not on a node or the first action is not move base type
             # navigate to closest node waypoint (only when first action is not move base)
             if a not in self.navigation_actions:
-                self.get_logger().info("The action of the first edge in the route is not a move base action")
+                self.get_logger().info("The action of the first edge in the route is not a navigate to poses action")
                 self.get_logger().info("Current node is {}".format(self.current_node))
                 
             if self.current_node == "none" and a not in self.navigation_actions:
@@ -621,7 +622,7 @@ class TopologicalNavServer(rclpy.node.Node):
                         navigation_action_act = True
 
                 if not navigation_action_act:
-                    self.get_logger().warning("Could not find a move base action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
+                    self.get_logger().warning("Could not find a nav action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
                     self.get_logger().info("Action not taken, outputing success")
                     nav_ok = True
                     inc = 0
@@ -1075,6 +1076,8 @@ class TopologicalNavServer(rclpy.node.Node):
                     self.preempted = True
             else:
                 result = True
+        else: 
+            self.preempted = False 
 
         if not res:
             if not result:

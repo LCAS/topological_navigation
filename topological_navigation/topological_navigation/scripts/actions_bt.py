@@ -10,6 +10,8 @@ class ActionsType:
         self.ROW_CHANGE = "row_change"
         self.GOAL_ALIGN = "goal_align"
         self.GOAL_ALIGN_INDEX = ["ca"]
+        self.GOAL_ALIGN_GOAL = ["cb"]
+        self.ABORT_NOT_CONTINUE = [self.GOAL_ALIGN]
 
         self.BT_DEFAULT = "bt_tree_default"
         self.BT_IN_ROW = "bt_tree_in_row"
@@ -19,6 +21,8 @@ class ActionsType:
             self.NAVIGATE_TO_POSE,
             self.NAVIGATE_THROUGH_POSES,
             self.DRIVE_ON_HEADING,
+            self.ROW_CHANGE,
+            self.ROW_TRAVERSAL
         ]
 
         self.bt_tree_types = [

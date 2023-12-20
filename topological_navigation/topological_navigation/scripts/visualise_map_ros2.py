@@ -271,7 +271,7 @@ class TopoMap2Vis(rclpy.node.Node):
                 try: 
                     rclpy.spin_once(self, executor=self.executor_goto_client)
                     if cancel_future.done() and self.goal_get_result_future.done():
-                        self.action_status = 5
+                        self.action_status = self.goal_get_result_future.result().status
                         self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                         return True 
                 except Exception as e:

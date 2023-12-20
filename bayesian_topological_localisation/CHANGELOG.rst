@@ -2,6 +2,11 @@
 Changelog for package bayesian_topological_localisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.4 (2023-12-06)
+------------------
+* Merge branch 'humble-dev' of github.com:LCAS/topological_navigation into humble-dev
+* Contributors: GPrathap
+
 3.0.3 (2023-11-24)
 ------------------
 

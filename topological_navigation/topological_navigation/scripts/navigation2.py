@@ -104,7 +104,7 @@ class TopologicalNavServer(rclpy.node.Node):
             self.navigation_actions.append(self.navigation_action_name)
         
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        
+        self.stat = None 
         self.stats_pub = self.create_publisher(NavStatistics, "topological_navigation/Statistics", qos_profile=self.latching_qos)
         self.route_pub = self.create_publisher(TopologicalRoute, "topological_navigation/Route", qos_profile=self.latching_qos)
         self.cur_edge = self.create_publisher(String, "current_edge", qos_profile=self.latching_qos)
@@ -528,6 +528,7 @@ class TopologicalNavServer(rclpy.node.Node):
                 not_fatal = False
                 nav_ok = False
 
+            
             self.stat.set_ended(self.current_node)
             dt_text=self.stat.get_finish_time_str()
             operation_time = self.stat.operation_time
@@ -695,6 +696,9 @@ class TopologicalNavServer(rclpy.node.Node):
         nav_ok, inc, status  = self.execute_actions(route_edges, route_dests, route_origins
                             , action_name=self.ACTIONS.NAVIGATE_THROUGH_POSES)
         
+        if(self.stat is None):
+            self.stat = nav_stats(route.source[0], cedg["node"], self.topol_map, cedg["edge_id"])
+
         self.stat.set_ended(self.current_node)
         dt_text = self.stat.get_finish_time_str()
         operation_time = self.stat.operation_time
@@ -915,7 +919,6 @@ class TopologicalNavServer(rclpy.node.Node):
         return route
 
     def edge_reconf_start(self, edge):
-
         if self.edge_reconfigure:
             if not self.srv_edge_reconfigure:
                 self.edgeReconfigureManager.register_edge(edge)

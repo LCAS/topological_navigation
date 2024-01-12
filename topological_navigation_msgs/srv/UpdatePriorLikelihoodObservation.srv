@@ -1,9 +1,0 @@
-topological_navigation_msgs/DistributionStamped prior
-topological_navigation_msgs/DistributionStamped likelihood
-
----
-
-bool success
-string estimated_node
-topological_navigation_msgs/DistributionStamped current_prob_dist
-

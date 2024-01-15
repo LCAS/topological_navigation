@@ -1,2 +1,0 @@
-topological_navigation_msgs/DistributionStamped likelihood
-bool identifying

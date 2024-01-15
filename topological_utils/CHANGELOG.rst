@@ -2,6 +2,9 @@
 Changelog for package topological_utils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.0.4 (2023-12-06)
 ------------------
 * Merge branch 'humble-dev' of github.com:LCAS/topological_navigation into humble-dev

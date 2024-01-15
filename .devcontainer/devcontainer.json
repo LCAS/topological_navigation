@@ -1,0 +1,61 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+{
+	"name": "lcas-humble",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	// "image": "lcas.lincoln.ac.uk/lcas/ros:humble",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": "."
+	},
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers/features/desktop-lite:1": {}
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	"forwardPorts": [6080, 5901],
+	"portsAttributes": {
+	  "6080": {
+		"label": "novnc"
+	  },
+	  "5901": {
+		"label": "vnc"
+	  }
+	},
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "bash .devcontainer/run.sh",
+	"containerUser": "lcas",
+	// Configure tool-specific properties.
+	// "customizations": {},
+	"runArgs": [ "--security-opt", "seccomp=unconfined", "--cap-add=NET_ADMIN" ],
+
+	"containerEnv": {
+        "ROS_LOCALHOST_ONLY": "0",
+        "LIBGL_ALWAYS_SOFTWARE": "1" // Needed for software rendering of opengl
+    },
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+    "customizations": {
+		"vscode": {
+			"extensions": [
+				"dotjoshjohnson.xml",
+				"zachflower.uncrustify",
+				"ms-python.python",
+				"ms-vscode.cpptools",
+				"redhat.vscode-yaml",
+				"smilerobotics.urdf",
+				"streetsidesoftware.code-spell-checker",
+				"twxs.cmake",
+				"king2021.vnc-extension",
+				"nonanonno.vscode-ros2",
+				"deitry.colcon-helper",
+				"yzhang.markdown-all-in-one",
+				"github.vscode-github-actions"
+			]
+		}
+	}
+
+}

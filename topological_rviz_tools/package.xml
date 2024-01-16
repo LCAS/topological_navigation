@@ -6,10 +6,11 @@
   <description>The ros2 rviz-based topological map construction package</description>
 
 
-  <maintainer email="staniasm@cs.bham.ac.uk">Michal Staniaszek</maintainer>
+  <maintainer email="marc@hanheide.net">Marc Hanheide</maintainer>
+  <author email="marc@hanheide.net">Marc Hanheide</author>
   <author email="staniasm@cs.bham.ac.uk">Michal Staniaszek</author>
   
-  <license>BSD</license>
+  <license>Apache-2.0</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

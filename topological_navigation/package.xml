@@ -6,15 +6,14 @@
   <description>The ros2 topological_navigation package</description>
 
 
-  <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>
-  <maintainer email="mhanheide@lincoln.ac.uk">Marc Hanheide</maintainer>
+  <maintainer email="marc@hanheide.net">Marc Hanheide</maintainer>
   <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
 
   <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
   <author email="abinch@sagarobotics.com">Adam Binch</author>
   <author email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</author>
 
-  <license>MIT</license>
+  <license>Apache-2.0</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

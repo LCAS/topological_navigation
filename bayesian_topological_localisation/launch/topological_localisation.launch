@@ -1,4 +1,0 @@
- <launch>
-        <node pkg="bayesian_topological_localisation" name="bayesian_topological_localisation" type="localisation_node.py" output="screen">
-        </node>
-</launch>

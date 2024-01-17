@@ -1,0 +1,9 @@
+repositories:
+  # teaching:
+  #   type: git
+  #   url: https://github.com/LCAS/teaching.git
+  #   version: 2324-devel
+  # limo_ros2:
+  #   type: git
+  #   url: https://github.com/LCAS/limo_ros2.git
+  #   version: humble

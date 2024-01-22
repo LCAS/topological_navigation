@@ -971,7 +971,7 @@ class TopologicalNavServer(rclpy.node.Node):
         
         pubst.date_finished = self.stat.get_finish_time_str()
         self.stats_pub.publish(pubst)
-        self.stat = None
+        # self.stat = None
         
 
     def get_fail_policy_state(self, edge):
@@ -1059,7 +1059,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.goal_reached = False
         self.prev_status = None
 
-        self.edge_action_manager.initialise(edges, destination_nodes, origin_nodes, action_name=action_name, bt_trees=self.bt_trees)
+        self.edge_action_manager.initialise(self.bt_trees, edges, destination_nodes, origin_nodes, action_name=action_name)
         self.edge_action_manager.execute()
         status = self.edge_action_manager.get_state()
         self.pub_status(status)
@@ -1134,7 +1134,7 @@ class TopologicalNavServer(rclpy.node.Node):
                 inc = 1
                 return result, inc
 
-        self.edge_action_manager.initialise(edge, destination_node, origin_node)
+        self.edge_action_manager.initialise(self.bt_trees, edge, destination_node, origin_node)
         self.edge_action_manager.execute()
         status = self.edge_action_manager.get_state()
         self.pub_status(status)

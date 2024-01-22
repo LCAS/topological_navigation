@@ -101,12 +101,12 @@ class EdgeActionManager(rclpy.node.Node):
             self.get_logger().error("Goal cancle code {}".format(status_code))
             return self.ACTIONS.goal_cancle_error_codes[0]
         
-    def initialise(self, edge, destination_node, origin_node=None
-                                , action_name=None, package="nav2_msgs.action", bt_trees=None):
+    def initialise(self, bt_trees, edge, destination_node, origin_node=None
+                                , action_name=None, package="nav2_msgs.action"):
         
+        self.bt_trees = bt_trees
         if(action_name is not None):
             self.action_name = action_name
-            self.bt_trees = bt_trees
         else:
             self.edge = yaml.safe_load(json.dumps(edge)) # no unicode in edge
             self.action_name = self.edge["action"]
@@ -176,7 +176,7 @@ class EdgeActionManager(rclpy.node.Node):
             if len(next_edge_ids) == 2:
                 next_goal_stage = next_edge_ids[1].split("-")
                 if len(next_goal_stage) == 2:
-                    if (next_goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX) or (next_goal_stage[1] not in self.GOAL_ALIGN_GOAL):
+                    if (next_goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX) or (next_goal_stage[1] not in self.ACTIONS.GOAL_ALIGN_GOAL):
                         return current_action
                     
         if len(edges) == 2:
@@ -275,6 +275,8 @@ class EdgeActionManager(rclpy.node.Node):
         nav_goal = NavigateToPose.Goal()
         target_pose = self.crete_pose_stamped_msg(frame_id, goal)
         nav_goal.pose = target_pose 
+        if(self.ACTIONS.NAVIGATE_TO_POSE in self.bt_trees):
+                    nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE]
         return [nav_goal], [self.ACTIONS.NAVIGATE_TO_POSE]
     
     def construct_navigate_through_poses_goal(self, goals, actions):

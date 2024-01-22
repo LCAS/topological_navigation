@@ -75,12 +75,11 @@ class ParameterUpdaterNode(Node):
                         if response:
                             return response.names
                     except Exception as e:
-                        self.get_logger().error("Error while getting paramer list {}".format(e))
-                        pass
+                        self.get_logger().error("Error while list_params list {}".format(e))
                         return []
             except Exception as e:
-                        self.get_logger().error("Error while getting paramer list {}".format(e))
-                        pass
+                        self.get_logger().error("Error while list_params list {}".format(e))
+                        return []
             
     def get_params(self, ):
         param_names = self.list_params()
@@ -100,10 +99,10 @@ class ParameterUpdaterNode(Node):
                             break 
                     except Exception as e:
                         self.get_logger().error("Error while getting paramer list {}".format(e))
-                        pass
+                        break
             except Exception as e:
                         self.get_logger().error("Error while getting paramer list {}".format(e))
-                        pass
+                        break
         if param_values:
             for key, value in zip(param_names, param_values):
 

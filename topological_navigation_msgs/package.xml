@@ -2,18 +2,18 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>topological_navigation_msgs</name>
-  <version>3.0.4</version>
+  <version>3.0.5</version>
   <description>The ros2 topological_navigation_msgs package</description>
 
 
-  <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>
-  <maintainer email="jpfentanes@sagarobotics.com">Jaime Pulido Fentanes</maintainer>
   <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
+  <maintainer email="marc@hanheide.net">Marc Hanheide</maintainer>
 
+  <author email="jheselden@lincoln.ac.uk">James R Heselden</author>
   <author email="abinch@sagarobotics.com">Adam Binch</author>
   <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
 
-  <license>MIT</license>
+  <license>Apache License 2.0</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

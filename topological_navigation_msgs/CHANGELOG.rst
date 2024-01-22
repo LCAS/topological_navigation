@@ -2,6 +2,14 @@
 Changelog for package topological_navigation_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.5 (2024-01-15)
+------------------
+* Merge pull request `#178 <https://github.com/LCAS/topological_navigation/issues/178>`_ from francescodelduchetto/humble-dev
+  Taking out  bayesian_topological_localisation
+* removed msg not longer in this package
+* removing bayesian_topological_localisation msg and srv definition
+* Contributors: James Heselden, Marc Hanheide, francescodelduchetto
+
 3.0.4 (2023-12-06)
 ------------------
 * Merge branch 'humble-dev' of github.com:LCAS/topological_navigation into humble-dev

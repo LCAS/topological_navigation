@@ -2,18 +2,18 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>topological_utils</name>
-  <version>3.0.4</version>
+  <version>3.0.5</version>
   <description>The ros2 topological_utils package</description>
 
 
-  <maintainer email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</maintainer>
-  <maintainer email="mhanheide@lincoln.ac.uk">Marc Hanheide</maintainer>
+  <maintainer email="marc@hanheide.net">Marc Hanheide</maintainer>
   <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
 
+  <author email="jheselden@lincoln.ac.uk">James R Heselden</author>
   <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
   <author email="contact@gauthampdas.com">Gautham P Das</author>
 
-  <license>MIT</license>
+  <license>Apache License 2.0</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

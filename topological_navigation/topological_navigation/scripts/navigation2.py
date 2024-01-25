@@ -69,14 +69,24 @@ class TopologicalNavServer(rclpy.node.Node):
         self.navigation_lock = Lock()
         self.ACTIONS = ActionsType()
 
-        
         self.declare_parameter('navigation_action_name', Parameter.Type.STRING)
         self.declare_parameter('navigation_actions', Parameter.Type.STRING_ARRAY)
         self.declare_parameter('navigation_action_goal', Parameter.Type.STRING_ARRAY)
         self.declare_parameter("max_dist_to_closest_edge", Parameter.Type.DOUBLE)
         self.declare_parameter('reconfigure_edges', Parameter.Type.BOOL)
         self.declare_parameter('reconfigure_edges_srv', Parameter.Type.BOOL)
-        self.declare_parameter("nav_planner", Parameter.Type.STRING)
+
+        self.declare_parameter("row_traversal_planner", Parameter.Type.STRING)
+        self.declare_parameter("default_planner", Parameter.Type.STRING)
+        self.declare_parameter("goal_align_planner", Parameter.Type.STRING)
+        
+        self.declare_parameter("row_traversal_planner_xy_goal_tolerance", Parameter.Type.DOUBLE)
+        self.declare_parameter("default_planner_xy_goal_tolerance", Parameter.Type.DOUBLE)
+        self.declare_parameter("goal_align_planner_xy_goal_tolerance", Parameter.Type.DOUBLE)
+
+        self.declare_parameter("row_traversal_planner_yaw_goal_tolerance", Parameter.Type.DOUBLE)
+        self.declare_parameter("default_planner_xy_yaw_goal_tolerance", Parameter.Type.DOUBLE)
+        self.declare_parameter("goal_align_planner_xy_yaw_goal_tolerance", Parameter.Type.DOUBLE)
 
         self.declare_parameter('use_nav2_follow_route', Parameter.Type.BOOL)
         self.declare_parameter(self.ACTIONS.BT_DEFAULT, Parameter.Type.STRING)
@@ -85,10 +95,30 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, self.ACTIONS.NAVIGATE_TO_POSE)).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value
+        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, False)).value
 
-        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, True)).value
+        row_traversal_planner = self.get_parameter_or("row_traversal_planner", Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
+        default_planner = self.get_parameter_or("default_planner", Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
+        goal_align_planner = self.get_parameter_or("goal_align_planner",Parameter('str', Parameter.Type.STRING, "dwb_core::DWBLocalPlanner")).value
+
+        self.ACTIONS.setPlanner(row_traversal_planner, self.ACTIONS.ROW_TRAVERSAL)
+        self.ACTIONS.setPlanner(default_planner, self.ACTIONS.NAVIGATE_TO_POSE)
+        self.ACTIONS.setPlanner(default_planner, self.ACTIONS.NAVIGATE_THROUGH_POSES)
+        self.ACTIONS.setPlanner(goal_align_planner, self.ACTIONS.GOAL_ALIGN)
         
-        self.get_logger().error("=============self.use_nav2_follow_route==================== {}".format(self.use_nav2_follow_route))
+        row_traversal_planner_xy_goal_tolerance = self.get_parameter_or("row_traversal_planner_xy_goal_tolerance", Parameter('double', Parameter.Type.DOUBLE, 0.1)).value
+        row_traversal_planner_yaw_goal_tolerance = self.get_parameter_or("row_traversal_planner_yaw_goal_tolerance", Parameter('double', Parameter.Type.DOUBLE, 0.1)).value
+        
+        default_planner_xy_goal_tolerance = self.get_parameter_or("default_planner_xy_goal_tolerance", Parameter('double', Parameter.Type.DOUBLE, 0.5)).value
+        default_planner_xy_yaw_goal_tolerance = self.get_parameter_or("default_planner_xy_yaw_goal_tolerance", Parameter('double', Parameter.Type.DOUBLE, 0.3)).value
+
+        goal_align_planner_xy_goal_tolerance = self.get_parameter_or("goal_align_planner_xy_goal_tolerance", Parameter('double', Parameter.Type.DOUBLE, 0.2)).value
+        goal_align_planner_xy_yaw_goal_tolerance = self.get_parameter_or("goal_align_planner_xy_yaw_goal_tolerance", Parameter('double', Parameter.Type.DOUBLE, 0.1)).value
+
+        self.ACTIONS.setPlannerParams(row_traversal_planner, row_traversal_planner_xy_goal_tolerance, row_traversal_planner_yaw_goal_tolerance)
+        self.ACTIONS.setPlannerParams(default_planner, default_planner_xy_goal_tolerance, default_planner_xy_yaw_goal_tolerance)
+        self.ACTIONS.setPlannerParams(goal_align_planner, goal_align_planner_xy_goal_tolerance, goal_align_planner_xy_yaw_goal_tolerance)
+
         bt_tree_default = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_default.xml')
         bt_tree_in_row = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_in_row.xml')
         bt_tree_goal_align = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_goal_align.xml')
@@ -122,7 +152,7 @@ class TopologicalNavServer(rclpy.node.Node):
                 self.get_logger().info("Navigation received the Topological Map")
                 break 
         
-        self.edge_action_manager = EdgeActionManager()
+        self.edge_action_manager = EdgeActionManager(self.ACTIONS)
 
         self.edge_reconfigure = self.get_parameter_or("reconfigure_edges", Parameter('bool', Parameter.Type.BOOL, True)).value
         self.srv_edge_reconfigure = self.get_parameter_or("reconfigure_edges_srv", Parameter('bool', Parameter.Type.BOOL, False)).value 

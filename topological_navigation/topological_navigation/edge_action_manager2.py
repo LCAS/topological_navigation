@@ -69,12 +69,12 @@ class dict_tools(object):
 #########################################################################################################
 class EdgeActionManager(rclpy.node.Node):
     
-    def __init__(self):
+    def __init__(self, ACTIONS):
         super().__init__("edge_action_manager")
         self.client = None        
         self.current_action = "none"
         self.dt = dict_tools()
-        self.ACTIONS = ActionsType()
+        self.ACTIONS = ACTIONS
         self.goal_handle = None 
         self.goal_resposne = None 
         self.internal_executor = SingleThreadedExecutor()

@@ -54,8 +54,8 @@ class ActionsType:
 
         self.planner_with_goal_checker_config = {
             "dwb_core::DWBLocalPlanner": {
-                "goal_checker.xy_goal_tolerance": 1.0,
-                "goal_checker.yaw_goal_tolerance": 1.25,
+                "goal_checker.xy_goal_tolerance": 0.78,
+                "goal_checker.yaw_goal_tolerance": 0.25,
             },
             "teb_local_planner::TebLocalPlannerROS": {
                 "goal_checker.xy_goal_tolerance": 0.1,
@@ -64,7 +64,18 @@ class ActionsType:
         }
 
         self.bt_tree_with_control_server_config = {}
-        self.bt_tree_with_control_server_config[self.ROW_TRAVERSAL] = "teb_local_planner::TebLocalPlannerROS"
+        self.bt_tree_with_control_server_config[self.ROW_TRAVERSAL] = "dwb_core::DWBLocalPlanner"
         self.bt_tree_with_control_server_config[self.NAVIGATE_THROUGH_POSES] = "dwb_core::DWBLocalPlanner"
         self.bt_tree_with_control_server_config[self.NAVIGATE_TO_POSE] = "dwb_core::DWBLocalPlanner"
-        self.bt_tree_with_control_server_config[self.GOAL_ALIGN] = "teb_local_planner::TebLocalPlannerROS"
+        self.bt_tree_with_control_server_config[self.GOAL_ALIGN] = "dwb_core::DWBLocalPlanner"
+
+    def setPlanner(self, planner_name, action_type):
+        self.bt_tree_with_control_server_config[action_type] = planner_name
+
+    def setPlannerParams(self, planner_name, xy_goal_tolerance, yaw_goal_tolerance):
+        if not planner_name in self.planner_with_goal_checker_config:
+            print("The planner {} is not one of configured types".format(planner_name))
+            return 
+        self.planner_with_goal_checker_config[planner_name]["goal_checker.xy_goal_tolerance"] = xy_goal_tolerance
+        self.planner_with_goal_checker_config[planner_name]["goal_checker.yaw_goal_tolerance"] = yaw_goal_tolerance
+        print("Setting planner {} params xy_goal_tolerance: {}, yaw_goal_tolerance: {}".format(planner_name, xy_goal_tolerance, yaw_goal_tolerance))

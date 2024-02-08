@@ -7,6 +7,7 @@ class ActionsType:
         self.DRIVE_ON_HEADING = "DriveOnHeading"
 
         self.ROW_TRAVERSAL = "row_traversal"
+        self.ROW_OPERATION = "row_operation"
         self.ROW_CHANGE = "row_change"
         self.GOAL_ALIGN = "goal_align"
         self.GOAL_ALIGN_INDEX = ["ca"]
@@ -14,28 +15,32 @@ class ActionsType:
         self.ABORT_NOT_CONTINUE = [self.GOAL_ALIGN, self.ROW_CHANGE, self.ROW_TRAVERSAL, self.NAVIGATE_TO_POSE, self.NAVIGATE_THROUGH_POSES]
 
         self.BT_DEFAULT = "bt_tree_default"
-        self.BT_IN_ROW = "bt_tree_in_row"
         self.BT_GOAL_ALIGN = "bt_tree_goal_align"
-        
+        self.BT_IN_ROW = "bt_tree_in_row"
+        self.BT_IN_ROW_OPERATION = "bt_tree_in_row_operation"
+
         self.navigation_actions = [
             self.NAVIGATE_TO_POSE,
             self.NAVIGATE_THROUGH_POSES,
             self.DRIVE_ON_HEADING,
             self.ROW_CHANGE,
-            self.ROW_TRAVERSAL
+            self.ROW_TRAVERSAL,
+            self.ROW_OPERATION
         ]
 
         self.bt_tree_types = [
             self.BT_IN_ROW,
             self.BT_DEFAULT,
-            self.BT_GOAL_ALIGN
+            self.BT_GOAL_ALIGN, 
+            self.BT_IN_ROW_OPERATION
         ]
 
         self.bt_tree_with_actions = {}
-        self.bt_tree_with_actions[self.ROW_TRAVERSAL] = self.BT_IN_ROW
         self.bt_tree_with_actions[self.NAVIGATE_THROUGH_POSES] = self.BT_DEFAULT
         self.bt_tree_with_actions[self.NAVIGATE_TO_POSE] = self.BT_DEFAULT
         self.bt_tree_with_actions[self.GOAL_ALIGN] = self.BT_GOAL_ALIGN
+        self.bt_tree_with_actions[self.ROW_TRAVERSAL] = self.BT_IN_ROW
+        self.bt_tree_with_actions[self.ROW_OPERATION] = self.BT_IN_ROW_OPERATION
 
         self.status_mapping = {}
         self.status_mapping[0] = "STATUS_UNKNOWN"
@@ -61,6 +66,10 @@ class ActionsType:
                 "goal_checker.xy_goal_tolerance": 0.1,
                 "goal_checker.yaw_goal_tolerance": 0.05,
             },
+            "rownav_local_planner::TebLocalPlannerROS":{
+                "goal_checker.xy_goal_tolerance": 0.1,
+                "goal_checker.yaw_goal_tolerance": 0.6,
+            }
         }
 
         self.bt_tree_with_control_server_config = {}

@@ -85,7 +85,7 @@ class EdgeActionManager(rclpy.node.Node):
         self.goal_handle = None 
         self.goal_resposne = None 
         self.internal_executor = SingleThreadedExecutor()
-        self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
         self.bt_trees =  {}
         self.in_row_operation = False
         self.in_row_inter_pose = []

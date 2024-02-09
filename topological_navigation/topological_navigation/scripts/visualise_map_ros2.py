@@ -267,6 +267,7 @@ class TopoMap2Vis(rclpy.node.Node):
              
             cancel_future = self.client._cancel_goal_async(self.goal_handle)
             self.get_logger().info("Waiting till terminating the current preemption")
+            counter = 0
             while rclpy.ok():
                 try: 
                     rclpy.spin_once(self, executor=self.executor_goto_client)
@@ -275,7 +276,12 @@ class TopoMap2Vis(rclpy.node.Node):
                         self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                         return True 
                 except Exception as e:
-                    pass 
+                    counter = counter + 1
+                    if(counter>1000):
+                        self.early_terminate_is_required = True
+                        self.get_logger().error("Something wrong with GOTO Node action server")
+                        return True 
+                    pass   
 
     def get_goal_cancle_error_msg(self, status_code):
         try:
@@ -357,6 +363,7 @@ class TopoMap2Vis(rclpy.node.Node):
         self.get_logger().info('The goal accepted')
         self.goal_get_result_future = self.goal_handle.get_result_async()
         self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
+        counter = 0
         while rclpy.ok():
             try:
                 rclpy.spin_once(self, timeout_sec=0.1)
@@ -369,8 +376,12 @@ class TopoMap2Vis(rclpy.node.Node):
                     self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
                     return True 
             except Exception as e:
-                self.get_logger().error("Error while executing go to node policy {} ".format(e))
-                pass 
+                counter = counter + 1
+                if(counter>1000):
+                    self.early_terminate_is_required = True
+                    self.get_logger().error("Something wrong with GOTO Node action server")
+                    return True 
+                pass  
 
     def get_colour(self, number):
         """

@@ -69,12 +69,12 @@ class dict_tools(object):
 #########################################################################################################
 class EdgeActionManager(rclpy.node.Node):
     
-    def __init__(self):
+    def __init__(self, ACTIONS):
         super().__init__("edge_action_manager")
         self.client = None        
         self.current_action = "none"
         self.dt = dict_tools()
-        self.ACTIONS = ActionsType()
+        self.ACTIONS = ACTIONS
         self.goal_handle = None 
         self.goal_resposne = None 
         self.internal_executor = SingleThreadedExecutor()
@@ -101,12 +101,12 @@ class EdgeActionManager(rclpy.node.Node):
             self.get_logger().error("Goal cancle code {}".format(status_code))
             return self.ACTIONS.goal_cancle_error_codes[0]
         
-    def initialise(self, edge, destination_node, origin_node=None
-                                , action_name=None, package="nav2_msgs.action", bt_trees=None):
+    def initialise(self, bt_trees, edge, destination_node, origin_node=None
+                                , action_name=None, package="nav2_msgs.action"):
         
+        self.bt_trees = bt_trees
         if(action_name is not None):
             self.action_name = action_name
-            self.bt_trees = bt_trees
         else:
             self.edge = yaml.safe_load(json.dumps(edge)) # no unicode in edge
             self.action_name = self.edge["action"]
@@ -135,10 +135,20 @@ class EdgeActionManager(rclpy.node.Node):
             segment = 0
             previous_action = ""
             current_action = ""
-            for edge_i, dest_i, origin_i in zip(edge, destination_node, origin_node):
+            # for edge_i, dest_i, origin_i in zip(edge, destination_node, origin_node):
+            total_edges = len(edge)
+            for index in range(0, total_edges):
+                edge_i, dest_i, origin_i = edge[index], destination_node[index], origin_node[index]
                 edge_i = yaml.safe_load(json.dumps(edge_i)) # no unicode in edge
                 current_action = edge_i["action"]
-                current_action = self.get_goal_align_if(edge_i["edge_id"], current_action)
+                self.get_logger().info("Edge Action Manager: -----> before processing edge {} action {}  goal {}".format(edge_i["edge_id"], current_action, edge_i["action"]))
+                if(index < (total_edges-1)):
+                    next_edge_id = edge[index+1]["edge_id"]
+                    current_action = self.get_goal_align_if(edge_i["edge_id"], current_action, next_edge_id)
+                else:
+                    current_action = self.get_goal_align_if(edge_i["edge_id"], current_action)
+
+                # current_action = self.get_goal_align_if(edge_i["edge_id"], current_action)
                 self.get_logger().info("Edge Action Manager: -----> Processing edge {} action {}  goal {}".format(edge_i["edge_id"], current_action, edge_i["action"]))
                 intermediate_goal = self.construct_goal(copy.deepcopy(edge_i["goal"]), dest_i, origin_i)
                 self.get_logger().info("Edge Action Manager: Constructing intermediate goal")
@@ -159,8 +169,16 @@ class EdgeActionManager(rclpy.node.Node):
 
         return True 
     
-    def get_goal_align_if(self, edge_id, current_action):
+    def get_goal_align_if(self, edge_id, current_action, next_edge_id=None):
         edges = edge_id.split("_")
+        if next_edge_id is not None:
+            next_edge_ids = next_edge_id.split("_")
+            if len(next_edge_ids) == 2:
+                next_goal_stage = next_edge_ids[1].split("-")
+                if len(next_goal_stage) == 2:
+                    if (next_goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX) or (next_goal_stage[1] not in self.ACTIONS.GOAL_ALIGN_GOAL):
+                        return current_action
+                    
         if len(edges) == 2:
             goal = edges[1]
             goal_stage = goal.split("-")
@@ -257,6 +275,8 @@ class EdgeActionManager(rclpy.node.Node):
         nav_goal = NavigateToPose.Goal()
         target_pose = self.crete_pose_stamped_msg(frame_id, goal)
         nav_goal.pose = target_pose 
+        if(self.ACTIONS.NAVIGATE_TO_POSE in self.bt_trees):
+                    nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE]
         return [nav_goal], [self.ACTIONS.NAVIGATE_TO_POSE]
     
     def construct_navigate_through_poses_goal(self, goals, actions):
@@ -335,7 +355,6 @@ class EdgeActionManager(rclpy.node.Node):
             if target_action in self.control_server_configs:
                 control_server_config = self.control_server_configs[target_action]
                 self.update_params_control_server.set_params(control_server_config)
-
             send_goal_future = self.client.send_goal_async(target_goal,  feedback_callback=self.feedback_callback)
             while rclpy.ok():
                 try:
@@ -361,8 +380,17 @@ class EdgeActionManager(rclpy.node.Node):
                         self.action_status = status
                         self.get_logger().info("Edge Action Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
                         self.current_action = self.action_name
-                        self.goal_resposne = self.goal_get_result_future.result() 
-                        break 
+                        self.goal_resposne = self.goal_get_result_future.result()
+                         
+                        if((self.get_status_msg(self.action_status) == "STATUS_EXECUTING") or (self.get_status_msg(self.action_status) == "STATUS_SUCCEEDED")):
+                            self.get_logger().info("Edge Action Manager: action is completed {}".format(target_action))
+                            break  
+                        if target_action in self.ACTIONS.ABORT_NOT_CONTINUE:
+                            self.get_logger().info("Edge Action Manager: action is not completed {}".format(target_action))
+                            return False 
+                        else:
+                            self.get_logger().info("Edge Action Manager: action is not completed {}. Executing next actions...".format(target_action))
+                            break 
                 except Exception as e:
                     pass 
         return True 

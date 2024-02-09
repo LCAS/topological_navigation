@@ -48,31 +48,38 @@ class ParameterUpdaterNode(Node):
             self.req.parameters.append(Parameter(name=param_name, value=param_value).to_parameter_msg())
         self.future = self.cli_set_param.call_async(self.req)
         while rclpy.ok():
-            rclpy.spin_once(self, executor=self.internal_executor)
-            if self.future.done():
-                try:
-                    response = self.future.result().results
-                    if response[0].successful:
-                        return True
-                except Exception as e:
-                    self.get_logger().error(" error while setting params {} ".format(e))
-                    pass
-                return False
+            try:
+                rclpy.spin_once(self, executor=self.internal_executor)
+                if self.future.done():
+                    try:
+                        response = self.future.result().results
+                        if response[0].successful:
+                            return True
+                    except Exception as e:
+                        self.get_logger().error(" error while setting params {} ".format(e))
+                        return False
+                    return False
+            except Exception as e:
+                        self.get_logger().error(" error while setting params {} ".format(e))
+                        return False
             
     def list_params(self, ):
         self.req_list = ListParameters.Request()
         self.future = self.cli_list_params.call_async(self.req_list)
         while rclpy.ok():
-            rclpy.spin_once(self, executor=self.internal_executor)
-            if self.future.done():
-                try:
-                    response = self.future.result().result 
-                    if response:
-                        return response.names
-                except Exception as e:
-                    self.get_logger().error("Error while getting paramer list {}".format(e))
-                    pass
-                return []
+            try:
+                rclpy.spin_once(self, executor=self.internal_executor)
+                if self.future.done():
+                    try:
+                        response = self.future.result().result 
+                        if response:
+                            return response.names
+                    except Exception as e:
+                        self.get_logger().error("Error while list_params list {}".format(e))
+                        return []
+            except Exception as e:
+                        self.get_logger().error("Error while list_params list {}".format(e))
+                        return []
             
     def get_params(self, ):
         param_names = self.list_params()
@@ -82,16 +89,20 @@ class ParameterUpdaterNode(Node):
         self.req_get.names = param_names 
         self.future = self.cli_get_params.call_async(self.req_get)
         while rclpy.ok():
-            rclpy.spin_once(self, executor=self.internal_executor)
-            if self.future.done():
-                try:
-                    response = self.future.result()
-                    if response:
-                        param_values = response.values
-                        break 
-                except Exception as e:
-                    self.get_logger().error("Error while getting paramer list {}".format(e))
-                    pass
+            try:
+                rclpy.spin_once(self, executor=self.internal_executor)
+                if self.future.done():
+                    try:
+                        response = self.future.result()
+                        if response:
+                            param_values = response.values
+                            break 
+                    except Exception as e:
+                        self.get_logger().error("Error while getting paramer list {}".format(e))
+                        break
+            except Exception as e:
+                        self.get_logger().error("Error while getting paramer list {}".format(e))
+                        break
         if param_values:
             for key, value in zip(param_names, param_values):
 

@@ -271,7 +271,7 @@ class TopoMap2Vis(rclpy.node.Node):
                 try: 
                     rclpy.spin_once(self, executor=self.executor_goto_client)
                     if cancel_future.done() and self.goal_get_result_future.done():
-                        self.action_status = 5
+                        self.action_status = self.goal_get_result_future.result().status
                         self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                         return True 
                 except Exception as e:
@@ -299,10 +299,10 @@ class TopoMap2Vis(rclpy.node.Node):
             else:
                 self.in_feedback = True
 
-        self.get_logger().warning('GOTO: '+str(self.early_terminate_is_required) + ' ')
+        self.get_logger().warning('GOTO: is early termination required ? ' + str(self.early_terminate_is_required) + ' ')
         self.get_logger().warning('GOTO: self.goto_node_executor {}  self.in_feedback {} self.early_terminate_is_required {}'.format(self.goto_node_executor, self.in_feedback, self.early_terminate_is_required))
         if ((self.goto_node_executor is not None) and self.goto_node_executor.is_alive()) and self.in_feedback:
-            self.get_logger().warning('GOTO: '+str(feedback.marker_name) + ' is not enable yet')
+            self.get_logger().warning('GOTO: '+str(feedback.marker_name) + ' is not enable yet, waiting till terminating previous action')
             return     
         else:
             self.in_feedback = True
@@ -361,7 +361,7 @@ class TopoMap2Vis(rclpy.node.Node):
             try:
                 rclpy.spin_once(self, timeout_sec=0.1)
                 if(self.early_terminate_is_required):
-                   self.get_logger().warning("Not going to wait till finish on going task, early termination is required ") 
+                   self.get_logger().warning("Not going to wait till finishing ongoing task, early termination is required ") 
                    return False 
                 if self.goal_get_result_future.done():
                     status = self.goal_get_result_future.result().status

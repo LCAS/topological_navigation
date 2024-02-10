@@ -265,9 +265,8 @@ class TopoMap2Vis(rclpy.node.Node):
                 self.get_logger().info("there is no goal to stop it is already cancelled with status {}".format(self.action_status))
                 return True 
              
-            cancel_future = self.client._cancel_goal_async(self.goal_handle)
+            cancel_future = self.goal_handle.cancel_goal_async()
             self.get_logger().info("Waiting till terminating the current preemption")
-            counter = 0
             while rclpy.ok():
                 try: 
                     rclpy.spin_once(self, executor=self.executor_goto_client)
@@ -276,12 +275,7 @@ class TopoMap2Vis(rclpy.node.Node):
                         self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                         return True 
                 except Exception as e:
-                    counter = counter + 1
-                    if(counter>1000):
-                        self.early_terminate_is_required = True
-                        self.get_logger().error("Something wrong with GOTO Node action server")
-                        return True 
-                    pass   
+                    pass 
 
     def get_goal_cancle_error_msg(self, status_code):
         try:
@@ -354,7 +348,8 @@ class TopoMap2Vis(rclpy.node.Node):
                     self.goal_handle = send_goal_future.result()
                     break
             except Exception as e:
-                pass 
+                self.get_logger().error("Error while sending the goal to GOTO node {} ".format(e))
+                return False  
 
         if not self.goal_handle.accepted:
             self.get_logger().error('GOTO action is rejected')
@@ -363,10 +358,9 @@ class TopoMap2Vis(rclpy.node.Node):
         self.get_logger().info('The goal accepted')
         self.goal_get_result_future = self.goal_handle.get_result_async()
         self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
-        counter = 0
         while rclpy.ok():
             try:
-                rclpy.spin_once(self, timeout_sec=0.1)
+                rclpy.spin_once(self, timeout_sec=0.2)
                 if(self.early_terminate_is_required):
                    self.get_logger().warning("Not going to wait till finishing ongoing task, early termination is required ") 
                    return False 
@@ -376,12 +370,8 @@ class TopoMap2Vis(rclpy.node.Node):
                     self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
                     return True 
             except Exception as e:
-                counter = counter + 1
-                if(counter>1000):
-                    self.early_terminate_is_required = True
-                    self.get_logger().error("Something wrong with GOTO Node action server")
-                    return True 
-                pass  
+                self.get_logger().error("Error while executing go to node policy {} ".format(e))
+                return False  
 
     def get_colour(self, number):
         """
@@ -549,5 +539,3 @@ def main():
 
 if __name__ == '__main__' :
     main()
-
-

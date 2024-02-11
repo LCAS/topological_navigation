@@ -91,6 +91,8 @@ class EdgeActionManager(rclpy.node.Node):
         self.in_row_inter_pose = []
         self.control_server_configs = []
         self.inrow_step_size = inrow_step_size
+        self.nav2_client_callback_group = MutuallyExclusiveCallbackGroup()
+
         self.update_params_control_server = ParameterUpdaterNode("controller_server")
         self.current_robot_pose = None 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/global', self.odom_callback,
@@ -222,7 +224,7 @@ class EdgeActionManager(rclpy.node.Node):
 
         self.get_logger().info("Edge Action Manager: Creating a {} client".format(self.action_server_name))
         self.action = action 
-        self.client = ActionClient(self, self.action, self.action_server_name)
+        self.client = ActionClient(self, self.action, self.action_server_name, callback_group=self.nav2_client_callback_group)
     
     def feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
@@ -230,7 +232,8 @@ class EdgeActionManager(rclpy.node.Node):
         return 
     
     def preempt_feedback_callback(self, feedback_msg):
-        self.nav_client_feedback = feedback_msg.feedback
+        self.nav_client_preempt_feedback = feedback_msg.feedback
+        self.get_logger().info("preempt: {} ".format(self.nav_client_preempt_feedback))
         return 
 
     def get_action_server_name(self, action_name):
@@ -261,8 +264,9 @@ class EdgeActionManager(rclpy.node.Node):
                 self.get_logger().info("Edge Action Manager: There is no goal to stop it is already cancelled with status {}".format(self.action_status))
                 return True
             cancel_future = self.goal_handle.cancel_goal_async()
+            counter = 0
             try: 
-                rclpy.spin_until_future_complete(self, cancel_future)
+                rclpy.spin_until_future_complete(self, cancel_future, feedback=self.preempt_feedback_callback)
                 self.get_logger().info("Edge Action Manager: Waiting till terminating the current preemption")
                 self.action_status = 5
                 self.get_logger().info("Edge Action Manager: The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))

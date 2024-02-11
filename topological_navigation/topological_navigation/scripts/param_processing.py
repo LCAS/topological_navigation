@@ -56,11 +56,11 @@ class ParameterUpdaterNode(Node):
                         if response[0].successful:
                             return True
                     except Exception as e:
-                        self.get_logger().error(" error while setting params {} ".format(e))
+                        self.get_logger().error(" Error while setting params {} ".format(e))
                         return False
                     return False
             except Exception as e:
-                        self.get_logger().error(" error while setting params {} ".format(e))
+                        self.get_logger().error(" Error while setting params {} ".format(e))
                         return False
             
     def list_params(self, ):

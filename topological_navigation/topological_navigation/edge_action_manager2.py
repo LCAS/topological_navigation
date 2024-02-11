@@ -91,13 +91,14 @@ class EdgeActionManager(rclpy.node.Node):
         self.in_row_inter_pose = []
         self.control_server_configs = []
         self.inrow_step_size = inrow_step_size
+        self.nav2_client_callback_group = MutuallyExclusiveCallbackGroup()
+
         self.update_params_control_server = ParameterUpdaterNode("controller_server")
         self.current_robot_pose = None 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/global', self.odom_callback,
                                 QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT))
         self.target_pose_frame_id = None
         self.boundary_publisher = self.create_publisher(Path, '/boundary_checker', qos_profile=self.latching_qos)
-
     
     def odom_callback(self, msg):
         self.current_robot_pose = msg.pose
@@ -223,7 +224,7 @@ class EdgeActionManager(rclpy.node.Node):
 
         self.get_logger().info("Edge Action Manager: Creating a {} client".format(self.action_server_name))
         self.action = action 
-        self.client = ActionClient(self, self.action, self.action_server_name)
+        self.client = ActionClient(self, self.action, self.action_server_name, callback_group=self.nav2_client_callback_group)
     
     def feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
@@ -231,7 +232,8 @@ class EdgeActionManager(rclpy.node.Node):
         return 
     
     def preempt_feedback_callback(self, feedback_msg):
-        self.nav_client_feedback = feedback_msg.feedback
+        self.nav_client_preempt_feedback = feedback_msg.feedback
+        self.get_logger().info("preempt: {} ".format(self.nav_client_preempt_feedback))
         return 
 
     def get_action_server_name(self, action_name):
@@ -255,26 +257,25 @@ class EdgeActionManager(rclpy.node.Node):
             if not self.client.server_is_ready():
                 self.get_logger().info("Edge Action Manager: Waiting for the action server  {}...".format(self.action_server_name))
                 self.client.wait_for_server(timeout_sec=2)
-            
             if not self.client.server_is_ready():
                 self.get_logger().info("Edge Action Manager: action server  {} not responding ... can not perform any action".format(self.action_server_name))
                 return True
-            
             if self.goal_handle is None:
                 self.get_logger().info("Edge Action Manager: There is no goal to stop it is already cancelled with status {}".format(self.action_status))
+                return True
+            cancel_future = self.goal_handle.cancel_goal_async()
+            counter = 0
+            try: 
+                rclpy.spin_until_future_complete(self, cancel_future, feedback=self.preempt_feedback_callback)
+                self.get_logger().info("Edge Action Manager: Waiting till terminating the current preemption")
+                self.action_status = 5
+                self.get_logger().info("Edge Action Manager: The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
                 return True 
-             
-            cancel_future = self.client._cancel_goal_async(self.goal_handle)
-            self.get_logger().info("Edge Action Manager: Waiting till terminating the current preemption")
-            while rclpy.ok():
-                try: 
-                    rclpy.spin_once(self)
-                    if cancel_future.done() and self.goal_get_result_future.done():
-                        self.action_status = 5
-                        self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
-                        return True 
-                except Exception as e:
-                    pass 
+            except Exception as e:
+                counter = counter +1
+                if(counter < 3):
+                    self.get_logger().error("Edge Action Manager: Something wrong with Nav2 Control server {} while preempting {}".format(e, self.action_server_name))
+                    return False 
         
     def construct_goal(self, goal_args, destination_node, origin_node):
         paths = self.dt.get_paths_from_nested_dict(goal_args)
@@ -398,8 +399,6 @@ class EdgeActionManager(rclpy.node.Node):
         side_back = self.selected_edges[side_edge_key][1].pose.position
         center_pose = center_pose["node"]["pose"]
         last_pose = last_pose["target_pose"]['pose']
-        # print("=================center_pose==============", center_pose)
-        # print("=================target_pose==============", last_pose)
 
         side_front_opposite = PoseStamped()
         side_front_opposite.header = header 
@@ -432,8 +431,6 @@ class EdgeActionManager(rclpy.node.Node):
         intermediate_pose = side_intermediate_pose.pose.position
         center_pose = center_pose["node"]["pose"]
         last_pose = last_pose["target_pose"]['pose']
-        # print("=================center_pose==============", center_pose)
-        # print("=================target_pose==============", last_pose)
         target_pose.pose.position.x = last_pose["position"]["x"] + (intermediate_pose.x - center_pose["position"]["x"])
         target_pose.pose.position.y = last_pose["position"]["y"] + (intermediate_pose.y - center_pose["position"]["y"])
         target_pose.pose.position.z = center_pose["position"]["z"]
@@ -489,9 +486,82 @@ class EdgeActionManager(rclpy.node.Node):
     def get_result(self, ):
         return self.goal_resposne
 
+    def execute_row_operation_one_step(self, next_goal, get_to_goal):
+        target_goal = NavigateThroughPoses.Goal()
+        if(self.ACTIONS.ROW_TRAVERSAL in self.bt_trees): 
+            target_goal.behavior_tree = self.bt_trees[self.ACTIONS.ROW_TRAVERSAL]
+        target_pose = self.crete_pose_stamped_msg_from_position(self.target_pose_frame_id, next_goal)
+        target_goal.poses.append(target_pose)
+        controller_plugin = self.ACTIONS.bt_tree_with_control_server_config[self.ACTIONS.ROW_TRAVERSAL]
+        control_server_config = self.ACTIONS.planner_with_goal_checker_config[controller_plugin] 
+        self.get_logger().info(" Edge Action Manager: Control params {}".format(control_server_config))
+        self.update_params_control_server.set_params(control_server_config)
+        send_goal_future = self.client.send_goal_async(target_goal,  feedback_callback=self.feedback_callback)
+        goal_accepted = self.send_goal_request(send_goal_future, self.ACTIONS.ROW_OPERATION)
+        if(goal_accepted == False):
+            return False 
+        processed_goal = self.processing_goal_request(self.ACTIONS.ROW_OPERATION)
+        return processed_goal
+
+    def send_goal_request(self, send_goal_future, msg):
+        while rclpy.ok():
+            try:
+                rclpy.spin_once(self)
+                if send_goal_future.done():
+                    self.goal_handle = send_goal_future.result()
+                    break
+            except Exception as e:
+                self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors : {} while executing {}".format(e, msg))
+                return False 
+                  
+        if not self.goal_handle.accepted:
+            self.get_logger().error('Edge Action Manager: The goal rejected: {}'.format(msg))
+            return False
+        self.get_logger().info('Edge Action Manager: The goal accepted for {}'.format(self.ACTIONS.ROW_OPERATION))
+        return True 
+
+    def processing_goal_request(self, target_action):
+        self.goal_get_result_future = self.goal_handle.get_result_async()
+        self.get_logger().info("Edge Action Manager: Waiting for {} action to complete".format(self.action_server_name))
+        while rclpy.ok():
+            try:
+                rclpy.spin_once(self)
+                if self.goal_get_result_future.done():
+                    status = self.goal_get_result_future.result().status
+                    self.action_status = status
+                    self.get_logger().info("Edge Action Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
+                    self.current_action = self.action_name
+                    self.goal_resposne = self.goal_get_result_future.result()
+                    if((self.get_status_msg(self.action_status) == "STATUS_EXECUTING") or (self.get_status_msg(self.action_status) == "STATUS_SUCCEEDED")):
+                        self.get_logger().info("Edge Action Manager: action is completed {}".format(target_action))
+                        break  
+                    if target_action in self.ACTIONS.ABORT_NOT_CONTINUE:
+                            self.get_logger().info("Edge Action Manager: action is not completed {}".format(target_action))
+                            return False 
+                    else:
+                        self.get_logger().info("Edge Action Manager: action is not completed {}. Executing next actions...".format(target_action))
+                        break 
+            except Exception as e:
+                self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors: {} while executing {}".format(e, target_action))
+                return False
+        return True 
+
+    def execute_row_operation(self,):
+        target_goal = NavigateThroughPoses.Goal()
+        if(self.ACTIONS.ROW_OPERATION in self.bt_trees): 
+            target_goal.behavior_tree = self.bt_trees[self.ACTIONS.ROW_OPERATION]
+            self.get_logger().info("Edge Action Manager: Row operation BT path {}".format(target_goal.behavior_tree))
+        else:
+            self.get_logger().error("Edge Action Manager: Row operation BT is not provided {}")
+            return False
+        send_goal_future = self.client.send_goal_async(target_goal)
+        goal_accepted = self.send_goal_request(send_goal_future, self.ACTIONS.ROW_OPERATION)
+        if(goal_accepted == False):
+            return False 
+        processed_goal = self.processing_goal_request(self.ACTIONS.ROW_OPERATION)
+        return processed_goal
 
     def execute(self):     
-        
         if not self.client.server_is_ready():
             self.get_logger().info("Edge Action Manager: Waiting for the action server  {}...".format(self.action_server_name))
             self.client.wait_for_server(timeout_sec=2)
@@ -502,49 +572,16 @@ class EdgeActionManager(rclpy.node.Node):
         
         for target_goal, target_action in zip(self.goal, self.actions):
             self.get_logger().info("Edge Action Manager: Executing action : {} ".format(target_action))
-
             if target_action in self.control_server_configs:
                 control_server_config = self.control_server_configs[target_action]
                 self.update_params_control_server.set_params(control_server_config)
             send_goal_future = self.client.send_goal_async(target_goal,  feedback_callback=self.feedback_callback)
-            while rclpy.ok():
-                try:
-                    rclpy.spin_once(self)
-                    if send_goal_future.done():
-                        self.goal_handle = send_goal_future.result()
-                        break
-                except Exception as e:
-                    pass 
-
-            if not self.goal_handle.accepted:
-                self.get_logger().error('Edge Action Manager: The goal rejected')
-                return False
-
-            self.get_logger().info('Edge Action Manager: The goal accepted')
-            self.goal_get_result_future = self.goal_handle.get_result_async()
-            self.get_logger().info("Edge Action Manager: Waiting for {} action to complete".format(self.action_server_name))
-            while rclpy.ok():
-                try:
-                    rclpy.spin_once(self)
-                    if self.goal_get_result_future.done():
-                        status = self.goal_get_result_future.result().status
-                        self.action_status = status
-                        self.get_logger().info("Edge Action Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
-                        self.current_action = self.action_name
-                        self.goal_resposne = self.goal_get_result_future.result()
-                         
-                        if((self.get_status_msg(self.action_status) == "STATUS_EXECUTING") or (self.get_status_msg(self.action_status) == "STATUS_SUCCEEDED")):
-                            self.get_logger().info("Edge Action Manager: action is completed {}".format(target_action))
-                            break  
-                        if target_action in self.ACTIONS.ABORT_NOT_CONTINUE:
-                            self.get_logger().info("Edge Action Manager: action is not completed {}".format(target_action))
-                            return False 
-                        else:
-                            self.get_logger().info("Edge Action Manager: action is not completed {}. Executing next actions...".format(target_action))
-                            break 
-                except Exception as e:
-                    self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors: {}".format(e))
-                    return False
+            goal_accepted = self.send_goal_request(send_goal_future, target_action)
+            if(goal_accepted == False):
+                return False 
+            processed_goal = self.processing_goal_request(target_action)
+            if(processed_goal == False):
+                return processed_goal
         
         if self.in_row_operation:
             self.get_logger().info("Edge Action Manager: Executing action : {} ".format(self.ACTIONS.ROW_OPERATION))
@@ -555,64 +592,28 @@ class EdgeActionManager(rclpy.node.Node):
                         self.get_logger().info("Robot current pose: {}".format(self.current_robot_pose))
                         break 
                 except Exception as e:
-                    self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors : {}".format(e))
+                    self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors {} while executing ".format(e, self.ACTIONS.ROW_OPERATION))
                     return False
-                
             inrow_opt = RowOperations(self.in_row_inter_pose, self.inrow_step_size) 
             robot_init_pose = self.current_robot_pose
             if inrow_opt.isPlanCalculated():
                 while True:
                     next_goal, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
                     robot_init_pose = next_goal 
+                    done_operation = self.execute_row_operation()
+                    self.get_logger().info("Edge Action Manager: done_operation {} ".format(done_operation))
                     target_goal = NavigateThroughPoses.Goal()
-                    self.get_logger().info("Edge Action Manager: Robot current pose: {}".format(robot_init_pose))
+                    self.get_logger().info("Edge Action Manager: Robot current pose: {},{}"
+                                                .format(next_goal.pose.position.x, next_goal.pose.position.y))
+                    step_moved = self.execute_row_operation_one_step(robot_init_pose, get_to_goal)
                     if(get_to_goal):
-                        self.get_logger().info("Edge Action Manager: Reach to the final goal {}".format(robot_init_pose))
+                        if step_moved:
+                            self.get_logger().info("Edge Action Manager: Reach to the final goal {},{}"
+                                        .format(next_goal.pose.position.x, next_goal.pose.position.y))
+                            
+                        else:
+                            self.get_logger().info("Edge Action Manager: Can not reach to the final goal {},{}"
+                                            .format(next_goal.pose.position.x, next_goal.pose.position.y))
                         break
-                    if(self.ACTIONS.ROW_TRAVERSAL in self.bt_trees): 
-                        target_goal.behavior_tree = self.bt_trees[self.ACTIONS.ROW_TRAVERSAL]
-                    target_pose = self.crete_pose_stamped_msg_from_position(self.target_pose_frame_id, next_goal)
-                    target_goal.poses.append(target_pose)
-
-                    controller_plugin = self.ACTIONS.bt_tree_with_control_server_config[self.ACTIONS.ROW_TRAVERSAL]
-                    control_server_config = self.ACTIONS.planner_with_goal_checker_config[controller_plugin] 
-                    self.get_logger().info(" Edge Action Manager: Control params {}".format(control_server_config))
-                    self.update_params_control_server.set_params(control_server_config)
-                    send_goal_future = self.client.send_goal_async(target_goal,  feedback_callback=self.feedback_callback)
-                    while rclpy.ok():
-                        try:
-                            rclpy.spin_once(self)
-                            if send_goal_future.done():
-                                self.goal_handle = send_goal_future.result()
-                                break
-                        except Exception as e:
-                            pass 
-
-                    if not self.goal_handle.accepted:
-                        self.get_logger().error('Edge Action Manager: The goal rejected')
-                        return False
-
-                    self.get_logger().info('Edge Action Manager: The goal accepted')
-                    self.goal_get_result_future = self.goal_handle.get_result_async()
-                    self.get_logger().info("Edge Action Manager: Waiting for {} action to complete".format(self.action_server_name))
-                    while rclpy.ok():
-                        try:
-                            rclpy.spin_once(self)
-                            if self.goal_get_result_future.done():
-                                status = self.goal_get_result_future.result().status
-                                self.action_status = status
-                                self.get_logger().info("Edge Action Manager: Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
-                                self.current_action = self.action_name
-                                self.goal_resposne = self.goal_get_result_future.result()
-                                if((self.get_status_msg(self.action_status) == "STATUS_EXECUTING") or (self.get_status_msg(self.action_status) == "STATUS_SUCCEEDED")):
-                                    self.get_logger().info("Edge Action Manager: action is completed {}".format(self.ACTIONS.ROW_OPERATION))
-                                    break  
-                                else:
-                                    self.get_logger().info("Edge Action Manager: action is not completed {}. Executing next actions...".format(self.ACTIONS.ROW_OPERATION))
-                                    break 
-                        except Exception as e:
-                            self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors: {}".format(e))
-                            return False
-            
         return True 
                             

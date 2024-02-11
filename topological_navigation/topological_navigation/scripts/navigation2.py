@@ -93,6 +93,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.declare_parameter(self.ACTIONS.BT_DEFAULT, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_IN_ROW, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_GOAL_ALIGN, Parameter.Type.STRING)
+        self.declare_parameter(self.ACTIONS.BT_IN_ROW_OPERATION, Parameter.Type.STRING)
 
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, self.ACTIONS.NAVIGATE_TO_POSE)).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value

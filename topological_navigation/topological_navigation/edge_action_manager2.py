@@ -486,7 +486,7 @@ class EdgeActionManager(rclpy.node.Node):
     def get_result(self, ):
         return self.goal_resposne
 
-    def execute_row_operation_one_step(self, next_goal, get_to_goal):
+    def execute_row_operation_one_step(self, next_goal):
         target_goal = NavigateThroughPoses.Goal()
         if(self.ACTIONS.ROW_TRAVERSAL in self.bt_trees): 
             target_goal.behavior_tree = self.bt_trees[self.ACTIONS.ROW_TRAVERSAL]
@@ -598,14 +598,14 @@ class EdgeActionManager(rclpy.node.Node):
             robot_init_pose = self.current_robot_pose
             if inrow_opt.isPlanCalculated():
                 while True:
+                    robot_init_pose = self.current_robot_pose 
                     next_goal, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
-                    robot_init_pose = next_goal 
                     done_operation = self.execute_row_operation()
                     self.get_logger().info("Edge Action Manager: done_operation {} ".format(done_operation))
                     target_goal = NavigateThroughPoses.Goal()
                     self.get_logger().info("Edge Action Manager: Robot current pose: {},{}"
                                                 .format(next_goal.pose.position.x, next_goal.pose.position.y))
-                    step_moved = self.execute_row_operation_one_step(robot_init_pose, get_to_goal)
+                    step_moved = self.execute_row_operation_one_step(next_goal)
                     if(get_to_goal):
                         if step_moved:
                             self.get_logger().info("Edge Action Manager: Reach to the final goal {},{}"

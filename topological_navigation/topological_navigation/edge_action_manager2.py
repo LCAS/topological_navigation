@@ -31,6 +31,9 @@ from rclpy.executors import SingleThreadedExecutor
 from topological_navigation.scripts.actions_bt import ActionsType 
 from topological_navigation.scripts.param_processing import ParameterUpdaterNode
 from topological_navigation.scripts.in_row_operations import RowOperations 
+from std_msgs.msg import String
+
+
 try:
     from collections.abc import Mapping
 except ImportError:
@@ -99,7 +102,9 @@ class EdgeActionManager(rclpy.node.Node):
                                 QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT))
         self.target_pose_frame_id = None
         self.boundary_publisher = self.create_publisher(Path, '/boundary_checker', qos_profile=self.latching_qos)
-    
+        self.robot_current_status_pub = self.create_publisher(String, '/robot_operation_current_status', qos_profile=self.latching_qos)
+        self.robot_current_behavior_pub = None
+
     def odom_callback(self, msg):
         self.current_robot_pose = msg.pose
     
@@ -125,6 +130,13 @@ class EdgeActionManager(rclpy.node.Node):
         
         self.bt_trees = bt_trees
         self.in_row_operation = in_row_operation
+        if self.in_row_operation:
+            try: 
+                from robot_behavior_msg.msg import RobotBehavior
+                self.robot_current_behavior_pub = self.create_publisher(RobotBehavior, '/robot_current_behavior', qos_profile=self.latching_qos)
+            except  Exception as e:
+                self.get_logger().error("Edge Action Manager: robot_behavior_msg.msg.RobotBehavior message type is not defined")
+                
         if(action_name is not None):
             self.action_name = action_name
         else:
@@ -606,13 +618,26 @@ class EdgeActionManager(rclpy.node.Node):
                     self.get_logger().info("Edge Action Manager: Robot current pose: {},{}"
                                                 .format(next_goal.pose.position.x, next_goal.pose.position.y))
                     step_moved = self.execute_row_operation_one_step(next_goal)
+                    if(step_moved == False):
+                        self.get_logger().error("Edge Action Manager: Something wrong with inrow navigaiton")
+                        msg = String()
+                        msg.data = "Disabled State Mode"
+                        self.robot_current_status_pub.publish(msg)
+                        if self.robot_current_behavior_pub is not None:
+                            from robot_behavior_msg.msg import RobotBehavior
+                            robot_behavir = RobotBehavior()
+                            robot_behavir.message = "Disabled State Mode"
+                            robot_behavir.behavior_code = 7
+                            self.robot_current_behavior_pub.publish(robot_behavir)
+
+                        return False
                     if(get_to_goal):
                         if step_moved:
                             self.get_logger().info("Edge Action Manager: Reach to the final goal {},{}"
                                         .format(next_goal.pose.position.x, next_goal.pose.position.y))
                             
                         else:
-                            self.get_logger().info("Edge Action Manager: Can not reach to the final goal {},{}"
+                            self.get_logger().error("Edge Action Manager: Can not reach to the final goal {},{}"
                                             .format(next_goal.pose.position.x, next_goal.pose.position.y))
                         break
         return True 

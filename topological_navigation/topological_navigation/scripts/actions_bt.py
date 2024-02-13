@@ -12,7 +12,8 @@ class ActionsType:
         self.GOAL_ALIGN = "goal_align"
         self.GOAL_ALIGN_INDEX = ["ca"]
         self.GOAL_ALIGN_GOAL = ["cb"]
-        self.ABORT_NOT_CONTINUE = [self.GOAL_ALIGN, self.ROW_CHANGE, self.ROW_TRAVERSAL, self.NAVIGATE_TO_POSE, self.NAVIGATE_THROUGH_POSES]
+        self.ABORT_NOT_CONTINUE = [self.GOAL_ALIGN, self.ROW_CHANGE, self.ROW_TRAVERSAL
+                                        , self.NAVIGATE_TO_POSE, self.NAVIGATE_THROUGH_POSES, self.ROW_OPERATION]
 
         self.BT_DEFAULT = "bt_tree_default"
         self.BT_GOAL_ALIGN = "bt_tree_goal_align"

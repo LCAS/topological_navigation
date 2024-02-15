@@ -9,7 +9,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 class ParameterUpdaterNode(Node):     
     def __init__(self, server_name):
-        super().__init__('param_update_node')
+        super().__init__(server_name + '_param_update_node')
         self.callback_group = ReentrantCallbackGroup()
         self.cli_set_param = self.create_client(SetParameters, '/' + server_name + '/set_parameters', callback_group=self.callback_group)
         self.cli_list_params = self.create_client(ListParameters, '/' + server_name + '/list_parameters' , callback_group=self.callback_group)

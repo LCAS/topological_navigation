@@ -43,7 +43,7 @@ class TopologicalNavServer(rclpy.node.Node):
     _feedback_exec_policy = ExecutePolicyModeFeedback()
     _result_exec_policy = ExecutePolicyMode.Result()
 
-    def __init__(self, name, mode):
+    def __init__(self, name, update_params_control_server):
         super().__init__(name)
         rclpy.get_default_context().on_shutdown(self._on_node_shutdown)
         self.node_by_node = False
@@ -58,6 +58,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.nav_from_closest_edge = False
         self.fluid_navigation = True
         self.final_goal = False
+        self.update_params_control_server = update_params_control_server
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -162,7 +163,7 @@ class TopologicalNavServer(rclpy.node.Node):
                 self.get_logger().info("Navigation received the Topological Map")
                 break 
         
-        self.edge_action_manager = EdgeActionManager(self.ACTIONS, self.rsearch, self.inrow_step_size)
+        self.edge_action_manager = EdgeActionManager(self.ACTIONS, self.rsearch, self.update_params_control_server, self.inrow_step_size)
 
         self.edge_reconfigure = self.get_parameter_or("reconfigure_edges", Parameter('bool', Parameter.Type.BOOL, True)).value
         self.srv_edge_reconfigure = self.get_parameter_or("reconfigure_edges_srv", Parameter('bool', Parameter.Type.BOOL, False)).value 
@@ -205,21 +206,20 @@ class TopologicalNavServer(rclpy.node.Node):
         self.callback_group_policy = ReentrantCallbackGroup()
         # Creating Action Server for navigation
         self.get_logger().info("Creating GO-TO-NODE action server...")  
-        self._as  =  ActionServer(self, GotoNode, name, execute_callback=self.executeCallback
+        self._as  =  ActionServer(self, GotoNode, "/" + name, execute_callback=self.executeCallback
                                   , cancel_callback=self.preemptCallback, callback_group=self.callback_group_gotonode)
-        self._as_action_feedback_pub = self.create_publisher(GotoNodeFeedback, name + '/feedback', qos_profile=self.latching_qos)
+        self._as_action_feedback_pub = self.create_publisher(GotoNodeFeedback, "/" + name + '/feedback', qos_profile=self.latching_qos)
         self.get_logger().info("...done")
    
         # Creating Action Server for execute policy
         self.get_logger().info("Creating EXECUTE POLICY MODE action server...")
-        self._as_exec_policy = ActionServer(self, ExecutePolicyMode, "topological_navigation/execute_policy_mode", 
+        self._as_exec_policy = ActionServer(self, ExecutePolicyMode, "/topological_navigation/execute_policy_mode", 
                             execute_callback=self.executeCallbackexecpolicy, cancel_callback=self.preemptCallbackexecpolicy
                             , callback_group=self.callback_group_policy)
         self._as_exec_policy_action_feedback_pub = self.create_publisher(ExecutePolicyModeFeedback, 'topological_navigation/execute_policy_mode/feedback'
                                                                                     , qos_profile=self.latching_qos)
         
-        self.update_params_control_server = ParameterUpdaterNode("controller_server") #TODO change the name 
-
+        
         self.get_logger().info("...done")
         self.get_logger().info("All Done.")
         
@@ -1221,10 +1221,12 @@ class TopologicalNavServer(rclpy.node.Node):
 
 def main():
     rclpy.init(args=None)
-    wtags = True
-    node = TopologicalNavServer('topological_navigation', wtags)
+    update_params_control_server = ParameterUpdaterNode("controller_server")
+
+    node = TopologicalNavServer('topological_navigation', update_params_control_server)
     executor = MultiThreadedExecutor()
     executor.add_node(node)
+    executor.add_node(update_params_control_server)
     try:
         executor.spin()
     except KeyboardInterrupt:

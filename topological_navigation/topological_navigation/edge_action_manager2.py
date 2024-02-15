@@ -78,7 +78,7 @@ class dict_tools(object):
 #########################################################################################################
 class EdgeActionManager(rclpy.node.Node):
     
-    def __init__(self, ACTIONS, route_search, inrow_step_size=3.0):
+    def __init__(self, ACTIONS, route_search, update_params_control_server, inrow_step_size=3.0):
         super().__init__("edge_action_manager")
         self.client = None        
         self.current_action = "none"
@@ -96,7 +96,7 @@ class EdgeActionManager(rclpy.node.Node):
         self.inrow_step_size = inrow_step_size
         self.nav2_client_callback_group = MutuallyExclusiveCallbackGroup()
 
-        self.update_params_control_server = ParameterUpdaterNode("controller_server")
+        self.update_params_control_server = update_params_control_server
         self.current_robot_pose = None 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/global', self.odom_callback,
                                 QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT))

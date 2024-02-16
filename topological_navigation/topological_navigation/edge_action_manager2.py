@@ -572,6 +572,35 @@ class EdgeActionManager(rclpy.node.Node):
             return False 
         processed_goal = self.processing_goal_request(self.ACTIONS.ROW_OPERATION)
         return processed_goal
+    
+    def execute_row_recovery(self, intermediate_pose):
+        target_goal = NavigateThroughPoses.Goal()
+        if(self.ACTIONS.ROW_RECOVERY in self.bt_trees): 
+            target_goal.behavior_tree = self.bt_trees[self.ACTIONS.ROW_RECOVERY]
+            self.get_logger().info("Edge Action Manager: Row recovery BT path {}".format(target_goal.behavior_tree))
+        else:
+            self.get_logger().error("Edge Action Manager: Row recovery BT is not provided {}")
+            return False
+        target_pose = self.crete_pose_stamped_msg_from_position(self.target_pose_frame_id, intermediate_pose)
+        target_goal.poses.append(target_pose)
+        send_goal_future = self.client.send_goal_async(target_goal)
+        goal_accepted = self.send_goal_request(send_goal_future, self.ACTIONS.ROW_RECOVERY)
+        if(goal_accepted == False):
+            return False 
+        processed_goal = self.processing_goal_request(self.ACTIONS.ROW_RECOVERY)
+        return processed_goal
+    
+    def publish_robot_terminaiton_msg(self, action):
+        self.get_logger().error("Edge Action Manager: Something wrong with inrow navigaiton {}".format(action))
+        msg = String()
+        msg.data = "Disabled State Mode"
+        self.robot_current_status_pub.publish(msg)
+        if self.robot_current_behavior_pub is not None:
+            from robot_behavior_msg.msg import RobotBehavior
+            robot_behavir = RobotBehavior()
+            robot_behavir.message = "Disabled State Mode"
+            robot_behavir.behavior_code = 7
+            self.robot_current_behavior_pub.publish(robot_behavir)
 
     def execute(self):     
         if not self.client.server_is_ready():
@@ -611,26 +640,28 @@ class EdgeActionManager(rclpy.node.Node):
             if inrow_opt.isPlanCalculated():
                 while True:
                     robot_init_pose = self.current_robot_pose 
-                    next_goal, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
+                    next_goal, intermediate_pose, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
                     done_operation = self.execute_row_operation()
                     self.get_logger().info("Edge Action Manager: done_operation {} ".format(done_operation))
-                    target_goal = NavigateThroughPoses.Goal()
+                    # target_goal = NavigateThroughPoses.Goal()
                     self.get_logger().info("Edge Action Manager: Robot current pose: {},{}"
                                                 .format(next_goal.pose.position.x, next_goal.pose.position.y))
+                    get_proper_alignment = self.execute_row_recovery(intermediate_pose)
+                    if(get_proper_alignment == False):
+                        self.publish_robot_terminaiton_msg(self.ACTIONS.ROW_RECOVERY)
+                        return False
                     step_moved = self.execute_row_operation_one_step(next_goal)
                     if(step_moved == False):
-                        self.get_logger().error("Edge Action Manager: Something wrong with inrow navigaiton")
-                        msg = String()
-                        msg.data = "Disabled State Mode"
-                        self.robot_current_status_pub.publish(msg)
-                        if self.robot_current_behavior_pub is not None:
-                            from robot_behavior_msg.msg import RobotBehavior
-                            robot_behavir = RobotBehavior()
-                            robot_behavir.message = "Disabled State Mode"
-                            robot_behavir.behavior_code = 7
-                            self.robot_current_behavior_pub.publish(robot_behavir)
-
-                        return False
+                        intermediate_pose, _ = inrow_opt.getNextIntermediateGoal(self.current_robot_pose)
+                        get_proper_alignment = self.execute_row_recovery(intermediate_pose)
+                        if(get_proper_alignment == False):
+                            self.publish_robot_terminaiton_msg(self.ACTIONS.ROW_RECOVERY)
+                            return False
+                        else:
+                            step_moved = self.execute_row_operation_one_step(next_goal)
+                            if(step_moved == False):
+                                self.publish_robot_terminaiton_msg(self.ACTIONS.ROW_TRAVERSAL)
+                                return False 
                     if(get_to_goal):
                         if step_moved:
                             self.get_logger().info("Edge Action Manager: Reach to the final goal {},{}"

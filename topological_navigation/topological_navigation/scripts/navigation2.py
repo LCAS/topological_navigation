@@ -95,6 +95,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.declare_parameter(self.ACTIONS.BT_IN_ROW, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_GOAL_ALIGN, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_IN_ROW_OPERATION, Parameter.Type.STRING)
+        self.declare_parameter(self.ACTIONS.BT_IN_ROW_RECOVERY, Parameter.Type.STRING)
 
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, self.ACTIONS.NAVIGATE_TO_POSE)).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value
@@ -140,6 +141,9 @@ class TopologicalNavServer(rclpy.node.Node):
             bt_tree_in_row_operation = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_in_row_operation.xml')
             self.bt_trees[self.ACTIONS.ROW_OPERATION] = self.get_parameter_or(self.ACTIONS.BT_IN_ROW_OPERATION
                                             , Parameter('str', Parameter.Type.STRING, bt_tree_in_row_operation)).value
+            bt_tree_in_row_recovery = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_in_row_recovery.xml')
+            self.bt_trees[self.ACTIONS.ROW_RECOVERY] = self.get_parameter_or(self.ACTIONS.BT_IN_ROW_RECOVERY
+                                            , Parameter('str', Parameter.Type.STRING, bt_tree_in_row_recovery)).value
 
         if not self.navigation_action_name in self.navigation_actions:
             self.navigation_actions.append(self.navigation_action_name)

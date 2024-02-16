@@ -3,10 +3,11 @@ import numpy as np
 from geometry_msgs.msg import PoseStamped
 
 class RowOperations:
-    def __init__(self, initial_edges, step_size=2.0):
+    def __init__(self, initial_edges, step_size=2.0, intermediate_dis=0.6):
         self.initial_edges = initial_edges
         self.initial_path = False
         self.step_size = step_size
+        self.intermediate_dis = intermediate_dis
         if len(self.initial_edges) > 1:
             self.terminal_pose = self.getPoseSE2(self.initial_edges[-1])
             self.getApproximatedLine()
@@ -85,10 +86,30 @@ class RowOperations:
         closest_pose = self.getClosestPoint(current_pose)
         norm_dis = np.linalg.norm(self.terminal_pose-closest_pose)
         updated_pose = None
+        intermediate_pose = None
         if(norm_dis < self.step_size):
             updated_pose = self.getSE2Pose(self.terminal_pose, current_pose_original.pose.orientation)
-            return updated_pose, True 
+            intermediate_pose = current_pose + self.intermediate_dis*((self.terminal_pose-closest_pose)/norm_dis)
+            intermediate_pose = self.getSE2Pose(intermediate_pose, current_pose_original.pose.orientation)  
+            return updated_pose, intermediate_pose, True 
         else:
             updated_pose = current_pose + self.step_size*((self.terminal_pose-closest_pose)/norm_dis)
             updated_pose = self.getSE2Pose(updated_pose, current_pose_original.pose.orientation) 
-            return updated_pose, False
+
+            intermediate_pose = current_pose + self.intermediate_dis*((self.terminal_pose-closest_pose)/norm_dis)
+            intermediate_pose = self.getSE2Pose(intermediate_pose, current_pose_original.pose.orientation)  
+            return updated_pose, intermediate_pose, False
+    
+    def getNextIntermediateGoal(self, current_pose_original):
+        current_pose = self.getPoseSE2(current_pose_original)
+        closest_pose = self.getClosestPoint(current_pose)
+        norm_dis = np.linalg.norm(self.terminal_pose-closest_pose)
+        intermediate_pose = None
+        if(norm_dis < self.step_size):
+            intermediate_pose = current_pose + self.intermediate_dis*((self.terminal_pose-closest_pose)/norm_dis)
+            intermediate_pose = self.getSE2Pose(intermediate_pose, current_pose_original.pose.orientation)  
+            return intermediate_pose, True 
+        else:
+            intermediate_pose = current_pose + self.intermediate_dis*((self.terminal_pose-closest_pose)/norm_dis)
+            intermediate_pose = self.getSE2Pose(intermediate_pose, current_pose_original.pose.orientation)  
+            return intermediate_pose, False

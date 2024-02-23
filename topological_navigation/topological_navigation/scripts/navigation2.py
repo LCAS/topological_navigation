@@ -310,6 +310,16 @@ class TopologicalNavServer(rclpy.node.Node):
         """
         self.get_logger().info("\n####################################################################################################")
         self.get_logger().info("Processing GO-TO-NODE goal (No Orientation = {})".format(goal.request.no_orientation))
+
+        status = self.edge_action_manager.get_state()
+        if self.edge_action_manager.get_status_msg(status) == "STATUS_ABORTED":
+            self.get_logger().error("Navigation Server was ABORTED, restart the Nav Server")
+            goal.abort()
+            self.get_logger().warning("Done processing the nav action GO-TO-NODE....")
+            result = GotoNode.Result()
+            result.success = self._result.success
+            return result 
+
         can_start = False
         if self.cancel_current_action(timeout_secs=10):
             # we successfully stopped the previous action, claim the title to activate navigation

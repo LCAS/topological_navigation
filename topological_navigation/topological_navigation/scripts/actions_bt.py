@@ -13,6 +13,7 @@ class ActionsType:
         self.GOAL_ALIGN = "goal_align"
         self.GOAL_ALIGN_INDEX = ["ca"]
         self.GOAL_ALIGN_GOAL = ["cb"]
+        self.ROW_START_INDEX = "a"
 
         self.ABORT_NOT_CONTINUE = [self.GOAL_ALIGN, self.ROW_CHANGE, self.ROW_TRAVERSAL
                                         , self.NAVIGATE_TO_POSE, self.NAVIGATE_THROUGH_POSES

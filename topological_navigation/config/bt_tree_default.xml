@@ -6,7 +6,7 @@
           <RecoveryNode number_of_retries="0" name="ComputePathThroughPoses">
             <ReactiveSequence>
               <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="1.5"/>
-              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GoalAligned"/>
+              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
             </ReactiveSequence>
             <ReactiveFallback name="ComputePathThroughPosesRecoveryFallback">
               <GoalUpdated/>

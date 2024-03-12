@@ -100,11 +100,19 @@ class EdgeActionManager(rclpy.node.Node):
         self.current_robot_pose = None 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/global', self.odom_callback,
                                 QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT))
+        self.get_current_node_sub = self.create_subscription(String, 'closest_node', self.set_current_pose
+                                , QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT))
         self.target_pose_frame_id = None
         self.boundary_publisher = self.create_publisher(Path, '/boundary_checker', qos_profile=self.latching_qos)
         self.robot_current_status_pub = self.create_publisher(String, '/robot_operation_current_status', qos_profile=self.latching_qos)
+
         self.robot_current_behavior_pub = None
+        self.current_node = None 
         self.action_status = 0
+        self.robot_current_status = self.ACTIONS.ROBOT_STATUS_AUTONOMOUS_NAVIGATION_STATE 
+
+    def set_current_pose(self, msg):
+        self.current_node = msg.data
 
     def odom_callback(self, msg):
         self.current_robot_pose = msg.pose
@@ -240,12 +248,12 @@ class EdgeActionManager(rclpy.node.Node):
         self.client = ActionClient(self, self.action, self.action_server_name, callback_group=self.nav2_client_callback_group)
     
     def feedback_callback(self, feedback_msg):
-        self.nav_client_feedback = feedback_msg.feedback
+        self.nav_client_feedback = feedback_msg
         # self.get_logger().info("Distance to goal: {} ".format(self.nav_client_feedback.distance_remaining))
         return 
     
     def preempt_feedback_callback(self, feedback_msg):
-        self.nav_client_preempt_feedback = feedback_msg.feedback
+        self.nav_client_preempt_feedback = feedback_msg
         self.get_logger().info("preempt: {} ".format(self.nav_client_preempt_feedback))
         return 
 
@@ -598,16 +606,15 @@ class EdgeActionManager(rclpy.node.Node):
         processed_goal = self.processing_goal_request(self.ACTIONS.ROW_RECOVERY)
         return processed_goal
     
-    def publish_robot_terminaiton_msg(self, action):
-        self.get_logger().error("Edge Action Manager: Something wrong with inrow navigaiton {}".format(action))
+    def publish_robot_current_status_msg(self, action, status):
         msg = String()
-        msg.data = "Disabled State Mode"
+        msg.data = status
         self.robot_current_status_pub.publish(msg)
         if self.robot_current_behavior_pub is not None:
             from robot_behavior_msg.msg import RobotBehavior
             robot_behavir = RobotBehavior()
-            robot_behavir.message = "Disabled State Mode"
-            robot_behavir.behavior_code = 7
+            robot_behavir.message = status
+            robot_behavir.behavior_code = self.ACTIONS.getCodeForRobotCurrentStatus(status)
             self.robot_current_behavior_pub.publish(robot_behavir)
 
     def execute(self):     
@@ -649,33 +656,59 @@ class EdgeActionManager(rclpy.node.Node):
 
             inrow_opt = RowOperations(self.in_row_inter_pose, self.inrow_step_size) 
             robot_init_pose = self.current_robot_pose
+            
             if inrow_opt.isPlanCalculated():
                 while True:
                     robot_init_pose = self.current_robot_pose 
                     next_goal, intermediate_pose, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
+                    self.robot_current_status = self.ACTIONS.ROBOT_STATUS_PREPARATION_STATE
+                    if(self.current_node is not None):
+                        node_id = self.current_node.split("-")
+                        if (len(node_id) == 2):
+                            node_id = node_id[1]
+                            if(node_id.startswith("c")):
+                                con_v1 = "b" not in node_id
+                                con_v2 = "a" not in node_id
+                                if ("a" not in node_id):
+                                    self.robot_current_status = self.ACTIONS.ROBOT_STATUS_AUTONOMOUS_HARVESTING_STATE
+
+                    self.publish_robot_current_status_msg(self.ACTIONS.ROW_OPERATION, self.robot_current_status)
                     done_operation = self.execute_row_operation()
                     self.get_logger().info("Edge Action Manager: done_operation {} ".format(done_operation))
                     # target_goal = NavigateThroughPoses.Goal()
                     self.get_logger().info("Edge Action Manager: Robot current pose: {},{}"
                                                 .format(next_goal.pose.position.x, next_goal.pose.position.y))
+                    self.robot_current_status = self.ACTIONS.ROBOT_STATUS_AUTONOMOUS_RECOVERY_STATE
+                    self.publish_robot_current_status_msg(self.ACTIONS.ROW_RECOVERY, self.robot_current_status)
                     get_proper_alignment = self.execute_row_recovery(intermediate_pose)
                     if(get_proper_alignment == False):
-                        self.publish_robot_terminaiton_msg(self.ACTIONS.ROW_RECOVERY)
+                        self.robot_current_status = self.ACTIONS.ROBOT_STATUS_DISABLE_STATE
+                        self.publish_robot_current_status_msg(self.ACTIONS.ROW_RECOVERY, self.robot_current_status)
                         return False
+                    self.robot_current_status = self.ACTIONS.ROBOT_STATUS_AUTONOMOUS_NAVIGATION_STATE
+                    self.publish_robot_current_status_msg(self.ACTIONS.ROW_TRAVERSAL, self.robot_current_status)
                     step_moved = self.execute_row_operation_one_step(next_goal)
                     if(step_moved == False):
                         intermediate_pose, _ = inrow_opt.getNextIntermediateGoal(self.current_robot_pose)
+                        self.robot_current_status = self.ACTIONS.ROBOT_STATUS_AUTONOMOUS_RECOVERY_STATE
+                        self.publish_robot_current_status_msg(self.ACTIONS.ROW_RECOVERY, self.robot_current_status)
                         get_proper_alignment = self.execute_row_recovery(intermediate_pose)
                         if(get_proper_alignment == False):
-                            self.publish_robot_terminaiton_msg(self.ACTIONS.ROW_RECOVERY)
+                            self.robot_current_status = self.ACTIONS.ROBOT_STATUS_DISABLE_STATE
+                            self.publish_robot_current_status_msg(self.ACTIONS.ROW_RECOVERY, self.robot_current_status)
                             return False
                         else:
+                            self.robot_current_status = self.ACTIONS.ROBOT_STATUS_AUTONOMOUS_NAVIGATION_STATE
+                            self.publish_robot_current_status_msg(self.ACTIONS.ROW_TRAVERSAL, self.robot_current_status)
                             step_moved = self.execute_row_operation_one_step(next_goal)
                             if(step_moved == False):
-                                self.publish_robot_terminaiton_msg(self.ACTIONS.ROW_TRAVERSAL)
+                                self.robot_current_status = self.ACTIONS.ROBOT_STATUS_DISABLE_STATE
+                                self.publish_robot_current_status_msg(self.ACTIONS.ROW_TRAVERSAL, self.robot_current_status)
                                 return False 
                     if(get_to_goal):
                         if step_moved:
+                            self.robot_current_status = self.ACTIONS.ROBOT_STATUS_NATURAL_STATE
+                            self.publish_robot_current_status_msg(self.ACTIONS.ROW_TRAVERSAL, self.robot_current_status)
                             self.get_logger().info("Edge Action Manager: Reach to the final goal {},{}"
                                         .format(next_goal.pose.position.x, next_goal.pose.position.y))
                             

@@ -15,6 +15,21 @@ class ActionsType:
         self.GOAL_ALIGN_GOAL = ["cb"]
         self.ROW_START_INDEX = "a"
 
+        self.ROBOT_STATUS_PREPARATION_STATE = "PREPARATION_STATE"
+        self.ROBOT_STATUS_AUTONOMOUS_NAVIGATION_STATE = "AUTONOMOUS_NAVIGATION_STATE"
+        self.ROBOT_STATUS_AUTONOMOUS_HARVESTING_STATE = "AUTONOMOUS_HARVESTING_STATE"
+        self.ROBOT_STATUS_AUTONOMOUS_RECOVERY_STATE = "AUTONOMOUS_RECOVERY_STATE"
+        self.ROBOT_STATUS_DISABLE_STATE = "DISABLE_STATE"
+        self.ROBOT_STATUS_NATURAL_STATE = "NATURAL_STATE"
+        
+        self.ROBOT_CURRENT_STATUS = {}
+        self.ROBOT_CURRENT_STATUS[self.ROBOT_STATUS_PREPARATION_STATE] = 0
+        self.ROBOT_CURRENT_STATUS[self.ROBOT_STATUS_AUTONOMOUS_NAVIGATION_STATE] = 1
+        self.ROBOT_CURRENT_STATUS[self.ROBOT_STATUS_AUTONOMOUS_HARVESTING_STATE] = 2
+        self.ROBOT_CURRENT_STATUS[self.ROBOT_STATUS_AUTONOMOUS_RECOVERY_STATE] = 3
+        self.ROBOT_CURRENT_STATUS[self.ROBOT_STATUS_DISABLE_STATE] = 4
+        self.ROBOT_CURRENT_STATUS[self.ROBOT_STATUS_NATURAL_STATE] = 5
+
         self.ABORT_NOT_CONTINUE = [self.GOAL_ALIGN, self.ROW_CHANGE, self.ROW_TRAVERSAL
                                         , self.NAVIGATE_TO_POSE, self.NAVIGATE_THROUGH_POSES
                                         , self.ROW_OPERATION, self.ROW_RECOVERY]
@@ -91,6 +106,12 @@ class ActionsType:
         self.bt_tree_with_control_server_config[self.NAVIGATE_TO_POSE] = "dwb_core::DWBLocalPlanner"
         self.bt_tree_with_control_server_config[self.GOAL_ALIGN] = "dwb_core::DWBLocalPlanner"
         self.bt_tree_with_control_server_config[self.ROW_RECOVERY] = "dwb_core::DWBLocalPlanner"
+
+    def getCodeForRobotCurrentStatus(self, msg):
+        if msg not in self.ROBOT_CURRENT_STATUS:
+            print("The {} is not one of configured robot status types".format(msg))
+            return self.ROBOT_CURRENT_STATUS[self.ROBOT_STATUS_DISABLE_STATE]
+        return self.ROBOT_CURRENT_STATUS[msg]
 
     def setPlanner(self, planner_name, action_type):
         self.bt_tree_with_control_server_config[action_type] = planner_name

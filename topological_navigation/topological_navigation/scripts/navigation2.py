@@ -43,7 +43,7 @@ class TopologicalNavServer(rclpy.node.Node):
     _feedback_exec_policy = ExecutePolicyModeFeedback()
     _result_exec_policy = ExecutePolicyMode.Result()
 
-    def __init__(self, name, update_params_control_server):
+    def __init__(self, name, update_params_control_server, edge_action_manager_server):
         super().__init__(name)
         rclpy.get_default_context().on_shutdown(self._on_node_shutdown)
         self.node_by_node = False
@@ -167,7 +167,8 @@ class TopologicalNavServer(rclpy.node.Node):
                 self.get_logger().info("Navigation received the Topological Map")
                 break 
         
-        self.edge_action_manager = EdgeActionManager(self.ACTIONS, self.rsearch, self.update_params_control_server, self.inrow_step_size)
+        self.edge_action_manager = edge_action_manager_server 
+        self.edge_action_manager.init(self.ACTIONS, self.rsearch, self.update_params_control_server, self.inrow_step_size)
 
         self.edge_reconfigure = self.get_parameter_or("reconfigure_edges", Parameter('bool', Parameter.Type.BOOL, True)).value
         self.srv_edge_reconfigure = self.get_parameter_or("reconfigure_edges_srv", Parameter('bool', Parameter.Type.BOOL, False)).value 
@@ -312,13 +313,13 @@ class TopologicalNavServer(rclpy.node.Node):
         self.get_logger().info("Processing GO-TO-NODE goal (No Orientation = {})".format(goal.request.no_orientation))
 
         status = self.edge_action_manager.get_state()
-        if self.edge_action_manager.get_status_msg(status) == "STATUS_ABORTED":
-            self.get_logger().error("Navigation Server was ABORTED, restart the Nav Server")
-            goal.abort()
-            self.get_logger().warning("Done processing the nav action GO-TO-NODE....")
-            result = GotoNode.Result()
-            result.success = self._result.success
-            return result 
+        # if self.edge_action_manager.get_status_msg(status) == "STATUS_ABORTED":
+        #     self.get_logger().error("Navigation Server was ABORTED, restart the Nav Server")
+        #     goal.abort()
+        #     self.get_logger().warning("Done processing the nav action GO-TO-NODE....")
+        #     result = GotoNode.Result()
+        #     result.success = self._result.success
+        #     return result 
 
         can_start = False
         if self.cancel_current_action(timeout_secs=10):
@@ -991,7 +992,7 @@ class TopologicalNavServer(rclpy.node.Node):
         Cancels the action currently in execution. Returns True if the current goal is correctly ended.
         """
         self.get_logger().info("Cancelling current navigation goal, timeout_secs = {}...".format(timeout_secs))
-        self.edge_action_manager.preempt()
+        self.edge_action_manager.preempt(timeout_secs=timeout_secs)
         self.cancelled = True
         self.navigation_activated = False 
         self.get_logger().info("Navigation active: " + str(self.navigation_activated))
@@ -1236,11 +1237,12 @@ class TopologicalNavServer(rclpy.node.Node):
 def main():
     rclpy.init(args=None)
     update_params_control_server = ParameterUpdaterNode("controller_server")
-
-    node = TopologicalNavServer('topological_navigation', update_params_control_server)
+    edge_action_manager_server = EdgeActionManager("edge_action_manager")
+    node = TopologicalNavServer('topological_navigation', update_params_control_server, edge_action_manager_server)
     executor = MultiThreadedExecutor()
-    executor.add_node(node)
     executor.add_node(update_params_control_server)
+    executor.add_node(edge_action_manager_server)
+    executor.add_node(node)
     try:
         executor.spin()
     except KeyboardInterrupt:

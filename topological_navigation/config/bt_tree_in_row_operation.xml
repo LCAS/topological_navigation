@@ -1,0 +1,10 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="0" name="Harvesting">
+        <Wait wait_duration="5"/>
+        <ReactiveFallback name="ComputePathToPoseRecoveryFallback">
+        <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+        </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

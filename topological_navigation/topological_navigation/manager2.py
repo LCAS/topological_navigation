@@ -38,6 +38,23 @@ class NoAliasDumper(yaml.SafeDumper):
 #########################################################################################################
 
 
+# this ensures that all the poses and translates 
+# are float-type and not int-type as there is an 
+# assertion in ros2 messages (vector3, pose etc.) 
+# for float-type [x,y,z,w] keys.
+class CustomSafeLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        mapping = super().construct_mapping(node, deep=deep)
+
+        # this can be extended to test the validity of the tmap2 
+        # as well at load time (or add missing keys)
+        for key in ['x', 'y', 'z', 'w']:
+            if key in mapping and isinstance(mapping[key], int):
+                mapping[key] = float(mapping[key])
+        
+        return mapping
+
+
 #########################################################################################################
 class map_manager_2(rclpy.node.Node):
 
@@ -151,7 +168,7 @@ class map_manager_2(rclpy.node.Node):
         self.loaded = False
         self.load = load
         if self.load:
-            self.load_map(self.filename)
+            self.load_map(self.filename) 
         else:
             self.tmap2 = {}
             self.tmap2["name"] = self.name
@@ -202,7 +219,8 @@ class map_manager_2(rclpy.node.Node):
         def loader(filename, transporter):
             try:
                 with open(filename, "r") as f:
-                    transporter["tmap2"] = yaml.safe_load(f)
+                    # transporter["tmap2"] = yaml.safe_load(f)
+                    transporter["tmap2"] = yaml.load(f, Loader = CustomSafeLoader)
             except Exception as e:
                 self.get_logger().error(e)
                 transporter["tmap2"] = {}

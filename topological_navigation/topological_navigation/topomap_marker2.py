@@ -183,13 +183,13 @@ class TopologicalVis(Node):
 
         for j in node['node']['verts']:
             vert = Point()
-            vert.z = 0.05
+            vert.z = node['node']['pose']['position']['z'] 
             vert.x = node['node']['pose']['position']['x'] + j['x']
             vert.y = node['node']['pose']['position']['y'] + j['y']
             marker.points.append(vert)
 
         vert = Point()
-        vert.z = 0.05
+        vert.z = node['node']['pose']['position']['z']
         vert.x = node['node']['pose']['position']['x'] + node['node']['verts'][0]['x']
         vert.y = node['node']['pose']['position']['y'] + node['node']['verts'][0]['y']
         marker.points.append(vert)

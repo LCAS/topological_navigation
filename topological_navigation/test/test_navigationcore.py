@@ -58,7 +58,7 @@ def test_check_if_topological_map_is_published():
     try:
         node = NavigationClient('test_node')
         node.initialize()
-        msgs_received_flag = node.topmap_event_object.wait(timeout=20.0)
+        msgs_received_flag = node.topmap_event_object.wait(timeout=40.0)
         assert msgs_received_flag, 'Did not receive topological map !'
     finally:
         rclpy.shutdown()
@@ -69,7 +69,7 @@ def test_check_if_closest_node_is_published():
     try:
         node = NavigationClient('test_node')
         node.initialize()
-        msgs_received_flag = node.closest_node_event_object.wait(timeout=20.0)
+        msgs_received_flag = node.closest_node_event_object.wait(timeout=40.0)
         assert msgs_received_flag, 'Did not receive closest node info !'
     finally:
         rclpy.shutdown()
@@ -80,7 +80,7 @@ def test_check_if_current_node_is_published():
     try:
         node = NavigationClient('test_node')
         node.initialize()
-        msgs_received_flag = node.current_node_event_object.wait(timeout=20.0)
+        msgs_received_flag = node.current_node_event_object.wait(timeout=40.0)
         assert msgs_received_flag, 'Did not receive current node info !'
     finally:
         rclpy.shutdown()

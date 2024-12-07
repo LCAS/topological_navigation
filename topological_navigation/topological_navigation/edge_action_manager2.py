@@ -461,7 +461,12 @@ class EdgeActionManager(rclpy.node.Node):
                 if(self.ACTIONS.NAVIGATE_TO_POSE in self.bt_trees):
                     nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE]
                 edge_action_is_valid = True
-                    
+
+            if(action == self.ACTIONS.REPEAT_PATH):
+                if(self.ACTIONS.REPEAT_PATH in self.bt_trees):
+                    nav_goal.behavior_tree = self.bt_trees[self.ACTIONS.REPEAT_PATH]
+                edge_action_is_valid = True
+
             if(action == self.ACTIONS.GOAL_ALIGN):
                 controller_plugin = self.ACTIONS.bt_tree_with_control_server_config[self.ACTIONS.GOAL_ALIGN]
                 control_server_configs[self.ACTIONS.GOAL_ALIGN] = self.ACTIONS.planner_with_goal_checker_config[controller_plugin]

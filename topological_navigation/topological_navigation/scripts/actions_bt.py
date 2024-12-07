@@ -2,11 +2,11 @@
 class ActionsType:
     def __init__(self):
 
-        self.NAVIGATE_TO_POSE = "NavigateToPose"
+        self.NAVIGATE_TO_POSE = "NavigateToPose" #This is used
         self.NAVIGATE_THROUGH_POSES = "NavigateThroughPoses"
         self.DRIVE_ON_HEADING = "DriveOnHeading"
-
-        self.ROW_TRAVERSAL = "row_traversal"
+        self.REPEAT_PATH = "RepeatPath"
+        self.ROW_TRAVERSAL = "row_traversal" #This is used
         self.ROW_OPERATION = "row_operation"
         self.ROW_RECOVERY = "row_recovery"
         self.ROW_CHANGE = "row_change"
@@ -40,13 +40,14 @@ class ActionsType:
 
         self.ABORT_NOT_CONTINUE = [self.GOAL_ALIGN, self.ROW_CHANGE, self.ROW_TRAVERSAL
                                         , self.NAVIGATE_TO_POSE, self.NAVIGATE_THROUGH_POSES
-                                        , self.ROW_OPERATION, self.ROW_RECOVERY]
+                                        , self.ROW_OPERATION, self.ROW_RECOVERY, self.REPEAT_PATH]
 
         self.BT_DEFAULT = "bt_tree_default"
         self.BT_GOAL_ALIGN = "bt_tree_goal_align"
         self.BT_IN_ROW = "bt_tree_in_row"
         self.BT_IN_ROW_OPERATION = "bt_tree_in_row_operation"
         self.BT_IN_ROW_RECOVERY = "bt_tree_in_row_recovery"
+        self.BT_TEACH_REPEAT = "bt_tree_teach_repeat"
 
         self.navigation_actions = [
             self.NAVIGATE_TO_POSE,
@@ -55,7 +56,8 @@ class ActionsType:
             self.ROW_CHANGE,
             self.ROW_TRAVERSAL,
             self.ROW_OPERATION,
-            self.ROW_RECOVERY
+            self.ROW_RECOVERY,
+            self.REPEAT_PATH
         ]
 
         self.bt_tree_types = [
@@ -64,6 +66,7 @@ class ActionsType:
             self.BT_GOAL_ALIGN, 
             self.BT_IN_ROW_OPERATION,
             self.BT_IN_ROW_RECOVERY,
+            self.BT_TEACH_REPEAT
         ]
 
         self.bt_tree_with_actions = {}
@@ -73,6 +76,7 @@ class ActionsType:
         self.bt_tree_with_actions[self.ROW_TRAVERSAL] = self.BT_IN_ROW
         self.bt_tree_with_actions[self.ROW_OPERATION] = self.BT_IN_ROW_OPERATION
         self.bt_tree_with_actions[self.ROW_RECOVERY] = self.BT_IN_ROW_RECOVERY
+        self.bt_tree_with_actions[self.REPEAT_PATH] = self.BT_TEACH_REPEAT
 
         self.status_mapping = {}
         self.status_mapping[0] = "STATUS_UNKNOWN"
@@ -114,6 +118,7 @@ class ActionsType:
         self.bt_tree_with_control_server_config[self.NAVIGATE_TO_POSE] = "dwb_core::DWBLocalPlanner"
         self.bt_tree_with_control_server_config[self.GOAL_ALIGN] = "dwb_core::DWBLocalPlanner"
         self.bt_tree_with_control_server_config[self.ROW_RECOVERY] = "dwb_core::DWBLocalPlanner"
+        self.bt_tree_with_control_server_config[self.REPEAT_PATH] = "nav2_teach_repeat_controller::TeachRepeatController"
         
         self.planner_with_pd_regulator_config = {
             "dwb_core::DWBLocalPlanner": {

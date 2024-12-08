@@ -103,6 +103,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self.declare_parameter(self.ACTIONS.BT_GOAL_ALIGN, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_IN_ROW_OPERATION, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_IN_ROW_RECOVERY, Parameter.Type.STRING)
+        self.declare_parameter(self.ACTIONS.BT_TEACH_REPEAT, Parameter.Type.STRING)
 
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, self.ACTIONS.NAVIGATE_TO_POSE)).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value
@@ -144,6 +145,7 @@ class TopologicalNavServer(rclpy.node.Node):
         bt_tree_default = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_default.xml')
         bt_tree_goal_align = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_goal_align.xml')
         bt_tree_in_row = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_in_row.xml')
+        bt_tree_teach_repeat = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_teach_repeat.xml')
 
         self.bt_trees = {}
         self.bt_trees[self.ACTIONS.NAVIGATE_TO_POSE] =  self.get_parameter_or(self.ACTIONS.BT_DEFAULT, Parameter('str'
@@ -152,6 +154,8 @@ class TopologicalNavServer(rclpy.node.Node):
                                         , Parameter('str', Parameter.Type.STRING, bt_tree_in_row)).value
         self.bt_trees[self.ACTIONS.GOAL_ALIGN] =   self.get_parameter_or(self.ACTIONS.BT_GOAL_ALIGN
                                         , Parameter('str', Parameter.Type.STRING, bt_tree_goal_align)).value
+        self.bt_trees[self.ACTIONS.REPEAT_PATH] =   self.get_parameter_or(self.ACTIONS.BT_TEACH_REPEAT
+                                        , Parameter('str', Parameter.Type.STRING, bt_tree_teach_repeat)).value
 
         if self.use_in_row_operation:
             bt_tree_in_row_operation = os.path.join(get_package_share_directory('topological_navigation'), 'config', 'bt_tree_in_row_operation.xml')

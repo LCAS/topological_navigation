@@ -7,7 +7,7 @@ required:
   - name
   - nodes
   - pointset
-additionalProperties: true
+additionalProperties: false
 properties:
   meta:
     type: object
@@ -17,6 +17,7 @@ properties:
         pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}$
     required:
       - last_updated
+    additionalProperties: true
   metric_map:
     type: string
   name:

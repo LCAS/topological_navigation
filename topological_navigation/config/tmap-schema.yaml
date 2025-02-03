@@ -7,7 +7,7 @@ required:
   - name
   - nodes
   - pointset
-additionalProperties: false
+additionalProperties: true
 properties:
   meta:
     type: object

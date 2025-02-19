@@ -30,13 +30,13 @@ class TopologicalNavLoc(rclpy.node.Node):
     def __init__(self, name, wtags):
         super().__init__(name)
         
-        self.declare_parameter('~LocalisationThrottle', rclpy.Parameter.Type.INTEGER) 
-        self.declare_parameter('~OnlyLatched', rclpy.Parameter.Type.BOOL) 
-        self.declare_parameter('~base_frame', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('LocalisationThrottle', rclpy.Parameter.Type.INTEGER) 
+        self.declare_parameter('OnlyLatched', rclpy.Parameter.Type.BOOL) 
+        self.declare_parameter('base_frame', rclpy.Parameter.Type.STRING)
 
-        self.throttle_val = self.get_parameter_or("~LocalisationThrottle", Parameter('int', Parameter.Type.INTEGER, 3)).value
+        self.throttle_val = self.get_parameter_or("LocalisationThrottle", Parameter('int', Parameter.Type.INTEGER, 3)).value
         self.only_latched = self.get_parameter_or("OnlyLatched", Parameter('bool', Parameter.Type.BOOL, True)).value 
-        self.base_frame = self.get_parameter_or("~base_frame", Parameter('str', Parameter.Type.STRING, "base_link")).value
+        self.base_frame = self.get_parameter_or("base_frame", Parameter('str', Parameter.Type.STRING, "base_link")).value
 
         self.throttle = self.throttle_val
         self.node="Unknown"

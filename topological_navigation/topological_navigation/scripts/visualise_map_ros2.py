@@ -139,6 +139,7 @@ class TopoMap2Vis(rclpy.node.Node):
         self.topological_map =  yaml.load(msg.data, Loader = CustomSafeLoader) 
         self.get_logger().info("{}".format(self.topological_map['name']))
         self._map_received = True  
+        self.create_map_marker()
 
     def route_cb(self, msg):
         self.clear_route() # clear the last route

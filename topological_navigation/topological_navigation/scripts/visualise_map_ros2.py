@@ -23,7 +23,21 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from builtin_interfaces.msg import Duration
 from rclpy.task import Future
 import threading
+import yaml
 
+# this ensures that all the poses and translates 
+# are float-type and not int-type as there is an 
+# assertion in ros2 messages (vector3, pose etc.) 
+# for float-type [x,y,z,w] keys.
+class CustomSafeLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        mapping = super().construct_mapping(node, deep=deep)
+        for key in ['x', 'y', 'z', 'w']:
+            if key in mapping and isinstance(mapping[key], int):
+                mapping[key] = float(mapping[key])
+        
+        return mapping
+    
 def get_node(nodes_list, name):
     for i in nodes_list:
         if i['node']['name'] == name:
@@ -122,7 +136,7 @@ class TopoMap2Vis(rclpy.node.Node):
         self.get_logger().info("All Done ...")
 
     def topo_map_cb(self, msg):
-        self.topological_map = json.loads(msg.data)
+        self.topological_map =  yaml.load(msg.data, Loader = CustomSafeLoader) 
         self.get_logger().info("{}".format(self.topological_map['name']))
         self._map_received = True  
 

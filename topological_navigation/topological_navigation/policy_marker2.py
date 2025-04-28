@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import math
-
+import yaml
 import rclpy, json 
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
@@ -16,6 +16,23 @@ from topological_navigation.tmap_utils import get_edge_from_id_tmap2
 
 from topological_navigation_msgs.msg import TopologicalMap, NavRoute
 from std_msgs.msg import String 
+
+# this ensures that all the poses and translates 
+# are float-type and not int-type as there is an 
+# assertion in ros2 messages (vector3, pose etc.) 
+# for float-type [x,y,z,w] keys.
+class CustomSafeLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        mapping = super().construct_mapping(node, deep=deep)
+
+        # this can be extended to test the validity of the tmap2 
+        # as well at load time (or add missing keys)
+        for key in ['x', 'y', 'z', 'w']:
+            if key in mapping and isinstance(mapping[key], int):
+                mapping[key] = float(mapping[key])
+        
+        return mapping
+
 
 class PoliciesVis(Node):
 
@@ -34,7 +51,8 @@ class PoliciesVis(Node):
     def map_callback(self, msg):
         self.get_logger().info('map callback triggered')
         # self.map = msg
-        self.lnodes = json.loads(msg.data)
+        # self.lnodes = json.loads(msg.data)
+        self.lnodes = yaml.load( msg.data, Loader = CustomSafeLoader)
         self.topol_map = self.lnodes["pointset"]
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
 

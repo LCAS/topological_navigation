@@ -7,12 +7,29 @@ Created on Tue Nov 17 22:02:24 2023
 """
 
 import sys
-import rclpy, json 
+import rclpy, json , yaml
 from std_msgs.msg import String
 from topological_navigation_msgs.srv import GetRouteTo, GetRouteBetween
 from topological_navigation.route_search2 import RouteChecker, TopologicalRouteSearch2, get_route_distance
 from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy
 from rclpy.executors import MultiThreadedExecutor
+
+# this ensures that all the poses and translates 
+# are float-type and not int-type as there is an 
+# assertion in ros2 messages (vector3, pose etc.) 
+# for float-type [x,y,z,w] keys.
+class CustomSafeLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        mapping = super().construct_mapping(node, deep=deep)
+
+        # this can be extended to test the validity of the tmap2 
+        # as well at load time (or add missing keys)
+        for key in ['x', 'y', 'z', 'w']:
+            if key in mapping and isinstance(mapping[key], int):
+                mapping[key] = float(mapping[key])
+        
+        return mapping
+
 
 class SearchPolicyServer(rclpy.node.Node):
        
@@ -57,7 +74,8 @@ class SearchPolicyServer(rclpy.node.Node):
         return res         
 
     def map_callback(self, msg) :
-        self.lnodes = json.loads(msg.data)
+        # self.lnodes = json.loads(msg.data)
+        self.lnodes = yaml.load( msg.data, Loader=CustomSafeLoader)
         self.topol_map = self.lnodes["pointset"]
         self.rsearch = TopologicalRouteSearch2(self.lnodes)
         self._map_received = True

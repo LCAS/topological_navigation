@@ -1,0 +1,15 @@
+action: move_base
+action_type: move_base_msgs/MoveBaseGoal
+config: []
+edge_id: origin_destination
+fail_policy: fail
+fluid_navigation: True
+goal:
+  target_pose:
+    header:
+      frame_id: $node.parent_frame
+    pose: $node.pose
+node: destination
+recovery_behaviours_config: ''
+restrictions_planning: 'True'
+restrictions_runtime: 'True'

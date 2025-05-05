@@ -12,7 +12,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/config/', glob('config/*', recursive=True))
+        ('share/' + package_name + '/config/', glob('config/*', recursive=True)),
+        ('share/' + package_name + '/launch/', glob('launch/*', recursive=True))
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -48,7 +49,8 @@ setup(
             'visualise_map_ros2.py = topological_navigation.scripts.visualise_map_ros2:main',
             'topomap_marker.py = topological_navigation.topomap_marker:main',
             'topomap_marker2.py = topological_navigation.topomap_marker2:main',
-            'policy_marker.py = topological_navigation.policy_marker:main'
+            'policy_marker.py = topological_navigation.policy_marker:main',
+            'manual_topomapping.py = topological_navigation.scripts.manual_topomapping:main'
         ],
     },
 

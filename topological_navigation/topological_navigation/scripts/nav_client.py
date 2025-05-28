@@ -42,7 +42,7 @@ class topol_nav_client(object):
 if __name__ == '__main__':
     print('Argument List:',str(sys.argv))
     if len(sys.argv) < 2 :
-	sys.exit(2)
+        sys.exit(2)
     rospy.init_node('topol_nav_test')
     ps = topol_nav_client(sys.argv[1])
     

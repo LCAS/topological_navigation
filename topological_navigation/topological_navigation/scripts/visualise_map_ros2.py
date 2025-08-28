@@ -24,6 +24,7 @@ from builtin_interfaces.msg import Duration
 from rclpy.task import Future
 import threading
 import yaml
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDurabilityPolicy
 
 # this ensures that all the poses and translates 
 # are float-type and not int-type as there is an 
@@ -131,8 +132,24 @@ class TopoMap2Vis(rclpy.node.Node):
                     self.get_logger().info("End generating map...")
                 break 
 
-        self.topo_route_sub = self.create_subscription(TopologicalRoute, "topological_navigation/Route"
-                                                        , self.route_cb, qos_profile=self.latching_qos, callback_group=self.callback_goto_subs)
+        # 1. Define a QoS profile that matches the publisher's settings
+        qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            durability=QoSDurabilityPolicy.VOLATILE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=10  # Match the publisher's depth
+        )
+
+        # 2. Create the subscriber with the new QoS profile
+        self.topo_route_sub = self.create_subscription(
+            TopologicalRoute,
+            'topological_navigation/Route',
+            self.route_cb,
+            qos_profile  # Pass the matching QoS profile here
+        )
+
+        # self.topo_route_sub = self.create_subscription(TopologicalRoute, "topological_navigation/Route"
+                                                        # , self.route_cb, qos_profile=self.latching_qos, callback_group=self.callback_goto_subs)
         self.get_logger().info("All Done ...")
 
     def topo_map_cb(self, msg):

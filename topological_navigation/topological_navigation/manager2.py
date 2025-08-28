@@ -1502,8 +1502,8 @@ class map_manager_2(rclpy.node.Node):
                 msg.pose = Pose()
                 rosidl_runtime_py.set_message_fields(msg.pose, node["node"]["pose"])
 
-                msg.yaw_goal_tolerance = node["node"]["properties"]["yaw_goal_tolerance"]
-                msg.xy_goal_tolerance = node["node"]["properties"]["xy_goal_tolerance"]
+                msg.yaw_goal_tolerance = float(node["node"]["properties"]["yaw_goal_tolerance"])
+                msg.xy_goal_tolerance = float(node["node"]["properties"]["xy_goal_tolerance"])
 
                 msgs_verts = []
                 for v in node["node"]["verts"]:

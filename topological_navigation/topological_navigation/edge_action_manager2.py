@@ -101,9 +101,12 @@ class TopoNavEdgeActionMsg():
         header.frame_id = self.target_frame_id
         path.header = header
         if(len(self.side_edges)>0):
+            print(" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> getBoundary")
             for key, val in self.side_edges.items():
+                print(key)
                 for pose in val:
                     path.poses.append(pose)
+            print(" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         return path 
     
     
@@ -204,7 +207,58 @@ class EdgeActionManager(rclpy.node.Node):
         except Exception as e:
             self.get_logger().error("Goal cancel code {}".format(status_code))
             return self.ACTIONS.goal_cancel_error_codes[0]
-        
+
+    def _is_waypoint_name(self, name: str) -> bool:
+        n = (name or "").lower()
+        return ("waypoint" in n) or n.startswith("wp") or ("_wp" in n)
+
+    def _is_row_node_name(self, name: str) -> bool:
+        # Uses your existing constant that you already rely on elsewhere
+        # (you used startswith(ROW_COLUMN_START_INDEX) in execute_row_operation_action)
+        if not name:
+            return False
+        n = str(name)
+        return n.split("-")[-1].startswith(self.ACTIONS.ROW_COLUMN_START_INDEX) and (not self._is_waypoint_name(n))
+
+    def _yaw_from_quat(self, q) -> float:
+        # q: dict with x,y,z,w
+        x, y, z, w = q["x"], q["y"], q["z"], q["w"]
+        siny = 2.0 * (w * z + x * y)
+        cosy = 1.0 - 2.0 * (y * y + z * z)
+        return math.atan2(siny, cosy)
+
+    def _set_pose_yaw(self, pose_stamped: PoseStamped, yaw: float):
+        pose_stamped.pose.orientation.x = 0.0
+        pose_stamped.pose.orientation.y = 0.0
+        pose_stamped.pose.orientation.z = math.sin(yaw / 2.0)
+        pose_stamped.pose.orientation.w = math.cos(yaw / 2.0)
+
+    def _pick_last_row_goal(self, nodes):
+        """
+        nodes: list of dict goals (each has target_pose.pose.position)
+        Prefer the last goal that corresponds to a ROW node (not a waypoint).
+        """
+        last_row = None
+        for n in nodes:
+            p = n["target_pose"]["pose"]["position"]
+            xy = (p["x"], p["y"])
+            name = getattr(self, "destination_node_str", {}).get(xy)
+            if name and self._is_row_node_name(name):
+                last_row = n
+        return last_row if last_row is not None else nodes[-1]
+
+    def _compute_row_yaw(self, cen_pose_dict, last_goal_dict) -> float:
+        cpos = cen_pose_dict["node"]["pose"]["position"]
+        lpos = last_goal_dict["target_pose"]["pose"]["position"]
+        dx = lpos["x"] - cpos["x"]
+        dy = lpos["y"] - cpos["y"]
+        if abs(dx) + abs(dy) > 1e-6:
+            return math.atan2(dy, dx)
+
+        # fallback: center node orientation yaw
+        cor = cen_pose_dict["node"]["pose"]["orientation"]
+        return self._yaw_from_quat(cor)
+
         
     def _adjust_orientations_for_next_wp(self, poses_dict):
         """
@@ -239,7 +293,6 @@ class EdgeActionManager(rclpy.node.Node):
             self.get_logger().info("[_adjust_orientations_for_next_wp] Adjusted orientation for pose {} to face next goal".format(i))
 
         return poses_dict
-    
         
     def _process_and_segment_edges(self, edge, destination_node, origin_node, is_execpolicy):
         """
@@ -497,10 +550,8 @@ class EdgeActionManager(rclpy.node.Node):
     
     def check_target_is_same(self, node1, node2):
         target1 = np.array([node1["pose"]["position"]["x"], node1["pose"]["position"]["y"]])
-        target2 = np.array([node2["pose"]["position"]["x"], node1["pose"]["position"]["y"]])
-        if(np.linalg.norm(target1-target2) < 0.001):
-            return True 
-        return False
+        target2 = np.array([node2["pose"]["position"]["x"], node2["pose"]["position"]["y"]])
+        return np.linalg.norm(target1 - target2) < 0.001
 
     def two_smallest_indices(self, lst):
         if len(lst) < 1:
@@ -576,96 +627,278 @@ class EdgeActionManager(rclpy.node.Node):
 
     def get_navigate_through_poses_goal(self, poses, actions, edge_ids, is_execpolicy=False):
         
+
         def handle_row_operation():
-            self.target_row_edge_id = edge_id.split("_")[0]
-            tag_id = self.target_row_edge_id.split("-")[1]
-            self.target_row_edge_id = self.target_row_edge_id[:-1] + self.ACTIONS.ROW_START_INDEX
-            tag_id = tag_id[:-1] + self.ACTIONS.ROW_START_INDEX
+            """
+            Build row boundaries (selected_edges) ONLY from row-related boundary nodes,
+            and force boundary pose orientations to align with the row direction.
 
-            self.get_logger().info("Action in_row_operation ")
-            self.get_logger().info("Edge id and tag id  {} {}".format(self.target_row_edge_id, tag_id))
-            cen =  self.route_search.get_node_from_tmap2(self.target_row_edge_id)
-            self.publish_target_edges_as_path(cen)
-            
+            Returns: (action, action_msg)
+            """
+
+            # ---------------------------
+            # Small local helpers
+            # ---------------------------
+            def yaw_from_quat(q):
+                x, y, z, w = q["x"], q["y"], q["z"], q["w"]
+                siny = 2.0 * (w * z + x * y)
+                cosy = 1.0 - 2.0 * (y * y + z * z)
+                return math.atan2(siny, cosy)
+
+            def set_pose_yaw(ps: PoseStamped, yaw: float):
+                ps.pose.orientation.x = 0.0
+                ps.pose.orientation.y = 0.0
+                ps.pose.orientation.z = math.sin(yaw / 2.0)
+                ps.pose.orientation.w = math.cos(yaw / 2.0)
+
+            def is_waypoint_name(name: str) -> bool:
+                n = (name or "").lower()
+                return ("waypoint" in n) or n.startswith("wp") or ("_wp" in n)
+
+            def is_row_node_name(name: str) -> bool:
+                # Uses your existing convention used elsewhere in the code
+                # (ROW_COLUMN_START_INDEX = row column prefix)
+                if not name:
+                    return False
+                n = str(name)
+                suffix = n.split("-")[-1]
+                return suffix.startswith(self.ACTIONS.ROW_COLUMN_START_INDEX) and (not is_waypoint_name(n))
+
+            def publish_empty_boundary(frame_id: str):
+                empty = Path()
+                empty.header.frame_id = frame_id
+                empty.header.stamp = self.get_clock().now().to_msg()
+                self.boundary_publisher.publish(empty)
+
+            # ---------------------------
+            # Validate inputs / frame id
+            # ---------------------------
+            if not nodes or len(nodes) == 0:
+                self.get_logger().error("[handle_row_operation] nodes list is empty. Clearing boundary.")
+                publish_empty_boundary("map")
+                action_msg.setSideEdges({}, "map")
+                return self.ACTIONS.ROW_OPERATION, action_msg
+
+            target_pose_frame_id = nodes[0]["target_pose"]["header"].get("frame_id", "map")
+
+            if not edge_id:
+                self.get_logger().error("[handle_row_operation] edge_id is empty. Clearing boundary.")
+                publish_empty_boundary(target_pose_frame_id)
+                action_msg.setSideEdges({}, target_pose_frame_id)
+                return self.ACTIONS.ROW_OPERATION, action_msg
+
+            # ---------------------------
+            # Derive "row start" center id
+            # ---------------------------
+            try:
+                target_row_edge_id_raw = edge_id.split("_")[0]
+                tag_id = target_row_edge_id_raw.split("-")[1]
+                # Force ROW_START_INDEX by replacing the last character (keeps your existing convention)
+                target_row_edge_id = target_row_edge_id_raw[:-1] + self.ACTIONS.ROW_START_INDEX
+                tag_id = tag_id[:-1] + self.ACTIONS.ROW_START_INDEX
+            except Exception as e:
+                self.get_logger().error(f"[handle_row_operation] Failed to parse row ids from edge_id='{edge_id}': {e}. Clearing boundary.")
+                publish_empty_boundary(target_pose_frame_id)
+                action_msg.setSideEdges({}, target_pose_frame_id)
+                return self.ACTIONS.ROW_OPERATION, action_msg
+
+            self.get_logger().info(f"[handle_row_operation] edge_id={edge_id} -> center_row_id={target_row_edge_id} tag_id={tag_id}")
+
+            cen = self.route_search.get_node_from_tmap2(target_row_edge_id)
+            if not cen or "node" not in cen or "pose" not in cen["node"]:
+                self.get_logger().error(f"[handle_row_operation] Could not resolve center node '{target_row_edge_id}'. Clearing boundary.")
+                publish_empty_boundary(target_pose_frame_id)
+                action_msg.setSideEdges({}, target_pose_frame_id)
+                return self.ACTIONS.ROW_OPERATION, action_msg
+
+            # Publish /target_edge_path for the center node (your existing behavior)
+            try:
+                self.publish_target_edges_as_path(cen)
+            except Exception as e:
+                self.get_logger().warn(f"[handle_row_operation] publish_target_edges_as_path failed: {e}")
+
+            # ---------------------------
+            # Collect candidate boundary nodes around the row center
+            # (keeps your existing connectivity logic but adds filters)
+            # ---------------------------
             children = self.route_search.get_connected_nodes_tmap2(cen)
-            selected_row_edge_nodes = {}
-            for next_edge in children:
-                if(next_edge.startswith(self.ACTIONS.OUTSIDE_EDGE_START_INDEX)):
-                    upper_nodes =  self.route_search.get_node_from_tmap2(next_edge)["node"]["edges"]
-                    for edges_all in upper_nodes:
-                        if((self.ACTIONS.GOAL_ALIGN_INDEX[0] in edges_all["node"]) 
-                                            and (self.target_row_edge_id not in edges_all["node"])):
-                            
-                            targte_pose = self.route_search.get_node_from_tmap2(edges_all["node"])["node"]["pose"]
-                            targte_pose_x_y = np.array([targte_pose["position"]["x"], targte_pose["position"]["y"]])
-                            selected_row_edge_nodes[edges_all["node"]] = (targte_pose, targte_pose_x_y)
-                    
-            center_pose = self.route_search.get_node_from_tmap2(self.target_row_edge_id)["node"]["pose"]["position"]
-            center_pose = np.array([center_pose["x"], center_pose["y"]])
-            distance_vector = []
-            distance_with_edge_ids = {}
-            index_dis = 0
-            for the_key, the_value in selected_row_edge_nodes.items():  
-                distance_vector.append(np.linalg.norm(center_pose- the_value[1]))
-                distance_with_edge_ids[index_dis] = the_key
-                index_dis += 1
-            min_indices = self.two_smallest_indices(distance_vector)
-            children = []
-            for index in min_indices:
-                children.append(distance_with_edge_ids[index])
-                    
-            # Sort the list based on the extracted number in descending order
-            children = sorted(children, key=self.extract_number, reverse=True)
-            
-            self.get_logger().info("Children edges {}".format(children)) 
-                    
-            target_pose_frame_id = nodes[0]["target_pose"]["header"]["frame_id"]
-            last_goal = nodes[-1]
+            selected_row_edge_nodes = {}  # node_id -> (pose_dict, xy_np)
 
-            if(len(nodes) > 1):
-                if(self.check_target_is_same(cen["node"], last_goal["target_pose"])):
-                    last_goal = nodes[0]
+            for next_edge in (children or []):
+                if not next_edge.startswith(self.ACTIONS.OUTSIDE_EDGE_START_INDEX):
+                    continue
 
-            selected_last_node = last_goal
-            if(len(nodes) == 1):
-                edges = edge_id.split("_")
-                if(len(edges) == 2):
-                    edge_0, edge_1 = edges[0], edges[1]
-                    tag_0, tag_1 = edge_0.split("-")[1], edge_1.split("-")[1]
-                    if(tag_1 == tag_id):
-                            selected_last_node["target_pose"]["pose"] = self.route_search.get_node_from_tmap2(edge_0)["node"]["pose"]
-                    elif(tag_0 == tag_id):
-                            selected_last_node["target_pose"]["pose"] = self.route_search.get_node_from_tmap2(edge_1)["node"]["pose"]
-                elif(len(selected_last_node) == 0 and self.current_node is not None):
-                    selected_last_node["target_pose"]["pose"] = self.route_search.get_node_from_tmap2(self.current_node)["node"]["pose"]
-                else:
-                    self.get_logger().error("Cound not find bounday edge...") 
-                            
-            self.selected_edges = {}    
-            for child in children:
-                if tag_id in child:
-                    child_node = self.route_search.get_node_from_tmap2(child)
-                    side_intermediate_pose = self.get_intermediate_pose(cen, child_node, target_pose_frame_id)
-                    side_last_intermediate_pose = self.get_last_intermediate_pose(side_intermediate_pose, cen, selected_last_node)
-                    self.selected_edges[child] = [side_intermediate_pose, side_last_intermediate_pose]
+                next_edge_node = self.route_search.get_node_from_tmap2(next_edge)
+                if not next_edge_node or "node" not in next_edge_node:
+                    continue
 
-            if(len(self.selected_edges) == 1):
-                self.selected_edges["side_wall"] = self.get_intermediate_poses_interpolated(self.selected_edges, cen, selected_last_node)
+                upper_edges = next_edge_node["node"].get("edges", [])
+                for edges_all in upper_edges:
+                    node_id = edges_all.get("node", "")
+                    if not isinstance(node_id, str) or not node_id:
+                        continue
 
-            if(self.check_edges_area_same(self.selected_edges)):
-                edge_action_is_valid = True
-                self.get_logger().error("Bounday edges are same")
+                    # keep your original constraint
+                    if (self.ACTIONS.GOAL_ALIGN_INDEX[0] not in node_id):
+                        continue
+                    if (target_row_edge_id in node_id):
+                        continue
+
+                    # Exclude waypoints explicitly
+                    if is_waypoint_name(node_id):
+                        continue
+
+                    node_obj = self.route_search.get_node_from_tmap2(node_id)
+                    if not node_obj or "node" not in node_obj or "pose" not in node_obj["node"]:
+                        continue
+
+                    pose = node_obj["node"]["pose"]
+                    xy = np.array([pose["position"]["x"], pose["position"]["y"]], dtype=float)
+                    selected_row_edge_nodes[node_id] = (pose, xy)
+
+            if len(selected_row_edge_nodes) == 0:
+                self.get_logger().error("[handle_row_operation] No candidate boundary nodes found. Clearing boundary.")
+                publish_empty_boundary(target_pose_frame_id)
+                action_msg.setSideEdges({}, target_pose_frame_id)
+                return self.ACTIONS.ROW_OPERATION, action_msg
+
+            # ---------------------------
+            # Choose last goal INSIDE the row (avoid waypoint outside-row corrupting direction)
+            # Uses destination_node_str if available; otherwise falls back to nodes[-1]
+            # ---------------------------
+            selected_last_node = None
+            try:
+                # Prefer the last goal that is a ROW node (not a waypoint)
+                for g in nodes:
+                    p = g["target_pose"]["pose"]["position"]
+                    xy = (p["x"], p["y"])
+                    name = getattr(self, "destination_node_str", {}).get(xy)
+                    if name and is_row_node_name(name):
+                        selected_last_node = g
+            except Exception:
+                selected_last_node = None
+
+            if selected_last_node is None:
+                selected_last_node = nodes[-1]
+
+            # If last goal is exactly the center, use first goal as fallback
+            try:
+                cpos = cen["node"]["pose"]["position"]
+                lpos = selected_last_node["target_pose"]["pose"]["position"]
+                if np.linalg.norm(np.array([lpos["x"] - cpos["x"], lpos["y"] - cpos["y"]], dtype=float)) < 1e-6:
+                    selected_last_node = nodes[0]
+            except Exception:
+                pass
+
+            # ---------------------------
+            # Compute row direction (yaw)
+            # ---------------------------
+            cpos = cen["node"]["pose"]["position"]
+            lpos = selected_last_node["target_pose"]["pose"]["position"]
+            dx = lpos["x"] - cpos["x"]
+            dy = lpos["y"] - cpos["y"]
+
+            if abs(dx) + abs(dy) > 1e-6:
+                row_yaw = math.atan2(dy, dx)
             else:
-                edge_action_is_valid = True   
-            if edge_action_is_valid:
-                action_msg.setSideEdges(self.selected_edges, target_pose_frame_id) 
-                if self.is_row_boundary_published == False:
-                    boundary_info = action_msg.getBoundary()
-                    self.boundary_publisher.publish(boundary_info)
-                    self.is_row_boundary_published = True  
-                action = self.ACTIONS.ROW_OPERATION
-            return action, action_msg
-        
+                row_yaw = yaw_from_quat(cen["node"]["pose"]["orientation"])
+
+            row_dir = np.array([math.cos(row_yaw), math.sin(row_yaw)], dtype=float)
+            center_xy = np.array([cpos["x"], cpos["y"]], dtype=float)
+
+            # ---------------------------
+            # Pick closest LEFT and closest RIGHT boundary node (relative to row direction)
+            # Also enforce "lateral" boundary: candidate vector should be ~perpendicular to row_dir
+            # ---------------------------
+            candidates = []  # (side_sign, dist, node_id)
+
+            for node_id, (_pose, txy) in selected_row_edge_nodes.items():
+                # Must be for this row tag
+                if tag_id not in node_id:
+                    continue
+
+                v = (txy - center_xy)
+                dist = float(np.linalg.norm(v))
+                if dist < 1e-6:
+                    continue
+
+                # lateral filter: reject candidates that are too aligned with row_dir
+                cosang = abs(float(np.dot(row_dir, v) / dist))
+                if cosang > 0.6:
+                    continue
+
+                crossz = float(row_dir[0] * v[1] - row_dir[1] * v[0])
+                side = 1.0 if crossz > 0.0 else -1.0
+                candidates.append((side, dist, node_id))
+
+            if len(candidates) == 0:
+                self.get_logger().error("[handle_row_operation] Candidates exist but none passed lateral/tag filters. Clearing boundary.")
+                publish_empty_boundary(target_pose_frame_id)
+                action_msg.setSideEdges({}, target_pose_frame_id)
+                return self.ACTIONS.ROW_OPERATION, action_msg
+
+            left = min((c for c in candidates if c[0] > 0.0), default=None, key=lambda x: x[1])
+            right = min((c for c in candidates if c[0] < 0.0), default=None, key=lambda x: x[1])
+
+            picked = []
+            if left:
+                picked.append(left[2])
+            if right:
+                picked.append(right[2])
+
+            # Fallback: if only one side found, take the next closest (still filtered)
+            if len(picked) < 2:
+                for _, _, nid in sorted(candidates, key=lambda x: x[1]):
+                    if nid not in picked:
+                        picked.append(nid)
+                    if len(picked) == 2:
+                        break
+
+            # ---------------------------
+            # Build selected_edges (front/back) and force yaw to row_yaw
+            # ---------------------------
+            self.selected_edges = {}
+
+            for child in picked:
+                child_node = self.route_search.get_node_from_tmap2(child)
+                if not child_node or "node" not in child_node:
+                    continue
+
+                side_intermediate_pose = self.get_intermediate_pose(cen, child_node, target_pose_frame_id)
+                side_last_intermediate_pose = self.get_last_intermediate_pose(side_intermediate_pose, cen, selected_last_node)
+
+                # Force boundary direction to be aligned with the row
+                set_pose_yaw(side_intermediate_pose, row_yaw)
+                set_pose_yaw(side_last_intermediate_pose, row_yaw)
+
+                self.selected_edges[child] = [side_intermediate_pose, side_last_intermediate_pose]
+
+            # If only one wall found, mirror to create opposite wall (and align yaw)
+            if len(self.selected_edges) == 1:
+                self.selected_edges["side_wall"] = self.get_intermediate_poses_interpolated(self.selected_edges, cen, selected_last_node)
+                for ps in self.selected_edges["side_wall"]:
+                    set_pose_yaw(ps, row_yaw)
+
+            if len(self.selected_edges) == 0:
+                self.get_logger().error("[handle_row_operation] selected_edges ended empty. Clearing boundary.")
+                publish_empty_boundary(target_pose_frame_id)
+                action_msg.setSideEdges({}, target_pose_frame_id)
+                return self.ACTIONS.ROW_OPERATION, action_msg
+
+            # ---------------------------
+            # Publish /boundary_checker once (latched) + attach to action_msg
+            # ---------------------------
+            action_msg.setSideEdges(self.selected_edges, target_pose_frame_id)
+
+            if self.is_row_boundary_published is False:
+                boundary_info = action_msg.getBoundary()
+                boundary_info.header.stamp = self.get_clock().now().to_msg()
+                self.boundary_publisher.publish(boundary_info)
+                self.is_row_boundary_published = True
+
+            return self.ACTIONS.ROW_OPERATION, action_msg
+
+
         
         control_server_configs = {}
         action_msgs = []

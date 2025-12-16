@@ -9,6 +9,7 @@ import json, yaml
 import operator, collections, copy
 import rclpy
 import numpy as np  
+import time
 from functools import reduce  # forward compatibility for Python 3
 from rclpy.action import ActionClient 
 from action_msgs.msg import GoalStatus
@@ -346,7 +347,14 @@ class EdgeActionManager(rclpy.node.Node):
     
     def initialise(self, bt_trees, edge, destination_node, origin_node=None,
                    action_name=None, package="nav2_msgs.action", in_row_operation=False, is_execpolicy=False):
-
+        """
+        Initialize the edge action manager for a new navigation action.
+        
+        Performance notes:
+        - [TIMING] logs help identify delays during action switching
+        """
+        init_start = time.time()
+        
         self.bt_trees = bt_trees
         self.in_row_operation = in_row_operation
         if self.in_row_operation:
@@ -366,10 +374,14 @@ class EdgeActionManager(rclpy.node.Node):
             self.action_name = self.ACTIONS.NAVIGATE_TO_POSE #TODO change this to actual
 
         if self.action_name != self.current_action:
+            preempt_start = time.time()
             self.preempt()
+            self.get_logger().info(f"[TIMING] Action switch preempt took {time.time() - preempt_start:.3f}s")
 
         self.package = package
+        client_start = time.time()
         self.set_nav_client()
+        self.get_logger().info(f"[TIMING] set_nav_client took {time.time() - client_start:.3f}s")
         self.action_status = 0
 
         if self.action_name == self.ACTIONS.NAVIGATE_TO_POSE:
@@ -397,29 +409,31 @@ class EdgeActionManager(rclpy.node.Node):
             self.destination_node = destination_node[-1]
             self.action_msgs, self.control_server_configs = self.construct_navigate_through_poses_goal(poses, actions, edge_ids, is_execpolicy=is_execpolicy)
 
+        self.get_logger().info(f"[TIMING] Total initialise took {time.time() - init_start:.3f}s")
         return True
         
     
     def get_goal_align_if(self, edge_id, current_action, next_edge_id=None):
-        edges = edge_id.split("_")
-        if next_edge_id is not None:
-            next_edge_ids = next_edge_id.split("_")
-            if len(next_edge_ids) == 2:
-                next_goal_stage = next_edge_ids[1].split("-")
-                if len(next_goal_stage) == 2:
-                    if (next_goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX) or \
-                    (next_goal_stage[1] not in self.ACTIONS.GOAL_ALIGN_GOAL):
-                        return current_action
-                elif len(next_goal_stage) == 1:
-                    if current_action == self.ACTIONS.ROW_TRAVERSAL:
-                        return current_action
-        if len(edges) == 2:
-            goal = edges[1]
-            goal_stage = goal.split("-")
-            if len(goal_stage) == 2:
-                if goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX and not self.is_inside_tunnel:
-                    return self.ACTIONS.GOAL_ALIGN
-
+        """
+        Determines the action for an edge.
+        
+        REFACTORED: Now uses edge.action metadata directly as the source of truth.
+        Legacy node-name-based inference has been removed.
+        
+        Args:
+            edge_id: The edge ID (used only for logging/debugging)
+            current_action: The action defined in the edge metadata (edge.action)
+            next_edge_id: The next edge ID (no longer used, kept for API compatibility)
+            
+        Returns:
+            The action to execute, taken directly from edge metadata.
+            
+        Note:
+            If you see unexpected behavior, ensure your topological map defines
+            the correct action type on each edge (e.g., 'goal_align', 'row_traversal').
+        """
+        # Use edge.action metadata as the single source of truth
+        # Do not infer actions from node names in edge IDs
         return current_action
 
 
@@ -467,10 +481,21 @@ class EdgeActionManager(rclpy.node.Node):
         
         
     def preempt(self, timeout_secs=2.0):
+        """
+        Preempt (cancel) the currently running navigation action.
+        
+        Performance notes:
+        - [TIMING] logs show where delays occur during behavior switching
+        - Main sources of delay: server readiness wait, goal cancellation
+        """
+        preempt_start = time.time()
+        
         if self.client is not None:
             if not self.client.server_is_ready():
+                server_wait_start = time.time()
                 self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
                 self.client.wait_for_server(timeout_sec=2)
+                self.get_logger().info(f"[TIMING] Server wait took {time.time() - server_wait_start:.3f}s")
             if not self.client.server_is_ready():
                 self.get_logger().info("action server  {} not responding ... can not perform any action".format(self.action_server_name))
                 return True
@@ -481,13 +506,16 @@ class EdgeActionManager(rclpy.node.Node):
             counter = 0
             
             try: 
+                cancel_start = time.time()
                 cancel_future = self.goal_handle.cancel_goal_async()
                 rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=5.0)
+                self.get_logger().info(f"[TIMING] Goal cancellation took {time.time() - cancel_start:.3f}s")
                 self.get_logger().info("Waiting till terminating the current preemption")
                 self.action_status = 5
                 self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancel_error_msg(cancel_future.result().return_code)))
                 self.robot_current_status = self.ACTIONS.ROBOT_STATUS_NATURAL_STATE
                 self.publish_robot_current_status_msg(self.ACTIONS.NAVIGATE_THROUGH_POSES, self.robot_current_status)
+                self.get_logger().info(f"[TIMING] Total preempt took {time.time() - preempt_start:.3f}s")
                 return True 
             except Exception as e:
                 self.get_logger().error("Something wrong with Nav2 Control server {} while preempting {}".format(e, self.action_server_name))

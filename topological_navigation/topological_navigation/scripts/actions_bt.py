@@ -1,5 +1,14 @@
 
 class ActionsType:
+    """
+    Defines action types and constants used in topological navigation.
+    
+    IMPORTANT: Actions should be determined from edge metadata (edge.action field),
+    NOT from node name patterns. The node-name-based constants below are DEPRECATED
+    and maintained only for backward compatibility with legacy maps.
+    
+    New maps should define actions explicitly on edges in the topological map YAML.
+    """
     def __init__(self):
 
         self.NAVIGATE_TO_POSE = "NavigateToPose"
@@ -11,12 +20,17 @@ class ActionsType:
         self.ROW_RECOVERY = "row_recovery"
         self.ROW_CHANGE = "row_change"
         self.GOAL_ALIGN = "goal_align"
-        self.GOAL_ALIGN_INDEX = ["ca"]
-        self.GOAL_ALIGN_GOAL = ["cb"]
-        self.ROW_START_INDEX = "a"
-        self.ROW_COLUMN_START_INDEX = "c"
-        self.ROW_COLUMN_START_NEXT_INDEX = "b"
-        self.OUTSIDE_EDGE_START_INDEX = "WayPoint"
+        
+        # DEPRECATED: Node-name-based action inference constants
+        # These are maintained for backward compatibility with legacy maps.
+        # New maps should define action types explicitly on edges.
+        # TODO: Remove these after migration to edge-action-driven behavior is complete
+        self.GOAL_ALIGN_INDEX = ["ca"]  # DEPRECATED: Use edge.action instead
+        self.GOAL_ALIGN_GOAL = ["cb"]   # DEPRECATED: Use edge.action instead
+        self.ROW_START_INDEX = "a"      # DEPRECATED: Use edge.action instead
+        self.ROW_COLUMN_START_INDEX = "c"  # DEPRECATED: Use edge.action instead
+        self.ROW_COLUMN_START_NEXT_INDEX = "b"  # DEPRECATED: Use edge.action instead
+        self.OUTSIDE_EDGE_START_INDEX = "WayPoint"  # DEPRECATED: Use edge.action instead
 
         self.INSIDE_POLYTUNNEL = "INSIDE_POLYTUNNEL"
         self.OUTSIDE_POLYTUNNEL = "OUTSIDE_POLYTUNNEL"

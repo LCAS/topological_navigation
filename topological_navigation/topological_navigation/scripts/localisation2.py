@@ -132,6 +132,37 @@ class TopologicalNavLoc(rclpy.node.Node):
         
         self.create_timer(1.0, self.pose_callback)
 
+    def get_navigation_area_from_edges(self, closest_edge_ids):
+        """
+        Determines the navigation area based on edge action metadata.
+        
+        This uses edge.action as the source of truth instead of inferring
+        from node name patterns.
+        
+        Args:
+            closest_edge_ids: List of closest edge IDs
+            
+        Returns:
+            Navigation area string: INSIDE_POLYTUNNEL, TRANSITION_INTO_POLYTUNNEL, 
+            or OUTSIDE_POLYTUNNEL
+        """
+        if not hasattr(self, 'dist_edge_actions') or not closest_edge_ids:
+            return None
+            
+        # Check the closest edge action
+        if len(closest_edge_ids) > 0:
+            closest_edge_id = closest_edge_ids[0]
+            edge_action = self.dist_edge_actions.get(closest_edge_id, "")
+            
+            # If the closest edge has row_traversal action, we're inside polytunnel
+            if edge_action == self.ACTIONS.ROW_TRAVERSAL:
+                return self.ACTIONS.INSIDE_POLYTUNNEL
+                
+            # If the closest edge has goal_align action, we're in transition
+            if edge_action == self.ACTIONS.GOAL_ALIGN:
+                return self.ACTIONS.TRANSITION_INTO_POLYTUNNEL
+        
+        return None
         
     def get_distances_to_pose(self, pose):
         """
@@ -260,18 +291,29 @@ class TopologicalNavLoc(rclpy.node.Node):
             else:
                 self.throttle +=1
 
+            # Determine navigation area - prioritize edge action metadata
             robot_current_area_info = String()
             robot_nav_area = None
-            if(robot_nav_area is None and self.ACTIONS.ROW_COLUMN_START_INDEX in self.current_closest_node_name and (self.current_closest_node_name[-1].isdigit() or self.current_closest_node_name[-1] == self.ACTIONS.ROW_COLUMN_START_NEXT_INDEX)):
-                robot_nav_area = self.ACTIONS.INSIDE_POLYTUNNEL
-            elif(len(self.closest_edge_ids) > 0):
-                edge_ids_list = self.closest_edge_ids[0]
-                edge_ids = edge_ids_list.split("_")
-                if(len(edge_ids) == 2):
-                        if((self.ACTIONS.GOAL_ALIGN_INDEX[0] in edge_ids_list) and (self.ACTIONS.GOAL_ALIGN_GOAL[0] in edge_ids_list)):
+            
+            # First try edge-action-based detection (new approach)
+            robot_nav_area = self.get_navigation_area_from_edges(self.closest_edge_ids)
+            
+            # Fallback to legacy node-name-based detection if edge action detection fails
+            # DEPRECATED: This fallback will be removed once all maps define edge actions
+            if robot_nav_area is None:
+                if (self.ACTIONS.ROW_COLUMN_START_INDEX in self.current_closest_node_name and 
+                    (self.current_closest_node_name[-1].isdigit() or 
+                     self.current_closest_node_name[-1] == self.ACTIONS.ROW_COLUMN_START_NEXT_INDEX)):
+                    robot_nav_area = self.ACTIONS.INSIDE_POLYTUNNEL
+                elif len(self.closest_edge_ids) > 0:
+                    edge_ids_list = self.closest_edge_ids[0]
+                    edge_ids = edge_ids_list.split("_")
+                    if len(edge_ids) == 2:
+                        if ((self.ACTIONS.GOAL_ALIGN_INDEX[0] in edge_ids_list) and 
+                            (self.ACTIONS.GOAL_ALIGN_GOAL[0] in edge_ids_list)):
                             robot_nav_area = self.ACTIONS.TRANSITION_INTO_POLYTUNNEL
          
-            if(robot_nav_area is None):
+            if robot_nav_area is None:
                 robot_nav_area = self.ACTIONS.OUTSIDE_POLYTUNNEL
             robot_current_area_info.data = robot_nav_area
             self.robot_navigation_area_pub.publish(robot_current_area_info)
@@ -365,12 +407,16 @@ class TopologicalNavLoc(rclpy.node.Node):
             
             
     def get_edge_vectors(self):
-        
+        """
+        Builds edge vectors for distance calculations and stores edge actions for 
+        navigation area detection.
+        """
         node_poses = {}
         for node in self.tmap["nodes"]:
             node_poses[node["node"]["name"]] = node["node"]["pose"]
         
         self.dist_edge_ids = []
+        self.dist_edge_actions = {}  # Map edge_id -> action for edge-action-driven area detection
         vectors_start = []
         vectors_end = []
         
@@ -383,6 +429,8 @@ class TopologicalNavLoc(rclpy.node.Node):
                 
                 if node["node"]["name"] != edge["node"]:
                     self.dist_edge_ids.append(edge["edge_id"])
+                    # Store the edge action for navigation area detection
+                    self.dist_edge_actions[edge["edge_id"]] = edge.get("action", "")
                     end = [dest_pose["position"]["x"], dest_pose["position"]["y"], 0]
                     
                     vectors_start.append(start)

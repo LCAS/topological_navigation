@@ -11,6 +11,11 @@ class ActionsType:
         self.ROW_RECOVERY = "row_recovery"
         self.ROW_CHANGE = "row_change"
         self.GOAL_ALIGN = "goal_align"
+        
+        # NOTE: The following constants are DEPRECATED for action inference.
+        # They remain for backward compatibility with agricultural-specific 
+        # row operation features (boundary detection, robot status).
+        # DO NOT use these for determining navigation actions - use edge.action instead.
         self.GOAL_ALIGN_INDEX = ["ca"]
         self.GOAL_ALIGN_GOAL = ["cb"]
         self.ROW_START_INDEX = "a"

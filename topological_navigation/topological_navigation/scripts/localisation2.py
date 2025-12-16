@@ -295,11 +295,16 @@ class TopologicalNavLoc(rclpy.node.Node):
             robot_current_area_info = String()
             robot_nav_area = None
             
-            # First try edge-action-based detection (new approach)
+            # First try edge-action-based detection (new approach using edge.action metadata)
             robot_nav_area = self.get_navigation_area_from_edges(self.closest_edge_ids)
             
-            # Fallback to legacy node-name-based detection if edge action detection fails
-            # DEPRECATED: This fallback will be removed once all maps define edge actions
+            # LEGACY FALLBACK: Node-name-based detection for backward compatibility
+            # This fallback uses deprecated node-name patterns:
+            # - ROW_COLUMN_START_INDEX ("c"): Indicates inside polytunnel row
+            # - ROW_COLUMN_START_NEXT_INDEX ("b"): Indicates inside polytunnel row
+            # - GOAL_ALIGN_INDEX ("ca") + GOAL_ALIGN_GOAL ("cb"): Transition zone
+            # TODO: Remove this fallback once all topological maps define explicit
+            # edge actions for all edges
             if robot_nav_area is None:
                 if (self.ACTIONS.ROW_COLUMN_START_INDEX in self.current_closest_node_name and 
                     (self.current_closest_node_name[-1].isdigit() or 

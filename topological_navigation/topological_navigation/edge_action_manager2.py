@@ -660,6 +660,19 @@ class EdgeActionManager(rclpy.node.Node):
             """
             Build row boundaries (selected_edges) ONLY from row-related boundary nodes,
             and force boundary pose orientations to align with the row direction.
+            
+            LEGACY NOTE: This function uses node-name patterns for agricultural robotics
+            row boundary detection. This is domain-specific behavior that requires
+            topological map metadata (e.g., row center nodes, boundary waypoints) to be
+            properly refactored. The node-name patterns used here are:
+            
+            - OUTSIDE_EDGE_START_INDEX ("WayPoint"): Waypoint nodes for boundary detection
+            - GOAL_ALIGN_INDEX ("ca"): Row alignment goal nodes  
+            - ROW_START_INDEX ("a"): Row start position marker
+            - ROW_COLUMN_START_INDEX ("c"): Row column identifier
+            
+            TODO: Add explicit row boundary metadata to topological maps to replace
+            this node-name-based inference.
 
             Returns: (action, action_msg)
             """
@@ -1285,6 +1298,12 @@ class EdgeActionManager(rclpy.node.Node):
                     robot_init_pose = self.current_robot_pose 
                     next_goal, intermediate_pose, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
                     self.robot_current_status = self.ACTIONS.ROBOT_STATUS_PREPARATION_STATE
+                    
+                    # LEGACY NOTE: Robot harvesting status detection uses node-name patterns
+                    # This is domain-specific for agricultural robotics to detect when robot
+                    # is in a harvesting position (inside row, not at start position).
+                    # TODO: Add explicit harvesting position metadata to topological map nodes
+                    # to replace this node-name-based inference.
                     if(self.current_node is not None):
                         node_id = self.current_node.split("-")
                         if (len(node_id) == 2):

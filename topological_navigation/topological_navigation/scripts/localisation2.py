@@ -260,6 +260,9 @@ class TopologicalNavLoc(rclpy.node.Node):
             else:
                 self.throttle +=1
 
+            # TODO: This robot navigation area detection still uses node name patterns as a fallback.
+            # Ideally, this should be determined from edge/node metadata (e.g., 'zone' or 'area' property).
+            # For agricultural applications, consider adding explicit area tags to nodes/edges.
             robot_current_area_info = String()
             robot_nav_area = None
             if(robot_nav_area is None and self.ACTIONS.ROW_COLUMN_START_INDEX in self.current_closest_node_name and (self.current_closest_node_name[-1].isdigit() or self.current_closest_node_name[-1] == self.ACTIONS.ROW_COLUMN_START_NEXT_INDEX)):

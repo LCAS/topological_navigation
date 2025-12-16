@@ -8,7 +8,8 @@ Created on Tue Nov 5 22:02:24 2023
 import json, yaml
 import operator, collections, copy
 import rclpy
-import numpy as np  
+import numpy as np
+import time  # Added for timing behavior switches
 from functools import reduce  # forward compatibility for Python 3
 from rclpy.action import ActionClient 
 from action_msgs.msg import GoalStatus
@@ -236,6 +237,7 @@ class EdgeActionManager(rclpy.node.Node):
     def _process_and_segment_edges(self, edge, destination_node, origin_node, is_execpolicy):
         """
         Processes a list of edges, groups them into segments based on the policy.
+        Uses edge.action as the single source of truth for action determination.
         """
         self.get_logger().warn(f"[_process_and_segment_edges] - {'EXECUTE-POLICY' if is_execpolicy else 'GO-TO-NODE'}")
         
@@ -247,16 +249,10 @@ class EdgeActionManager(rclpy.node.Node):
         for index in range(total_edges):
             edge_i, dest_i, origin_i = edge[index], destination_node[index], origin_node[index]
             edge_i = yaml.safe_load(json.dumps(edge_i))
-            current_action_base = edge_i["action"]
-
-            # Determine the effective current action (common logic)
-            if index < (total_edges - 1):
-                next_edge_id = edge[index + 1]["edge_id"]
-                current_action = self.get_goal_align_if(edge_i["edge_id"], current_action_base, next_edge_id)
-                self.get_logger().debug(f"[_process_and_segment_edges] - intermediate edge {edge_i['edge_id']} -> action {current_action}")
-            else:
-                current_action = self.get_goal_align_if(edge_i["edge_id"], current_action_base)
-                self.get_logger().debug(f"[_process_and_segment_edges] - final edge {edge_i['edge_id']} -> action {current_action}")
+            
+            # Use edge.action directly as the single source of truth
+            current_action = edge_i["action"]
+            self.get_logger().debug(f"[_process_and_segment_edges] - edge {edge_i['edge_id']} -> action {current_action}")
 
             # Determine segment number based on the policy (the only differing logic)
             if not is_execpolicy:
@@ -305,10 +301,19 @@ class EdgeActionManager(rclpy.node.Node):
             self.action_name = self.ACTIONS.NAVIGATE_TO_POSE #TODO change this to actual
 
         if self.action_name != self.current_action:
+            action_switch_start = time.time()
+            self.get_logger().info(f"[TIMING] Action switching from '{self.current_action}' to '{self.action_name}' - starting preempt...")
             self.preempt()
+            action_switch_duration = time.time() - action_switch_start
+            self.get_logger().info(f"[TIMING] Action switch preempt completed in {action_switch_duration:.3f}s")
 
         self.package = package
+        
+        client_setup_start = time.time()
         self.set_nav_client()
+        client_setup_duration = time.time() - client_setup_start
+        self.get_logger().info(f"[TIMING] Nav client setup completed in {client_setup_duration:.3f}s")
+        
         self.action_status = 0
 
         if self.action_name == self.ACTIONS.NAVIGATE_TO_POSE:
@@ -338,27 +343,6 @@ class EdgeActionManager(rclpy.node.Node):
 
         return True
         
-    
-    def get_goal_align_if(self, edge_id, current_action, next_edge_id=None):
-        edges = edge_id.split("_")
-        if next_edge_id is not None:
-            next_edge_ids = next_edge_id.split("_")
-            if len(next_edge_ids) == 2:
-                next_goal_stage = next_edge_ids[1].split("-")
-                if len(next_goal_stage) == 2:
-                    if (next_goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX) or (next_goal_stage[1] not in self.ACTIONS.GOAL_ALIGN_GOAL):
-                        return current_action
-                elif len(next_goal_stage) == 1:
-                    if(current_action == self.ACTIONS.ROW_TRAVERSAL):
-                        return current_action
-        if len(edges) == 2:
-            goal = edges[1]
-            goal_stage = goal.split("-")
-            if len(goal_stage) == 2:
-                if goal_stage[1] in self.ACTIONS.GOAL_ALIGN_INDEX:
-                    return self.ACTIONS.GOAL_ALIGN 
-        return current_action
-
 
     def set_nav_client(self):
         self.action_server_name = self.get_action_server_name(self.action_name)
@@ -404,10 +388,14 @@ class EdgeActionManager(rclpy.node.Node):
         
         
     def preempt(self, timeout_secs=2.0):
+        preempt_start = time.time()
         if self.client is not None:
             if not self.client.server_is_ready():
-                self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
+                wait_start = time.time()
+                self.get_logger().info("[TIMING] Waiting for the action server {}...".format(self.action_server_name))
                 self.client.wait_for_server(timeout_sec=2)
+                wait_duration = time.time() - wait_start
+                self.get_logger().info(f"[TIMING] Action server wait completed in {wait_duration:.3f}s")
             if not self.client.server_is_ready():
                 self.get_logger().info("action server  {} not responding ... can not perform any action".format(self.action_server_name))
                 return True
@@ -417,14 +405,19 @@ class EdgeActionManager(rclpy.node.Node):
             
             counter = 0
             
-            try: 
+            try:
+                cancel_start = time.time()
                 cancel_future = self.goal_handle.cancel_goal_async()
                 rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=5.0)
+                cancel_duration = time.time() - cancel_start
+                self.get_logger().info(f"[TIMING] Goal cancellation took {cancel_duration:.3f}s")
                 self.get_logger().info("Waiting till terminating the current preemption")
                 self.action_status = 5
                 self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancel_error_msg(cancel_future.result().return_code)))
                 self.robot_current_status = self.ACTIONS.ROBOT_STATUS_NATURAL_STATE
                 self.publish_robot_current_status_msg(self.ACTIONS.NAVIGATE_THROUGH_POSES, self.robot_current_status)
+                preempt_total = time.time() - preempt_start
+                self.get_logger().info(f"[TIMING] Total preempt duration: {preempt_total:.3f}s")
                 return True 
             except Exception as e:
                 self.get_logger().error("Something wrong with Nav2 Control server {} while preempting {}".format(e, self.action_server_name))
@@ -509,6 +502,10 @@ class EdgeActionManager(rclpy.node.Node):
 
     def get_navigate_through_poses_goal(self, poses, actions, edge_ids, is_execpolicy=False):
         
+        # NOTE: handle_row_operation is an agricultural-specific feature for row-based operations.
+        # It uses node naming patterns to identify row boundaries and waypoints.
+        # This is acceptable as it's a specialized behavior mode, but ideally should use
+        # explicit boundary metadata in edges or nodes for better maintainability.
         def handle_row_operation():
             self.target_row_edge_id = edge_id.split("_")[0]
             tag_id = self.target_row_edge_id.split("-")[1]
@@ -955,6 +952,8 @@ class EdgeActionManager(rclpy.node.Node):
                     robot_init_pose = self.current_robot_pose 
                     next_goal, intermediate_pose, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
                     self.robot_current_status = self.ACTIONS.ROBOT_STATUS_PREPARATION_STATE
+                    # TODO: Robot status determination uses node name patterns.
+                    # This should be replaced with node/edge metadata tags indicating harvesting zones.
                     if(self.current_node is not None):
                         node_id = self.current_node.split("-")
                         if (len(node_id) == 2):

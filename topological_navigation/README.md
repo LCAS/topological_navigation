@@ -3,7 +3,11 @@ Topological Navigation
 
 **These instructions are intended for the legacy branch of topological navigation. Instructions for the master branch (topological navigation 2) are to do.**
 
-This node provides support for topological navigation in the STRANDS system. 
+This package provides support for topological navigation, originally devised for the STRANDS system.
+
+## Flexible Properties System
+
+The topological map schema now supports a flexible properties system that allows you to attach custom metadata to nodes and edges without requiring schema modifications. This enables domain-specific customization such as setting navigation tolerances, semantic labels, operational zones, and application-specific attributes. See [doc/PROPERTIES.md](doc/PROPERTIES.md) for detailed documentation. 
 
 This module requires:
  * move_base

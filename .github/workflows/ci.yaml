@@ -2,9 +2,11 @@ name: ros CI
 
 on:
   push:
-    branches: [ humble-dev ]
+    branches: [ humble-dev, aoc ]
+    tags:     # Also run CI on tags.
+      - '*'
   pull_request:
-    branches: [ humble-dev ]
+    branches: [ humble-dev, aoc ]
 
 jobs:
   test_docker: # On Linux, iterates on all ROS 1 and ROS 2 distributions.

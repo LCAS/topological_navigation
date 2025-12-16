@@ -52,6 +52,7 @@ setup(
             'manual_topomapping.py = topological_navigation.scripts.manual_topomapping:main',
             'occupancy_checker.py = topological_navigation.scripts.occupancy_checker:main',
             'topological_visual.py = topological_navigation.scripts.topological_visual:main',
+            'validate_map.py = topological_navigation.scripts.validate_map:main',
         ],
     },
 

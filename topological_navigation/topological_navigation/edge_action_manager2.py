@@ -1338,7 +1338,11 @@ class EdgeActionManager(rclpy.node.Node):
             self.get_logger().warn("Executing action : {} ".format(target_action))
 
             # Publish segment destination for visualisation purposes
-            current_destination = (target_goal.poses[-1].pose.position.x, target_goal.poses[-1].pose.position.y)
+            # Handle both NavigateToPose (single pose) and NavigateThroughPoses (poses array)
+            if target_action == self.ACTIONS.NAVIGATE_TO_POSE:
+                current_destination = (target_goal.pose.pose.position.x, target_goal.pose.pose.position.y)
+            else:
+                current_destination = (target_goal.poses[-1].pose.position.x, target_goal.poses[-1].pose.position.y)
             self.get_logger().warn("Current destination : {} ".format(self.destination_node_str[current_destination]))
             self.current_dest.publish(String(data=self.destination_node_str[current_destination]))
             

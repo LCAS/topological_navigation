@@ -166,7 +166,7 @@ class EdgeActionManager(rclpy.node.Node):
         self.robot_current_status_pub = self.create_publisher(String, '/robot_operation_current_status', qos_profile=self.latching_qos)
         self.current_dest = self.create_publisher(String, '/topological_navigation/current_destination', qos_profile=self.latching_qos)
         self.target_edge_path_pub = self.create_publisher(Path, "/target_edge_path", qos_profile=self.latching_qos)
-        self.center_node_pose_pub = self.create_publisher(PoseStamped, "/center_node_pose", qos_profile=self.latching_qos)
+        self.center_node_pose_pub = self.create_publisher(PoseStamped, "/center_node/pose", qos_profile=self.latching_qos)
 
         self.robot_current_behavior_pub = None
         self.current_node = None 

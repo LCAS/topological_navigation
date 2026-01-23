@@ -610,18 +610,30 @@ class EdgeActionManager(rclpy.node.Node):
         Returns: (center_node, tag_id, target_row_edge_id) or (None, None, None) on failure.
         """
         try:
-            target_row_edge_id_raw = edge_id.split("_")[0]
-            tag_id = target_row_edge_id_raw.split("-")[1]
-            # print trget_row_edge_id_raw, tag_id
+            # edge_id = r7.5-c20_r7.5-c19
+            target_row_edge_id_raw = edge_id.split("_")[0] # e.g. 'r7.5-c20'
+            tag_id = target_row_edge_id_raw.split("-")[1] # e.g. 'c20'
+            # print trget_row_edge_id_raw, tag_id 
             self.get_logger().info(f"[_get_row_center_node] Parsed edge_id='{edge_id}' to target_row_edge_id_raw='{target_row_edge_id_raw}', tag_id='{tag_id}'")
             # Force ROW_START_INDEX by replacing the last character
-            target_row_edge_id = target_row_edge_id_raw[:-1] + self.ACTIONS.ROW_START_INDEX
-            tag_id = tag_id[:-1] + self.ACTIONS.ROW_START_INDEX
+            # e.g. 'r7.5-c20' -> 'r7.5-c2a' if ROW_START_INDEX='a'
+            target_row_edge_id =  target_row_edge_id_raw.split("c", 1)[0] + "c" + self.ACTIONS.ROW_START_INDEX # target_row_edge_id_raw[:-1] + self.ACTIONS.ROW_START_INDEX
+            tag_id = tag_id[0] + self.ACTIONS.ROW_START_INDEX
             #print target_row_edge_id, tag_id
             self.get_logger().info(f"[_get_row_center_node] Adjusted to target_row_edge_id='{target_row_edge_id}', tag_id='{tag_id}'")
         except Exception as e:
             self.get_logger().error(f"[_get_row_center_node] Failed to parse edge_id='{edge_id}': {e}")
             return None, None, None
+
+
+# [navigation2.py-1] [INFO] [1769092547.587714525] [edge_action_manager]: seg: 1, action: row_traversal, edge id: r7.5-c20_r7.5-c19                                         [5/542]
+# [navigation2.py-1] [WARN] [1769092547.588122116] [edge_action_manager]: Segment 1: ROW_TRAVERSAL with in_row_operation                                                           
+# [navigation2.py-1] [INFO] [1769092547.588500119] [edge_action_manager]: [_get_row_center_node] Parsed edge_id='r7.5-c20_r7.5-c19' to target_row_edge_id_raw='r7.5-c20', tag_id='c20'                                                                                                                                                                              
+# [navigation2.py-1] [INFO] [1769092547.588853300] [edge_action_manager]: [_get_row_center_node] Adjusted to target_row_edge_id='r7.5-c2a', tag_id='ca'                            
+# [navigation2.py-1] [ERROR] [1769092547.589243941] [edge_action_manager]: [_get_row_center_node] Could not resolve 'r7.5-c2a'                                                     
+# [navigation2.py-1] [INFO] [1769092547.589773425] [edge_action_manager]:  Action row_operation  Bt_tree : /home/ros/aoc_strawberry_scenario_ws/install/aoc_strawberry_scenario_bringup/share/aoc_strawberry_scenario_bringup/config/robots/dynium_platform/topological_manager/bt_tree_in_row.xml
+
+
 
         cen = self.route_search.get_node_from_tmap2(target_row_edge_id)
         if not cen or "node" not in cen or "pose" not in cen["node"]:

@@ -624,17 +624,7 @@ class EdgeActionManager(rclpy.node.Node):
         except Exception as e:
             self.get_logger().error(f"[_get_row_center_node] Failed to parse edge_id='{edge_id}': {e}")
             return None, None, None
-
-
-# [navigation2.py-1] [INFO] [1769092547.587714525] [edge_action_manager]: seg: 1, action: row_traversal, edge id: r7.5-c20_r7.5-c19                                         [5/542]
-# [navigation2.py-1] [WARN] [1769092547.588122116] [edge_action_manager]: Segment 1: ROW_TRAVERSAL with in_row_operation                                                           
-# [navigation2.py-1] [INFO] [1769092547.588500119] [edge_action_manager]: [_get_row_center_node] Parsed edge_id='r7.5-c20_r7.5-c19' to target_row_edge_id_raw='r7.5-c20', tag_id='c20'                                                                                                                                                                              
-# [navigation2.py-1] [INFO] [1769092547.588853300] [edge_action_manager]: [_get_row_center_node] Adjusted to target_row_edge_id='r7.5-c2a', tag_id='ca'                            
-# [navigation2.py-1] [ERROR] [1769092547.589243941] [edge_action_manager]: [_get_row_center_node] Could not resolve 'r7.5-c2a'                                                     
-# [navigation2.py-1] [INFO] [1769092547.589773425] [edge_action_manager]:  Action row_operation  Bt_tree : /home/ros/aoc_strawberry_scenario_ws/install/aoc_strawberry_scenario_bringup/share/aoc_strawberry_scenario_bringup/config/robots/dynium_platform/topological_manager/bt_tree_in_row.xml
-
-
-
+            
         cen = self.route_search.get_node_from_tmap2(target_row_edge_id)
         if not cen or "node" not in cen or "pose" not in cen["node"]:
             self.get_logger().error(f"[_get_row_center_node] Could not resolve '{target_row_edge_id}'")

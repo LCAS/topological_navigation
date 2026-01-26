@@ -1236,8 +1236,8 @@ class EdgeActionManager(rclpy.node.Node):
             if inrow_opt.isPlanCalculated():
                 while rclpy.ok():
                     # Check for cancellation before proceeding with next iteration
-                    if self.action_status == 5: # see https://docs.ros.org/en/jazzy/p/action_msgs/msg/GoalStatus.html
-                        self.get_logger().warn("Row operation cancelled - exiting loop")
+                    if self.action_status == GoalStatus.STATUS_CANCELED:
+                        self.get_logger().warning("Row operation cancelled - exiting loop")
                         self.robot_current_status = self.ACTIONS.ROBOT_STATUS_NATURAL_STATE
                         self.publish_robot_current_status_msg(self.ACTIONS.ROW_OPERATION, self.robot_current_status)
                         return False

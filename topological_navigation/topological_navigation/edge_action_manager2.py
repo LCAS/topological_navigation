@@ -464,12 +464,10 @@ class EdgeActionManager(rclpy.node.Node):
                 return True 
             except Exception as e:
                 self.get_logger().error("Something wrong with Nav2 Control server {} while preempting {}".format(e, self.action_server_name))
-                return True 
-            finally:
-                # in any case set it to canceled
                 self.action_status = GoalStatus.STATUS_CANCELED
+                return True
         else:
-            self.get_logger().warning("There is no client to preempt")
+            self.get_logger().warning("There is no client to preempt, setting status to canceled anyway")
             self.action_status = GoalStatus.STATUS_CANCELED
             return True
         

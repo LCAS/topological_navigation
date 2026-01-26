@@ -1234,7 +1234,14 @@ class EdgeActionManager(rclpy.node.Node):
             robot_init_pose = self.current_robot_pose
             
             if inrow_opt.isPlanCalculated():
-                while True:
+                while rclpy.ok():
+                    # Check for cancellation before proceeding with next iteration
+                    if self.action_status == 5: # see https://docs.ros.org/en/jazzy/p/action_msgs/msg/GoalStatus.html
+                        self.get_logger().warn("Row operation cancelled - exiting loop")
+                        self.robot_current_status = self.ACTIONS.ROBOT_STATUS_NATURAL_STATE
+                        self.publish_robot_current_status_msg(self.ACTIONS.ROW_OPERATION, self.robot_current_status)
+                        return False
+                    
                     robot_init_pose = self.current_robot_pose 
                     next_goal, intermediate_pose, get_to_goal = inrow_opt.getNextGoal(robot_init_pose)
                     self.robot_current_status = self.ACTIONS.ROBOT_STATUS_PREPARATION_STATE

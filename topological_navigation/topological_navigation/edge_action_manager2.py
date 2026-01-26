@@ -1246,6 +1246,11 @@ class EdgeActionManager(rclpy.node.Node):
                         self.get_logger().warning("Row operation cancelled - exiting loop")
                         self.robot_current_status = self.ACTIONS.ROBOT_STATUS_NATURAL_STATE
                         self.publish_robot_current_status_msg(self.ACTIONS.ROW_OPERATION, self.robot_current_status)
+                        # Allow nav client to fully terminate before returning
+                        try:
+                            rclpy.spin_once(self, executor=self.executor_nav_client, timeout_sec=0.5)
+                        except Exception as e:
+                            self.get_logger().error("Error while spinning once during cancellation: {}".format(e))
                         return False
                     
                     robot_init_pose = self.current_robot_pose 

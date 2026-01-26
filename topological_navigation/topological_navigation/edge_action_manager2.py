@@ -454,9 +454,10 @@ class EdgeActionManager(rclpy.node.Node):
             
             try: 
                 cancel_future = self.goal_handle.cancel_goal_async()
-                rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=5.0)
+                rclpy.spin_until_future_complete(self, cancel_future, timeout_sec=timeout_secs)
                 self.get_logger().info("Waiting till terminating the current preemption")
-                self.action_status = 5
+                # set to canceled
+                self.action_status = GoalStatus.STATUS_CANCELED
                 self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancel_error_msg(cancel_future.result().return_code)))
                 self.robot_current_status = self.ACTIONS.ROBOT_STATUS_NATURAL_STATE
                 self.publish_robot_current_status_msg(self.ACTIONS.NAVIGATE_THROUGH_POSES, self.robot_current_status)
@@ -464,6 +465,13 @@ class EdgeActionManager(rclpy.node.Node):
             except Exception as e:
                 self.get_logger().error("Something wrong with Nav2 Control server {} while preempting {}".format(e, self.action_server_name))
                 return True 
+            finally:
+                # in any case set it to canceled
+                self.action_status = GoalStatus.STATUS_CANCELED
+        else:
+            self.get_logger().warning("There is no client to preempt")
+            self.action_status = GoalStatus.STATUS_CANCELED
+            return True
         
         
     def construct_goal(self, goal_args, destination_node, origin_node):

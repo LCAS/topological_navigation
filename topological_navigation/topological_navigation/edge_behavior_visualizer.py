@@ -29,8 +29,8 @@ class EdgeBehaviorVisualizer(Node):
         self.declare_parameter("slow_controller_id", "SlowFollowPath")
         self.declare_parameter("reverse_controller_id", "ReverseFollowPath")
         self.declare_parameter("marker_topic", "/topological_edges_colored")
-        self.declare_parameter("line_width", 0.12)
-        self.declare_parameter("line_z", 0.12)
+        self.declare_parameter("line_width", 0.06)
+        self.declare_parameter("line_z", 0.03)
         self.declare_parameter("publish_period_sec", 2.0)
 
         self.graph_file = str(self.get_parameter("graph_file").value)

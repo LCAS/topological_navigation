@@ -391,6 +391,9 @@ class RouteBtWrapper(Node):
             ):
                 last["edge_ids"].extend(seg["edge_ids"])
                 last["poses"].extend(seg["poses"])
+                # Preserve per-edge primitive steps used by reverse/slow traversal.
+                last["slow_steps"].extend(seg.get("slow_steps", []))
+                last["reverse_steps"].extend(seg.get("reverse_steps", []))
             else:
                 merged.append(seg)
         return merged

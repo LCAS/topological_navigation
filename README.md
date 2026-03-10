@@ -83,6 +83,22 @@ ros2 action send_goal /execute_named_waypoints \
 	"{waypoint_names: ['A', 'B', 'C', 'D'], execute_navigation: true}"
 ```
 
+## Behavior diagnostics
+
+Use the helper script to validate that route segments are being executed with
+mixed default / slow / reverse behaviors and to summarize observed `/cmd_vel`
+linear speed buckets:
+
+```bash
+./scripts/check_edge_behaviors.sh 7 8 15 16
+```
+
+The script prints:
+
+- matching `route_bt_wrapper` segment logs (`Executing segment ...`)
+- fallback warnings if a slow/reverse primitive failed
+- sampled `/cmd_vel` stats (max/min/slow/positive/reverse sample counts)
+
 ## Closest Node Publisher
 
 `closest_node_publisher` runs in the same launch file and continuously subscribes to:

@@ -42,8 +42,8 @@ class InteractiveNodeMarkers(Node):
         self.declare_parameter("pose_cov_topic", "/amcl_pose")
         self.declare_parameter("odom_topic", "/odom")
         self.declare_parameter("selected_route_topic", "/selected_topological_route")
-        self.declare_parameter("marker_scale", 0.4)
-        self.declare_parameter("marker_z_offset", 0.18)
+        self.declare_parameter("marker_scale", 0.2)
+        self.declare_parameter("marker_z_offset", 0.05)
         self.declare_parameter("click_sphere_scale_factor", 0.65)
 
         self.graph_file = str(self.get_parameter("graph_file").value)
@@ -273,7 +273,7 @@ class InteractiveNodeMarkers(Node):
         route_marker.id = 0
         route_marker.type = Marker.LINE_STRIP
         route_marker.action = Marker.ADD
-        route_marker.scale.x = 0.09
+        route_marker.scale.x = 0.05
         route_marker.color = ColorRGBA(r=1.0, g=0.1, b=0.1, a=0.95)
         route_marker.lifetime = Duration(seconds=0.0).to_msg()
 
@@ -281,7 +281,7 @@ class InteractiveNodeMarkers(Node):
             p = Point()
             p.x = float(node.position.x)
             p.y = float(node.position.y)
-            p.z = 0.22
+            p.z = 0.04
             route_marker.points.append(p)
 
         endpoints = Marker()
@@ -291,9 +291,9 @@ class InteractiveNodeMarkers(Node):
         endpoints.id = 1
         endpoints.type = Marker.SPHERE_LIST
         endpoints.action = Marker.ADD
-        endpoints.scale.x = 0.18
-        endpoints.scale.y = 0.18
-        endpoints.scale.z = 0.18
+        endpoints.scale.x = 0.10
+        endpoints.scale.y = 0.10
+        endpoints.scale.z = 0.10
         endpoints.color = ColorRGBA(r=1.0, g=0.95, b=0.2, a=0.95)
         endpoints.lifetime = Duration(seconds=0.0).to_msg()
 

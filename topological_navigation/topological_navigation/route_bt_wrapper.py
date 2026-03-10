@@ -4,15 +4,17 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
+import time
 
 import rclpy
 import yaml
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Goals
-from nav2_msgs.action import ComputeRoute, NavigateThroughPoses, NavigateToPose
+from nav_msgs.msg import Goals, Odometry
+from nav2_msgs.action import BackUp, ComputeRoute, NavigateThroughPoses, NavigateToPose, Spin
 from rclpy.action import ActionClient, ActionServer
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -34,11 +36,18 @@ class RouteBtWrapper(Node):
         self.declare_parameter("randomize_edge_behaviors", True)
         self.declare_parameter("edge_behavior_seed", 42)
         self.declare_parameter("controller_selector_topic", "/controller_selector")
+        self.declare_parameter("controller_selector_publish_repeats", 4)
+        self.declare_parameter("controller_selector_publish_interval_sec", 0.05)
+        self.declare_parameter("controller_selector_settle_sec", 0.12)
+        self.declare_parameter("odom_topic", "/odom")
         self.declare_parameter("default_controller_id", "FollowPath")
         self.declare_parameter("slow_controller_id", "SlowFollowPath")
         self.declare_parameter("reverse_controller_id", "ReverseFollowPath")
         self.declare_parameter("slow_behavior_tree", "")
         self.declare_parameter("reverse_behavior_tree", "")
+        self.declare_parameter("reverse_backup_speed", 0.08)
+        self.declare_parameter("reverse_spin_timeout_sec", 8)
+        self.declare_parameter("reverse_backup_timeout_sec", 12)
 
         self.route_frame = str(self.get_parameter("route_frame").value)
         self.graph_file = str(self.get_parameter("graph_file").value)
@@ -47,9 +56,17 @@ class RouteBtWrapper(Node):
         default_bt = str(self.get_parameter("default_behavior_tree").value)
         self.default_bt, self.edge_bts = self._load_behavior_map(behavior_map_file, default_bt)
         self.edge_controller_overrides: dict[int, str] = {}
+        self.latest_yaw: float | None = None
         self.graph_edge_ids, self.edge_pairs = self._load_edge_info(self.graph_file)
         self._assign_random_edge_behaviors()
         self.name_to_node_id = self._load_name_to_id(self.graph_file)
+
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            str(self.get_parameter("odom_topic").value),
+            self._odom_cb,
+            10,
+        )
 
         self.controller_selector_pub = self.create_publisher(
             String,
@@ -72,7 +89,8 @@ class RouteBtWrapper(Node):
             NavigateThroughPoses,
             str(self.get_parameter("navigate_through_poses_action").value),
         )
-
+        self.spin_client = ActionClient(self, Spin, "/spin")
+        self.backup_client = ActionClient(self, BackUp, "/backup")
         self.named_route_action_server = ActionServer(
             self,
             ExecuteNamedWaypoints,
@@ -218,6 +236,16 @@ class RouteBtWrapper(Node):
         except ValueError as ex:
             raise KeyError(name) from ex
 
+    def _odom_cb(self, msg: Odometry) -> None:
+        q = msg.pose.pose.orientation
+        siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
+        cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+        self.latest_yaw = math.atan2(siny_cosp, cosy_cosp)
+
+    @staticmethod
+    def _normalize_angle(angle: float) -> float:
+        return math.atan2(math.sin(angle), math.cos(angle))
+
     def _publish_feedback(
         self,
         goal_handle,
@@ -283,7 +311,9 @@ class RouteBtWrapper(Node):
                 edge_id,
                 str(self.get_parameter("default_controller_id").value),
             )
-            pose = self._pose_from_node(route_msg.nodes[i + 1])
+            reverse_controller = str(self.get_parameter("reverse_controller_id").value)
+            reverse_motion = controller_id == reverse_controller
+            pose = self._pose_from_nodes(route_msg.nodes[i], route_msg.nodes[i + 1], reverse_motion)
 
             if (
                 current is None
@@ -295,11 +325,29 @@ class RouteBtWrapper(Node):
                     "controller_id": controller_id,
                     "edge_ids": [edge_id],
                     "poses": [pose],
+                    "reverse_steps": [],
                 }
                 segments.append(current)
             else:
                 current["edge_ids"].append(edge_id)
                 current["poses"].append(pose)
+
+            if reverse_motion:
+                dist = math.hypot(
+                    float(route_msg.nodes[i + 1].position.x) - float(route_msg.nodes[i].position.x),
+                    float(route_msg.nodes[i + 1].position.y) - float(route_msg.nodes[i].position.y),
+                )
+                # Face opposite travel direction so backing motion follows the edge to the next node.
+                edge_yaw = math.atan2(
+                    float(route_msg.nodes[i + 1].position.y) - float(route_msg.nodes[i].position.y),
+                    float(route_msg.nodes[i + 1].position.x) - float(route_msg.nodes[i].position.x),
+                )
+                current["reverse_steps"].append(
+                    {
+                        "distance": dist,
+                        "heading": self._normalize_angle(edge_yaw + math.pi),
+                    }
+                )
 
         return segments
 
@@ -323,28 +371,56 @@ class RouteBtWrapper(Node):
     def _select_controller(self, controller_id: str) -> None:
         msg = String()
         msg.data = controller_id
-        self.controller_selector_pub.publish(msg)
+        repeats = int(self.get_parameter("controller_selector_publish_repeats").value)
+        interval = float(self.get_parameter("controller_selector_publish_interval_sec").value)
+        for _ in range(max(1, repeats)):
+            self.controller_selector_pub.publish(msg)
+            time.sleep(max(0.0, interval))
 
-    def _pose_from_node(self, node_msg) -> PoseStamped:
+    def _pose_from_nodes(self, prev_node_msg, node_msg, reverse_motion: bool) -> PoseStamped:
         pose = PoseStamped()
         pose.header.frame_id = self.route_frame
         pose.pose.position.x = float(node_msg.position.x)
         pose.pose.position.y = float(node_msg.position.y)
         pose.pose.position.z = float(node_msg.position.z)
-        pose.pose.orientation.w = 1.0
+
+        dx = float(node_msg.position.x) - float(prev_node_msg.position.x)
+        dy = float(node_msg.position.y) - float(prev_node_msg.position.y)
+        yaw = math.atan2(dy, dx)
+        if reverse_motion:
+            yaw += math.pi
+
+        pose.pose.orientation.z = math.sin(yaw * 0.5)
+        pose.pose.orientation.w = math.cos(yaw * 0.5)
         return pose
 
     def _execute_segments(self, segments, goal_handle=None) -> bool:
-        for seg in segments:
+        for idx, seg in enumerate(segments):
             if goal_handle is not None and goal_handle.is_cancel_requested:
                 return False
 
             poses = seg["poses"]
             bt = seg["behavior_tree"]
             controller_id = seg["controller_id"]
+            reverse_controller = str(self.get_parameter("reverse_controller_id").value)
 
             # Select controller for this segment in BT navigator.
+            self.get_logger().info(
+                "Executing segment "
+                + f"{idx + 1}/{len(segments)} "
+                + f"edges={seg['edge_ids']} "
+                + f"controller={controller_id} "
+                + f"bt={'default' if not bt else bt} "
+                + f"poses={len(poses)}"
+            )
             self._select_controller(controller_id)
+            time.sleep(float(self.get_parameter("controller_selector_settle_sec").value))
+
+            if controller_id == reverse_controller and seg.get("reverse_steps"):
+                ok = self._execute_reverse_segment(seg)
+                if ok:
+                    continue
+                self.get_logger().warn("Reverse edge traversal failed; falling back to standard goal")
 
             ok = self._execute_segment_goal(poses, bt)
             if ok:
@@ -368,6 +444,60 @@ class RouteBtWrapper(Node):
                     continue
 
             return False
+
+        return True
+
+    def _execute_reverse_segment(self, seg) -> bool:
+        if self.latest_yaw is None:
+            self.get_logger().warn("No odom yaw available for reverse segment alignment")
+            return False
+
+        spin_timeout = int(self.get_parameter("reverse_spin_timeout_sec").value)
+        backup_timeout = int(self.get_parameter("reverse_backup_timeout_sec").value)
+        backup_speed = float(self.get_parameter("reverse_backup_speed").value)
+
+        for step in seg["reverse_steps"]:
+            target_heading = float(step["heading"])
+            delta = self._normalize_angle(target_heading - float(self.latest_yaw))
+
+            if abs(delta) > 0.08:
+                if not self.spin_client.wait_for_server(timeout_sec=2.0):
+                    return False
+                spin_goal = Spin.Goal()
+                spin_goal.target_yaw = float(delta)
+                spin_goal.time_allowance.sec = spin_timeout
+                spin_goal.time_allowance.nanosec = 0
+                spin_future = self.spin_client.send_goal_async(spin_goal)
+                rclpy.spin_until_future_complete(self, spin_future)
+                spin_handle = spin_future.result()
+                if spin_handle is None or not spin_handle.accepted:
+                    return False
+                spin_result_future = spin_handle.get_result_async()
+                rclpy.spin_until_future_complete(self, spin_result_future)
+                spin_wrapped = spin_result_future.result()
+                if spin_wrapped is None or spin_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
+                    return False
+
+            if not self.backup_client.wait_for_server(timeout_sec=2.0):
+                return False
+            back_goal = BackUp.Goal()
+            back_goal.target.x = float(step["distance"])
+            back_goal.target.y = 0.0
+            back_goal.target.z = 0.0
+            back_goal.speed = backup_speed
+            back_goal.time_allowance.sec = backup_timeout
+            back_goal.time_allowance.nanosec = 0
+
+            back_future = self.backup_client.send_goal_async(back_goal)
+            rclpy.spin_until_future_complete(self, back_future)
+            back_handle = back_future.result()
+            if back_handle is None or not back_handle.accepted:
+                return False
+            back_result_future = back_handle.get_result_async()
+            rclpy.spin_until_future_complete(self, back_result_future)
+            back_wrapped = back_result_future.result()
+            if back_wrapped is None or back_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
+                return False
 
         return True
 
@@ -526,6 +656,15 @@ class RouteBtWrapper(Node):
             + str(len(waypoint_names))
             + " named waypoints"
         )
+        for idx, seg in enumerate(merged_segments):
+            self.get_logger().info(
+                "Planned segment "
+                + f"{idx + 1}/{len(merged_segments)} "
+                + f"edges={seg['edge_ids']} "
+                + f"controller={seg['controller_id']} "
+                + f"bt={'default' if not seg['behavior_tree'] else seg['behavior_tree']} "
+                + f"poses={len(seg['poses'])}"
+            )
 
         if not merged_segments:
             result.success = False

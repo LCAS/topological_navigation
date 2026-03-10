@@ -48,10 +48,8 @@ bt_navigator:
     bt_loop_duration: 10
     default_server_timeout: 20
     wait_for_service_timeout: 1000
-    # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
-    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
-    # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
-    # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+    default_nav_to_pose_bt_xml: /workspace/install/topological_navigation/share/topological_navigation/config/navigate_to_pose_selector.xml
+    default_nav_through_poses_bt_xml: /workspace/install/topological_navigation/share/topological_navigation/config/navigate_through_poses_selector.xml
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
@@ -124,8 +122,10 @@ controller_server:
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
-      movement_time_allowance: 10.0
+      # Looser progress settings so slow/reverse edge behaviors can complete
+      # without being prematurely marked as stalled.
+      required_movement_radius: 0.2
+      movement_time_allowance: 20.0
     # Goal checker parameters
     #precise_goal_checker:
     #  plugin: "nav2_controller::SimpleGoalChecker"
@@ -185,11 +185,11 @@ controller_server:
       debug_trajectory_details: True
       min_vel_x: 0.0
       min_vel_y: 0.0
-      max_vel_x: 0.026
+      max_vel_x: 0.04
       max_vel_y: 0.0
-      max_vel_theta: 0.2
+      max_vel_theta: 0.12
       min_speed_xy: 0.0
-      max_speed_xy: 0.026
+      max_speed_xy: 0.04
       min_speed_theta: 0.0
       acc_lim_x: 2.5
       acc_lim_y: 0.0
@@ -221,44 +221,24 @@ controller_server:
       RotateToGoal.lookahead_time: -1.0
 
     ReverseFollowPath:
-      plugin: "dwb_core::DWBLocalPlanner"
-      debug_trajectory_details: True
-      min_vel_x: -0.26
-      min_vel_y: 0.0
-      max_vel_x: 0.0
-      max_vel_y: 0.0
-      max_vel_theta: 1.0
-      min_speed_xy: 0.0
-      max_speed_xy: 0.26
-      min_speed_theta: 0.0
-      acc_lim_x: 2.5
-      acc_lim_y: 0.0
-      acc_lim_theta: 3.2
-      decel_lim_x: -2.5
-      decel_lim_y: 0.0
-      decel_lim_theta: -3.2
-      vx_samples: 20
-      vy_samples: 5
-      vtheta_samples: 20
-      sim_time: 1.7
-      linear_granularity: 0.05
-      angular_granularity: 0.025
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.08
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      lookahead_time: 1.2
       transform_tolerance: 0.2
-      xy_goal_tolerance: 0.25
-      trans_stopped_velocity: 0.25
-      short_circuit_trajectory_evaluation: True
-      stateful: True
-      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
-      PathAlign.scale: 32.0
-      PathAlign.forward_point_distance: 0.1
-      GoalAlign.scale: 24.0
-      GoalAlign.forward_point_distance: 0.1
-      PathDist.scale: 32.0
-      GoalDist.scale: 24.0
-      RotateToGoal.scale: 32.0
-      RotateToGoal.slowing_factor: 5.0
-      RotateToGoal.lookahead_time: -1.0
+      use_velocity_scaled_lookahead_dist: true
+      min_approach_linear_velocity: 0.03
+      approach_velocity_scaling_dist: 0.6
+      use_regulated_linear_velocity_scaling: true
+      use_cost_regulated_linear_velocity_scaling: false
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+      use_rotate_to_heading: false
+      allow_reversing: true
+      rotate_to_heading_angular_vel: 0.4
+      max_angular_accel: 2.5
 
 local_costmap:
   local_costmap:

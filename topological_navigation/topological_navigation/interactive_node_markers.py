@@ -281,7 +281,7 @@ class InteractiveNodeMarkers(Node):
             p = Point()
             p.x = float(node.position.x)
             p.y = float(node.position.y)
-            p.z = 0.06
+            p.z = 0.22
             route_marker.points.append(p)
 
         endpoints = Marker()

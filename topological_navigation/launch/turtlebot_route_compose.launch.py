@@ -146,12 +146,10 @@ def generate_launch_description():
                 "default_controller_id": "FollowPath",
                 "slow_controller_id": "SlowFollowPath",
                 "reverse_controller_id": "ReverseFollowPath",
-                "slow_behavior_tree": PathJoinSubstitution(
-                    [FindPackageShare("topological_navigation"), "config", "navigate_to_pose_slow.xml"]
-                ),
-                "reverse_behavior_tree": PathJoinSubstitution(
-                    [FindPackageShare("topological_navigation"), "config", "navigate_to_pose_reverse.xml"]
-                ),
+                # Keep edge variation in controller profiles only.
+                # Custom BT files are disabled for Humble compatibility/stability.
+                "slow_behavior_tree": "",
+                "reverse_behavior_tree": "",
                 "controller_selector_topic": "/controller_selector",
             }
         ],
@@ -225,14 +223,14 @@ def generate_launch_description():
                 "yaw": 0.0,
                 # Keep publishing long enough to catch AMCL after robot spawn/odom are live.
                 "use_sim_time": True,
-                "publish_count": 120,
-                "publish_interval_sec": 0.5,
+                "publish_count": 6,
+                "publish_interval_sec": 1.0,
             }
         ],
     )
 
     delayed_initial_pose = TimerAction(
-        period=24.0,
+        period=30.0,
         actions=[initial_pose_publisher],
     )
 

@@ -11,6 +11,9 @@ This repository has been reduced to two minimal ROS 2 packages:
 - Edge-level BT selection is read from `config/edge_behaviors.yaml`
 - Consecutive edges with the same BT are merged into one execution segment
 - Action server accepts waypoint names and plans shortest routes for each consecutive pair
+- Interactive node clicks preview the selected topological route in RViz before execution
+- Edges are color-coded in RViz by applied behavior class (default / slow / reverse / custom BT)
+- Random behavior assignment is pair-based: both directions of a node pair share the same BT/controller config
 
 ## Build and run (native)
 
@@ -44,6 +47,12 @@ The compose stack launches:
 - Nav2 core stack including `route_server` with the configured graph
 - `route_bt_wrapper`
 - `closest_node_publisher`
+
+Notes:
+
+- Gazebo runs headless by default (`use_gzclient:=False`).
+- Initial pose is published automatically shortly after startup so Nav2 and marker clicks can execute routes without manual pose seeding.
+- In RViz, select the `Interact` tool before clicking node markers (GoalTool is for `/goal_pose` navigation, not marker buttons).
 
 Execution mode is controlled per goal using the action field
 `execute_navigation` (`false` = plan only, `true` = plan + execute).

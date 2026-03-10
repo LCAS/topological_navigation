@@ -16,6 +16,7 @@ def generate_launch_description():
     map_file = LaunchConfiguration("map_file")
     params_file = LaunchConfiguration("params_file")
     use_rviz = LaunchConfiguration("use_rviz")
+    use_gzclient = LaunchConfiguration("use_gzclient")
     enable_random_navigation = LaunchConfiguration("enable_random_navigation")
     random_nav_period = LaunchConfiguration("random_nav_period")
 
@@ -33,7 +34,8 @@ def generate_launch_description():
     gzclient = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(gazebo_ros_pkg, "launch", "gzclient.launch.py")
-        )
+        ),
+        condition=IfCondition(use_gzclient),
     )
 
     robot_state_publisher = IncludeLaunchDescription(
@@ -144,6 +146,12 @@ def generate_launch_description():
                 "default_controller_id": "FollowPath",
                 "slow_controller_id": "SlowFollowPath",
                 "reverse_controller_id": "ReverseFollowPath",
+                "slow_behavior_tree": PathJoinSubstitution(
+                    [FindPackageShare("topological_navigation"), "config", "navigate_to_pose_slow.xml"]
+                ),
+                "reverse_behavior_tree": PathJoinSubstitution(
+                    [FindPackageShare("topological_navigation"), "config", "navigate_to_pose_reverse.xml"]
+                ),
                 "controller_selector_topic": "/controller_selector",
             }
         ],
@@ -158,8 +166,35 @@ def generate_launch_description():
             {
                 "graph_file": graph_file,
                 "frame_id": "map",
+                "interactive_markers_namespace": "topological_nodes",
                 "named_route_action": "/execute_named_waypoints",
                 "closest_node_topic": "/closest_node",
+                "pose_topic": "/robot_pose",
+                "pose_cov_topic": "/amcl_pose",
+                "odom_topic": "/odom",
+                "selected_route_topic": "/selected_topological_route",
+                "marker_z_offset": 0.24,
+                "click_sphere_scale_factor": 0.8,
+            }
+        ],
+    )
+
+    edge_behavior_visualizer = Node(
+        package="topological_navigation",
+        executable="edge_behavior_visualizer",
+        name="edge_behavior_visualizer",
+        output="screen",
+        parameters=[
+            {
+                "graph_file": graph_file,
+                "frame_id": "map",
+                "behavior_map_file": behavior_map_file,
+                "randomize_edge_behaviors": True,
+                "edge_behavior_seed": 42,
+                "default_controller_id": "FollowPath",
+                "slow_controller_id": "SlowFollowPath",
+                "reverse_controller_id": "ReverseFollowPath",
+                "marker_topic": "/topological_edges_colored",
             }
         ],
     )
@@ -189,14 +224,15 @@ def generate_launch_description():
                 "y": -0.5,
                 "yaw": 0.0,
                 # Keep publishing long enough to catch AMCL after robot spawn/odom are live.
-                "publish_count": 40,
-                "publish_interval_sec": 1.0,
+                "use_sim_time": True,
+                "publish_count": 120,
+                "publish_interval_sec": 0.5,
             }
         ],
     )
 
     delayed_initial_pose = TimerAction(
-        period=52.0,
+        period=24.0,
         actions=[initial_pose_publisher],
     )
 
@@ -224,7 +260,7 @@ def generate_launch_description():
 
     delayed_wrapper_stack = TimerAction(
         period=28.0,
-        actions=[wrapper, closest_node_publisher, interactive_node_markers],
+        actions=[wrapper, closest_node_publisher, interactive_node_markers, edge_behavior_visualizer],
     )
 
     return LaunchDescription(
@@ -252,6 +288,7 @@ def generate_launch_description():
                 ),
             ),
             DeclareLaunchArgument("use_rviz", default_value="True"),
+            DeclareLaunchArgument("use_gzclient", default_value="False"),
             DeclareLaunchArgument("enable_random_navigation", default_value="False"),
             DeclareLaunchArgument("random_nav_period", default_value="30.0"),
             gzserver,

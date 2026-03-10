@@ -31,6 +31,7 @@ setup(
             "random_target_navigator = topological_navigation.random_target_navigator:main",
             "gazebo_spawn_waiter = topological_navigation.gazebo_spawn_waiter:main",
             "interactive_node_markers = topological_navigation.interactive_node_markers:main",
+            "edge_behavior_visualizer = topological_navigation.edge_behavior_visualizer:main",
         ],
     },
 )

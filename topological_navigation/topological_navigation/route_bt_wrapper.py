@@ -37,6 +37,8 @@ class RouteBtWrapper(Node):
         self.declare_parameter("default_controller_id", "FollowPath")
         self.declare_parameter("slow_controller_id", "SlowFollowPath")
         self.declare_parameter("reverse_controller_id", "ReverseFollowPath")
+        self.declare_parameter("slow_behavior_tree", "")
+        self.declare_parameter("reverse_behavior_tree", "")
 
         self.route_frame = str(self.get_parameter("route_frame").value)
         self.graph_file = str(self.get_parameter("graph_file").value)
@@ -45,7 +47,7 @@ class RouteBtWrapper(Node):
         default_bt = str(self.get_parameter("default_behavior_tree").value)
         self.default_bt, self.edge_bts = self._load_behavior_map(behavior_map_file, default_bt)
         self.edge_controller_overrides: dict[int, str] = {}
-        self.graph_edge_ids = self._load_edge_ids(self.graph_file)
+        self.graph_edge_ids, self.edge_pairs = self._load_edge_info(self.graph_file)
         self._assign_random_edge_behaviors()
         self.name_to_node_id = self._load_name_to_id(self.graph_file)
 
@@ -123,14 +125,15 @@ class RouteBtWrapper(Node):
         self.get_logger().info(f"Loaded {len(lookup)} waypoint names from graph")
         return lookup
 
-    def _load_edge_ids(self, graph_file: str) -> list[int]:
+    def _load_edge_info(self, graph_file: str) -> tuple[list[int], dict[int, tuple[int, int]]]:
         if not graph_file:
-            return []
+            return [], {}
 
         with open(graph_file, "r", encoding="utf-8") as f:
             graph = json.load(f)
 
         edge_ids: list[int] = []
+        edge_pairs: dict[int, tuple[int, int]] = {}
         for feature in graph.get("features", []):
             geometry = feature.get("geometry", {})
             geometry_type = geometry.get("type")
@@ -140,42 +143,69 @@ class RouteBtWrapper(Node):
             props = feature.get("properties", {})
             if "id" not in props:
                 continue
-            edge_ids.append(int(props["id"]))
+            edge_id = int(props["id"])
+            edge_ids.append(edge_id)
+
+            if "startid" in props and "endid" in props:
+                a = int(props["startid"])
+                b = int(props["endid"])
+                edge_pairs[edge_id] = (min(a, b), max(a, b))
+            else:
+                edge_pairs[edge_id] = (edge_id, edge_id)
 
         edge_ids = sorted(set(edge_ids))
         self.get_logger().info(f"Loaded {len(edge_ids)} route edges from graph")
-        return edge_ids
+        return edge_ids, edge_pairs
 
     def _assign_random_edge_behaviors(self) -> None:
         if not bool(self.get_parameter("randomize_edge_behaviors").value):
             return
 
-        edge_ids = list(self.graph_edge_ids)
-        if len(edge_ids) < 3:
-            self.get_logger().warn("Not enough edges to assign random 1/3 behavior groups")
+        pair_to_edges: dict[tuple[int, int], list[int]] = {}
+        for edge_id in self.graph_edge_ids:
+            pair = self.edge_pairs.get(edge_id, (edge_id, edge_id))
+            pair_to_edges.setdefault(pair, []).append(edge_id)
+
+        pair_keys = list(pair_to_edges.keys())
+        if len(pair_keys) < 3:
+            self.get_logger().warn("Not enough node pairs to assign random 1/3 behavior groups")
             return
 
         slow_controller = str(self.get_parameter("slow_controller_id").value)
         reverse_controller = str(self.get_parameter("reverse_controller_id").value)
+        slow_bt = str(self.get_parameter("slow_behavior_tree").value)
+        reverse_bt = str(self.get_parameter("reverse_behavior_tree").value)
 
         seed = int(self.get_parameter("edge_behavior_seed").value)
         rng = random.Random(seed)
-        rng.shuffle(edge_ids)
+        rng.shuffle(pair_keys)
 
-        group_size = len(edge_ids) // 3
-        slow_edges = edge_ids[:group_size]
-        reverse_edges = edge_ids[group_size : 2 * group_size]
+        group_size = len(pair_keys) // 3
+        slow_pairs = pair_keys[:group_size]
+        reverse_pairs = pair_keys[group_size : 2 * group_size]
 
-        for edge_id in slow_edges:
-            self.edge_controller_overrides[edge_id] = slow_controller
+        slow_edges: list[int] = []
+        reverse_edges: list[int] = []
 
-        for edge_id in reverse_edges:
-            self.edge_controller_overrides[edge_id] = reverse_controller
+        for pair in slow_pairs:
+            for edge_id in pair_to_edges[pair]:
+                self.edge_controller_overrides[edge_id] = slow_controller
+                if slow_bt:
+                    self.edge_bts[edge_id] = slow_bt
+                slow_edges.append(edge_id)
+
+        for pair in reverse_pairs:
+            for edge_id in pair_to_edges[pair]:
+                self.edge_controller_overrides[edge_id] = reverse_controller
+                if reverse_bt:
+                    self.edge_bts[edge_id] = reverse_bt
+                reverse_edges.append(edge_id)
 
         self.get_logger().info(
-            "Assigned random edge behaviors: "
-            + f"{len(slow_edges)} slow edges, {len(reverse_edges)} reverse edges, "
-            + f"{len(edge_ids) - len(slow_edges) - len(reverse_edges)} default edges"
+            "Assigned random pair behaviors: "
+            + f"{len(slow_pairs)} slow pairs ({len(slow_edges)} edges), "
+            + f"{len(reverse_pairs)} reverse pairs ({len(reverse_edges)} edges), "
+            + f"{len(pair_keys) - len(slow_pairs) - len(reverse_pairs)} default pairs"
         )
 
     def _resolve_waypoint(self, name: str) -> int:
@@ -316,68 +346,135 @@ class RouteBtWrapper(Node):
             # Select controller for this segment in BT navigator.
             self._select_controller(controller_id)
 
+            ok = self._execute_segment_goal(poses, bt)
+            if ok:
+                continue
+
+            default_controller = str(self.get_parameter("default_controller_id").value)
+            if controller_id != default_controller or bt != self.default_bt:
+                self.get_logger().warn(
+                    "Segment failed with edge-specific behavior; retrying with default controller/BT"
+                )
+                self._select_controller(default_controller)
+                if self._execute_segment_goal(poses, self.default_bt):
+                    continue
+
             if len(poses) > 1:
-                if not self.nav_through_poses_client.wait_for_server(timeout_sec=10.0):
-                    self.get_logger().error("NavigateThroughPoses action server unavailable")
-                    return False
+                self.get_logger().warn(
+                    "Merged segment still failed; retrying as per-pose NavigateToPose goals"
+                )
+                self._select_controller(default_controller)
+                if self._execute_segment_as_single_pose_goals(poses, self.default_bt):
+                    continue
 
-                goal = NavigateThroughPoses.Goal()
+            return False
 
-                # Humble uses PoseStamped[] while newer distros may use nav_msgs/Goals.
+        return True
+
+    def _execute_segment_goal(self, poses, bt: str) -> bool:
+        if len(poses) > 1:
+            if not self.nav_through_poses_client.wait_for_server(timeout_sec=10.0):
+                self.get_logger().error("NavigateThroughPoses action server unavailable")
+                return False
+
+            goal = NavigateThroughPoses.Goal()
+
+            # Humble uses PoseStamped[] while newer distros may use nav_msgs/Goals.
+            assigned = False
+            try:
+                goal.poses = poses
+                assigned = True
+            except (AssertionError, TypeError):
                 assigned = False
-                try:
-                    goal.poses = poses
-                    assigned = True
-                except (AssertionError, TypeError):
-                    assigned = False
 
-                if not assigned:
-                    goals_msg = Goals()
-                    if hasattr(goals_msg, "goals"):
-                        goals_msg.goals = poses
-                    elif hasattr(goals_msg, "poses"):
-                        goals_msg.poses = poses
-                    if hasattr(goals_msg, "header"):
-                        goals_msg.header.frame_id = self.route_frame
-                    goal.poses = goals_msg
+            if not assigned:
+                goals_msg = Goals()
+                if hasattr(goals_msg, "goals"):
+                    goals_msg.goals = poses
+                elif hasattr(goals_msg, "poses"):
+                    goals_msg.poses = poses
+                if hasattr(goals_msg, "header"):
+                    goals_msg.header.frame_id = self.route_frame
+                goal.poses = goals_msg
 
-                if bt:
-                    goal.behavior_tree = bt
-                future = self.nav_through_poses_client.send_goal_async(goal)
-            else:
-                if not self.nav_to_pose_client.wait_for_server(timeout_sec=10.0):
-                    self.get_logger().error("NavigateToPose action server unavailable")
-                    return False
+            # Through-poses goals in this setup use default through-poses BT.
+            # Edge behavior is applied via controller selection, not BT override.
+            future = self.nav_through_poses_client.send_goal_async(goal)
+        else:
+            if not self.nav_to_pose_client.wait_for_server(timeout_sec=10.0):
+                self.get_logger().error("NavigateToPose action server unavailable")
+                return False
 
-                goal = NavigateToPose.Goal()
-                goal.pose = poses[0]
-                if bt:
-                    goal.behavior_tree = bt
-                future = self.nav_to_pose_client.send_goal_async(goal)
+            goal = NavigateToPose.Goal()
+            goal.pose = poses[0]
+            if bt:
+                goal.behavior_tree = bt
+            future = self.nav_to_pose_client.send_goal_async(goal)
 
+        rclpy.spin_until_future_complete(self, future)
+        handle = future.result()
+        if handle is None or not handle.accepted:
+            self.get_logger().error("Navigation segment goal rejected")
+            return False
+
+        result_future = handle.get_result_async()
+        rclpy.spin_until_future_complete(self, result_future)
+        wrapped_result = result_future.result()
+        if wrapped_result is None:
+            self.get_logger().error("Navigation segment returned no result")
+            return False
+
+        if wrapped_result.status != GoalStatus.STATUS_SUCCEEDED:
+            self.get_logger().error(
+                f"Navigation segment failed with status={wrapped_result.status}"
+            )
+            return False
+
+        result = wrapped_result.result
+        if hasattr(result, "error_code") and result.error_code != 0:
+            self.get_logger().error(
+                f"Navigation segment failed: code={result.error_code}, msg={result.error_msg}"
+            )
+            return False
+
+        return True
+
+    def _execute_segment_as_single_pose_goals(self, poses, bt: str) -> bool:
+        for pose in poses:
+            if not self.nav_to_pose_client.wait_for_server(timeout_sec=10.0):
+                self.get_logger().error("NavigateToPose action server unavailable")
+                return False
+
+            goal = NavigateToPose.Goal()
+            goal.pose = pose
+            if bt:
+                goal.behavior_tree = bt
+
+            future = self.nav_to_pose_client.send_goal_async(goal)
             rclpy.spin_until_future_complete(self, future)
             handle = future.result()
             if handle is None or not handle.accepted:
-                self.get_logger().error("Navigation segment goal rejected")
+                self.get_logger().error("Single-pose retry goal rejected")
                 return False
 
             result_future = handle.get_result_async()
             rclpy.spin_until_future_complete(self, result_future)
             wrapped_result = result_future.result()
             if wrapped_result is None:
-                self.get_logger().error("Navigation segment returned no result")
+                self.get_logger().error("Single-pose retry returned no result")
                 return False
 
             if wrapped_result.status != GoalStatus.STATUS_SUCCEEDED:
                 self.get_logger().error(
-                    f"Navigation segment failed with status={wrapped_result.status}"
+                    f"Single-pose retry failed with status={wrapped_result.status}"
                 )
                 return False
 
             result = wrapped_result.result
             if hasattr(result, "error_code") and result.error_code != 0:
                 self.get_logger().error(
-                    f"Navigation segment failed: code={result.error_code}, msg={result.error_msg}"
+                    "Single-pose retry failed: "
+                    + f"code={result.error_code}, msg={result.error_msg}"
                 )
                 return False
 

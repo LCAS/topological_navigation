@@ -3,8 +3,6 @@ Panels:
     Name: Displays
   - Class: rviz_common/Views
     Name: Views
-  - Class: rviz_common/Time
-    Name: Time
 Visualization Manager:
   Class: ""
   Displays:
@@ -58,24 +56,40 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: Route Graph
+      Name: Topological Edges Colored
       Namespaces:
-        route_graph: true
-        route_graph_ids: true
+        custom_bt: true
+        default: true
+        reverse: true
+        slow: true
       Topic:
         Depth: 5
         Durability Policy: Transient Local
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /route_graph
+        Value: /topological_edges_colored
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Selected Topological Route
+      Namespaces:
+        selected_route: true
+        selected_route_endpoints: true
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /selected_topological_route
       Value: true
     - Class: rviz_default_plugins/InteractiveMarkers
       Enable Transparency: true
       Enabled: true
+      Interactive Markers Namespace: topological_nodes
       Name: Node Markers
       Show Axes: false
       Show Descriptions: true
-      Show Visual Aids: false
+      Show Visual Aids: true
       Update Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -104,12 +118,19 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /initialpose
     - Class: nav2_rviz_plugins/GoalTool
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
   Value: true
   Views:
     Current:
+      Angle: -1.5749995708465576
       Class: rviz_default_plugins/TopDownOrtho
       Name: TopDown
       Scale: 35

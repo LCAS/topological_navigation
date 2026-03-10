@@ -14,7 +14,8 @@ import yaml
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Goals, Odometry
-from nav2_msgs.action import BackUp, ComputeRoute, NavigateThroughPoses, NavigateToPose, Spin
+from nav2_msgs.action import BackUp, ComputeRoute, DriveOnHeading, NavigateThroughPoses, NavigateToPose, Spin
+from nav2_msgs.msg import SpeedLimit
 from rclpy.action import ActionClient, ActionServer
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -48,6 +49,10 @@ class RouteBtWrapper(Node):
         self.declare_parameter("reverse_backup_speed", 0.08)
         self.declare_parameter("reverse_spin_timeout_sec", 8)
         self.declare_parameter("reverse_backup_timeout_sec", 12)
+        self.declare_parameter("slow_drive_speed", 0.03)
+        self.declare_parameter("slow_drive_timeout_sec", 14)
+        self.declare_parameter("speed_limit_topic", "/speed_limit")
+        self.declare_parameter("slow_segment_speed_limit_mps", 0.03)
 
         self.route_frame = str(self.get_parameter("route_frame").value)
         self.graph_file = str(self.get_parameter("graph_file").value)
@@ -73,6 +78,11 @@ class RouteBtWrapper(Node):
             str(self.get_parameter("controller_selector_topic").value),
             10,
         )
+        self.speed_limit_pub = self.create_publisher(
+            SpeedLimit,
+            str(self.get_parameter("speed_limit_topic").value),
+            10,
+        )
 
         self.compute_route_client = ActionClient(
             self,
@@ -91,6 +101,7 @@ class RouteBtWrapper(Node):
         )
         self.spin_client = ActionClient(self, Spin, "/spin")
         self.backup_client = ActionClient(self, BackUp, "/backup")
+        self.drive_on_heading_client = ActionClient(self, DriveOnHeading, "/drive_on_heading")
         self.named_route_action_server = ActionServer(
             self,
             ExecuteNamedWaypoints,
@@ -325,6 +336,7 @@ class RouteBtWrapper(Node):
                     "controller_id": controller_id,
                     "edge_ids": [edge_id],
                     "poses": [pose],
+                    "slow_steps": [],
                     "reverse_steps": [],
                 }
                 segments.append(current)
@@ -346,6 +358,21 @@ class RouteBtWrapper(Node):
                     {
                         "distance": dist,
                         "heading": self._normalize_angle(edge_yaw + math.pi),
+                    }
+                )
+            elif controller_id == str(self.get_parameter("slow_controller_id").value):
+                dist = math.hypot(
+                    float(route_msg.nodes[i + 1].position.x) - float(route_msg.nodes[i].position.x),
+                    float(route_msg.nodes[i + 1].position.y) - float(route_msg.nodes[i].position.y),
+                )
+                edge_yaw = math.atan2(
+                    float(route_msg.nodes[i + 1].position.y) - float(route_msg.nodes[i].position.y),
+                    float(route_msg.nodes[i + 1].position.x) - float(route_msg.nodes[i].position.x),
+                )
+                current["slow_steps"].append(
+                    {
+                        "distance": dist,
+                        "heading": self._normalize_angle(edge_yaw),
                     }
                 )
 
@@ -377,6 +404,14 @@ class RouteBtWrapper(Node):
             self.controller_selector_pub.publish(msg)
             time.sleep(max(0.0, interval))
 
+    def _publish_speed_limit(self, mps: float, no_limit: bool = False) -> None:
+        msg = SpeedLimit()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = self.route_frame
+        msg.percentage = False
+        msg.speed_limit = 0.0 if no_limit else max(0.0, float(mps))
+        self.speed_limit_pub.publish(msg)
+
     def _pose_from_nodes(self, prev_node_msg, node_msg, reverse_motion: bool) -> PoseStamped:
         pose = PoseStamped()
         pose.header.frame_id = self.route_frame
@@ -403,6 +438,7 @@ class RouteBtWrapper(Node):
             bt = seg["behavior_tree"]
             controller_id = seg["controller_id"]
             reverse_controller = str(self.get_parameter("reverse_controller_id").value)
+            slow_controller = str(self.get_parameter("slow_controller_id").value)
 
             # Select controller for this segment in BT navigator.
             self.get_logger().info(
@@ -416,11 +452,25 @@ class RouteBtWrapper(Node):
             self._select_controller(controller_id)
             time.sleep(float(self.get_parameter("controller_selector_settle_sec").value))
 
+            if controller_id == slow_controller:
+                self._publish_speed_limit(
+                    float(self.get_parameter("slow_segment_speed_limit_mps").value),
+                    no_limit=False,
+                )
+            else:
+                self._publish_speed_limit(0.0, no_limit=True)
+
             if controller_id == reverse_controller and seg.get("reverse_steps"):
                 ok = self._execute_reverse_segment(seg)
                 if ok:
                     continue
                 self.get_logger().warn("Reverse edge traversal failed; falling back to standard goal")
+
+            if controller_id == slow_controller and seg.get("slow_steps"):
+                ok = self._execute_slow_segment(seg)
+                if ok:
+                    continue
+                self.get_logger().warn("Slow edge traversal failed; falling back to standard goal")
 
             ok = self._execute_segment_goal(poses, bt)
             if ok:
@@ -444,6 +494,60 @@ class RouteBtWrapper(Node):
                     continue
 
             return False
+
+        return True
+
+    def _execute_slow_segment(self, seg) -> bool:
+        if self.latest_yaw is None:
+            self.get_logger().warn("No odom yaw available for slow segment alignment")
+            return False
+
+        spin_timeout = int(self.get_parameter("reverse_spin_timeout_sec").value)
+        drive_timeout = int(self.get_parameter("slow_drive_timeout_sec").value)
+        drive_speed = float(self.get_parameter("slow_drive_speed").value)
+
+        for step in seg["slow_steps"]:
+            target_heading = float(step["heading"])
+            delta = self._normalize_angle(target_heading - float(self.latest_yaw))
+
+            if abs(delta) > 0.08:
+                if not self.spin_client.wait_for_server(timeout_sec=2.0):
+                    return False
+                spin_goal = Spin.Goal()
+                spin_goal.target_yaw = float(delta)
+                spin_goal.time_allowance.sec = spin_timeout
+                spin_goal.time_allowance.nanosec = 0
+                spin_future = self.spin_client.send_goal_async(spin_goal)
+                rclpy.spin_until_future_complete(self, spin_future)
+                spin_handle = spin_future.result()
+                if spin_handle is None or not spin_handle.accepted:
+                    return False
+                spin_result_future = spin_handle.get_result_async()
+                rclpy.spin_until_future_complete(self, spin_result_future)
+                spin_wrapped = spin_result_future.result()
+                if spin_wrapped is None or spin_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
+                    return False
+
+            if not self.drive_on_heading_client.wait_for_server(timeout_sec=2.0):
+                return False
+            drive_goal = DriveOnHeading.Goal()
+            drive_goal.target.x = float(step["distance"])
+            drive_goal.target.y = 0.0
+            drive_goal.target.z = 0.0
+            drive_goal.speed = drive_speed
+            drive_goal.time_allowance.sec = drive_timeout
+            drive_goal.time_allowance.nanosec = 0
+
+            drive_future = self.drive_on_heading_client.send_goal_async(drive_goal)
+            rclpy.spin_until_future_complete(self, drive_future)
+            drive_handle = drive_future.result()
+            if drive_handle is None or not drive_handle.accepted:
+                return False
+            drive_result_future = drive_handle.get_result_async()
+            rclpy.spin_until_future_complete(self, drive_result_future)
+            drive_wrapped = drive_result_future.result()
+            if drive_wrapped is None or drive_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
+                return False
 
         return True
 

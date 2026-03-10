@@ -19,6 +19,9 @@ Visualization Manager:
     - Class: rviz_default_plugins/TF
       Enabled: true
       Name: TF
+      Show Arrows: true
+      Show Axes: false
+      Show Names: false
       Value: true
     - Class: rviz_default_plugins/RobotModel
       Enabled: true
@@ -88,7 +91,7 @@ Visualization Manager:
       Interactive Markers Namespace: topological_nodes
       Name: Node Markers
       Show Axes: false
-      Show Descriptions: true
+      Show Descriptions: false
       Show Visual Aids: true
       Update Topic:
         Depth: 5

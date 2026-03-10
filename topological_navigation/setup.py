@@ -30,6 +30,7 @@ setup(
             "initial_pose_publisher = topological_navigation.initial_pose_publisher:main",
             "random_target_navigator = topological_navigation.random_target_navigator:main",
             "gazebo_spawn_waiter = topological_navigation.gazebo_spawn_waiter:main",
+            "interactive_node_markers = topological_navigation.interactive_node_markers:main",
         ],
     },
 )

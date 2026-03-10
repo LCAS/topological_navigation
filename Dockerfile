@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-turtlebot3-description \
     ros-humble-gazebo-ros-pkgs \
     ros-humble-rviz2 \
+    ros-humble-interactive-markers \
     ros-humble-robot-state-publisher \
     ros-humble-xacro \
     && rm -rf /var/lib/apt/lists/*

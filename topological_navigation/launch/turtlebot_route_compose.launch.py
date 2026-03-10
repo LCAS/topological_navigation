@@ -83,7 +83,7 @@ def generate_launch_description():
         launch_arguments={
             "use_sim_time": "True",
             "rviz_config": PathJoinSubstitution(
-                [FindPackageShare("nav2_bringup"), "rviz", "nav2_default_view.rviz"]
+                [FindPackageShare("topological_navigation"), "config", "route_map_view.rviz"]
             ),
         }.items(),
     )
@@ -139,6 +139,27 @@ def generate_launch_description():
                 "graph_file": graph_file,
                 "behavior_map_file": behavior_map_file,
                 "route_frame": "map",
+                "randomize_edge_behaviors": True,
+                "edge_behavior_seed": 42,
+                "default_controller_id": "FollowPath",
+                "slow_controller_id": "SlowFollowPath",
+                "reverse_controller_id": "ReverseFollowPath",
+                "controller_selector_topic": "/controller_selector",
+            }
+        ],
+    )
+
+    interactive_node_markers = Node(
+        package="topological_navigation",
+        executable="interactive_node_markers",
+        name="interactive_node_markers",
+        output="screen",
+        parameters=[
+            {
+                "graph_file": graph_file,
+                "frame_id": "map",
+                "named_route_action": "/execute_named_waypoints",
+                "closest_node_topic": "/closest_node",
             }
         ],
     )
@@ -167,14 +188,15 @@ def generate_launch_description():
                 "x": -2.0,
                 "y": -0.5,
                 "yaw": 0.0,
-                "publish_count": 8,
-                "publish_interval_sec": 1.5,
+                # Keep publishing long enough to catch AMCL after robot spawn/odom are live.
+                "publish_count": 40,
+                "publish_interval_sec": 1.0,
             }
         ],
     )
 
     delayed_initial_pose = TimerAction(
-        period=30.0,
+        period=52.0,
         actions=[initial_pose_publisher],
     )
 
@@ -196,13 +218,13 @@ def generate_launch_description():
     )
 
     delayed_random_navigation = TimerAction(
-        period=48.0,
+        period=80.0,
         actions=[random_target_navigator],
     )
 
     delayed_wrapper_stack = TimerAction(
         period=28.0,
-        actions=[wrapper, closest_node_publisher],
+        actions=[wrapper, closest_node_publisher, interactive_node_markers],
     )
 
     return LaunchDescription(
@@ -215,9 +237,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "behavior_map_file",
-                default_value=PathJoinSubstitution(
-                    [FindPackageShare("topological_navigation"), "config", "edge_behaviors.yaml"]
-                ),
+                default_value="",
             ),
             DeclareLaunchArgument(
                 "map_file",
@@ -228,11 +248,11 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "params_file",
                 default_value=PathJoinSubstitution(
-                    [FindPackageShare("nav2_bringup"), "params", "nav2_params.yaml"]
+                    [FindPackageShare("topological_navigation"), "config", "nav2_params_custom.yaml"]
                 ),
             ),
             DeclareLaunchArgument("use_rviz", default_value="True"),
-            DeclareLaunchArgument("enable_random_navigation", default_value="True"),
+            DeclareLaunchArgument("enable_random_navigation", default_value="False"),
             DeclareLaunchArgument("random_nav_period", default_value="30.0"),
             gzserver,
             gzclient,

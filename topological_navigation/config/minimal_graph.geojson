@@ -1,0 +1,122 @@
+{
+  "type": "FeatureCollection",
+  "name": "minimal_graph",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:EPSG::3857"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "name": "A"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 2,
+        "name": "B"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          2.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 3,
+        "name": "C"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 4,
+        "name": "D"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 100,
+        "startid": 1,
+        "endid": 2,
+        "bidirectional": true
+      },
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [
+            [0.0, 0.0],
+            [2.0, 0.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 101,
+        "startid": 2,
+        "endid": 3,
+        "bidirectional": true
+      },
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [
+            [2.0, 0.0],
+            [4.0, 0.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 102,
+        "startid": 3,
+        "endid": 4,
+        "bidirectional": true
+      },
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [
+            [4.0, 0.0],
+            [6.0, 0.0]
+          ]
+        ]
+      }
+    }
+  ]
+}

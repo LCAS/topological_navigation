@@ -1,4 +1,0 @@
-geometry_msgs/Pose pose
----
-string current_node
-string closest_node

@@ -1,0 +1,24 @@
+services:
+  topo_nav_sim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: topo_nav_sim
+    network_mode: host
+    ipc: host
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - MESA_GL_VERSION_OVERRIDE=3.3
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - TURTLEBOT3_MODEL=waffle
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    command: >
+      bash -lc "source /opt/ros/$ROS_DISTRO/setup.bash &&
+      source /workspace/install/setup.bash &&
+      ros2 launch topological_navigation turtlebot_route_compose.launch.py"

@@ -1,44 +1,35 @@
-from setuptools import find_packages
-from setuptools import setup
 from glob import glob
 
-package_name = 'topological_navigation'
+from setuptools import find_packages, setup
+
+
+package_name = "topological_navigation"
+
 
 setup(
     name=package_name,
-    version='5.0.0',  # Major version bump - ROS1 code removed
+    version="0.1.0",
     packages=find_packages(),
     data_files=[
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/config/', glob('config/*', recursive=True)),
-        ('share/' + package_name + '/config/',
-            glob('test/fixtures/mixed_actions_map.yaml')),
-        ('share/' + package_name + '/launch/', glob('launch/*', recursive=True)),
-        ('share/' + package_name + '/rviz/', glob('rviz/*', recursive=True)),
+        ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
+        ("share/" + package_name, ["package.xml"]),
+        ("share/" + package_name + "/config", glob("config/*")),
+        ("share/" + package_name + "/launch", glob("launch/*.launch.py")),
     ],
-    install_requires=['setuptools'],
+    install_requires=["setuptools", "PyYAML"],
     zip_safe=True,
-    maintainer='Ibrahim Hroob',
-    maintainer_email='ihroob@lincoln.ac.uk',
-    description='ROS2 topological navigation package (ROS1 support removed in v4.0.0)',
-    license='MIT',
-    tests_require=['pytest', 'launch-pytest'],
+    maintainer="Topological Navigation Team",
+    maintainer_email="maintainers@example.com",
+    description="Minimal wrapper around nav2_route with BT-aware segment execution.",
+    license="Apache-2.0",
+    tests_require=["pytest"],
     entry_points={
-        'console_scripts': [
-            # Core ROS2 Navigation Nodes
-            'navigation2.py = topological_navigation.scripts.navigation2:main',
-            'localisation2.py = topological_navigation.scripts.localisation2:main',
-            'map_manager2.py = topological_navigation.scripts.map_manager2:main',
-
-            # Supporting Utilities
-            'manual_topomapping.py = topological_navigation.scripts.manual_topomapping:main',
-            'validate_map.py = topological_navigation.validate_map:main',
-
-            # Map conversion
-            'convert_tmap.py = topological_navigation.convert_tmap:main',
+        "console_scripts": [
+            "route_bt_wrapper = topological_navigation.route_bt_wrapper:main",
+            "closest_node_publisher = topological_navigation.closest_node_publisher:main",
+            "initial_pose_publisher = topological_navigation.initial_pose_publisher:main",
+            "random_target_navigator = topological_navigation.random_target_navigator:main",
+            "gazebo_spawn_waiter = topological_navigation.gazebo_spawn_waiter:main",
         ],
     },
-
 )

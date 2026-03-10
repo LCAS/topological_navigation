@@ -1,0 +1,12 @@
+# Goal
+string[] waypoint_names
+bool execute_navigation
+---
+# Result
+bool success
+string message
+---
+# Feedback
+string status
+string current_from
+string current_to

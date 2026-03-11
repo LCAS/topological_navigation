@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
 
@@ -31,6 +32,7 @@ class EdgeBehaviorVisualizer(Node):
         self.declare_parameter("marker_topic", "/topological_edges_colored")
         self.declare_parameter("line_width", 0.06)
         self.declare_parameter("line_z", 0.03)
+        self.declare_parameter("node_capture_radius", 0.15)
         self.declare_parameter("publish_period_sec", 2.0)
 
         self.graph_file = str(self.get_parameter("graph_file").value)
@@ -41,6 +43,8 @@ class EdgeBehaviorVisualizer(Node):
         behavior_map_file = str(self.get_parameter("behavior_map_file").value)
         default_bt, edge_bts = self._load_behavior_map(behavior_map_file)
         graph_edges, edge_pairs = self._load_graph_edges(self.graph_file)
+        self._edge_pairs = edge_pairs
+        graph_nodes = self._load_graph_nodes(self.graph_file)
         edge_ids = sorted(graph_edges.keys())
         edge_controller_overrides = self._assign_random_edge_behaviors(edge_ids, edge_pairs)
 
@@ -55,6 +59,7 @@ class EdgeBehaviorVisualizer(Node):
 
         self.marker_array = self._build_markers(
             graph_edges,
+            graph_nodes,
             default_bt,
             edge_bts,
             edge_controller_overrides,
@@ -83,6 +88,23 @@ class EdgeBehaviorVisualizer(Node):
             bt_file = os.path.expandvars(str(entry["bt_file"]))
             edge_bts[edge_id] = bt_file
         return default_bt, edge_bts
+
+    def _load_graph_nodes(self, graph_file: str) -> dict[int, tuple[float, float]]:
+        if not graph_file:
+            return {}
+        with open(graph_file, "r", encoding="utf-8") as f:
+            graph = json.load(f)
+        nodes: dict[int, tuple[float, float]] = {}
+        for feature in graph.get("features", []):
+            geom = feature.get("geometry", {})
+            if geom.get("type") != "Point":
+                continue
+            props = feature.get("properties", {})
+            if "id" not in props:
+                continue
+            coords = geom["coordinates"]
+            nodes[int(props["id"])] = (float(coords[0]), float(coords[1]))
+        return nodes
 
     def _load_graph_edges(
         self, graph_file: str
@@ -192,9 +214,52 @@ class EdgeBehaviorVisualizer(Node):
         marker.color = color
         return marker
 
+    def _node_edge_class(
+        self,
+        node_id: int,
+        default_bt: str,
+        edge_bts: dict[int, str],
+        edge_controller_overrides: dict[int, str],
+    ) -> str:
+        priority = {"reverse": 3, "slow": 2, "custom_bt": 1, "default": 0}
+        best = "default"
+        for edge_id, pair in self._edge_pairs.items():
+            if node_id in pair:
+                klass = self._edge_class(edge_id, default_bt, edge_bts, edge_controller_overrides)
+                if priority.get(klass, 0) > priority.get(best, 0):
+                    best = klass
+        return best
+
+    def _make_circle_marker(
+        self,
+        marker_id: int,
+        x: float,
+        y: float,
+        radius: float,
+        color: ColorRGBA,
+    ) -> Marker:
+        marker = Marker()
+        marker.header.frame_id = self.frame_id
+        marker.ns = "node_circles"
+        marker.id = marker_id
+        marker.type = Marker.LINE_STRIP
+        marker.action = Marker.ADD
+        marker.scale.x = 0.02
+        marker.color = color
+        n_pts = 32
+        for i in range(n_pts + 1):
+            angle = 2.0 * math.pi * i / n_pts
+            p = Point()
+            p.x = x + radius * math.cos(angle)
+            p.y = y + radius * math.sin(angle)
+            p.z = self.line_z
+            marker.points.append(p)
+        return marker
+
     def _build_markers(
         self,
         graph_edges: dict[int, list[tuple[float, float]]],
+        graph_nodes: dict[int, tuple[float, float]],
         default_bt: str,
         edge_bts: dict[int, str],
         edge_controller_overrides: dict[int, str],
@@ -224,8 +289,26 @@ class EdgeBehaviorVisualizer(Node):
                 marker.points.append(p0)
                 marker.points.append(p1)
 
+        colors = {
+            "default": ColorRGBA(r=0.75, g=0.75, b=0.75, a=0.95),
+            "slow": ColorRGBA(r=1.0, g=0.55, b=0.1, a=0.98),
+            "reverse": ColorRGBA(r=0.1, g=0.55, b=1.0, a=0.98),
+            "custom_bt": ColorRGBA(r=0.25, g=0.95, b=0.45, a=0.98),
+        }
+        radius = float(self.get_parameter("node_capture_radius").value)
+        node_circle_markers = []
+        for node_id, (nx, ny) in graph_nodes.items():
+            klass = self._node_edge_class(node_id, default_bt, edge_bts, edge_controller_overrides)
+            circle = self._make_circle_marker(
+                1000 + node_id, nx, ny, radius, colors[klass]
+            )
+            node_circle_markers.append(circle)
+
         out = MarkerArray()
-        out.markers = [markers["default"], markers["slow"], markers["reverse"], markers["custom_bt"]]
+        out.markers = (
+            [markers["default"], markers["slow"], markers["reverse"], markers["custom_bt"]]
+            + node_circle_markers
+        )
         return out
 
     def _republish(self) -> None:

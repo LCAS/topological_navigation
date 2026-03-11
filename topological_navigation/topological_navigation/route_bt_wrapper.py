@@ -49,10 +49,10 @@ class RouteBtWrapper(Node):
         self.declare_parameter("reverse_backup_speed", 0.08)
         self.declare_parameter("reverse_spin_timeout_sec", 8)
         self.declare_parameter("reverse_backup_timeout_sec", 12)
-        self.declare_parameter("slow_drive_speed", 0.03)
+        self.declare_parameter("slow_drive_speed", 0.13)
         self.declare_parameter("slow_drive_timeout_sec", 14)
         self.declare_parameter("speed_limit_topic", "/speed_limit")
-        self.declare_parameter("slow_segment_speed_limit_mps", 0.03)
+        self.declare_parameter("slow_segment_speed_limit_mps", 0.13)
 
         self.route_frame = str(self.get_parameter("route_frame").value)
         self.graph_file = str(self.get_parameter("graph_file").value)

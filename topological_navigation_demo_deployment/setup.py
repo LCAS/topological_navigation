@@ -2,9 +2,7 @@ from glob import glob
 
 from setuptools import find_packages, setup
 
-
-package_name = "topological_navigation"
-
+package_name = "topological_navigation_demo_deployment"
 
 setup(
     name=package_name,
@@ -16,19 +14,12 @@ setup(
         ("share/" + package_name + "/config", glob("config/*")),
         ("share/" + package_name + "/launch", glob("launch/*.launch.py")),
     ],
-    install_requires=["setuptools", "PyYAML"],
+    install_requires=["setuptools"],
     zip_safe=True,
     maintainer="Topological Navigation Team",
     maintainer_email="maintainers@example.com",
-    description="Minimal wrapper around nav2_route with BT-aware segment execution.",
+    description="Example custom deployment of topological_navigation.",
     license="Apache-2.0",
     tests_require=["pytest"],
-    entry_points={
-        "console_scripts": [
-            "route_bt_wrapper = topological_navigation.route_bt_wrapper:main",
-            "closest_node_publisher = topological_navigation.closest_node_publisher:main",
-            "interactive_node_markers = topological_navigation.interactive_node_markers:main",
-            "edge_behavior_visualizer = topological_navigation.edge_behavior_visualizer:main",
-        ],
-    },
+    entry_points={"console_scripts": []},
 )

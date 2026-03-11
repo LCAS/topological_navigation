@@ -1,0 +1,9 @@
+default_behavior_tree: /opt/ros/$ROS_DISTRO/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml
+
+edge_behaviors:
+  - edge_id: 100
+    bt_file: /opt/ros/$ROS_DISTRO/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml
+  - edge_id: 101
+    bt_file: /opt/ros/$ROS_DISTRO/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml
+  - edge_id: 102
+    bt_file: /opt/ros/$ROS_DISTRO/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml

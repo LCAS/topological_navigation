@@ -45,8 +45,9 @@ def generate_launch_description():
         launch_arguments={"use_sim_time": "True"}.items(),
     )
 
+    # Spawn robot via the demo package's spawn waiter node.
     spawn_waiter = Node(
-        package="topological_navigation",
+        package="topological_navigation_demo",
         executable="gazebo_spawn_waiter",
         name="gazebo_spawn_waiter",
         output="screen",
@@ -63,18 +64,60 @@ def generate_launch_description():
 
     delayed_spawn_turtlebot = TimerAction(period=6.0, actions=[spawn_waiter])
 
-    nav2_bringup = IncludeLaunchDescription(
+    # Fake localizer: reads Gazebo ground-truth and broadcasts map→odom TF.
+    # Started early so the map frame exists before Nav2 activates.
+    fake_localizer = Node(
+        package="topological_navigation_demo",
+        executable="fake_localizer",
+        name="fake_localizer",
+        output="screen",
+        parameters=[{
+            "use_sim_time": True,
+            "robot_model_name": "waffle",
+            "map_frame": "map",
+            "odom_frame": "odom",
+            "base_frame": "base_footprint",
+        }],
+    )
+
+    # Start fake localizer early — before Nav2 — so its map→odom TF is live.
+    delayed_fake_localizer = TimerAction(period=9.0, actions=[fake_localizer])
+
+    # Nav2 navigation stack (no AMCL — map frame is provided by fake_localizer).
+    nav2_navigation = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            PathJoinSubstitution([FindPackageShare("nav2_bringup"), "launch", "bringup_launch.py"])
+            PathJoinSubstitution(
+                [FindPackageShare("nav2_bringup"), "launch", "navigation_launch.py"]
+            )
         ),
         launch_arguments={
-            "slam": "False",
             "use_sim_time": "True",
             "autostart": "True",
-            "map": map_file,
             "params_file": params_file,
-            "graph": graph_file,
         }.items(),
+    )
+
+    # Map server — serves the static occupancy grid for the global costmap.
+    map_server = Node(
+        package="nav2_map_server",
+        executable="map_server",
+        name="map_server",
+        output="screen",
+        parameters=[params_file, {"yaml_filename": map_file, "use_sim_time": True}],
+    )
+
+    # Lifecycle manager for map_server only (AMCL excluded — using fake_localizer).
+    lifecycle_manager_localization = Node(
+        package="nav2_lifecycle_manager",
+        executable="lifecycle_manager",
+        name="lifecycle_manager_localization",
+        output="screen",
+        parameters=[{
+            "use_sim_time": True,
+            "autostart": True,
+            "node_names": ["map_server"],
+            "bond_timeout": 0.0,
+        }],
     )
 
     nav2_rviz = IncludeLaunchDescription(
@@ -85,14 +128,20 @@ def generate_launch_description():
         launch_arguments={
             "use_sim_time": "True",
             "rviz_config": PathJoinSubstitution(
-                [FindPackageShare("topological_navigation"), "config", "route_map_view.rviz"]
+                [FindPackageShare("topological_navigation_demo"), "config", "route_map_view.rviz"]
             ),
         }.items(),
     )
 
+    # Nav2 starts at t=16s — after fake_localizer has had ~7s to begin broadcasting.
     delayed_nav2_stack = TimerAction(
-        period=14.0,
-        actions=[nav2_bringup, nav2_rviz],
+        period=16.0,
+        actions=[
+            nav2_navigation,
+            map_server,
+            lifecycle_manager_localization,
+            nav2_rviz,
+        ],
     )
 
     route_server = Node(
@@ -127,7 +176,7 @@ def generate_launch_description():
     )
 
     delayed_route_stack = TimerAction(
-        period=18.0,
+        period=20.0,
         actions=[route_server, route_lifecycle_manager],
     )
 
@@ -146,8 +195,6 @@ def generate_launch_description():
                 "default_controller_id": "FollowPath",
                 "slow_controller_id": "SlowFollowPath",
                 "reverse_controller_id": "ReverseFollowPath",
-                # Keep edge variation in controller profiles only.
-                # Custom BT files are disabled for Humble compatibility/stability.
                 "slow_behavior_tree": "",
                 "reverse_behavior_tree": "",
                 "controller_selector_topic": "/controller_selector",
@@ -171,7 +218,7 @@ def generate_launch_description():
                 "pose_cov_topic": "/amcl_pose",
                 "odom_topic": "/odom",
                 "selected_route_topic": "/selected_topological_route",
-                "marker_z_offset": 0.24,
+                "marker_z_offset": 0.05,
                 "click_sphere_scale_factor": 0.8,
             }
         ],
@@ -211,31 +258,8 @@ def generate_launch_description():
         ],
     )
 
-    initial_pose_publisher = Node(
-        package="topological_navigation",
-        executable="initial_pose_publisher",
-        name="initial_pose_publisher",
-        output="screen",
-        parameters=[
-            {
-                "x": -2.0,
-                "y": -0.5,
-                "yaw": 0.0,
-                # Keep publishing long enough to catch AMCL after robot spawn/odom are live.
-                "use_sim_time": True,
-                "publish_count": 6,
-                "publish_interval_sec": 1.0,
-            }
-        ],
-    )
-
-    delayed_initial_pose = TimerAction(
-        period=30.0,
-        actions=[initial_pose_publisher],
-    )
-
     random_target_navigator = Node(
-        package="topological_navigation",
+        package="topological_navigation_demo",
         executable="random_target_navigator",
         name="random_target_navigator",
         output="screen",
@@ -257,7 +281,7 @@ def generate_launch_description():
     )
 
     delayed_wrapper_stack = TimerAction(
-        period=28.0,
+        period=30.0,
         actions=[wrapper, closest_node_publisher, interactive_node_markers, edge_behavior_visualizer],
     )
 
@@ -266,7 +290,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "graph_file",
                 default_value=PathJoinSubstitution(
-                    [FindPackageShare("topological_navigation"), "config", "turtlebot3_graph.geojson"]
+                    [FindPackageShare("topological_navigation_demo"), "config", "turtlebot3_graph.geojson"]
                 ),
             ),
             DeclareLaunchArgument(
@@ -282,7 +306,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "params_file",
                 default_value=PathJoinSubstitution(
-                    [FindPackageShare("topological_navigation"), "config", "nav2_params_custom.yaml"]
+                    [FindPackageShare("topological_navigation_demo"), "config", "nav2_params_turtlebot3.yaml"]
                 ),
             ),
             DeclareLaunchArgument("use_rviz", default_value="True"),
@@ -293,10 +317,10 @@ def generate_launch_description():
             gzclient,
             robot_state_publisher,
             delayed_spawn_turtlebot,
+            delayed_fake_localizer,
             delayed_nav2_stack,
             delayed_route_stack,
             delayed_wrapper_stack,
-            delayed_initial_pose,
             delayed_random_navigation,
         ]
     )

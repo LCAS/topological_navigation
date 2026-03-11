@@ -28,4 +28,4 @@ RUN source /opt/ros/$ROS_DISTRO/setup.bash && \
     cd /workspace && \
     colcon build --symlink-install
 
-CMD ["bash", "-lc", "source /opt/ros/$ROS_DISTRO/setup.bash && source /workspace/install/setup.bash && ros2 launch topological_navigation turtlebot_route_compose.launch.py"]
+CMD ["bash", "-lc", "source /opt/ros/$ROS_DISTRO/setup.bash && source /workspace/install/setup.bash && ros2 launch topological_navigation_demo turtlebot_route_compose.launch.py"]

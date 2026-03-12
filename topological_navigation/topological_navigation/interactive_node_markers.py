@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 
 import rclpy
 from action_msgs.msg import GoalStatus
@@ -42,9 +43,11 @@ class InteractiveNodeMarkers(Node):
         self.declare_parameter("pose_cov_topic", "/amcl_pose")
         self.declare_parameter("odom_topic", "/odom")
         self.declare_parameter("selected_route_topic", "/selected_topological_route")
+        self.declare_parameter("closest_node_max_age_sec", 1.0)
         self.declare_parameter("marker_scale", 0.2)
         self.declare_parameter("marker_z_offset", 0.05)
         self.declare_parameter("click_sphere_scale_factor", 0.65)
+        self.declare_parameter("node_capture_radius", 0.15)
 
         self.graph_file = str(self.get_parameter("graph_file").value)
         self.frame_id = str(self.get_parameter("frame_id").value)
@@ -59,10 +62,13 @@ class InteractiveNodeMarkers(Node):
 
         self.node_positions, self.node_name_to_id = self._load_nodes(self.graph_file)
         self.current_node_name = ""
+        self.current_node_stamp_ns = 0
         self.last_pose_xy: tuple[float, float] | None = None
         self.last_target_name = ""
         self.goal_in_progress = False
         self.preview_request_in_flight = False
+        self._current_goal_handle = None
+        self._nav_generation = 0
 
         self.closest_sub = self.create_subscription(
             ClosestNode,
@@ -142,6 +148,7 @@ class InteractiveNodeMarkers(Node):
 
     def _closest_cb(self, msg: ClosestNode) -> None:
         self.current_node_name = msg.node_name
+        self.current_node_stamp_ns = self.get_clock().now().nanoseconds
 
     def _pose_cb(self, msg: PoseStamped) -> None:
         self.last_pose_xy = (float(msg.pose.position.x), float(msg.pose.position.y))
@@ -150,8 +157,7 @@ class InteractiveNodeMarkers(Node):
         self.last_pose_xy = (float(msg.pose.pose.position.x), float(msg.pose.pose.position.y))
 
     def _odom_cb(self, msg: Odometry) -> None:
-        if self.last_pose_xy is None:
-            self.last_pose_xy = (float(msg.pose.pose.position.x), float(msg.pose.pose.position.y))
+        self.last_pose_xy = (float(msg.pose.pose.position.x), float(msg.pose.pose.position.y))
 
     def _nearest_node_from_pose(self) -> str:
         if self.last_pose_xy is None:
@@ -166,6 +172,10 @@ class InteractiveNodeMarkers(Node):
                 best_dist_sq = dist_sq
                 best_name = name
         return best_name
+
+    def _select_start_node(self) -> str:
+        """Return the nearest graph node to the robot's current pose."""
+        return self._nearest_node_from_pose()
 
     def _create_markers(self) -> None:
         for name, (x, y) in self.node_positions.items():
@@ -221,7 +231,7 @@ class InteractiveNodeMarkers(Node):
 
         goal = ComputeRoute.Goal()
         goal.use_poses = False
-        goal.use_start = False
+        goal.use_start = True
         goal.start_id = start_id
         goal.goal_id = target_id
 
@@ -306,13 +316,7 @@ class InteractiveNodeMarkers(Node):
         self.selected_route_pub.publish(msg)
 
     def _marker_feedback(self, feedback: InteractiveMarkerFeedback) -> None:
-        self.get_logger().info(
-            f"Marker feedback: marker={feedback.marker_name}, event_type={feedback.event_type}"
-        )
         if feedback.event_type != InteractiveMarkerFeedback.BUTTON_CLICK:
-            self.get_logger().debug(
-                f"Ignoring non-click marker event {feedback.event_type} for marker {feedback.marker_name}"
-            )
             return
 
         target = feedback.marker_name
@@ -323,55 +327,69 @@ class InteractiveNodeMarkers(Node):
             return
 
         if self.goal_in_progress:
-            self.get_logger().warn("Navigation in progress; ignoring marker click")
-            return
+            if self._current_goal_handle is not None:
+                self._current_goal_handle.cancel_goal_async()
+                self._current_goal_handle = None
+            self.goal_in_progress = False
+            self.get_logger().info(f"Cancelling current navigation to re-route to {target}")
 
-        start = self.current_node_name or self.last_target_name
-        if start not in self.node_positions:
-            self.get_logger().info(
-                "Current node unavailable from /closest_node; falling back to nearest node from pose topics"
-            )
-            start = self._nearest_node_from_pose()
-
-        if start not in self.node_positions:
-            self.get_logger().warn(
-                "No localized start node from /closest_node or pose topics yet. Wait for localization before clicking markers."
-            )
+        # Prefer a fresh /closest_node update; fallback to nearest node from pose.
+        start = self._select_start_node()
+        if not start:
+            self.get_logger().warn("No robot pose available yet; wait for localization.")
             return
 
         if start == target:
             self.get_logger().info(f"Already at node {target}")
             return
 
+        self._nav_generation += 1
+        gen = self._nav_generation
+        self.goal_in_progress = True
+        self.get_logger().info(f"Marker click: {start} -> {target}")
+        self._send_navigation_goal(start, target, gen)
+
+    def _send_navigation_goal(self, start: str, target: str, gen: int) -> None:
+        """Send the ExecuteNamedWaypoints goal after start/target have been resolved."""
+        if gen != self._nav_generation:
+            self.goal_in_progress = False
+            return
         if not self.exec_client.server_is_ready() and not self.exec_client.wait_for_server(
             timeout_sec=0.2
         ):
+            self.goal_in_progress = False
             self.get_logger().warn("execute_named_waypoints action server unavailable")
             return
-
+        self._publish_route_preview(start, target)
         goal = ExecuteNamedWaypoints.Goal()
         goal.waypoint_names = [start, target]
         goal.execute_navigation = True
-
-        self.goal_in_progress = True
-        self._publish_route_preview(start, target)
-
         future = self.exec_client.send_goal_async(goal)
-        future.add_done_callback(lambda f: self._goal_response_cb(f, target))
-        self.get_logger().info(f"Marker click navigation: {start} -> {target}")
+        future.add_done_callback(lambda f: self._goal_response_cb(f, target, gen))
+        self.get_logger().info(f"Navigating: {start} -> {target}")
 
-    def _goal_response_cb(self, future, target: str) -> None:
+    def _goal_response_cb(self, future, target: str, generation: int) -> None:
         handle = future.result()
         if handle is None or not handle.accepted:
-            self.goal_in_progress = False
+            if generation == self._nav_generation:
+                self.goal_in_progress = False
             self.get_logger().warn("Marker navigation goal rejected")
             return
 
-        result_future = handle.get_result_async()
-        result_future.add_done_callback(lambda f: self._result_cb(f, target))
+        if generation != self._nav_generation:
+            # A newer click arrived while this goal was being sent — cancel it
+            handle.cancel_goal_async()
+            return
 
-    def _result_cb(self, future, target: str) -> None:
+        self._current_goal_handle = handle
+        result_future = handle.get_result_async()
+        result_future.add_done_callback(lambda f: self._result_cb(f, target, generation))
+
+    def _result_cb(self, future, target: str, generation: int) -> None:
+        if generation != self._nav_generation:
+            return  # Stale result from a cancelled/superseded goal
         self.goal_in_progress = False
+        self._current_goal_handle = None
         wrapped = future.result()
         if wrapped is None:
             self.get_logger().warn("Marker navigation returned no result")

@@ -276,7 +276,7 @@ class RouteBtWrapper(Node):
 
         goal = ComputeRoute.Goal()
         goal.use_poses = False
-        goal.use_start = False
+        goal.use_start = True
         goal.start_id = start_id
         goal.goal_id = goal_id
 

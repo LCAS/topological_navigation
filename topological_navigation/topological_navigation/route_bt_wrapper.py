@@ -16,7 +16,7 @@ from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Goals, Odometry
 from nav2_msgs.action import BackUp, ComputeRoute, DriveOnHeading, NavigateThroughPoses, NavigateToPose, Spin
 from nav2_msgs.msg import SpeedLimit
-from rclpy.action import ActionClient, ActionServer
+from rclpy.action import ActionClient, ActionServer, CancelResponse
 from rclpy.node import Node
 from std_msgs.msg import String
 from topological_navigation_msgs.action import ExecuteNamedWaypoints
@@ -63,6 +63,8 @@ class RouteBtWrapper(Node):
         self.edge_controller_overrides: dict[int, str] = {}
         self.latest_yaw: float | None = None
         self.graph_edge_ids, self.edge_pairs = self._load_edge_info(self.graph_file)
+        self._exec_gen = 0
+        self._active_nav2_handle = None
         self._assign_random_edge_behaviors()
         self.name_to_node_id = self._load_name_to_id(self.graph_file)
 
@@ -107,6 +109,7 @@ class RouteBtWrapper(Node):
             ExecuteNamedWaypoints,
             str(self.get_parameter("named_route_action").value),
             execute_callback=self._execute_named_waypoints,
+            cancel_callback=self._cancel_callback,
         )
 
         self.get_logger().info(
@@ -247,6 +250,12 @@ class RouteBtWrapper(Node):
         except ValueError as ex:
             raise KeyError(name) from ex
 
+    def _cancel_callback(self, goal_handle):
+        """Accept cancels and immediately preempt any in-flight nav2 goal."""
+        if self._active_nav2_handle is not None:
+            self._active_nav2_handle.cancel_goal_async()
+        return CancelResponse.ACCEPT
+
     def _odom_cb(self, msg: Odometry) -> None:
         q = msg.pose.pose.orientation
         siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
@@ -269,6 +278,13 @@ class RouteBtWrapper(Node):
         feedback.current_from = current_from
         feedback.current_to = current_to
         goal_handle.publish_feedback(feedback)
+
+    def _is_preempted(self, goal_handle=None, exec_gen=None) -> bool:
+        if goal_handle is not None and goal_handle.is_cancel_requested:
+            return True
+        if exec_gen is not None and exec_gen != self._exec_gen:
+            return True
+        return False
 
     def _compute_route_between_ids(self, start_id: int, goal_id: int):
         if not self.compute_route_client.wait_for_server(timeout_sec=10.0):
@@ -432,9 +448,9 @@ class RouteBtWrapper(Node):
         pose.pose.orientation.w = math.cos(yaw * 0.5)
         return pose
 
-    def _execute_segments(self, segments, goal_handle=None) -> bool:
+    def _execute_segments(self, segments, goal_handle=None, exec_gen=None) -> bool:
         for idx, seg in enumerate(segments):
-            if goal_handle is not None and goal_handle.is_cancel_requested:
+            if self._is_preempted(goal_handle, exec_gen):
                 return False
 
             poses = seg["poses"]
@@ -464,20 +480,26 @@ class RouteBtWrapper(Node):
                 self._publish_speed_limit(0.0, no_limit=True)
 
             if controller_id == reverse_controller and seg.get("reverse_steps"):
-                ok = self._execute_reverse_segment(seg)
+                ok = self._execute_reverse_segment(seg, goal_handle, exec_gen)
                 if ok:
                     continue
+                if self._is_preempted(goal_handle, exec_gen):
+                    return False
                 self.get_logger().warn("Reverse edge traversal failed; falling back to standard goal")
 
             if controller_id == slow_controller and seg.get("slow_steps"):
-                ok = self._execute_slow_segment(seg)
+                ok = self._execute_slow_segment(seg, goal_handle, exec_gen)
                 if ok:
                     continue
+                if self._is_preempted(goal_handle, exec_gen):
+                    return False
                 self.get_logger().warn("Slow edge traversal failed; falling back to standard goal")
 
-            ok = self._execute_segment_goal(poses, bt)
+            ok = self._execute_segment_goal(poses, bt, goal_handle, exec_gen)
             if ok:
                 continue
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
 
             default_controller = str(self.get_parameter("default_controller_id").value)
             if controller_id != default_controller or bt != self.default_bt:
@@ -485,22 +507,28 @@ class RouteBtWrapper(Node):
                     "Segment failed with edge-specific behavior; retrying with default controller/BT"
                 )
                 self._select_controller(default_controller)
-                if self._execute_segment_goal(poses, self.default_bt):
+                if self._execute_segment_goal(poses, self.default_bt, goal_handle, exec_gen):
                     continue
+                if self._is_preempted(goal_handle, exec_gen):
+                    return False
 
             if len(poses) > 1:
                 self.get_logger().warn(
                     "Merged segment still failed; retrying as per-pose NavigateToPose goals"
                 )
                 self._select_controller(default_controller)
-                if self._execute_segment_as_single_pose_goals(poses, self.default_bt):
+                if self._execute_segment_as_single_pose_goals(
+                    poses, self.default_bt, goal_handle, exec_gen
+                ):
                     continue
+                if self._is_preempted(goal_handle, exec_gen):
+                    return False
 
             return False
 
         return True
 
-    def _execute_slow_segment(self, seg) -> bool:
+    def _execute_slow_segment(self, seg, goal_handle=None, exec_gen=None) -> bool:
         if self.latest_yaw is None:
             self.get_logger().warn("No odom yaw available for slow segment alignment")
             return False
@@ -510,6 +538,8 @@ class RouteBtWrapper(Node):
         drive_speed = float(self.get_parameter("slow_drive_speed").value)
 
         for step in seg["slow_steps"]:
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             target_heading = float(step["heading"])
             delta = self._normalize_angle(target_heading - float(self.latest_yaw))
 
@@ -525,12 +555,18 @@ class RouteBtWrapper(Node):
                 spin_handle = spin_future.result()
                 if spin_handle is None or not spin_handle.accepted:
                     return False
+                self._active_nav2_handle = spin_handle
                 spin_result_future = spin_handle.get_result_async()
                 rclpy.spin_until_future_complete(self, spin_result_future)
+                self._active_nav2_handle = None
+                if self._is_preempted(goal_handle, exec_gen):
+                    return False
                 spin_wrapped = spin_result_future.result()
                 if spin_wrapped is None or spin_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
                     return False
 
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             if not self.drive_on_heading_client.wait_for_server(timeout_sec=2.0):
                 return False
             drive_goal = DriveOnHeading.Goal()
@@ -546,15 +582,19 @@ class RouteBtWrapper(Node):
             drive_handle = drive_future.result()
             if drive_handle is None or not drive_handle.accepted:
                 return False
+            self._active_nav2_handle = drive_handle
             drive_result_future = drive_handle.get_result_async()
             rclpy.spin_until_future_complete(self, drive_result_future)
+            self._active_nav2_handle = None
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             drive_wrapped = drive_result_future.result()
             if drive_wrapped is None or drive_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
                 return False
 
         return True
 
-    def _execute_reverse_segment(self, seg) -> bool:
+    def _execute_reverse_segment(self, seg, goal_handle=None, exec_gen=None) -> bool:
         if self.latest_yaw is None:
             self.get_logger().warn("No odom yaw available for reverse segment alignment")
             return False
@@ -564,6 +604,8 @@ class RouteBtWrapper(Node):
         backup_speed = float(self.get_parameter("reverse_backup_speed").value)
 
         for step in seg["reverse_steps"]:
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             target_heading = float(step["heading"])
             delta = self._normalize_angle(target_heading - float(self.latest_yaw))
 
@@ -579,12 +621,18 @@ class RouteBtWrapper(Node):
                 spin_handle = spin_future.result()
                 if spin_handle is None or not spin_handle.accepted:
                     return False
+                self._active_nav2_handle = spin_handle
                 spin_result_future = spin_handle.get_result_async()
                 rclpy.spin_until_future_complete(self, spin_result_future)
+                self._active_nav2_handle = None
+                if self._is_preempted(goal_handle, exec_gen):
+                    return False
                 spin_wrapped = spin_result_future.result()
                 if spin_wrapped is None or spin_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
                     return False
 
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             if not self.backup_client.wait_for_server(timeout_sec=2.0):
                 return False
             back_goal = BackUp.Goal()
@@ -600,18 +648,26 @@ class RouteBtWrapper(Node):
             back_handle = back_future.result()
             if back_handle is None or not back_handle.accepted:
                 return False
+            self._active_nav2_handle = back_handle
             back_result_future = back_handle.get_result_async()
             rclpy.spin_until_future_complete(self, back_result_future)
+            self._active_nav2_handle = None
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             back_wrapped = back_result_future.result()
             if back_wrapped is None or back_wrapped.status != GoalStatus.STATUS_SUCCEEDED:
                 return False
 
         return True
 
-    def _execute_segment_goal(self, poses, bt: str) -> bool:
+    def _execute_segment_goal(self, poses, bt: str, goal_handle=None, exec_gen=None) -> bool:
+        if self._is_preempted(goal_handle, exec_gen):
+            return False
         if len(poses) > 1:
             if not self.nav_through_poses_client.wait_for_server(timeout_sec=10.0):
                 self.get_logger().error("NavigateThroughPoses action server unavailable")
+                return False
+            if self._is_preempted(goal_handle, exec_gen):
                 return False
 
             goal = NavigateThroughPoses.Goal()
@@ -641,6 +697,8 @@ class RouteBtWrapper(Node):
             if not self.nav_to_pose_client.wait_for_server(timeout_sec=10.0):
                 self.get_logger().error("NavigateToPose action server unavailable")
                 return False
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
 
             goal = NavigateToPose.Goal()
             goal.pose = poses[0]
@@ -649,13 +707,19 @@ class RouteBtWrapper(Node):
             future = self.nav_to_pose_client.send_goal_async(goal)
 
         rclpy.spin_until_future_complete(self, future)
+        if self._is_preempted(goal_handle, exec_gen):
+            return False
         handle = future.result()
         if handle is None or not handle.accepted:
             self.get_logger().error("Navigation segment goal rejected")
             return False
 
+        self._active_nav2_handle = handle
         result_future = handle.get_result_async()
         rclpy.spin_until_future_complete(self, result_future)
+        self._active_nav2_handle = None
+        if self._is_preempted(goal_handle, exec_gen):
+            return False
         wrapped_result = result_future.result()
         if wrapped_result is None:
             self.get_logger().error("Navigation segment returned no result")
@@ -676,10 +740,16 @@ class RouteBtWrapper(Node):
 
         return True
 
-    def _execute_segment_as_single_pose_goals(self, poses, bt: str) -> bool:
+    def _execute_segment_as_single_pose_goals(
+        self, poses, bt: str, goal_handle=None, exec_gen=None
+    ) -> bool:
         for pose in poses:
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             if not self.nav_to_pose_client.wait_for_server(timeout_sec=10.0):
                 self.get_logger().error("NavigateToPose action server unavailable")
+                return False
+            if self._is_preempted(goal_handle, exec_gen):
                 return False
 
             goal = NavigateToPose.Goal()
@@ -689,6 +759,8 @@ class RouteBtWrapper(Node):
 
             future = self.nav_to_pose_client.send_goal_async(goal)
             rclpy.spin_until_future_complete(self, future)
+            if self._is_preempted(goal_handle, exec_gen):
+                return False
             handle = future.result()
             if handle is None or not handle.accepted:
                 self.get_logger().error("Single-pose retry goal rejected")
@@ -718,6 +790,13 @@ class RouteBtWrapper(Node):
         return True
 
     def _execute_named_waypoints(self, goal_handle):
+        self._exec_gen += 1
+        my_gen = self._exec_gen
+        # Preempt any nav2 goal left over from a previously executing goal.
+        if self._active_nav2_handle is not None:
+            self._active_nav2_handle.cancel_goal_async()
+            self._active_nav2_handle = None
+
         waypoint_names = [str(n) for n in goal_handle.request.waypoint_names]
         do_execute = bool(goal_handle.request.execute_navigation)
 
@@ -742,6 +821,14 @@ class RouteBtWrapper(Node):
         all_segments = []
         try:
             for i in range(len(node_ids) - 1):
+                if my_gen != self._exec_gen or goal_handle.is_cancel_requested:
+                    result.success = False
+                    result.message = "Preempted before planning"
+                    if goal_handle.is_cancel_requested:
+                        goal_handle.canceled()
+                    else:
+                        goal_handle.abort()
+                    return result
                 from_name = waypoint_names[i]
                 to_name = waypoint_names[i + 1]
                 self._publish_feedback(goal_handle, "planning_leg", from_name, to_name)
@@ -781,7 +868,7 @@ class RouteBtWrapper(Node):
 
         if do_execute:
             self._publish_feedback(goal_handle, "executing")
-            ok = self._execute_segments(merged_segments, goal_handle)
+            ok = self._execute_segments(merged_segments, goal_handle, exec_gen=my_gen)
             if not ok:
                 if goal_handle.is_cancel_requested:
                     goal_handle.canceled()

@@ -21,6 +21,24 @@ Nav2 and localisation nodes have finished initialising.
   simulation.
 - Launch files and environment startup helpers.
 
+## RViz Visualization
+
+Edges and nodes are color-coded by their assigned traversal behavior:
+
+| Color  | Behavior   | Controller used       |
+|--------|------------|-----------------------|
+| Grey   | Normal     | `FollowPath`          |
+| Orange | Slow       | `SlowFollowPath`      |
+| Blue   | Reverse    | `ReverseFollowPath`   |
+| Green  | Custom BT  | edge-specific BT file |
+
+Each node also has a ring drawn around it. The ring radius reflects the
+`node_capture_radius` parameter (default 0.15 m), which is kept in sync with
+the Nav2 `xy_goal_tolerance` in the controller params. Together these mean the
+robot's segment goal is considered reached once it is within that radius of the
+target node — so the ring shows you exactly how close the robot needs to get
+before the next segment starts.
+
 ## Using Toponav In Your Own Project
 
 This package is the recommended starting point for adopting the stack in a

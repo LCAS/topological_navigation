@@ -6,7 +6,6 @@ on:
     tags:     # Also run CI on tags.
       - '*'
   pull_request:
-    branches: [ humble-dev, aoc ]
 
 jobs:
   # -------------------------------------------------------------------
@@ -32,7 +31,7 @@ jobs:
           pip install pytest pyyaml jsonschema networkx scipy numpy
 
       - name: Run topological_navigation unit tests
-        working-directory: topological_navigation
+        working-directory: src/topological_navigation
         run: |
           python -m pytest test/ \
             --ignore=test/test_navigationcore.py \
@@ -40,7 +39,7 @@ jobs:
             -v --tb=short
 
       - name: Run topological_nav_simulator unit tests
-        working-directory: topological_nav_simulator
+        working-directory: src/topological_nav_simulator
         run: |
           python -m pytest test/ -v --tb=short || true
           # These tests require geometry_msgs (ROS 2); they are
@@ -50,11 +49,13 @@ jobs:
   # Full ROS 2 build + colcon test
   # -------------------------------------------------------------------
   test_docker:
+    name: ROS Testing ${{ matrix.ros_distribution }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         ros_distribution:
           - humble
+          - jazzy
 
         include:
           # Humble Hawksbill (May 2022 - May 2027)
@@ -62,11 +63,16 @@ jobs:
             ros_distribution: humble
             ros_version: 2
 
+          # Jazzy Jalisco (May 2024 - May 2029)
+          - docker_image: ubuntu:noble
+            ros_distribution: jazzy
+            ros_version: 2
+
     container:
       image: ${{ matrix.docker_image }}
     steps:
       - name: setup ROS environment
-        uses: LCAS/setup-ros@master
+        uses: ros-tooling/setup-ros@main
         with:
           required-ros-distributions: ${{ matrix.ros_distribution }}
       - name: build and test ROS 2

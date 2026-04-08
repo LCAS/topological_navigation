@@ -1,0 +1,42 @@
+services:
+  vnc:
+    image: lcas.lincoln.ac.uk/vnc
+    volumes:
+      - x11:/tmp/.X11-unix
+    devices:
+      - /dev/dri:/dev/dri
+    networks:
+      - ros_net
+    shm_size: '2gb'
+    stdin_open: true
+    tty: true
+
+  topo-nav:
+    build:
+      context: ../
+      dockerfile: .devcontainer/Dockerfile
+      target: devcontainer
+    volumes:
+      - x11:/tmp/.X11-unix
+      - ../:/home/ros/workspace
+      - colcon_build:/home/ros/workspace/build
+      - colcon_install:/home/ros/workspace/install
+      - colcon_log:/home/ros/workspace/log
+    stdin_open: true
+    tty: true
+    networks:
+      - ros_net
+    depends_on: 
+      - vnc
+    environment:
+      - DISPLAY=:1.0
+      - ROS_DOMAIN_ID=10
+
+volumes:
+  x11:
+  colcon_build:
+  colcon_install:
+  colcon_log:
+
+networks:
+  ros_net:

@@ -1,0 +1,39 @@
+services:
+  vnc:
+    image: lcas.lincoln.ac.uk/vnc:staging
+    ports: 
+    - "5801:5801"
+    volumes:
+      - x11:/tmp/.X11-unix
+    devices:
+      - /dev/dri:/dev/dri
+    networks:
+      - ros_net
+    shm_size: '2gb'
+    stdin_open: true
+    tty: true
+
+  topo-nav:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+      target: final
+    volumes:
+      - x11:/tmp/.X11-unix
+    stdin_open: true
+    tty: true
+    networks:
+      - ros_net
+    depends_on: 
+      - vnc
+    environment:
+      - DISPLAY=:1.0
+      - ROS_DOMAIN_ID=10
+      - MAP_FILE=/home/ros/workspace/src/topological_navigation/config/test_complex_tmap2.yaml
+      - FAKE_ROBOT=true
+
+volumes:
+  x11:
+
+networks:
+  ros_net:

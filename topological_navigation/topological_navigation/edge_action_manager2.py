@@ -345,6 +345,13 @@ class EdgeActionManager(rclpy.node.Node):
         self.action_status = 0
 
         if self.action_name == self.ACTIONS.NAVIGATE_TO_POSE:
+            self.destination_node_str = {}
+            name = destination_node['node']['name']
+            x_coord = destination_node['node']['pose']['position']['x']
+            y_coord = destination_node['node']['pose']['position']['y']
+            coordinates = (x_coord, y_coord)
+            self.destination_node_str[coordinates] = name
+            self.get_logger().warn(f"Destination nodes: {self.destination_node_str}")
             self.destination_node = destination_node
             self.origin_node = origin_node
             self.get_logger().info(f"Processing edge {self.edge['edge_id']}")
@@ -1321,10 +1328,10 @@ class EdgeActionManager(rclpy.node.Node):
             self.get_logger().warn("Executing action : {} ".format(target_action))
 
             # Publish segment destination for visualisation purposes
-            current_destination = (target_goal.poses[-1].pose.position.x, target_goal.poses[-1].pose.position.y)
+            current_destination = (target_goal.pose.pose.position.x, target_goal.pose.pose.position.y)
             self.get_logger().warn("Current destination : {} ".format(self.destination_node_str[current_destination]))
             self.current_dest.publish(String(data=self.destination_node_str[current_destination]))
-            
+
             # Handles both lists and dictionaries
             control_server_config = None
             if isinstance(self.control_server_configs, list):

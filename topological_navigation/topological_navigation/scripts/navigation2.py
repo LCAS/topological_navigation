@@ -122,7 +122,7 @@ class TopologicalNavServer(rclpy.node.Node):
 
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, self.ACTIONS.NAVIGATE_TO_POSE)).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value
-        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, False)).value
+        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, True)).value
         self.use_in_row_operation = self.get_parameter_or("use_in_row_operation", Parameter('bool', Parameter.Type.BOOL, False)).value
         self.inrow_step_size = self.get_parameter_or("inrow_step_size", Parameter('double', Parameter.Type.DOUBLE, 2.0)).value 
         self.inrow_step_intermediate_dis = self.get_parameter_or("inrow_step_intermediate_dis", Parameter('double', Parameter.Type.DOUBLE, -1.0)).value 

@@ -10,6 +10,7 @@ goal:
       frame_id: $node.parent_frame
     pose: $node.pose
 node: destination
+properties: {}
 recovery_behaviours_config: ''
 restrictions_planning: 'True'
 restrictions_runtime: 'True'

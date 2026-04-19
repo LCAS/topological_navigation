@@ -48,7 +48,7 @@ class CustomSafeLoader(yaml.SafeLoader):
 
         # this can be extended to test the validity of the tmap2 
         # as well at load time (or add missing keys)
-        for key in ['x', 'y', 'z', 'w']:
+        for key in ['x', 'y', 'z', 'w', 'yaw_goal_tolerance', 'xy_goal_tolerance']:
             if key in mapping and isinstance(mapping[key], int):
                 mapping[key] = float(mapping[key])
         

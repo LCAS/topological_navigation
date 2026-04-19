@@ -64,9 +64,17 @@ properties:
                     type: string
                   node:
                     type: string
+                  properties:
+                    type: object
+                    additionalProperties: true
+                    description: Flexible dictionary of application-specific edge properties (e.g., max_speed, priority, surface_type)
             name:
               type: string
             parent_frame:
               type: string
+            properties:
+              type: object
+              additionalProperties: true
+              description: Flexible dictionary of application-specific node properties (e.g., xy_goal_tolerance, yaw_goal_tolerance, semantics, zone)
   pointset:
     type: string

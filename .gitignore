@@ -67,3 +67,4 @@ coverage.xml
 # Nano auto-backups
 **/*.*~
 **/*.*.swp
+.DS_Store

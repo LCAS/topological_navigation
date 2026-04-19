@@ -7,7 +7,7 @@ Created on Tue Nov 5 22:02:24 2023
 
 import rclpy, json, yaml
 
-
+import math
 from topological_navigation_msgs.msg import NavStatistics, CurrentEdge, ClosestEdges, TopologicalRoute, GotoNodeFeedback, ExecutePolicyModeFeedback
 from topological_navigation_msgs.srv import EvaluateEdge, EvaluateNode
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
@@ -19,7 +19,7 @@ from topological_navigation.route_search2 import RouteChecker, TopologicalRouteS
 from topological_navigation.navigation_stats import nav_stats
 from topological_navigation.scripts.param_processing import ParameterUpdaterNode
 from topological_navigation.tmap_utils import *
-from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy, QoSDurabilityPolicy
+from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy, QoSDurabilityPolicy, QoSHistoryPolicy
 from rclpy.action import ActionServer
 from rclpy import Parameter 
 from topological_navigation.edge_action_manager2 import EdgeActionManager
@@ -75,6 +75,9 @@ class TopologicalNavServer(rclpy.node.Node):
         self.fluid_navigation = True
         self.final_goal = False
         self.update_params_control_server = update_params_control_server
+        
+        self.route = None
+        self.target = None
 
         self.current_node = "Unknown"
         self.closest_node = "Unknown"
@@ -113,10 +116,13 @@ class TopologicalNavServer(rclpy.node.Node):
         self.declare_parameter(self.ACTIONS.BT_GOAL_ALIGN, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_IN_ROW_OPERATION, Parameter.Type.STRING)
         self.declare_parameter(self.ACTIONS.BT_IN_ROW_RECOVERY, Parameter.Type.STRING)
+        
+        self.declare_parameter("allow_intermediate_orientation_override", Parameter.Type.BOOL)
+        self.allow_intermediate_orientation_override = self.get_parameter_or("allow_intermediate_orientation_override", Parameter('bool', Parameter.Type.BOOL, False)).value
 
         self.navigation_action_name = self.get_parameter_or("navigation_action_name", Parameter('str', Parameter.Type.STRING, self.ACTIONS.NAVIGATE_TO_POSE)).value
         self.navigation_actions = self.get_parameter_or("navigation_actions", Parameter('str', Parameter.Type.STRING_ARRAY, self.ACTIONS.navigation_actions)).value
-        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, False)).value
+        self.use_nav2_follow_route = self.get_parameter_or("use_nav2_follow_route", Parameter('bool', Parameter.Type.BOOL, True)).value
         self.use_in_row_operation = self.get_parameter_or("use_in_row_operation", Parameter('bool', Parameter.Type.BOOL, False)).value
         self.inrow_step_size = self.get_parameter_or("inrow_step_size", Parameter('double', Parameter.Type.DOUBLE, 2.0)).value 
         self.inrow_step_intermediate_dis = self.get_parameter_or("inrow_step_intermediate_dis", Parameter('double', Parameter.Type.DOUBLE, -1.0)).value 
@@ -168,9 +174,12 @@ class TopologicalNavServer(rclpy.node.Node):
             self.navigation_actions.append(self.navigation_action_name)
         
         self.latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.keep_history_qos = QoSProfile(reliability = ReliabilityPolicy.BEST_EFFORT, history=QoSHistoryPolicy.KEEP_LAST, depth=10, )
         self.stat = None 
         self.stats_pub = self.create_publisher(NavStatistics, "topological_navigation/Statistics", qos_profile=self.latching_qos)
-        self.route_pub = self.create_publisher(TopologicalRoute, "topological_navigation/Route", qos_profile=self.latching_qos)
+        self.route_pub = self.create_publisher(TopologicalRoute, "topological_navigation/Route", qos_profile= self.keep_history_qos)
+        self.route_pub_timer = self.create_timer( 2.0 , self.router_pub_timer_callback)
+        self.stroute = None
         self.cur_edge = self.create_publisher(String, "current_edge", qos_profile=self.latching_qos)
         self.move_act_pub =  self.create_publisher(String, "topological_navigation/move_action_status", qos_profile=self.latching_qos)
         self._map_received = False
@@ -746,6 +755,50 @@ class TopologicalNavServer(rclpy.node.Node):
             rindex = rindex + 1
 
         self.get_logger().info(" ========== Action list {} ".format(route_actions_list))
+        
+        if self.allow_intermediate_orientation_override:
+            # ======================================================================
+            # ## NEW LOGIC START: Realign Orientations for Continuous Flow
+            # ======================================================================
+            # We iterate through all destinations except the very last one.
+            # We point each node to look at the NEXT node.
+            
+            for i in range(len(route_dests) - 1):
+                curr_node = route_dests[i]
+                next_node = route_dests[i+1]
+                
+                # 1. Get positions
+                # Note: Adjust keys ["pose"]["position"] if your dictionary structure is different
+                cx = curr_node["node"]["pose"]["position"]["x"]
+                cy = curr_node["node"]["pose"]["position"]["y"]
+                nx = next_node["node"]["pose"]["position"]["x"]
+                ny = next_node["node"]["pose"]["position"]["y"]
+
+                # 2. Calculate the specific angle (Yaw) to the next node
+                dx = nx - cx
+                dy = ny - cy
+                yaw = math.atan2(dy, dx)
+
+                # 3. Convert Yaw to Quaternion manually (to avoid extra dependencies)
+                # Formula for Z-axis rotation
+                qz = math.sin(yaw * 0.5)
+                qw = math.cos(yaw * 0.5)
+
+                # 4. Overwrite the orientation of the intermediate node
+                # Now the planner thinks this node is "facing" the path, so it won't stop to turn.
+                curr_node["node"]["pose"]["orientation"]["x"] = 0.0
+                curr_node["node"]["pose"]["orientation"]["y"] = 0.0
+                curr_node["node"]["pose"]["orientation"]["z"] = qz
+                curr_node["node"]["pose"]["orientation"]["w"] = qw
+                
+                self.get_logger().info(f"Realigned node {i} to yaw: {yaw:.2f}")
+
+            # The LAST node (route_dests[-1]) is left untouched so it keeps 
+            # the final desired docking/goal orientation.
+            # ======================================================================
+            # ## NEW LOGIC END
+            # ======================================================================
+        
         nav_ok, inc, status  = self.execute_actions(route_edges, route_dests, route_origins, 
                                                     action_name=self.ACTIONS.NAVIGATE_THROUGH_POSES, is_execpolicy=exec_policy)
 
@@ -792,6 +845,7 @@ class TopologicalNavServer(rclpy.node.Node):
             
             self.max_dist_to_closest_edge = self.get_parameter_or("max_dist_to_closest_edge",  Parameter('double', Parameter.Type.DOUBLE, 1.0)).value 
           
+            # if we are nowhere near an edge or not at a node, then do a node plan
             if self.closest_edges.distances and (self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none"):
                 self.nav_from_closest_edge = False
                 o_node = self.rsearch.get_node_from_tmap2(self.closest_node)
@@ -799,6 +853,9 @@ class TopologicalNavServer(rclpy.node.Node):
             else:
                 self.nav_from_closest_edge = True
                 o_node, the_edge = self.orig_node_from_closest_edge(g_node)
+                # This creates essentially a fake "previous node" to address the edge case when navigating over a single edge and the closest node is on the edge but the current node isnt. (otherwise it will mark as complete without navigation).
+                if o_node == target:
+                    o_node, the_edge = self.orig_node_from_closest_edge(g_node, flip=True)
                 self.get_logger().info("Planning from the closest EDGE: {}".format(the_edge["edge_id"]))
                 
             self.get_logger().info("Navigating From Origin {} to Target {} ".format(o_node["node"]["name"], target))
@@ -811,7 +868,8 @@ class TopologicalNavServer(rclpy.node.Node):
                     route = self.enforce_navigable_route(route, target)
                     if route.source:
                         self.get_logger().info("Navigating Case 1: Following route")
-                        self.get_logger().warn("[navigate] - publishing route")
+                        self.route = route
+                        self.target = target
                         self.publish_route(route, target)
                         if(self.use_nav2_follow_route):
                             result, inc, status = self.navigate_to_poses(route, target, 0)
@@ -891,7 +949,7 @@ class TopologicalNavServer(rclpy.node.Node):
         self._as_exec_policy_action_feedback_pub.publish(self._feedback_exec_policy)
         
         
-    def orig_node_from_closest_edge(self, g_node):
+    def orig_node_from_closest_edge(self, g_node, flip=False):
         
         name_1, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[0])
         name_2, _ = get_node_names_from_edge_id_2(self.lnodes, self.closest_edges.edge_ids[1])
@@ -911,11 +969,18 @@ class TopologicalNavServer(rclpy.node.Node):
             d2 = get_route_distance(self.lnodes, o_node_2, g_node)
         else: # Use the destination node of the closest edge.
             d1 = 0; d2 = 1
-        if d1 <= d2:
-            return o_node_1, edge_1
+        if flip:
+            if d1 <= d2:
+                return o_node_1, edge_1
+            else:
+                return o_node_2, edge_2
         else:
-            return o_node_2, edge_2
-        
+            o_node_1b = self.rsearch.get_node_from_tmap2(name_1)
+            o_node_2b = self.rsearch.get_node_from_tmap2(name_2)
+            if d1 <= d2:
+                return o_node_1b, edge_1
+            else:
+                return o_node_2b, edge_2
         
     def to_goal_node(self, g_node, the_edge=None):
         self.get_logger().info("Target and Origin Nodes are the same")
@@ -1010,8 +1075,13 @@ class TopologicalNavServer(rclpy.node.Node):
         for i in route.source:
             stroute.nodes.append(i)
         stroute.nodes.append(target)
+        self.stroute = stroute
         self.route_pub.publish(stroute)
+    
+    def router_pub_timer_callback(self):
         
+        if (self.stroute is not None and self.stroute.nodes):
+            self.route_pub.publish(self.stroute)   
         
     def publish_stats(self):
         pubst = NavStatistics()

@@ -24,6 +24,7 @@ from builtin_interfaces.msg import Duration
 from rclpy.task import Future
 import threading
 import yaml
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDurabilityPolicy
 
 # this ensures that all the poses and translates 
 # are float-type and not int-type as there is an 

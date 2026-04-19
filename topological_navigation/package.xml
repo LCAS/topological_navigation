@@ -2,12 +2,13 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>topological_navigation</name>
-  <version>3.0.5</version>
-  <description>The ros2 topological_navigation package</description>
+  <version>5.0.0</version>
+  <description>The ros2 topological_navigation package (ROS1 support removed in v5.0.0)</description>
 
 
   <maintainer email="marc@hanheide.net">Marc Hanheide</maintainer>
   <maintainer email="jheselden@lincoln.ac.uk">James R Heselden</maintainer>
+  <maintainer email="ihroob@lincoln.ac.uk">Ibrahim Hroob</maintainer>
 
   <author email="jpulidofentanes@lincoln.ac.uk">Jaime Pulido Fentanes</author>
   <author email="abinch@sagarobotics.com">Adam Binch</author>
@@ -19,12 +20,20 @@
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
+  <test_depend>python3-pytest-cov</test_depend>
+  <test_depend>python3-pytest-mock</test_depend>
   <test_depend>launch_pytest</test_depend>
+  <test_depend>python3-hypothesis</test_depend>
 
   <depend>ament_cmake</depend>
+  <depend>python3-networkx</depend>
+  <depend>python3-scipy</depend>
+  <depend>python3-numpy</depend>
+  <depend>python3-jsonschema</depend>
 
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>actionlib_msgs</depend>

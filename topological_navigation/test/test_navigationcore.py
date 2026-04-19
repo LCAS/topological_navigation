@@ -8,6 +8,7 @@ import launch_ros
 import pytest
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import String
 
 @launch_pytest.fixture
@@ -23,16 +24,9 @@ def generate_test_description():
         ),
         launch_ros.actions.Node(
             executable=sys.executable,
-            arguments=[str(path_to_test / '..' / 'topological_navigation'/'scripts' /'map_manager2.py'), str(path_to_test / 'conf' / 'network_autogen.tmap2.yaml')],
+            arguments=[str(path_to_test / '..' / 'topological_navigation'/'scripts' /'map_manager2.py'), str(path_to_test / 'fixtures' / 'simple_map.yaml')],
             additional_env={'PYTHONUNBUFFERED': '1'},
             name='map_manager',
-            output='screen',
-        ),
-        launch_ros.actions.Node(
-            executable=sys.executable,
-            arguments=[str(path_to_test / '..' / 'topological_navigation'/'scripts'/'topological_transform_publisher.py')],
-            additional_env={'PYTHONUNBUFFERED': '1'},
-            name='topological_transform_publisher',
             output='screen',
         ),
         launch_ros.actions.Node(
@@ -61,7 +55,10 @@ def test_check_if_topological_map_is_published():
         msgs_received_flag = node.topmap_event_object.wait(timeout=40.0)
         assert msgs_received_flag, 'Did not receive topological map !'
     finally:
-        rclpy.shutdown()
+        try:
+            rclpy.shutdown()
+        except (RuntimeError, rclpy._rclpy_pybind11.RCLError):
+            pass
 
 @pytest.mark.launch(fixture=generate_test_description)
 def test_check_if_closest_node_is_published():
@@ -72,7 +69,10 @@ def test_check_if_closest_node_is_published():
         msgs_received_flag = node.closest_node_event_object.wait(timeout=40.0)
         assert msgs_received_flag, 'Did not receive closest node info !'
     finally:
-        rclpy.shutdown()
+        try:
+            rclpy.shutdown()
+        except (RuntimeError, rclpy._rclpy_pybind11.RCLError):
+            pass
 
 @pytest.mark.launch(fixture=generate_test_description)
 def test_check_if_current_node_is_published():
@@ -83,7 +83,10 @@ def test_check_if_current_node_is_published():
         msgs_received_flag = node.current_node_event_object.wait(timeout=40.0)
         assert msgs_received_flag, 'Did not receive current node info !'
     finally:
-        rclpy.shutdown()
+        try:
+            rclpy.shutdown()
+        except (RuntimeError, rclpy._rclpy_pybind11.RCLError):
+            pass
 
 class NavigationClient(Node):
     def __init__(self, name='test_node'):
@@ -93,9 +96,21 @@ class NavigationClient(Node):
         self.current_node_event_object = Event()
 
     def initialize(self):
-        self.topmap_sub = self.create_subscription(String, '/topological_map_2', self.topmap_sub_callback, 1)
-        self.closest_node_sub = self.create_subscription(String, 'closest_node', self.closest_node_callback, 1)
-        self.current_node_sub = self.create_subscription(String, 'current_node', self.current_node_callback, 1)
+        # Match the TRANSIENT_LOCAL durability used by the publishers
+        # (map_manager2, localisation2) so late-joining subscribers
+        # receive the last published message.
+        latched_qos = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+        )
+        self.topmap_sub = self.create_subscription(
+            String, '/topological_map_2', self.topmap_sub_callback, latched_qos)
+        self.closest_node_sub = self.create_subscription(
+            String, 'closest_node', self.closest_node_callback, latched_qos)
+        self.current_node_sub = self.create_subscription(
+            String, 'current_node', self.current_node_callback, latched_qos)
 
         self.ros_spin_thread = Thread(target=lambda node: rclpy.spin(node), args=(self,))
         self.ros_spin_thread.start()

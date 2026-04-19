@@ -116,9 +116,8 @@ ros2 run topological_navigation validate_map.py path/to/map.tmap2.yaml -v
 
 ### Documentation
 - `README.md`: Package-level documentation
-- `doc/PROPERTIES.md`: Comprehensive guide to the properties system
 - `CHANGELOG.rst`: Version history and changes
-
+- Additional technical documentation may be found in the `doc/` directory (if present).
 ### Testing
 - `test/`: Unit tests and integration tests
 - Uses `pytest` for Python tests

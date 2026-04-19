@@ -44,6 +44,7 @@ topological_navigation/
 │   │   ├── route_search2.py     # A* path planning
 │   │   ├── topological_map.py   # Map data structures
 │   │   ├── load_maps_from_yaml.py # YAML map loader
+│   │   ├── networkx_utils.py    # NetworkX graph and KD-tree utilities (NEW)
 │   │   └── restrictions_impl.py # Navigation restrictions
 │   ├── config/                   # YAML schemas and templates
 │   │   └── schema2.json         # JSON schema for map validation
@@ -75,12 +76,18 @@ topological_navigation/
 - **GUI**: Qt (for RViz panels)
 - **Data Format**: YAML for topological maps (`.tmap2.yaml` extension)
 - **Validation**: JSON Schema (`config/schema2.json`)
+- **Graph Library**: NetworkX (>=2.5) for graph data structures and algorithms
+- **Spatial Indexing**: scipy (>=1.5) for KD-tree nearest neighbor search
+- **Numerical Operations**: numpy (>=1.19) for vectorized calculations
 - **Key Dependencies**:
   - `nav2_msgs` - Nav2 navigation actions and messages
   - `geometry_msgs`, `nav_msgs`, `sensor_msgs` - ROS 2 standard messages
   - `tf_transformations` - Coordinate frame transformations
   - `visualization_msgs` - RViz markers
   - `topological_navigation_msgs` - Custom message definitions
+  - `networkx` - Graph data structures and algorithms
+  - `scipy` - KD-tree spatial indexing
+  - `numpy` - Numerical operations
 
 ## Core Concepts
 
@@ -177,12 +184,16 @@ See `topological_navigation/doc/PROPERTIES.md` for comprehensive documentation.
    - Validates map structure against JSON schema
    - Manages node and edge metadata
 
-2. **Localisation** (`scripts/localisation2.py`)
+2. **Localisation** (`scripts/localisation2.py`, `networkx_utils.py`)
    - Determines robot's current topological node
-   - Publishes `/current_node` and `/closest_node`
+   - Publishes `/current_node`, `/closest_node`, `/closest_node_distance`, `/closest_edges`, `/current_node/tag`
    - Supports pose-based and topic-based localization
-   - Uses influence zones to determine node proximity
+   - Uses influence zones with ray-casting point-in-polygon checks
    - Critical for navigation start conditions
+   - **Refactored with NetworkX and KD-tree** for O(log n) performance
+   - Uses `networkx_utils.py` module for graph operations and spatial indexing
+   - 35 unit tests in `test/test_localisation2.py`
+   - See `doc/LOCALISATION.md` for detailed technical documentation
 
 3. **Navigation** (`scripts/navigation2.py`)
    - Executes topological navigation actions
@@ -232,6 +243,119 @@ See `topological_navigation/doc/PROPERTIES.md` for comprehensive documentation.
   - `search_route()` - Find optimal path between nodes
   - `get_path_cost()` - Calculate path cost with property-based weighting
   - `is_node_blocked()` - Check if node is restricted/blocked
+
+### 5. NetworkX Refactoring and Spatial Indexing
+
+The localisation system has been refactored to use NetworkX graph data structures and KD-tree spatial indexing for improved performance and maintainability.
+
+#### NetworkX Utils Module (`networkx_utils.py`)
+
+**Purpose**: Provides graph-based data structures and efficient spatial queries for topological localization
+
+**Key Features**:
+- NetworkX DiGraph representation of topological maps
+- KD-tree spatial indexing for O(log n) nearest neighbor search
+- Point-in-polygon checks using ray-casting algorithm
+- Vectorized edge distance calculations
+- NetworkX algorithm wrappers for shortest paths and connectivity
+
+**Core Functions**:
+
+1. **Graph Construction**:
+   - `build_graph_from_tmap(tmap_data, logger)` - Convert YAML map to NetworkX DiGraph
+   - Stores node positions, influence zones, properties as graph attributes
+   - Stores edge metadata (edge_id, action, action_type, properties)
+   - Returns `nx.DiGraph` with full topological map structure
+
+2. **KD-Tree Spatial Indexing**:
+   - `build_kdtree_from_graph(graph, logger)` - Build KD-tree from node positions
+   - Returns tuple of `(kdtree, node_names)` for efficient spatial queries
+   - Construction: O(n log n), Query: O(log n) average case
+   - Enables fast closest node detection for large maps (1000+ nodes)
+
+3. **Spatial Queries**:
+   - `query_nearest_nodes(kdtree, node_names, pose, k)` - Find k-nearest nodes
+   - Returns list of `{'node': name, 'dist': distance}` sorted by distance
+   - Used for efficient localization without checking all nodes
+
+4. **Geometric Operations**:
+   - `point_in_poly_nx(graph, node_name, pose)` - Check if pose is within influence zone
+   - Ray-casting algorithm: O(m) where m is polygon vertices
+   - Transforms pose to node-relative coordinates before checking
+   - `get_edge_distances_nx(graph, pose, logger)` - Calculate distances to all edges
+   - Vectorized numpy operations for efficiency
+   - Returns sorted `(edge_ids, distances)` tuple
+
+5. **Localization Logic**:
+   - `determine_current_node(graph, kdtree, node_names, pose, loc_by_topic, nogos)` - Find current node
+   - Priority 1: Topic-based localization (highest priority)
+   - Priority 2: Geometric localization using KD-tree + influence zones
+   - Only checks 3 closest nodes (KD-tree optimization)
+   - `determine_closest_node(kdtree, node_names, graph, current_node, nogos, names_by_topic, pose)` - Find closest node
+   - Filters no-go and topic-based nodes
+   - Returns `(node_name, distance)` tuple
+
+6. **Topic-Based Localization**:
+   - `update_loc_by_topic_nx(graph, logger)` - Extract topic-based localization config
+   - Parses JSON configuration from node attributes
+   - Sets default values for `localise_anywhere` and `persistency`
+   - Returns `(nodes_by_topic, names_by_topic)` tuple
+
+7. **NetworkX Algorithm Wrappers**:
+   - `compute_shortest_path(graph, source, target, weight, logger)` - Dijkstra's algorithm
+   - `compute_path_length(graph, source, target, weight, logger)` - Path length only
+   - `check_connectivity(graph, source, target, logger)` - Path existence check
+   - `get_neighbors(graph, node, logger)` - Get adjacent nodes
+
+**Performance Characteristics**:
+- KD-tree construction: O(n log n) where n is number of nodes
+- KD-tree query: O(log n) average case for nearest neighbor
+- Point-in-polygon: O(m) where m is number of polygon vertices
+- Edge distance: O(e) where e is number of edges (vectorized)
+- Full localization: O(log n + k*m) where k=3 closest nodes
+
+**Usage Pattern in localisation2.py**:
+```python
+# Build graph and KD-tree when map is received
+self._graph = build_graph_from_tmap(self.tmap, logger=self.get_logger())
+self._kdtree, self._kdtree_node_names = build_kdtree_from_graph(self._graph, logger=self.get_logger())
+
+# Update topic-based localization configuration
+self.nodes_by_topic, self.names_by_topic = update_loc_by_topic_nx(self._graph, logger=self.get_logger())
+
+# During localization (pose_callback)
+currentstr = determine_current_node(
+    self._graph, self._kdtree, self._kdtree_node_names,
+    msg, self.loc_by_topic, self.nogos
+)
+
+closeststr, closest_dist = determine_closest_node(
+    self._kdtree, self._kdtree_node_names, self._graph,
+    currentstr, self.nogos, self.names_by_topic, msg
+)
+
+# Get edge distances
+closest_edges, edge_dists = get_edge_distances_nx(self._graph, msg, logger=self.get_logger())
+```
+
+**Key Benefits**:
+- **Performance**: O(log n) spatial queries vs O(n) linear search
+- **Scalability**: Handles 1000+ node maps efficiently
+- **Maintainability**: Uses standard NetworkX algorithms instead of custom implementations
+- **Testability**: Modular functions with clear interfaces
+- **Type Safety**: Comprehensive type hints on all public functions
+- **Documentation**: Detailed docstrings with examples and performance notes
+
+**Dependencies**:
+- `networkx` (>=2.5) - Graph data structures and algorithms
+- `scipy` (>=1.5) - KD-tree spatial indexing (`scipy.spatial.KDTree`)
+- `numpy` (>=1.19) - Numerical operations and vectorization
+
+**Testing**:
+- Unit tests in `test/test_networkx_utils.py`
+- Localisation unit tests in `test/test_localisation2.py` (35 tests)
+- Performance tests verify O(log n) query times
+- Coverage: 80%+ for all networkx_utils functions
 
 ## Development Guidelines
 
@@ -545,6 +669,106 @@ class MyNode(Node):
         map_file = self.get_parameter('map_file').value
 ```
 
+### Pattern 5: NetworkX Graph and KD-Tree Usage
+
+Follow the pattern in `localisation2.py` for efficient spatial queries:
+
+```python
+from topological_navigation.networkx_utils import (
+    build_graph_from_tmap,
+    build_kdtree_from_graph,
+    query_nearest_nodes,
+    point_in_poly_nx,
+    get_edge_distances_nx,
+    determine_current_node,
+    determine_closest_node
+)
+
+class MyLocalisationNode(Node):
+    def __init__(self):
+        super().__init__('my_localisation')
+        
+        # Initialize data structures
+        self._graph = None
+        self._kdtree = None
+        self._kdtree_node_names = []
+    
+    def map_callback(self, msg):
+        # Build NetworkX graph from topological map
+        self._graph = build_graph_from_tmap(
+            self.tmap, 
+            logger=self.get_logger()
+        )
+        
+        if self._graph is None:
+            self.get_logger().error("Failed to build graph")
+            return
+        
+        # Build KD-tree for O(log n) spatial queries
+        self._kdtree, self._kdtree_node_names = build_kdtree_from_graph(
+            self._graph, 
+            logger=self.get_logger()
+        )
+        
+        if self._kdtree is None:
+            self.get_logger().error("Failed to build KD-tree")
+            return
+    
+    def localize(self, pose):
+        # Determine current node (within influence zone)
+        current_node = determine_current_node(
+            self._graph,
+            self._kdtree,
+            self._kdtree_node_names,
+            pose,
+            self.loc_by_topic,  # Topic-based localization list
+            self.nogos          # No-go nodes list
+        )
+        
+        # Determine closest node by distance
+        closest_node, distance = determine_closest_node(
+            self._kdtree,
+            self._kdtree_node_names,
+            self._graph,
+            current_node,
+            self.nogos,
+            self.names_by_topic,
+            pose
+        )
+        
+        # Get distances to edges
+        edge_ids, distances = get_edge_distances_nx(
+            self._graph, 
+            pose, 
+            logger=self.get_logger()
+        )
+        
+        return current_node, closest_node, distance
+    
+    def check_influence_zone(self, node_name, pose):
+        # Check if pose is within node's influence zone
+        is_inside = point_in_poly_nx(self._graph, node_name, pose)
+        return is_inside
+    
+    def find_nearest_nodes(self, pose, k=3):
+        # Find k nearest nodes efficiently
+        nearest = query_nearest_nodes(
+            self._kdtree, 
+            self._kdtree_node_names, 
+            pose, 
+            k=k
+        )
+        # Returns: [{'node': 'WP1', 'dist': 2.5}, ...]
+        return nearest
+```
+
+**Key Points**:
+- Build graph and KD-tree once when map is received
+- Reuse KD-tree for multiple queries (O(log n) performance)
+- Always check for None before using graph/KD-tree
+- Use logger parameter for consistent error reporting
+- KD-tree queries return sorted results by distance
+
 ## Common Pitfalls
 
 ### Pitfall 1: Property Access Without Defaults
@@ -600,14 +824,56 @@ self._nav_client = ActionClient(
 )
 ```
 
+### Pitfall 5: Not Rebuilding KD-Tree After Map Updates
+**Wrong**:
+```python
+def map_callback(self, msg):
+    self._graph = build_graph_from_tmap(self.tmap)
+    # Forgot to rebuild KD-tree! Old KD-tree has stale data
+```
+
+**Right**:
+```python
+def map_callback(self, msg):
+    # Always rebuild both graph AND KD-tree together
+    self._graph = build_graph_from_tmap(self.tmap, logger=self.get_logger())
+    self._kdtree, self._kdtree_node_names = build_kdtree_from_graph(
+        self._graph, 
+        logger=self.get_logger()
+    )
+```
+
+### Pitfall 6: Using Linear Search Instead of KD-Tree
+**Wrong**:
+```python
+# O(n) linear search through all nodes
+min_dist = float('inf')
+closest_node = None
+for node_name in all_nodes:
+    dist = calculate_distance(pose, node_name)
+    if dist < min_dist:
+        min_dist = dist
+        closest_node = node_name
+```
+
+**Right**:
+```python
+# O(log n) KD-tree query
+nearest = query_nearest_nodes(self._kdtree, self._kdtree_node_names, pose, k=1)
+if nearest:
+    closest_node = nearest[0]['node']
+    min_dist = nearest[0]['dist']
+```
+
 ## Key Files Reference
 
 ### Core Navigation Files
 - `scripts/navigation2.py` - Main navigation action server (topological navigation entry point)
 - `edge_action_manager2.py` - Edge action execution (complex, 1363 lines)
 - `route_search2.py` - A* path planning algorithm
-- `scripts/localisation2.py` - Topological localisation node
+- `scripts/localisation2.py` - Topological localisation node (refactored with NetworkX)
 - `scripts/map_manager.py` - Map loading and publishing node
+- `networkx_utils.py` - NetworkX graph and KD-tree utilities (NEW)
 
 ### Map Data Structures
 - `topological_map.py` - In-memory map representation
@@ -615,6 +881,7 @@ self._nav_client = ActionClient(
 - `manager2.py` - Map management core logic
 
 ### Utility Classes
+- `networkx_utils.py` - NetworkX graph operations and spatial indexing (NEW)
 - `dict_tools` (in edge_action_manager2.py) - Nested dictionary operations
 - `tmap_utils.py` - Map manipulation utilities
 - `route_search.py` - Legacy route search (v1)
@@ -623,7 +890,15 @@ self._nav_client = ActionClient(
 - `config/schema2.json` - JSON schema for map validation
 - `doc/PROPERTIES.md` - Properties system documentation
 
+### Documentation
+- `doc/LOCALISATION.md` - Topological localisation technical documentation
+- `doc/MANAGER2_DOCUMENTATION.md` - Map manager technical documentation
+- `doc/PROPERTIES.md` - Properties system guide
+- `doc/FLUID_NAVIGATION.md` - Fluid navigation guide
+
 ### Testing
+- `test/test_localisation2.py` - Localisation unit tests (35 tests)
+- `test/test_networkx_utils.py` - NetworkX utilities unit tests
 - `test/test_navigationcore.py` - Navigation core tests
 - `tests/topological_navigation_tester_critical.py` - Critical integration tests
 - `tests/map_manager_tester.py` - Map manager tests
@@ -798,6 +1073,17 @@ colcon test --packages-select topological_navigation
 4. **Follow existing patterns**: Don't introduce new patterns without discussion
 5. **Consider agricultural use cases**: Changes impact real-world robot operations
 
+### When Creating Documentation
+1. **Location**: Place all new documentation files in the `doc/` folder
+2. **Track documentation**: Maintain a list of documentation files when creating new ones
+3. **Keep synchronized**: When updating script or function functionalities:
+   - Update corresponding documentation in `doc/` folder
+   - Update references in AGENTS.md, README.md, and other relevant docs
+   - Ensure examples and code snippets reflect current implementation
+4. **Naming convention**: Use descriptive names (e.g., `EDGE_ACTIONS.md`, `ROUTING_ALGORITHM.md`)
+5. **Cross-reference**: Link related documentation files for easy navigation
+6. **Version updates**: Update the "Last Updated" date at the bottom of modified documentation
+
 ### When Debugging
 1. **Start with logs**: Check ROS 2 logs for errors/warnings
 2. **Verify map structure**: Ensure YAML maps are valid
@@ -807,6 +1093,6 @@ colcon test --packages-select topological_navigation
 
 ---
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-02-15
 **Branch**: agent_prep
 **Maintainer**: AI Coding Agents

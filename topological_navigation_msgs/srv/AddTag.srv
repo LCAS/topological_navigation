@@ -1,5 +1,0 @@
-string tag
-string[] node
----
-bool success
-string meta

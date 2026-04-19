@@ -1,641 +1,538 @@
 #!/usr/bin/env python
-"""
-Created on Tue Nov 5 22:02:24 2023
-@author: Geesara Kulathunga (ggeesara@gmail.com)
+"""Topological localisation node for ROS 2.
 
+Determines the robot's current topological node and closest node by
+subscribing to TF transforms and the topological map topic.  Uses a
+NetworkX directed graph and a KD-tree spatial index for efficient
+O(log n) nearest-neighbour queries.
+
+Publishers:
+    ~/closest_node          (std_msgs/String)   - name of the closest node
+    ~/closest_node_distance (std_msgs/Float32)  - distance to closest node
+    ~/current_node          (std_msgs/String)   - node whose influence zone
+                                                   the robot currently occupies
+    ~/closest_edges         (topological_navigation_msgs/ClosestEdges)
+    ~/current_node/tag      (std_msgs/String)   - tag of the current node
+
+Services:
+    /topological_localisation/localise_pose (LocalisePose)
+
+Subscriptions:
+    /topological_map_2      (std_msgs/String)   - YAML-encoded topological map
 """
-###################################################################################################################
-import sys, json, numpy as np
-import rclpy, tf2_ros
+
+import threading
+
+import numpy as np
+import rclpy
 import yaml
-import topological_navigation_msgs.srv
-from rclpy.parameter import Parameter
+
 from geometry_msgs.msg import Pose
-from std_msgs.msg import String, Float32
-from topological_navigation_msgs.msg import ClosestEdges
-from topological_navigation_msgs.srv import GetTaggedNodes, LocalisePose
-from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy, DurabilityPolicy
-from topological_navigation.tmap_utils import *
-from topological_navigation.point2line import pnt2line
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.parameter import Parameter
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
+from std_msgs.msg import Float32, String
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-import time 
-from std_msgs.msg import Bool
-from threading import Thread, Event 
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup 
-from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor 
-from topological_navigation.scripts.actions_bt import ActionsType 
 
-# this ensures that all the poses and translates 
-# are float-type and not int-type as there is an 
-# assertion in ros2 messages (vector3, pose etc.) 
-# for float-type [x,y,z,w] keys.
-class CustomSafeLoader(yaml.SafeLoader):
-    def construct_mapping(self, node, deep=False):
-        mapping = super().construct_mapping(node, deep=deep)
+from topological_navigation.tmap_utils import CustomSafeLoader
+from topological_navigation.networkx_utils import (
+    build_graph_from_tmap,
+    build_kdtree_from_graph,
+    determine_closest_node,
+    determine_current_node,
+    get_edge_distances_nx,
+    update_loc_by_topic_nx,
+)
+from topological_navigation_msgs.msg import ClosestEdges
+from topological_navigation_msgs.srv import LocalisePose
 
-        # this can be extended to test the validity of the tmap2 
-        # as well at load time (or add missing keys)
-        for key in ['x', 'y', 'z', 'w']:
-            if key in mapping and isinstance(mapping[key], int):
-                mapping[key] = float(mapping[key])
-        
-        return mapping
+try:
+    from topological_navigation_msgs.srv import GetTaggedNodes
+    _HAS_GET_TAGGED_NODES = True
+except ImportError:
+    _HAS_GET_TAGGED_NODES = False
 
-###################################################################################################################    
 class TopologicalNavLoc(rclpy.node.Node):
+    """ROS 2 node for topological localisation.
 
-    def __init__(self, name, wtags):
+    Determines which topological node the robot currently occupies
+    (influence-zone check) and which node is closest (KD-tree query).
+    Publishes the results on latched topics.
+    """
+
+    def __init__(self, name: str, with_tags: bool = True):
         super().__init__(name)
-        
-        self.declare_parameter('LocalisationThrottle', rclpy.Parameter.Type.INTEGER) 
-        self.declare_parameter('OnlyLatched', rclpy.Parameter.Type.BOOL) 
+
+        # -- ROS parameters --------------------------------------------------
+        self.declare_parameter('LocalisationThrottle', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('OnlyLatched', rclpy.Parameter.Type.BOOL)
         self.declare_parameter('base_frame', rclpy.Parameter.Type.STRING)
 
-        self.throttle_val = self.get_parameter_or("LocalisationThrottle", Parameter('int', Parameter.Type.INTEGER, 3)).value
-        self.only_latched = self.get_parameter_or("OnlyLatched", Parameter('bool', Parameter.Type.BOOL, True)).value 
-        self.base_frame = self.get_parameter_or("base_frame", Parameter('str', Parameter.Type.STRING, "base_link")).value
+        self.throttle_val = self.get_parameter_or(
+            "LocalisationThrottle",
+            Parameter('int', Parameter.Type.INTEGER, 1),
+        ).value
+        self.only_latched = self.get_parameter_or(
+            "OnlyLatched",
+            Parameter('bool', Parameter.Type.BOOL, True),
+        ).value
+        self.base_frame = self.get_parameter_or(
+            "base_frame",
+            Parameter('str', Parameter.Type.STRING, "base_link"),
+        ).value
 
+        # -- Internal state ---------------------------------------------------
         self.throttle = self.throttle_val
-        self.node="Unknown"
-        self.wpstr="Unknown"
-        self.closest_dist = 10e5-1
-        self.cnstr="Unknown"
-        self.nodetag="Unknown"   #current node tag
-        self.closest_edge_ids = []
-        self.closest_edge_dists = []
-        self.node_poses = {}
-        self.current_closest_node_name = ""
-        
-        # TODO: remove Temporary arg until tags functionality is MongoDB independent
-        self.with_tags = wtags
+        self.wpstr = "Unknown"
+        self.closest_dist = 1e6 - 1
+        self.cnstr = "Unknown"
+        self.nodetag = "Unknown"
+        self.closest_edge_ids: list = []
+        self.closest_edge_dists: list = []
 
-        self.subscribers=[]
+        # NetworkX graph and KD-tree data structures
+        self._graph = None
+        self._kdtree = None
+        self._kdtree_node_names: list = []
 
-        self.qos = QoSProfile(depth=1, 
-                         reliability=ReliabilityPolicy.RELIABLE,
-                         history=HistoryPolicy.KEEP_LAST,
-                         durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        
+        # Lock protects _graph, _kdtree, _kdtree_node_names, loc_by_topic,
+        # names_by_topic, and nogos during concurrent map rebuilds.
+        self._map_lock = threading.Lock()
+
+        self.with_tags = with_tags
+
+        # -- QoS profile (transient-local for late-joining subscribers) -------
+        self.qos = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+        )
+
+        # -- Publishers -------------------------------------------------------
         self.wp_pub = self.create_publisher(String, 'closest_node', qos_profile=self.qos)
-        self.wd_pub = self.create_publisher(Float32,'closest_node_distance', qos_profile=self.qos)
+        self.wd_pub = self.create_publisher(Float32, 'closest_node_distance', qos_profile=self.qos)
         self.cn_pub = self.create_publisher(String, 'current_node', qos_profile=self.qos)
         self.ce_pub = self.create_publisher(ClosestEdges, 'closest_edges', qos_profile=self.qos)
         self.tag_pub = self.create_publisher(String, 'current_node/tag', qos_profile=self.qos)
-        self.robot_navigation_area_pub = self.create_publisher(String, 'robot_navigation_area', qos_profile=self.qos)
 
-        self.force_check = True
+        # -- Localisation state -----------------------------------------------
         self.rec_map = False
-        self.set_nogos = False  
-        self.loc_by_topic = []
-        self.persist = {}
+        self.loc_by_topic: list = []
+        self.names_by_topic: list = []
+        self.nogos: list = []
 
-        self.current_pose=Pose()
-        self.previous_pose=Pose()
-        self.previous_pose.position.x = 1000.0 #just give a random big value so this is tested
+        self.current_pose = Pose()
 
-        self.service_get_tagged_done_event  = Event()
-        self.callback_group = ReentrantCallbackGroup()
-        self.callback_localize_pose = ReentrantCallbackGroup()
-        self.timer_map_group = ReentrantCallbackGroup()
+        # -- Callback groups --------------------------------------------------
+        self._cb_group_localise = ReentrantCallbackGroup()
+        self._cb_group_map = ReentrantCallbackGroup()
 
-        self.get_tagged_srv = self.create_service(GetTaggedNodes, '/topological_localisation/get_nodes_with_tag'
-                                ,  self.get_nodes_wtag_cb, callback_group=self.callback_group)
-        self.loc_pos_srv = self.create_service(LocalisePose, '/topological_localisation/localise_pose'
-                                               , self.localise_pose_cb, callback_group=self.callback_localize_pose)
+        # -- Service ----------------------------------------------------------
+        self.loc_pos_srv = self.create_service(
+            LocalisePose,
+            '/topological_localisation/localise_pose',
+            self.localise_pose_cb,
+            callback_group=self._cb_group_localise,
+        )
 
-        self.subs_topmap = self.create_subscription(String, '/topological_map_2'
-                                , self.MapCallback, qos_profile=self.qos, callback_group=self.timer_map_group)
-        self.subs_topmap  # prevent unused variable warning
+        # -- Subscription -----------------------------------------------------
+        self.create_subscription(
+            String,
+            '/topological_map_2',
+            self._map_callback,
+            qos_profile=self.qos,
+            callback_group=self._cb_group_map,
+        )
 
-        self.ACTIONS = ActionsType()
-
-        self.get_logger().info("Localisation waiting for the Topological Map...")
+        # -- Wait for the first map -------------------------------------------
+        # _map_callback already rebuilds graph, KD-tree, nogos, and
+        # loc_by_topic, so we only need to wait for rec_map here.
+        self.get_logger().info("Waiting for the topological map on /topological_map_2 ...")
         while rclpy.ok():
             rclpy.spin_once(self)
-            if(self.rec_map):
-                if self.with_tags:
-                    self.nogos = self.get_no_go_nodes()
-                    self.set_nogos = True 
-                else:
-                    self.nogos=[]
-                self.get_logger().info("NO GO NODES: %s" %self.nogos)
-                self.get_logger().info("NODES BY TOPIC: %s" %self.names_by_topic)
-                self.get_logger().info("Listening to the tf transform between {} and {}".format(self.tmap_frame, self.base_frame))
-                break 
-            self.get_logger().warning("Wating for the topological map")
+            if self.rec_map:
+                self.get_logger().info(f"No-go nodes: {self.nogos}")
+                self.get_logger().info(f"Localise-by-topic nodes: {self.names_by_topic}")
+                self.get_logger().info(
+                    f"Listening for TF: {self.tmap_frame} -> {self.base_frame}"
+                )
+                break
+            self.get_logger().warning("Still waiting for the topological map ...")
 
+        # -- TF listener & periodic callback ----------------------------------
         self.tf_buffer = Buffer()
         self.listener = TransformListener(self.tf_buffer, self)
-        self.rate = self.create_rate(20.0)
-        
-        self.create_timer(1.0, self.pose_callback)
+        self.create_timer(1.0, self._pose_callback)
 
-        
-    def get_distances_to_pose(self, pose):
+    def get_edge_distances_to_pose(self, pose: Pose):
+        """Return edge-ID list and distance array for all edges relative to *pose*.
+
+        Uses the NetworkX graph for vectorised edge distance calculations.
+        Thread-safe: takes a snapshot of the graph under the map lock.
+
+        Returns:
+            Tuple ``(edge_ids, distances)`` - both may be empty if the graph
+            is unavailable.
         """
-        This function returns the distance from each waypoint to a pose in an organised way
-        """
-        distances = []
-        for node in self.tmap["nodes"]:
-            dist = get_distance_node_pose_from_tmap2(node, pose)
-            a = {}
-            a["node"] = node
-            a["dist"] = dist
-            distances.append(a)
-        
-        distances = sorted(distances, key=lambda k: k["dist"])
-        return distances
-    
-    
-    def get_edge_distances_to_pose(self, pose):
-        """
-        This function returns the distance from each edge to a pose in an organised way
-        """
+        with self._map_lock:
+            graph = self._graph
+
+        if graph is None:
+            self.get_logger().warning(
+                "Cannot compute edge distances: graph not yet available"
+            )
+            return [], np.array([])
+
+        return get_edge_distances_nx(graph, pose, logger=self.get_logger())
+
+    # -----------------------------------------------------------------
+    # Periodic TF-based localisation
+    # -----------------------------------------------------------------
+
+    def _pose_callback(self):
+        """Look up the TF transform and localise the robot in the topological map."""
         try:
-            pnts = np.array(self.vectors_start.shape[0] * [[pose.position.x, pose.position.y, 0]])
-            distances = pnt2line(pnts, self.vectors_start, self.vectors_end)
-            closest_edges = [self.dist_edge_ids[index] for index in np.argsort(distances)]
-        except Exception as e:
-            self.get_logger().warning("Cannot get distance to edges: {}".format(e))
-            closest_edges = []
-            distances = np.array([])
-        
-        return closest_edges, np.sort(distances)
-        
-
-    def pose_callback(self):
-        """
-        This function receives the topo_map to base_link tf transform and localises 
-        the robot in topological space
-        """
-        try:
-            trans = self.tf_buffer.lookup_transform(self.tmap_frame, self.base_frame, rclpy.time.Time())
-            msg = Pose()
-            msg.position.x = trans.transform.translation.x 
-            msg.position.y = trans.transform.translation.y 
-            msg.position.z = trans.transform.translation.z 
-            msg.orientation.x = trans.transform.rotation.x
-            msg.orientation.y = trans.transform.rotation.y 
-            msg.orientation.z = trans.transform.rotation.z 
-            msg.orientation.w = trans.transform.rotation.w 
-            
-            self.current_pose = msg   
-            if(self.throttle%self.throttle_val==0):
-                self.distances = []
-                self.distances = self.get_distances_to_pose(msg)
-                closeststr='none'
-                currentstr='none'
-                nodetag = 'Unknown'
-                
-                closest_edges, edge_dists = self.get_edge_distances_to_pose(msg)
-                if len(closest_edges) > 1:
-                    closest_edges = closest_edges[:2]
-                    edge_dists = edge_dists[:2]
-                
-                not_loc = True
-                if self.loc_by_topic:
-                    for i in self.loc_by_topic:
-                        if not_loc:
-                            if not i['localise_anywhere']:      #If it should check the influence zone to localise by topic
-                                test_node = get_node_from_tmap2(self.tmap, i['name'])
-                                if self.point_in_poly(test_node, msg):
-                                    not_loc=False
-                                    closeststr=str(i['name'])
-                                    currentstr=str(i['name'])
-                                    self.current_closest_node_name = currentstr
-                                    self.force_check = False
-                            else:                               # If not, it is localised!!!
-                                not_loc=False
-                                closeststr=str(i['name'])
-                                currentstr=str(i['name'])
-                                self.current_closest_node_name = currentstr
-                                self.force_check = False
-                else:
-                    self.force_check = True
-    
-                if not_loc:
-                    ind = 0
-                    while not_loc and ind<len(self.distances) and ind<3:
-                        name = self.distances[ind]['node']['node']['name']
-                        # nodetag = self.distances[ind]['node']['meta']['tag']
-                        if name not in self.names_by_topic:
-                            if self.point_in_poly(self.distances[ind]['node'], msg) :
-                                currentstr=str(name)
-                                closeststr=currentstr
-                                self.current_closest_node_name = currentstr
-                                not_loc=False
-                        ind+=1
-                            
-                    ind = 0
-                    not_loc=True
-                    # No go nodes and Nodes localisable by topic are ONLY closest node when the robot is within them
-                    while not_loc and ind<len(self.distances) and closeststr=='none' :
-                        name = self.distances[ind]['node']['node']['name']
-                        if name not in self.nogos and name not in self.names_by_topic :
-                            closeststr=str(name)
-                            not_loc=False
-                        ind+=1
-
-                node = get_node_from_tmap2(self.tmap, closeststr)
-
-                if node is None:
-                    self.get_logger().warn(f"Node '{closeststr}' not found in the topological map.")
-                    nodetag = 'Unknown'
-                else:
-                    try:
-                        nodetag = node['meta']['tag'][0]
-                    except KeyError:
-                        # self.get_logger().warn(f"Node '{closeststr}' does not contain a 'meta' or 'tag' field.")
-                        nodetag = 'Unknown'
-                    except Exception as e:
-                        # self.get_logger().warn(f"Unexpected error while accessing 'meta' or 'tag': {e}")
-                        nodetag = 'Unknown'
-                                
-                # distance to physically closest node.
-                closest_dist = np.round(self.distances[0]["dist"], 3)
-                self.publishTopics(closeststr, closest_dist, currentstr, closest_edges, list(np.round(edge_dists, 3)), nodetag)
-                self.throttle=1
-            else:
-                self.throttle +=1
-
-            robot_current_area_info = String()
-            robot_nav_area = None
-            if(robot_nav_area is None and self.ACTIONS.ROW_COLUMN_START_INDEX in self.current_closest_node_name and (self.current_closest_node_name[-1].isdigit() or self.current_closest_node_name[-1] == self.ACTIONS.ROW_COLUMN_START_NEXT_INDEX)):
-                robot_nav_area = self.ACTIONS.INSIDE_POLYTUNNEL
-            elif(len(self.closest_edge_ids) > 0):
-                edge_ids_list = self.closest_edge_ids[0]
-                edge_ids = edge_ids_list.split("_")
-                if(len(edge_ids) == 2):
-                        if((self.ACTIONS.GOAL_ALIGN_INDEX[0] in edge_ids_list) and (self.ACTIONS.GOAL_ALIGN_GOAL[0] in edge_ids_list)):
-                            robot_nav_area = self.ACTIONS.TRANSITION_INTO_POLYTUNNEL
-         
-            if(robot_nav_area is None):
-                robot_nav_area = self.ACTIONS.OUTSIDE_POLYTUNNEL
-            robot_current_area_info.data = robot_nav_area
-            self.robot_navigation_area_pub.publish(robot_current_area_info)
-            
+            trans = self.tf_buffer.lookup_transform(
+                self.tmap_frame, self.base_frame, rclpy.time.Time(),
+            )
         except TransformException as ex:
-            self.get_logger().warn(f'Could not transform {self.tmap_frame} to {self.base_frame}: {ex}')
-            pass  
+            self.get_logger().warning(
+                f"TF lookup failed ({self.tmap_frame} -> {self.base_frame}): {ex}"
+            )
+            return
+
+        msg = Pose()
+        msg.position.x = trans.transform.translation.x
+        msg.position.y = trans.transform.translation.y
+        msg.position.z = trans.transform.translation.z
+        msg.orientation.x = trans.transform.rotation.x
+        msg.orientation.y = trans.transform.rotation.y
+        msg.orientation.z = trans.transform.rotation.z
+        msg.orientation.w = trans.transform.rotation.w
+        self.current_pose = msg
+
+        if self.throttle % self.throttle_val != 0:
+            self.throttle += 1
+            return
+
+        # Snapshot data structures under the lock so we work with a
+        # consistent view even if a map update arrives mid-callback.
+        with self._map_lock:
+            graph = self._graph
+            kdtree = self._kdtree
+            kdtree_names = self._kdtree_node_names
+            loc_by_topic = self.loc_by_topic
+            nogos = list(self.nogos)
+            names_by_topic = list(self.names_by_topic)
+
+        if graph is None or kdtree is None:
+            self.get_logger().warning(
+                "Localisation skipped: graph or KD-tree not ready"
+            )
+            self.throttle += 1
+            return
+
+        # Current node (inside influence zone)
+        currentstr = determine_current_node(
+            graph, kdtree, kdtree_names,
+            msg, loc_by_topic, nogos,
+        )
+
+        # Closest node by distance
+        closeststr, closest_dist = determine_closest_node(
+            kdtree, kdtree_names, graph,
+            currentstr, nogos, names_by_topic, msg,
+        )
+
+        # Closest edges (computed from the *current* pose)
+        closest_edges, edge_dists = get_edge_distances_nx(graph, msg, logger=self.get_logger())
+        if len(closest_edges) > 1:
+            closest_edges = closest_edges[:2]
+            edge_dists = edge_dists[:2]
+
+        # Resolve node tag
+        nodetag = self._get_node_tag(closeststr)
+
+        # Publish
+        closest_dist = float(np.round(closest_dist, 3))
+        self._publish_topics(
+            closeststr, closest_dist, currentstr,
+            closest_edges, list(np.round(edge_dists, 3)), nodetag,
+        )
+        self.throttle = 1
         
 
-    def get_string_msgs(self, str):
-        msg =  String()
-        msg.data = str
-        return msg 
+    # -----------------------------------------------------------------
+    # Tag helper
+    # -----------------------------------------------------------------
 
-    def get_float32_msgs(self, num):
-        msg =  Float32()
-        msg.data = num
-        return msg 
+    def _get_node_tag(self, node_name: str) -> str:
+        """Return the first tag string for *node_name*, or ``'Unknown'``.
 
-    def publishTopics(self, wpstr, closest_dist, cnstr, closest_edge_ids, closest_edge_dists, nodetag = 'Unknown') :
-        
-        def pub_closest_edges(closest_edge_ids, closest_edge_dists):
+        Uses the NetworkX graph ``meta`` attribute instead of a linear
+        YAML lookup.
+        """
+        if self._graph is None or node_name not in self._graph.nodes:
+            return 'Unknown'
+        meta = self._graph.nodes[node_name].get('meta', {})
+        try:
+            return meta['tag'][0]
+        except (KeyError, IndexError, TypeError):
+            return 'Unknown'
+
+    # -----------------------------------------------------------------
+    # Message construction helpers
+    # -----------------------------------------------------------------
+
+    @staticmethod
+    def _make_string_msg(text: str) -> String:
+        msg = String()
+        msg.data = text
+        return msg
+
+    @staticmethod
+    def _make_float32_msg(value: float) -> Float32:
+        msg = Float32()
+        msg.data = value
+        return msg
+
+    # -----------------------------------------------------------------
+    # Topic publishing
+    # -----------------------------------------------------------------
+
+    def _publish_topics(
+        self,
+        wpstr: str,
+        closest_dist: float,
+        cnstr: str,
+        closest_edge_ids: list,
+        closest_edge_dists: list,
+        nodetag: str = 'Unknown',
+    ):
+        """Publish localisation results, optionally in latched mode."""
+
+        def _pub_edges(edge_ids, edge_dists):
             msg = ClosestEdges()
-            msg.edge_ids = closest_edge_ids
-            msg.distances = closest_edge_dists
+            msg.edge_ids = edge_ids
+            msg.distances = edge_dists
             self.ce_pub.publish(msg)
-            
+
         if len(set(closest_edge_dists)) == 1:
             closest_edge_ids.sort()
-        
-        if self.only_latched :
+
+        if self.only_latched:
             if self.wpstr != wpstr:
-                self.wp_pub.publish(self.get_string_msgs(wpstr))
+                self.wp_pub.publish(self._make_string_msg(wpstr))
             if self.closest_dist != closest_dist:
-                self.wd_pub.publish(self.get_float32_msgs(closest_dist))
+                self.wd_pub.publish(self._make_float32_msg(closest_dist))
             if self.cnstr != cnstr:
-                self.cn_pub.publish(self.get_string_msgs(cnstr))
+                self.cn_pub.publish(self._make_string_msg(cnstr))
             if self.nodetag != nodetag:
-                self.tag_pub.publish(self.get_string_msgs(nodetag))
-            if self.closest_edge_ids != closest_edge_ids \
-                or self.closest_edge_dists != closest_edge_dists:
-                pub_closest_edges(closest_edge_ids, closest_edge_dists)
+                self.tag_pub.publish(self._make_string_msg(nodetag))
+            if (self.closest_edge_ids != closest_edge_ids
+                    or self.closest_edge_dists != closest_edge_dists):
+                _pub_edges(closest_edge_ids, closest_edge_dists)
         else:
-            self.wp_pub.publish(self.get_string_msgs(wpstr))
-            self.wd_pub.publish(self.get_float32_msgs(closest_dist))
-            self.cn_pub.publish(self.get_string_msgs(cnstr))
-            self.tag_pub.publish(self.get_string_msgs(nodetag))
-            pub_closest_edges(closest_edge_ids, closest_edge_dists)
-            
+            self.wp_pub.publish(self._make_string_msg(wpstr))
+            self.wd_pub.publish(self._make_float32_msg(closest_dist))
+            self.cn_pub.publish(self._make_string_msg(cnstr))
+            self.tag_pub.publish(self._make_string_msg(nodetag))
+            _pub_edges(closest_edge_ids, closest_edge_dists)
+
         self.wpstr = wpstr
         self.closest_dist = closest_dist
         self.cnstr = cnstr
         self.nodetag = nodetag
         self.closest_edge_ids = closest_edge_ids
         self.closest_edge_dists = closest_edge_dists
-        
 
+        # self.get_logger().info(
+        #     f"Published: closest_node='{wpstr}', closest_dist={closest_dist}, "
+        #     f"current_node='{cnstr}', nodetag='{nodetag}', "
+        #     f"closest_edges={closest_edge_ids} (dists: {closest_edge_dists})"
+        # )
 
-    def MapCallback(self, msg):
+    # -----------------------------------------------------------------
+    # Map reception
+    # -----------------------------------------------------------------
+
+    def _map_callback(self, msg):
+        """Handle incoming topological map - build graph and KD-tree.
+
+        This callback is safe to invoke repeatedly: on every update the
+        graph, KD-tree, topic-based localisation config, and no-go nodes
+        are fully rebuilt so that localisation keeps working after node
+        positions, edges, or properties change at runtime.
         """
-        This function receives the Topological Map
-        """
-        if(self.rec_map is False):
-            self.names_by_topic = []
-            self.nodes_by_topic = []
-            self.nogos = []
+        is_update = self.rec_map
+        label = "Updated" if is_update else "Received"
 
-            # self.tmap = json.loads(msg.data) 
-            self.tmap = yaml.load( msg.data, Loader=CustomSafeLoader)
-            self.tmap_frame = self.tmap["transformation"]["child"]
-            self.get_logger().info("Localisation received the Topological Map")
-            
-            self.get_edge_vectors()
-            self.update_loc_by_topic()
-            
-            self.get_logger().info("Creating localise by topic subscribers...")
+        self.tmap = yaml.load(msg.data, Loader=CustomSafeLoader)
+        self.tmap_frame = self.tmap["transformation"]["topo_frame_id"]
+        self.get_logger().info(f"{label} the topological map")
 
-            for i in self.subscribers:
-                del i
-            self.subscribers = []
-            # for j in self.nodes_by_topic:
-            #     # Append to list to keep the instance alive and the subscriber active.
-            #     self.subscribers.append(LocaliseByTopicSubscriber(
-            #         topic=j['topic'],
-            #         callback=self.Callback,
-            #         callback_args=j
-            #     ))
-            #     # Calling instance of class to start subsribing thread.
-            #     self.subscribers[-1]()
-            self.rec_map = True
-            
-            
-    def get_edge_vectors(self):
-        
-        node_poses = {}
-        for node in self.tmap["nodes"]:
-            node_poses[node["node"]["name"]] = node["node"]["pose"]
-        
-        self.dist_edge_ids = []
-        vectors_start = []
-        vectors_end = []
-        
-        for node in self.tmap["nodes"]:
-            orig_pose = node_poses[node["node"]["name"]]
-            start = [orig_pose["position"]["x"], orig_pose["position"]["y"], 0]
-            
-            for edge in node["node"]["edges"]:
-                dest_pose = node_poses[edge["node"]]
-                
-                if node["node"]["name"] != edge["node"]:
-                    self.dist_edge_ids.append(edge["edge_id"])
-                    end = [dest_pose["position"]["x"], dest_pose["position"]["y"], 0]
-                    
-                    vectors_start.append(start)
-                    vectors_end.append(end)
-                else:
-                    self.get_logger().error("Cannot get distance to edge {}: Destination is equal to origin".format(edge["edge_id"]))
-        
-        self.vectors_start = np.array(vectors_start)
-        self.vectors_end = np.array(vectors_end)
+        # Build new graph and KD-tree in local variables first so the
+        # live data structures remain consistent until the swap.
+        new_graph = build_graph_from_tmap(self.tmap, logger=self.get_logger())
+        if new_graph is None:
+            self.get_logger().error("Failed to build the NetworkX graph – aborting map load")
+            return
+        self.get_logger().info(
+            f"Graph built: {new_graph.number_of_nodes()} nodes, "
+            f"{new_graph.number_of_edges()} edges"
+        )
 
+        new_kdtree, new_kdtree_node_names = build_kdtree_from_graph(
+            new_graph, logger=self.get_logger(),
+        )
+        if new_kdtree is None:
+            self.get_logger().error("Failed to build KD-tree – aborting map load")
+            return
+        self.get_logger().info(
+            f"KD-tree built with {len(new_kdtree_node_names)} nodes"
+        )
 
-    def update_loc_by_topic(self):
-        """
-        This function updates the localisation by topic variables
-        """
-        for i in self.tmap['nodes']:
-            if i['node']['localise_by_topic']:
-                a= json.loads(i['node']['localise_by_topic'])
-                a['name'] = i['node']['name']
-                if not a.has_key('localise_anywhere'):
-                    a['localise_anywhere']=True
-                if not a.has_key('persistency'):
-                    a['persistency']=10
-                self.nodes_by_topic.append(a)
-                self.names_by_topic.append(a['name'])
+        # Topic-based localisation config
+        new_loc_by_topic, new_names_by_topic = update_loc_by_topic_nx(
+            new_graph, logger=self.get_logger(),
+        )
 
-
-    def Callback(self, msg, item):
-        #needed for not checking the localise by topic when the robot hasn't moved and making sure it does when the new
-        #position is close (<10) to the last one it was detected
-        if self.force_check:
-            dist = 1.0
+        # Re-query no-go nodes (may have changed with the map update)
+        if self.with_tags:
+            new_nogos = self._get_no_go_nodes()
         else:
-            dist = get_distance(self.current_pose, self.previous_pose)
+            new_nogos = []
 
-        if dist>0.10:
-            val = getattr(msg, item['field'])
-            
-            if val == item['val']:
-                if self.persist.has_key(item['name']):
-                    if self.persist[item['name']] < item['persistency']:
-                        self.persist[item['name']]+=1
-                else:
-                    self.persist[item['name']]=0
-                    
-                if item['name'] not in [x['name'] for x in self.loc_by_topic] and self.persist[item['name']] < item['persistency']:
-                    self.loc_by_topic.append(item)
-                    self.previous_pose = self.current_pose
-                    
-            else:
-                if item['name'] in self.persist:
-                    self.persist.pop(item['name'])
-                    
-                if item['name'] in [x['name'] for x in self.loc_by_topic]:
-                    self.loc_by_topic.remove(item)
-                    self.previous_pose = self.current_pose
-                    
+        # Atomically swap all data structures under the lock so that
+        # _pose_callback never sees a half-rebuilt state.
+        with self._map_lock:
+            self._graph = new_graph
+            self._kdtree = new_kdtree
+            self._kdtree_node_names = new_kdtree_node_names
+            self.loc_by_topic = new_loc_by_topic
+            self.names_by_topic = new_names_by_topic
+            self.nogos = new_nogos
 
-    def get_nodes_wtag_cb(self, req, res):
-        res.nodes = []
-        try:
-            cli = self.create_client(GetTaggedNodes, '/topological_map_manager2/get_tagged_nodes')
-            if not cli.wait_for_service(timeout_sec=3.0):
-                self.get_logger().warning('/topological_map_manager2/get_tagged_nodes service not available')
-                return res 
-            self.service_get_tagged_done_event.clear()
-            event  = Event()
-            def done_callback(future):
-                nonlocal event 
-                event.set() 
+        self.rec_map = True
+        if is_update:
+            self.get_logger().info(
+                "Map update applied – graph, KD-tree, no-go nodes, "
+                "and topic-based localisation refreshed"
+            )
 
-            cli_req = GetTaggedNodes.Request()
-            cli_req.tag = req.tag 
-            cli_future = cli.call_async(req)
-            cli_future.add_done_callback(done_callback)
-            event.wait()
-            get_prediction = cli_future.result()
-            # self.get_logger().info(get_prediction)
-            tagnodes = get_prediction.nodes
-            # for x in self.distances:
-            ldis = [x["node"]["node"]["name"] for x in self.distances]
-            for i in ldis:
-                if i in tagnodes:
-                    res.nodes.append(i)
-            return res 
-        except (Exception) as e:
-            self.get_logger().error("Service call /topological_map_manager2/get_tagged_nodes failed: %s"%e)
-            return res 
-
+    # -----------------------------------------------------------------
+    # Localise-pose service
+    # -----------------------------------------------------------------
 
     def localise_pose_cb(self, req, res):
-        """
-        This function gets the node and closest node for a pose
-        """
-        not_loc = True
-        distances = []
-        distances = self.get_distances_to_pose(req.pose)
-        closeststr='none'
-        currentstr='none'
+        """Service callback: localise a given pose in the topological map."""
+        with self._map_lock:
+            graph = self._graph
+            kdtree = self._kdtree
+            kdtree_names = self._kdtree_node_names
+            nogos = list(self.nogos)
+            names_by_topic = list(self.names_by_topic)
 
-        ind = 0
-        while not_loc and ind<len(distances) and ind<3 :
-            if self.point_in_poly(distances[ind]['node'], req.pose) :
-                name = distances[ind]['node']['node']['name']
-                currentstr=str(name)
-                closeststr=currentstr
-                not_loc=False
-            ind+=1
+        if graph is None or kdtree is None:
+            self.get_logger().warning(
+                "localise_pose service called before map is ready"
+            )
+            res.current_node = 'none'
+            res.closest_node = 'none'
+            return res
 
-        ind = 0
-        while not_loc and ind<len(distances) :
-            name = distances[ind]['node']['node']['name']
-            if name not in self.nogos :
-                closeststr=str(name)
-                not_loc=False
-            ind+=1
+        currentstr = determine_current_node(
+            graph, kdtree, kdtree_names,
+            req.pose, [], nogos,  # no topic-based loc for one-shot queries
+        )
+        closeststr, _ = determine_closest_node(
+            kdtree, kdtree_names, graph,
+            currentstr, nogos, names_by_topic, req.pose,
+        )
+
         res.current_node = currentstr
-        res.closest_node = closeststr 
-        return res 
+        res.closest_node = closeststr
+        return res
 
+    # -----------------------------------------------------------------
+    # No-go nodes
+    # -----------------------------------------------------------------
 
-    def get_no_go_nodes(self):
+    def _get_no_go_nodes(self) -> list:
+        """Query the map manager for 'no-go' tagged nodes.
+
+        Returns an empty list when the GetTaggedNodes service type is
+        unavailable (e.g. not defined in topological_navigation_msgs).
         """
-        This function gets the list of No go nodes
-        """
-        cli = self.create_client(GetTaggedNodes, '/topological_map_manager2/get_tagged_nodes')
-        if not cli.wait_for_service(timeout_sec=3.0):
-            self.get_logger().warning('/topological_map_manager2/get_tagged_nodes service not available')
+        if not _HAS_GET_TAGGED_NODES:
+            self.get_logger().info(
+                "GetTaggedNodes service not available in this build; "
+                "no-go nodes disabled"
+            )
             return []
-        else:
-            cli_req = GetTaggedNodes.Request()
-            future = cli.call_async(cli_req)
-            rclpy.spin_until_future_complete(self, future)
-            get_prediction = future.result()
-            return get_prediction.nodes
 
-    def point_in_poly(self,node,pose):
-        
-        x=pose.position.x-node["node"]["pose"]["position"]["x"]
-        y=pose.position.y-node["node"]["pose"]["position"]["y"]
+        cli = self.create_client(
+            GetTaggedNodes,
+            '/topological_map_manager2/get_tagged_nodes',
+        )
+        if not cli.wait_for_service(timeout_sec=3.0):
+            self.get_logger().warning(
+                "Service /topological_map_manager2/get_tagged_nodes unavailable; "
+                "assuming no no-go nodes"
+            )
+            return []
 
-        n = len(node["node"]["verts"])
-        inside = False
-
-        p1x = node["node"]["verts"][0]["x"]
-        p1y = node["node"]["verts"][0]["y"]
-        for i in range(n+1):
-            p2x = node["node"]["verts"][i % n]["x"]
-            p2y = node["node"]["verts"][i % n]["y"]
-            if y > min(p1y,p2y):
-                if y <= max(p1y,p2y):
-                    if x <= max(p1x,p2x):
-                        if p1y != p2y:
-                            xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                        if p1x == p2x or x <= xints:
-                            inside = not inside
-            p1x,p1y = p2x,p2y
-            
-        return inside
-###################################################################################################################        
-
-# class LocaliseByTopicSubscriber(object):
-#     """
-#     Helper class for localise by topic subcription. Callable to start subsriber
-#     thread.
-#     """
-#     def __init__(self, topic, callback, callback_args):
-        
-#         self.topic = rclpy.get_namespace() + topic
-#         self.callback = callback
-#         self.callback_args = callback_args
-#         self.sub = None
-#         self.t = None
-        
+        future = cli.call_async(GetTaggedNodes.Request())
+        rclpy.spin_until_future_complete(self, future)
+        return list(future.result().nodes)
 
 
-#     def get_topic_type(self, topic, blocking=False):
-#         """
-#         Get the topic type.
-#         !!! Overriden from rostopic !!!
+# =====================================================================
+# Entry point
+# =====================================================================
 
-#         :param topic: topic name, ``str``
-#         :param blocking: (default False) block until topic becomes available, ``bool``
-
-#         :returns: topic type, real topic name and fn to evaluate the message instance
-#           if the topic points to a field within a topic, e.g. /rosout/msg. fn is None otherwise. ``(str, str, fn)``
-#         :raises: :exc:`ROSTopicException` If master cannot be contacted
-#         """
-#         topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
-#         if topic_type:
-#             return topic_type, real_topic, msg_eval
-#         elif blocking:
-#             sys.stderr.write("WARNING: topic [%s] does not appear to be published yet\n"%topic)
-#             while not rclpy.is_shutdown():
-#                 topic_type, real_topic, msg_eval = rostopic._get_topic_type(topic)
-#                 if topic_type:
-#                     return topic_type, real_topic, msg_eval
-#                 else:
-#                     rostopic._sleep(10.) # Change! Waiting for 10 seconds instead of 0.1 to reduce load
-                    
-#         return None, None, None
-
-
-#     def __call__(self):
-#         """
-#         When called start a new thread that waits for the topic type and then
-#         subscribes. This is therefore non blocking and waits in the background.
-#         """
-#         self.t = Thread(target=self.subscribe)
-#         self.t.start()
-
-
-#     def subscribe(self):
-#         """
-#         Get the topic type and subscribe to topic. Subscriber is kept alive as
-#         long as the instance of the class is alive.
-#         """
-#         rostopic.get_topic_type = self.get_topic_type # Monkey patch
-#         topic_type = rostopic.get_topic_class(self.topic, True)[0]
-#         self.get_logger().info("Subscribing to %s" % self.topic)
-#         self.sub = rclpy.Subscriber(
-#             name=self.topic,
-#             data_class=topic_type,
-#             callback=self.callback,
-#             callback_args=self.callback_args
-#         )
-
-
-#     def close(self):
-#         self.sub.unregister()
-        
-
-#     def __del__(self):
-#         self.close()
-# ###################################################################################################################    
-
-
-###################################################################################################################
 def main(args=None):
+    node = None
+    executor = None
     rclpy.init(args=args)
-    wtags = True
-    node = TopologicalNavLoc('topological_localisation', wtags)
-    executor = MultiThreadedExecutor()
-    executor.add_node(node)
     try:
+        node = TopologicalNavLoc('topological_localisation', with_tags=True)
+        executor = MultiThreadedExecutor()
+        executor.add_node(node)
         executor.spin()
     except KeyboardInterrupt:
-        node.get_logger().info('shutting down localisation node\n')
-    node.destroy_node()
-    rclpy.shutdown()
+        try:
+            if node is not None and rclpy.ok():
+                node.get_logger().info("Shutting down localisation node")
+        except Exception:
+            pass
+    finally:
+        try:
+            if executor is not None and node is not None:
+                executor.remove_node(node)
+        except Exception:
+            pass
+        try:
+            if node is not None:
+                node.destroy_node()
+        except Exception:
+            pass
+        try:
+            if rclpy.ok():
+                rclpy.shutdown()
+        except Exception:
+            pass
 
 
-if __name__ == '__main__' :
+if __name__ == '__main__':
     main()
-
 

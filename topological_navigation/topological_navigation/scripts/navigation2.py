@@ -381,6 +381,13 @@ class TopologicalNavServer(rclpy.node.Node):
         
         return result
 
+    def trim_to_earliest(self, route, nodes):
+        idx = min([route.source.index(n) for n in nodes if n in route.source])
+        route.source = route.source[idx:]
+        route.edge_id = route.edge_id[idx:]
+        return route
+
+
     def executeCallbackexecpolicy(self, goal):
         """
         This Function is called when the execute policy Action Server is called
@@ -405,6 +412,7 @@ class TopologicalNavServer(rclpy.node.Node):
             route = goal.request.route
             valid_route = self.route_checker.check_route(route)
             
+            # CHECK IF ROBOT IS AT THE START OF THE ROUTE
             if valid_route and (route.source[0] == self.current_node or route.source[0] == self.closest_node):
                 final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
                 target = final_edge["node"]
@@ -412,6 +420,16 @@ class TopologicalNavServer(rclpy.node.Node):
                 self.get_logger().warn("[executeCallbackexecpolicy] - publishing route")
                 self.publish_route(route, target)
                 result = self.execute_policy(route, target)
+            # CHECK IF ROBOT IS HALF WAY ALONG THE ROUTE
+            elif valid_route and (self.current_node in route.source or self.closest_node in route.source):
+                route = self.trim_to_earliest(route, [self.current_node, self.closest_node])
+                final_edge = get_edge_from_id_tmap2(self.lnodes, route.source[-1], route.edge_id[-1])
+                target = final_edge["node"]
+                route = self.enforce_navigable_route(route, target)
+                self.get_logger().warn("[executeCallbackexecpolicy] - publishing route starting midway")
+                self.publish_route(route, target)
+                result = self.execute_policy(route, target)
+            # ROBOT ISNT ON ANY PART OF THE ROUTE
             else:
                 result = False
                 self.cancelled = True

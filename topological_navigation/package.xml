@@ -43,6 +43,7 @@
   <depend>visualization_msgs</depend>
   <depend>topological_navigation_msgs</depend>
   <depend>nav2_msgs</depend>
+  <depend>topological_nav_simulator</depend>
 
   <depend>tf_transformations</depend>
   <depend>tf2_ros</depend>

@@ -26,6 +26,11 @@ Split map and navigation config files::
     ros2 launch topological_navigation topological_navigation.launch.py \
         map_path:=/absolute/path/to/my_map.tmap2.yaml \
         navigation_config_file:=/absolute/path/to/topological_navigation_config.yaml
+
+Disable RViz and/or the fake Nav2 server::
+
+    ros2 launch topological_navigation topological_navigation.launch.py \
+        rviz:=false fake_nav2:=false
 """
 
 import os
@@ -33,6 +38,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, TimerAction
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -67,6 +73,14 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'rviz_config', default_value=default_rviz,
             description='Path to the RViz config file',
+        ),
+        DeclareLaunchArgument(
+            'rviz', default_value='true',
+            description='Launch RViz (true/false)',
+        ),
+        DeclareLaunchArgument(
+            'fake_nav2', default_value='true',
+            description='Launch the fake Nav2 simulator server (true/false)',
         ),
         DeclareLaunchArgument(
             'initial_x', default_value='0.0',
@@ -116,6 +130,7 @@ def generate_launch_description():
         # =============================================================
         TimerAction(
             period=2.0,
+            condition=IfCondition(LaunchConfiguration('fake_nav2')),
             actions=[
                 Node(
                     package='topological_nav_simulator',
@@ -177,6 +192,7 @@ def generate_launch_description():
         # =============================================================
         TimerAction(
             period=5.0,
+            condition=IfCondition(LaunchConfiguration('rviz')),
             actions=[
                 Node(
                     package='rviz2',

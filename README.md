@@ -258,6 +258,8 @@ This starts (in order with delays for dependency readiness):
 |----------|---------|-------------|
 | `map_path` | `<share>/config/mixed_actions_map.yaml` | Absolute path to a `.tmap2.yaml` topological map |
 | `rviz_config` | `<share>/rviz/topological_navigation.rviz` | Path to the RViz config file |
+| `rviz` | `true` | Launch RViz (`true`/`false`) |
+| `fake_nav2` | `true` | Launch the fake Nav2 simulator server (`true`/`false`) |
 | `initial_x` | `0.0` | Initial robot X position (metres) |
 | `initial_y` | `0.0` | Initial robot Y position (metres) |
 | `initial_yaw` | `0.0` | Initial robot yaw (radians) |

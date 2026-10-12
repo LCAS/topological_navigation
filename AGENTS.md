@@ -895,6 +895,7 @@ if nearest:
 - `doc/MANAGER2_DOCUMENTATION.md` - Map manager technical documentation
 - `doc/PROPERTIES.md` - Properties system guide
 - `doc/FLUID_NAVIGATION.md` - Fluid navigation guide
+- `doc/WEB_APP.md` - Browser web app (`topological_navigation_visual/scripts/topological_web_app.py`, port 8083)
 
 ### Testing
 - `test/test_localisation2.py` - Localisation unit tests (35 tests)

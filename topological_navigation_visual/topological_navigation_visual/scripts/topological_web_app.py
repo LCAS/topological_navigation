@@ -48,8 +48,7 @@ from action_msgs.msg import GoalStatus, GoalStatusArray
 from action_msgs.srv import CancelGoal
 from nav_msgs.msg import Odometry
 from rclpy.action import ActionClient
-from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import (
     DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy,
@@ -109,7 +108,6 @@ class TopologicalWebApp(Node):
         web_root = str(self.get_parameter('web_root').value) or DEFAULT_WEB_ROOT
 
         self.state = WebAppState()
-        self._cb_group = ReentrantCallbackGroup()
         self._tf_warned = False
 
         latched = QoSProfile(
@@ -126,45 +124,38 @@ class TopologicalWebApp(Node):
 
         # -- Subscriptions ---------------------------------------------
         self.create_subscription(
-            String, '/topological_map_2', self._map_cb, latched,
-            callback_group=self._cb_group)
+            String, '/topological_map_2', self._map_cb, latched)
         self.create_subscription(
-            String, '/current_node', self._current_node_cb, latched,
-            callback_group=self._cb_group)
+            String, '/current_node', self._current_node_cb, latched)
         self.create_subscription(
-            String, '/closest_node', self._closest_node_cb, latched,
-            callback_group=self._cb_group)
+            String, '/closest_node', self._closest_node_cb, latched)
         self.create_subscription(
-            Odometry, odom_topic, self._odom_cb, qos_profile_sensor_data,
-            callback_group=self._cb_group)
+            Odometry, odom_topic, self._odom_cb, qos_profile_sensor_data)
         self.create_subscription(
             TopologicalRoute, '/topological_navigation/Route',
-            self._route_cb, best_effort, callback_group=self._cb_group)
+            self._route_cb, best_effort)
         self.create_subscription(
-            String, '/current_edge', self._current_edge_cb, latched,
-            callback_group=self._cb_group)
+            String, '/current_edge', self._current_edge_cb, latched)
         self.create_subscription(
             String, '/topological_navigation/move_action_status',
-            self._move_status_cb, latched, callback_group=self._cb_group)
+            self._move_status_cb, latched)
         self.create_subscription(
             String, '/robot_operation_current_status',
-            self._nav_status_cb, latched, callback_group=self._cb_group)
+            self._nav_status_cb, latched)
         self.create_subscription(
             GoalStatusArray, action_name.rstrip('/') + '/_action/status',
-            self._action_status_cb, latched, callback_group=self._cb_group)
+            self._action_status_cb, latched)
 
         # -- Action client + cancel-all service ------------------------
         self._goto_client = ActionClient(
-            self, GotoNode, action_name, callback_group=self._cb_group)
+            self, GotoNode, action_name)
         self._cancel_client = self.create_client(
-            CancelGoal, action_name.rstrip('/') + '/_action/cancel_goal',
-            callback_group=self._cb_group)
+            CancelGoal, action_name.rstrip('/') + '/_action/cancel_goal')
 
         # -- TF pose lookup --------------------------------------------
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
-        self.create_timer(1.0 / pose_rate, self._pose_timer_cb,
-                          callback_group=self._cb_group)
+        self.create_timer(1.0 / pose_rate, self._pose_timer_cb)
 
         # -- HTTP server -----------------------------------------------
         self.server = WebAppServer(
@@ -298,10 +289,11 @@ class TopologicalWebApp(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = TopologicalWebApp()
-    executor = MultiThreadedExecutor()
-    executor.add_node(node)
+    # All callbacks are non-blocking (HTTP requests are handled in the
+    # server's own threads), so a single-threaded executor is sufficient
+    # and far cheaper than a multi-threaded one.
     try:
-        executor.spin()
+        rclpy.spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:

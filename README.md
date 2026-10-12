@@ -27,6 +27,7 @@ Originally developed for the [STRANDS](https://strands-project.eu/) long-term au
     - [Full Stack (with Simulator)](#full-stack-with-simulator)
     - [Standalone Simulator](#standalone-simulator)
     - [Visualiser Only](#visualiser-only)
+    - [Web App](#web-app)
     - [On a Real Robot](#on-a-real-robot)
     - [Sending Navigation Goals](#sending-navigation-goals)
   - [ROS 2 Node Parameters](#ros-2-node-parameters)
@@ -37,6 +38,7 @@ Originally developed for the [STRANDS](https://strands-project.eu/) long-term au
     - [map\_recorder (map\_recorder.py)](#map_recorder-map_recorderpy)
     - [topological\_map\_visualiser (topological\_map\_visualiser.py)](#topological_map_visualiser-topological_map_visualiserpy)
     - [route\_visualiser / occupancy\_visualiser (topological\_visual.py)](#route_visualiser--occupancy_visualiser-topological_visualpy)
+    - [topological\_web\_app (topological\_web\_app.py)](#topological_web_app-topological_web_apppy)
     - [fake\_nav2\_server (fake\_nav2\_server.py — simulator)](#fake_nav2_server-fake_nav2_serverpy--simulator)
   - [ROS 2 Topics](#ros-2-topics)
     - [Published Topics](#published-topics)
@@ -147,7 +149,7 @@ Defines 16 message types, 9 service types, and 3 action types used across the na
 |---|---|
 | **Type** | `ament_python` |
 | **Version** | 1.0.0 |
-| **Purpose** | RViz visualisation and interactive map editing |
+| **Purpose** | RViz visualisation, interactive map editing and a browser-based web app |
 
 **Key executables:**
 
@@ -155,6 +157,7 @@ Defines 16 message types, 9 service types, and 3 action types used across the na
 |-----------|-------------|
 | `topological_map_visualiser.py` | Unified visualiser + interactive drag-and-drop editor for topological maps in RViz |
 | `topological_visual.py` | Route and occupied-node visualisation |
+| `topological_web_app.py` | Web app (port 8083) showing the map, live robot position/speed, goals and route; click a node to send the robot there (see [doc/WEB_APP.md](topological_navigation/doc/WEB_APP.md)) |
 | `policy_marker.py` | Policy arrow visualisation for MDP planning |
 
 ### topological_nav_simulator
@@ -250,6 +253,7 @@ This starts (in order with delays for dependency readiness):
 | 2 s | `fake_nav2_server` | Virtual robot + fake Nav2 action servers |
 | 3 s | `topological_navigation` | Navigation action server |
 | 4 s | `topological_map_visualiser` | Interactive RViz map editor |
+| 4 s | `topological_web_app` | Web app on http://localhost:8083/ (if `web_app:=true`) |
 | 5 s | `rviz2` | RViz with pre-configured display layout |
 
 **Launch arguments:**
@@ -260,6 +264,8 @@ This starts (in order with delays for dependency readiness):
 | `rviz_config` | `<share>/rviz/topological_navigation.rviz` | Path to the RViz config file |
 | `rviz` | `true` | Launch RViz (`true`/`false`) |
 | `fake_nav2` | `true` | Launch the fake Nav2 simulator server (`true`/`false`) |
+| `web_app` | `true` | Launch the topological navigation web app (`true`/`false`) |
+| `web_app_port` | `8083` | HTTP port of the web app |
 | `initial_x` | `0.0` | Initial robot X position (metres) |
 | `initial_y` | `0.0` | Initial robot Y position (metres) |
 | `initial_yaw` | `0.0` | Initial robot yaw (radians) |
@@ -337,6 +343,25 @@ ros2 launch topological_navigation_visual topological_map_visualiser.launch.py \
 > ros2 param set /topological_map_visualiser auto_marker_scale true
 > ```
 
+### Web App
+
+A browser-based UI (React + cytoscape.js, all assets bundled so it works
+offline) is served on a single port, by default **8083**:
+
+```bash
+ros2 run topological_navigation_visual topological_web_app.py
+# open http://<robot>:8083/
+```
+
+It shows the topological map as a zoomable/pannable graph (roboflow-enabled
+nodes in a different colour, node name and properties on hover), the robot's
+current node, metric position and speed, the current destination and goal
+with a **Cancel goal** button, and highlights the planned route while the
+robot moves. Clicking a node sends the robot there. All state lives in the
+backend and is pushed to every browser, so all open clients stay in sync. All
+URLs are relative, so it can also be served under a URL prefix behind a
+reverse proxy. See [doc/WEB_APP.md](topological_navigation/doc/WEB_APP.md).
+
 ### On a Real Robot
 
 When using a real robot with Nav2, launch the navigation stack without the simulator:
@@ -356,6 +381,10 @@ ros2 run topological_navigation navigation2.py
 
 # 5. (Optional) Start visualiser
 ros2 run topological_navigation_visual topological_map_visualiser.py
+
+# 6. (Optional) Start the web app on http://<robot>:8083/
+ros2 run topological_navigation_visual topological_web_app.py \
+    --ros-args -p odom_topic:=/odom
 ```
 
 ### Sending Navigation Goals
@@ -461,6 +490,20 @@ ros2 action send_goal /topological_navigation \
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `tmap` | string | *(required)* | Path to a `.tmap2.yaml` topological map file |
+
+### topological_web_app (topological_web_app.py)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `port` | int | `8083` | HTTP port serving both the UI and the API |
+| `host` | string | `"0.0.0.0"` | Interface to bind to |
+| `odom_topic` | string | `"/odometry/global"` | `nav_msgs/Odometry` topic for the speed display |
+| `base_frame` | string | `"base_link"` | Robot frame looked up in TF for the metric position |
+| `map_frame` | string | `""` | Fixed frame for the TF lookup (empty = map's `topo_frame_id`, else `map`) |
+| `action_name` | string | `"/topological_navigation"` | `GotoNode` action server used to send/cancel goals |
+| `pose_rate` | double | `5.0` | Rate (Hz) of the TF pose lookup |
+| `update_rate` | double | `10.0` | Max rate (Hz) of state updates pushed to clients |
+| `web_root` | string | `""` | Alternative front-end directory (empty = bundled assets) |
 
 ### fake_nav2_server (fake_nav2_server.py — simulator)
 
@@ -571,6 +614,7 @@ ros2 action send_goal /topological_navigation \
 |--------|------|------|-------------|
 | *(dynamic from map actions section)* | *(e.g., `nav2_msgs/NavigateToPose`)* | Navigation | Created for each unique `(action_type, action_server)` pair defined in the map |
 | `/topological_navigation` | `GotoNode` | Map Visualiser | Click-to-navigate from RViz context menu |
+| `/topological_navigation` | `GotoNode` | Web App | Click-to-navigate in the browser (cancel via `/topological_navigation/_action/cancel_goal`) |
 
 ---
 
@@ -795,6 +839,10 @@ colcon test --packages-select topological_navigation --event-handlers console_di
 cd topological_navigation
 pytest test/test_networkx_utils.py -v
 pytest test/test_localisation2.py -v
+
+# Web app backend tests (no ROS 2 required)
+cd ../topological_navigation_visual
+pytest test/test_web_state.py test/test_web_server.py -v
 
 # Python linting
 colcon test --packages-select topological_navigation \

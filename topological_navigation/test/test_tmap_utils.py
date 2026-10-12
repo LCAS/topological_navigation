@@ -4,6 +4,7 @@ import pytest
 import yaml
 
 from topological_navigation.tmap_utils import (
+    DEFAULT_NAVIGATION_CONFIG_FILENAME,
     NAVIGATION_CONFIG_FILE_KEY,
     CustomSafeLoader,
     NoAliasDumper,
@@ -126,7 +127,7 @@ class TestSplitMapIo:
 
     def test_load_tmap2_file_merges_navigation_config(self, tmp_path):
         """Definitions/actions can be loaded from a sidecar YAML file."""
-        config_path = tmp_path / "nav_config.yaml"
+        config_path = tmp_path / DEFAULT_NAVIGATION_CONFIG_FILENAME
         config_path.write_text(
             yaml.safe_dump(
                 {
@@ -146,7 +147,7 @@ class TestSplitMapIo:
         main_path.write_text(
             yaml.safe_dump(
                 {
-                    NAVIGATION_CONFIG_FILE_KEY: "nav_config.yaml",
+                    NAVIGATION_CONFIG_FILE_KEY: DEFAULT_NAVIGATION_CONFIG_FILENAME,
                     "meta": {"last_updated": "01-01-2026_00-00-00"},
                     "metric_map": "test_map",
                     "name": "test_map",
@@ -161,7 +162,59 @@ class TestSplitMapIo:
 
         assert loaded["definitions"]["default_bt"] == "<root/>"
         assert "navigate_to_pose" in loaded["actions"]
-        assert loaded[NAVIGATION_CONFIG_FILE_KEY] == "nav_config.yaml"
+        assert loaded[NAVIGATION_CONFIG_FILE_KEY] == DEFAULT_NAVIGATION_CONFIG_FILENAME
+        assert layout["section_sources"] == {
+            "definitions": "external",
+            "actions": "external",
+        }
+
+    def test_load_tmap2_file_accepts_explicit_navigation_config(self, tmp_path):
+        """A caller can pass the actions/definitions sidecar separately."""
+        config_path = tmp_path / DEFAULT_NAVIGATION_CONFIG_FILENAME
+        config_path.write_text(
+            yaml.safe_dump(
+                {
+                    "definitions": {"default_bt": "<root/>"},
+                    "actions": {
+                        "navigate_to_pose": {
+                            "action_type": "nav2_msgs.action.NavigateToPose",
+                            "action_server": "/navigate_to_pose",
+                            "action_goal_template": {
+                                "behavior_tree": "${definitions.default_bt}",
+                            },
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        main_path = tmp_path / "map.tmap2.yaml"
+        main_path.write_text(
+            yaml.safe_dump(
+                {
+                    "meta": {"last_updated": "01-01-2026_00-00-00"},
+                    "metric_map": "test_map",
+                    "name": "test_map",
+                    "pointset": "test_map",
+                    "nodes": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        loaded, layout = load_tmap2_file(
+            main_path,
+            return_layout=True,
+            navigation_config_file=DEFAULT_NAVIGATION_CONFIG_FILENAME,
+        )
+
+        assert (
+            loaded[NAVIGATION_CONFIG_FILE_KEY]
+            == DEFAULT_NAVIGATION_CONFIG_FILENAME
+        )
+        assert loaded["definitions"]["default_bt"] == "<root/>"
+        assert "navigate_to_pose" in loaded["actions"]
+        assert layout["config_path"] == str(config_path)
         assert layout["section_sources"] == {
             "definitions": "external",
             "actions": "external",

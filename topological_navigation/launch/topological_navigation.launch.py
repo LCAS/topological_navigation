@@ -20,6 +20,17 @@ Custom map file::
 
     ros2 launch topological_navigation topological_navigation.launch.py \
         map_path:=/absolute/path/to/my_map.tmap2.yaml
+
+Split map and navigation config files::
+
+    ros2 launch topological_navigation topological_navigation.launch.py \
+        map_path:=/absolute/path/to/my_map.tmap2.yaml \
+        navigation_config_file:=/absolute/path/to/topological_navigation_config.yaml
+
+Disable RViz and/or the fake Nav2 server::
+
+    ros2 launch topological_navigation topological_navigation.launch.py \
+        rviz:=false fake_nav2:=false
 """
 
 import os
@@ -27,6 +38,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, TimerAction
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -51,8 +63,24 @@ def generate_launch_description():
             description='Absolute path to a .tmap2.yaml topological map',
         ),
         DeclareLaunchArgument(
+            'navigation_config_file',
+            default_value='',
+            description=(
+                'Optional path to topological_navigation_config.yaml containing '
+                'the actions and definitions sections'
+            ),
+        ),
+        DeclareLaunchArgument(
             'rviz_config', default_value=default_rviz,
             description='Path to the RViz config file',
+        ),
+        DeclareLaunchArgument(
+            'rviz', default_value='true',
+            description='Launch RViz (true/false)',
+        ),
+        DeclareLaunchArgument(
+            'fake_nav2', default_value='true',
+            description='Launch the fake Nav2 simulator server (true/false)',
         ),
         DeclareLaunchArgument(
             'initial_x', default_value='0.0',
@@ -75,7 +103,11 @@ def generate_launch_description():
             executable='map_manager2.py',
             name='topological_map_manager_2',
             output='screen',
-            arguments=[LaunchConfiguration('map_path')],
+            arguments=[
+                LaunchConfiguration('map_path'),
+                '--navigation-config-file',
+                LaunchConfiguration('navigation_config_file'),
+            ],
         ),
 
         # =============================================================
@@ -98,6 +130,7 @@ def generate_launch_description():
         # =============================================================
         TimerAction(
             period=2.0,
+            condition=IfCondition(LaunchConfiguration('fake_nav2')),
             actions=[
                 Node(
                     package='topological_nav_simulator',
@@ -124,6 +157,14 @@ def generate_launch_description():
                     executable='navigation2.py',
                     name='topological_navigation',
                     output='screen',
+                    parameters=[{
+                        'coarse_white_extension_m': 4.0,
+                        'route_white_extension_m': 2.0,
+                        'metric_map_resolution': 1.0,
+                        'route_segment_resolution': 0.05,
+                        'route_segment_border_width': 0.25,
+                        'route_segment_padding': 0.0,
+                    }],
                 ),
             ],
         ),
@@ -151,6 +192,7 @@ def generate_launch_description():
         # =============================================================
         TimerAction(
             period=5.0,
+            condition=IfCondition(LaunchConfiguration('rviz')),
             actions=[
                 Node(
                     package='rviz2',

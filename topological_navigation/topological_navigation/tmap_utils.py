@@ -45,6 +45,7 @@ class NoAliasDumper(yaml.SafeDumper):
 # ========================
 
 NAVIGATION_CONFIG_FILE_KEY = "navigation_config_file"
+DEFAULT_NAVIGATION_CONFIG_FILENAME = "topological_navigation_config.yaml"
 _EXTERNAL_TMAP_SECTIONS = ("definitions", "actions")
 
 
@@ -89,7 +90,12 @@ def _log_info(logger, message):
         logger.info(message)
 
 
-def load_tmap2_file(filepath, logger=None, return_layout=False):
+def load_tmap2_file(
+    filepath,
+    logger=None,
+    return_layout=False,
+    navigation_config_file=None,
+):
     """Load a tmap2 YAML file, optionally pulling actions/definitions from a sidecar file.
 
     The main map file can point at a second YAML document via the top-level
@@ -105,6 +111,9 @@ def load_tmap2_file(filepath, logger=None, return_layout=False):
         logger: Optional ROS logger.
         return_layout: When ``True``, also return metadata describing which
             sections came from the main map versus the sidecar file.
+        navigation_config_file: Optional explicit path to the sidecar YAML file.
+            When provided, this takes precedence over the map's
+            ``navigation_config_file`` key.
 
     Returns:
         dict or tuple[dict, dict]: Loaded map, plus optional layout metadata.
@@ -115,12 +124,14 @@ def load_tmap2_file(filepath, logger=None, return_layout=False):
 
     layout = {
         "main_path": os.path.abspath(filepath),
-        NAVIGATION_CONFIG_FILE_KEY: loaded.get(NAVIGATION_CONFIG_FILE_KEY),
+        NAVIGATION_CONFIG_FILE_KEY: (
+            navigation_config_file or loaded.get(NAVIGATION_CONFIG_FILE_KEY)
+        ),
         "config_path": None,
         "section_sources": {},
     }
 
-    config_ref = loaded.get(NAVIGATION_CONFIG_FILE_KEY)
+    config_ref = navigation_config_file or loaded.get(NAVIGATION_CONFIG_FILE_KEY)
     if not config_ref:
         for section in _EXTERNAL_TMAP_SECTIONS:
             layout["section_sources"][section] = "main" if section in loaded else "missing"
@@ -142,6 +153,7 @@ def load_tmap2_file(filepath, logger=None, return_layout=False):
         )
 
     merged = deepcopy(loaded)
+    merged[NAVIGATION_CONFIG_FILE_KEY] = config_ref
     for section in _EXTERNAL_TMAP_SECTIONS:
         if section in loaded:
             layout["section_sources"][section] = "main"

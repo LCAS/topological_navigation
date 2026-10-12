@@ -18,7 +18,7 @@ setup(
         ('share/' + package_name + '/launch/', glob('launch/*', recursive=True)),
         ('share/' + package_name + '/rviz/', glob('rviz/*', recursive=True)),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'Pillow', 'PyYAML'],
     zip_safe=True,
     maintainer='Ibrahim Hroob',
     maintainer_email='ihroob@lincoln.ac.uk',
@@ -34,10 +34,14 @@ setup(
 
             # Supporting Utilities
             'manual_topomapping.py = topological_navigation.scripts.manual_topomapping:main',
+            'map_recorder.py = topological_navigation.scripts.map_recorder:main',
             'validate_map.py = topological_navigation.validate_map:main',
+            'topo_stats.py = topological_navigation.scripts.topo_stats:main',
+            'map_analyser.py = topological_navigation.map_analyser:main',
 
             # Map conversion
             'convert_tmap.py = topological_navigation.convert_tmap:main',
+            'topomap_to_map_image.py = topological_navigation.topomap_to_map_image:main',
         ],
     },
 

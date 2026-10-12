@@ -36,23 +36,23 @@ except ImportError:
 from topological_navigation.tmap_utils import load_tmap2_file
 
 
-def find_schema_file():
-    """Find the schema file in standard locations."""
+def find_schema_file(schema_name='tmap-schema.yaml'):
+    """Find a schema file in standard locations."""
     # Try relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Possible locations for the schema file
     possible_paths = [
-        os.path.join(script_dir, '..', '..', 'config', 'tmap-schema.yaml'),
-        os.path.join(script_dir, '..', 'config', 'tmap-schema.yaml'),
-        os.path.join(script_dir, 'config', 'tmap-schema.yaml'),
+        os.path.join(script_dir, '..', '..', 'config', schema_name),
+        os.path.join(script_dir, '..', 'config', schema_name),
+        os.path.join(script_dir, 'config', schema_name),
     ]
     
     # Try ROS2 package share directory if ament_index is available
     try:
         from ament_index_python.packages import get_package_share_directory
         package_path = get_package_share_directory('topological_navigation')
-        possible_paths.insert(0, os.path.join(package_path, 'config', 'tmap-schema.yaml'))
+        possible_paths.insert(0, os.path.join(package_path, 'config', schema_name))
     except (ImportError, Exception):
         pass
     
@@ -62,6 +62,11 @@ def find_schema_file():
             return normalized_path
     
     return None
+
+
+def find_navigation_config_schema_file():
+    """Find the schema for split actions/definitions config files."""
+    return find_schema_file('navigation-config-schema.yaml')
 
 
 def load_yaml_file(filepath):
@@ -77,7 +82,13 @@ def load_yaml_file(filepath):
         raise RuntimeError(f"Error reading file: {e}")
 
 
-def validate_map(map_file, schema_file=None, verbose=False):
+def validate_map(
+    map_file,
+    schema_file=None,
+    verbose=False,
+    navigation_config_file=None,
+    navigation_config_schema_file=None,
+):
     """
     Validate a topological map file against the schema.
     
@@ -85,6 +96,9 @@ def validate_map(map_file, schema_file=None, verbose=False):
         map_file: Path to the topological map YAML file
         schema_file: Path to the schema YAML file (optional)
         verbose: Print detailed validation information
+        navigation_config_file: Optional explicit sidecar YAML file containing
+            actions and definitions.
+        navigation_config_schema_file: Optional schema for the sidecar YAML file.
     
     Returns:
         Tuple of (is_valid: bool, message: str)
@@ -107,9 +121,45 @@ def validate_map(map_file, schema_file=None, verbose=False):
     
     # Load map
     try:
-        tmap = load_tmap2_file(map_file)
+        tmap, layout = load_tmap2_file(
+            map_file,
+            return_layout=True,
+            navigation_config_file=navigation_config_file,
+        )
     except Exception as e:
         return False, f"Error loading map: {e}"
+
+    config_path = layout.get("config_path")
+    if config_path:
+        if navigation_config_schema_file is None:
+            navigation_config_schema_file = find_navigation_config_schema_file()
+            if navigation_config_schema_file is None:
+                return (
+                    False,
+                    "Could not find navigation-config-schema.yaml. "
+                    "Please specify schema file path.",
+                )
+
+        if verbose:
+            print(f"Using navigation config schema: {navigation_config_schema_file}")
+            print(f"Validating navigation config: {config_path}")
+
+        try:
+            navigation_config_schema = load_yaml_file(navigation_config_schema_file)
+            navigation_config = load_yaml_file(config_path)
+            jsonschema.validate(navigation_config, navigation_config_schema)
+        except jsonschema.ValidationError as e:
+            path = (
+                " -> ".join(str(p) for p in e.absolute_path)
+                if e.absolute_path else "root"
+            )
+            return (
+                False,
+                "Navigation config validation failed at "
+                f"'{path}':\n  {e.message}",
+            )
+        except Exception as e:
+            return False, f"Error validating navigation config: {e}"
     
     # Validate
     try:
@@ -165,11 +215,21 @@ def main():
 Examples:
   %(prog)s my_map.tmap2.yaml
   %(prog)s my_map.tmap2.yaml --schema custom_schema.yaml
+  %(prog)s my_map.tmap2.yaml --navigation-config-file topological_navigation_config.yaml
   %(prog)s my_map.tmap2.yaml -v
         """
     )
     parser.add_argument('map_file', help='Path to the topological map YAML file')
     parser.add_argument('--schema', '-s', help='Path to the schema YAML file (optional)')
+    parser.add_argument(
+        '--navigation-config-file',
+        '--nav-config',
+        help='Path to a sidecar YAML file containing actions and definitions',
+    )
+    parser.add_argument(
+        '--navigation-config-schema',
+        help='Path to the actions/definitions sidecar schema YAML file',
+    )
     parser.add_argument('--verbose', '-v', action='store_true', help='Print detailed information')
     
     args = parser.parse_args()
@@ -180,7 +240,13 @@ Examples:
         sys.exit(2)
     
     # Validate
-    is_valid, message = validate_map(args.map_file, args.schema, args.verbose)
+    is_valid, message = validate_map(
+        args.map_file,
+        args.schema,
+        args.verbose,
+        navigation_config_file=args.navigation_config_file,
+        navigation_config_schema_file=args.navigation_config_schema,
+    )
     
     if is_valid:
         print(f"✓ {message}")

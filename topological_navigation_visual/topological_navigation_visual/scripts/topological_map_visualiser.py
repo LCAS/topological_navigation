@@ -33,18 +33,24 @@ import math
 import os
 import sys
 import tempfile
-from copy import deepcopy
 
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.parameter import Parameter
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import yaml
 import tf_transformations
 
 from geometry_msgs.msg import Point, Pose
+from rcl_interfaces.msg import (
+    FloatingPointRange,
+    IntegerRange,
+    ParameterDescriptor,
+    SetParametersResult,
+)
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from visualization_msgs.msg import (
@@ -61,6 +67,8 @@ from topological_navigation.tmap_utils import CustomSafeLoader
 from topological_navigation.navigation_graph import plan_route
 from topological_navigation.networkx_utils import build_graph_from_tmap
 from topological_navigation_msgs.action import GotoNode
+
+from topological_navigation_visual import viz_utils
 
 # ──────────────────────────────────────────────────────────────────
 #  Colour palette
@@ -95,6 +103,16 @@ def _node2pose(pose_dict) -> Pose:
     return p
 
 
+def _node_xyz(node, z_offset: float = 0.0):
+    """Return a node's ``(x, y, z)`` position from its tmap2 dict."""
+    pos = node['pose']['position']
+    return (
+        float(pos['x']),
+        float(pos['y']),
+        float(pos.get('z', 0.0)) + z_offset,
+    )
+
+
 # ══════════════════════════════════════════════════════════════════
 #  Main visualiser node
 # ══════════════════════════════════════════════════════════════════
@@ -105,29 +123,126 @@ class TopologicalMapVisualiser(Node):
         super().__init__('topological_map_visualiser')
 
         # ── Parameters ──────────────────────────────────────────
-        self.declare_parameter('map_file', '')
-        self.declare_parameter('auto_save', False)
-        self.declare_parameter('marker_scale', 0.5)
-        self.declare_parameter('edit_mode', True)
+        # ``map_file`` and ``nav_action_name`` are start-up only.
+        self.declare_parameter(
+            'map_file', '',
+            ParameterDescriptor(
+                description='Path to a .tmap2.yaml file. Empty = subscribe '
+                            'to /topological_map_2 (start-up only).',
+                read_only=True,
+            ),
+        )
         self.declare_parameter(
             'nav_action_name', '/topological_navigation',
+            ParameterDescriptor(
+                description='GotoNode action server for click-to-navigate '
+                            '(start-up only).',
+                read_only=True,
+            ),
+        )
+
+        # The following parameters can all be changed at runtime via
+        # ``ros2 param set`` (see ``_on_set_parameters``).
+        self.declare_parameter(
+            'auto_save', False,
+            ParameterDescriptor(
+                description='Periodically save the map to file every 30 s.',
+            ),
+        )
+        self.declare_parameter(
+            'marker_scale', 0.5,
+            ParameterDescriptor(
+                description='Base scale factor for RViz markers.',
+                floating_point_range=[FloatingPointRange(
+                    from_value=float(viz_utils.MIN_SCALE),
+                    to_value=float(viz_utils.MAX_SCALE),
+                    step=0.0,
+                )],
+            ),
+        )
+        self.declare_parameter(
+            'edit_mode', True,
+            ParameterDescriptor(
+                description='Enable interactive drag-and-drop node editing.',
+            ),
+        )
+        self.declare_parameter(
+            'show_node_labels', True,
+            ParameterDescriptor(
+                description='Render per-node text labels. Disable for large '
+                            'maps — text markers are the most expensive '
+                            'RViz primitive.',
+            ),
+        )
+        self.declare_parameter(
+            'show_zones', True,
+            ParameterDescriptor(
+                description='Render node influence-zone polygons.',
+            ),
+        )
+        self.declare_parameter(
+            'show_edges', True,
+            ParameterDescriptor(
+                description='Render edges between nodes.',
+            ),
+        )
+        self.declare_parameter(
+            'auto_marker_scale', False,
+            ParameterDescriptor(
+                description='Derive marker_scale automatically from the '
+                            'spatial spread of the map.',
+            ),
+        )
+        self.declare_parameter(
+            'interactive_marker_limit', 750,
+            ParameterDescriptor(
+                description='Maximum node count for which interactive '
+                            '(editable) markers are created. Above this the '
+                            'map is shown read-only to keep RViz responsive.',
+                integer_range=[IntegerRange(
+                    from_value=0, to_value=1_000_000, step=1,
+                )],
+            ),
         )
 
         self.map_file: str = self.get_parameter('map_file').value
-        self.auto_save: bool = self.get_parameter('auto_save').value
-        self.marker_scale: float = self.get_parameter('marker_scale').value
-        self.edit_mode: bool = self.get_parameter('edit_mode').value
         nav_action: str = self.get_parameter('nav_action_name').value
+        self.auto_save: bool = self.get_parameter('auto_save').value
+        self.edit_mode: bool = self.get_parameter('edit_mode').value
+        self.show_node_labels: bool = self.get_parameter(
+            'show_node_labels').value
+        self.show_zones: bool = self.get_parameter('show_zones').value
+        self.show_edges: bool = self.get_parameter('show_edges').value
+        self.auto_marker_scale: bool = self.get_parameter(
+            'auto_marker_scale').value
+        self.interactive_marker_limit: int = self.get_parameter(
+            'interactive_marker_limit').value
+
+        # ``_base_marker_scale`` is the user-requested scale; ``marker_scale``
+        # is the *effective* scale (possibly auto-computed) used by markers.
+        self._base_marker_scale: float = self.get_parameter(
+            'marker_scale').value
+        self.marker_scale: float = self._base_marker_scale
+
+        # Register the runtime parameter callback (ROS 2 Humble compatible).
+        self._param_apply_timer = None
+        self.add_on_set_parameters_callback(self._on_set_parameters)
 
         # ── State ────────────────────────────────────────────────
         self.tmap = None
         self._graph = None
         self._map_dirty = False
         self._node_entries_by_name: dict[str, dict] = {}
-        self._incoming_edges_by_target: dict[str, list[tuple[dict, dict]]] = {}
         self._action_names: list[str] = []
         self._action_index: dict[str, int] = {}
-        self._marker_ids = {
+        # Names of source nodes for every edge that *terminates* at a node,
+        # keyed by the target node name. Lets an incremental update redraw
+        # only the edge markers whose endpoint moved.
+        self._incoming_edges_by_target: dict[str, list] = {}
+        # Stable RViz marker ids assigned per namespace, keyed by node name
+        # (or action name for the legend). Reused by incremental updates so a
+        # single dragged node republishes the same ids instead of the map.
+        self._marker_ids: dict[str, dict] = {
             'nodes': {},
             'names': {},
             'zones': {},
@@ -244,7 +359,9 @@ class TopologicalMapVisualiser(Node):
         )
 
         # ── Auto-save timer ──────────────────────────────────────
-        if self.auto_save and self.map_file:
+        # Always create the timer when a file is available; the callback
+        # gates on ``self.auto_save`` so it can be toggled at runtime.
+        if self.map_file:
             self.create_timer(30.0, self._auto_save_cb)
 
         self.get_logger().info('Topological map visualiser started')
@@ -259,9 +376,9 @@ class TopologicalMapVisualiser(Node):
     def _refresh_visual_cache(self):
         """Build lookup tables used by static-marker updates."""
         self._node_entries_by_name = {}
-        self._incoming_edges_by_target = {}
         self._action_names = []
         self._action_index = {}
+        self._incoming_edges_by_target = {}
 
         if self.tmap is None:
             return
@@ -274,29 +391,21 @@ class TopologicalMapVisualiser(Node):
 
         for entry in nodes:
             node = entry['node']
+            src_name = node['name']
             for edge in node.get('edges', []):
-                target = edge.get('node', '')
-                if target:
-                    self._incoming_edges_by_target.setdefault(
-                        target, []
-                    ).append((node, edge))
-
                 action = edge.get('action', '')
                 if action and action not in seen_actions:
                     seen_actions.add(action)
                     self._action_names.append(action)
+                target = edge.get('node')
+                if target:
+                    self._incoming_edges_by_target.setdefault(
+                        target, []
+                    ).append(src_name)
 
         self._action_index = {
             action: idx for idx, action in enumerate(self._action_names)
         }
-
-    @staticmethod
-    def _edge_key(source_name: str, edge: dict) -> str:
-        """Return a stable key for an edge marker."""
-        edge_id = edge.get('edge_id', '')
-        if edge_id:
-            return edge_id
-        return f'{source_name}->{edge.get("node", "")}'
 
     # ──────────────────────────────────────────────────────────────
     #  Map loading / saving
@@ -367,7 +476,8 @@ class TopologicalMapVisualiser(Node):
             self.tmap, logger=self.get_logger(),
         )
         self.get_logger().info('Received updated map from topic')
-        self._rebuild_visualisation()
+        # Clear first: a new map may have fewer nodes/edges than before.
+        self._rebuild_visualisation(clear_first=True)
         # Delayed re-publish so late-subscribing RViz gets markers
         if self._initial_vis_timer is not None:
             self.destroy_timer(self._initial_vis_timer)
@@ -385,7 +495,7 @@ class TopologicalMapVisualiser(Node):
         return response
 
     def _auto_save_cb(self):
-        if self._map_dirty:
+        if self.auto_save and self.map_file and self._map_dirty:
             self.get_logger().info('Auto-saving map…')
             self.save_map()
 
@@ -399,6 +509,151 @@ class TopologicalMapVisualiser(Node):
             self.get_logger().debug(
                 'Deferred map visualisation republished'
             )
+
+    # ──────────────────────────────────────────────────────────────
+    #  Runtime (dynamic) parameter handling — ROS 2 Humble compatible
+    # ──────────────────────────────────────────────────────────────
+    def _on_set_parameters(self, params):
+        """Validate and apply parameter updates received at runtime.
+
+        Registered via ``add_on_set_parameters_callback`` (the only
+        runtime-parameter hook available in ROS 2 Humble).  The callback
+        runs *before* the new values are committed, so we validate here
+        and read the new values directly from the ``params`` list.  The
+        (potentially expensive) marker rebuild is deferred to a one-shot
+        timer so it never blocks the parameter-set transaction.
+        """
+        needs_rebuild = False
+
+        for p in params:
+            name = p.name
+
+            if name == 'marker_scale':
+                if p.type_ not in (
+                    Parameter.Type.DOUBLE, Parameter.Type.INTEGER,
+                ):
+                    return SetParametersResult(
+                        successful=False,
+                        reason='marker_scale must be a number',
+                    )
+                value = float(p.value)
+                if not (viz_utils.MIN_SCALE <= value <= viz_utils.MAX_SCALE):
+                    return SetParametersResult(
+                        successful=False,
+                        reason='marker_scale out of range [%g, %g]'
+                        % (viz_utils.MIN_SCALE, viz_utils.MAX_SCALE),
+                    )
+                self._base_marker_scale = value
+                needs_rebuild = True
+
+            elif name == 'auto_marker_scale':
+                if p.type_ != Parameter.Type.BOOL:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='auto_marker_scale must be a boolean',
+                    )
+                self.auto_marker_scale = bool(p.value)
+                needs_rebuild = True
+
+            elif name == 'show_node_labels':
+                if p.type_ != Parameter.Type.BOOL:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='show_node_labels must be a boolean',
+                    )
+                self.show_node_labels = bool(p.value)
+                needs_rebuild = True
+
+            elif name == 'show_zones':
+                if p.type_ != Parameter.Type.BOOL:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='show_zones must be a boolean',
+                    )
+                self.show_zones = bool(p.value)
+                needs_rebuild = True
+
+            elif name == 'show_edges':
+                if p.type_ != Parameter.Type.BOOL:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='show_edges must be a boolean',
+                    )
+                self.show_edges = bool(p.value)
+                needs_rebuild = True
+
+            elif name == 'edit_mode':
+                if p.type_ != Parameter.Type.BOOL:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='edit_mode must be a boolean',
+                    )
+                self.edit_mode = bool(p.value)
+                needs_rebuild = True
+
+            elif name == 'interactive_marker_limit':
+                if p.type_ != Parameter.Type.INTEGER:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='interactive_marker_limit must be an integer',
+                    )
+                if int(p.value) < 0:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='interactive_marker_limit must be >= 0',
+                    )
+                self.interactive_marker_limit = int(p.value)
+                needs_rebuild = True
+
+            elif name == 'auto_save':
+                if p.type_ != Parameter.Type.BOOL:
+                    return SetParametersResult(
+                        successful=False,
+                        reason='auto_save must be a boolean',
+                    )
+                self.auto_save = bool(p.value)
+
+        if needs_rebuild:
+            self._schedule_param_apply()
+
+        return SetParametersResult(successful=True)
+
+    def _schedule_param_apply(self):
+        """Defer a full rebuild so it runs outside the param transaction."""
+        if self._param_apply_timer is not None:
+            self._param_apply_timer.cancel()
+            self.destroy_timer(self._param_apply_timer)
+        self._param_apply_timer = self.create_timer(
+            0.05, self._apply_param_changes,
+            callback_group=self._cb_group,
+        )
+
+    def _apply_param_changes(self):
+        """Recompute the effective scale and rebuild the visualisation."""
+        if self._param_apply_timer is not None:
+            self._param_apply_timer.cancel()
+            self.destroy_timer(self._param_apply_timer)
+            self._param_apply_timer = None
+
+        self._recompute_effective_scale()
+        # Full rebuild with a clear so toggled-off layers are removed.
+        self._rebuild_visualisation(clear_first=True)
+
+    def _recompute_effective_scale(self):
+        """Update ``self.marker_scale`` from the base value / auto mode."""
+        if self.auto_marker_scale and self.tmap is not None:
+            positions = viz_utils.collect_node_positions(
+                self.tmap.get('nodes', [])
+            )
+            self.marker_scale = viz_utils.compute_auto_scale(
+                positions, fallback=self._base_marker_scale,
+            )
+            self.get_logger().info(
+                'Auto marker scale -> %.3f (%d nodes)'
+                % (self.marker_scale, len(positions))
+            )
+        else:
+            self.marker_scale = self._base_marker_scale
 
     # ──────────────────────────────────────────────────────────────
     #  GotoNode navigation helpers
@@ -703,33 +958,54 @@ class TopologicalMapVisualiser(Node):
     # ──────────────────────────────────────────────────────────────
     #  Build / rebuild all visualisation markers
     # ──────────────────────────────────────────────────────────────
-    def _rebuild_visualisation(self):
+    def _rebuild_visualisation(self, clear_first: bool = False):
         """Re-create marker array + interactive markers from ``self.tmap``."""
         if self.tmap is None:
             return
 
+        self._recompute_effective_scale()
         self._refresh_visual_cache()
         nodes = self.tmap.get('nodes', [])
-        marker_array = self._build_full_static_marker_array()
+        marker_array = self._build_full_static_marker_array(
+            clear_first=clear_first,
+        )
 
         self.map_marker_pub.publish(marker_array)
 
-        # Interactive editor markers
+        # Interactive editor markers (or clear them when editing is off).
         if self.edit_mode:
             self._rebuild_interactive_markers(nodes)
+        else:
+            self._clear_interactive_markers()
 
         self.get_logger().info(
             f'Visualisation published ({len(nodes)} nodes, '
-            f'{len(marker_array.markers)} markers)'
+            f'{len(marker_array.markers)} markers, '
+            f'scale={self.marker_scale:.3f})'
         )
 
     # ──────────────────────────────────────────────────────────────
     #  Interactive marker layer
     # ──────────────────────────────────────────────────────────────
     def _rebuild_interactive_markers(self, nodes):
-        """Create / update interactive markers for every node."""
+        """Create / update interactive markers for every node.
+
+        For very large maps creating an interactive marker per node makes
+        RViz unresponsive, so above ``interactive_marker_limit`` the map is
+        shown read-only (static markers only) and a warning is logged.
+        """
         # Clear existing markers
         self._im_server.clear()
+
+        if len(nodes) > self.interactive_marker_limit:
+            self._im_server.applyChanges()
+            self.get_logger().warning(
+                'Map has %d nodes (> interactive_marker_limit=%d): '
+                'showing read-only. Raise the limit or disable edit_mode '
+                'to suppress this message.'
+                % (len(nodes), self.interactive_marker_limit)
+            )
+            return
 
         for entry in nodes:
             node = entry['node']
@@ -751,6 +1027,11 @@ class TopologicalMapVisualiser(Node):
                 InteractiveMarkerFeedback.POSE_UPDATE,
             )
 
+        self._im_server.applyChanges()
+
+    def _clear_interactive_markers(self):
+        """Remove all interactive markers (used when edit_mode is off)."""
+        self._im_server.clear()
         self._im_server.applyChanges()
 
     def _create_edit_marker(self, node: dict):
@@ -900,8 +1181,14 @@ class TopologicalMapVisualiser(Node):
                 f'{feedback.pose.position.y:.2f}), yaw={yaw_deg:.1f}°'
             )
 
-        # Refresh only the moved node and directly connected edges.
-        self._publish_incremental_node_update(name)
+            # Republish only the markers touched by this move so the
+            # visualisation stays responsive even on very large maps.
+            self._publish_incremental_node_update(name)
+
+            # Keep the route highlight aligned with the dragged node.
+            if self._route_nodes:
+                self._publish_route_markers()
+
         self._im_server.applyChanges()
 
         # Schedule a debounced republish so downstream nodes
@@ -961,18 +1248,58 @@ class TopologicalMapVisualiser(Node):
         except Exception as exc:
             self.get_logger().error(f'Failed to save temp map: {exc}')
 
-    def _rebuild_static_markers(self):
+    def _map_frame(self) -> str:
+        """Resolve a single frame id for the batched markers.
+
+        All nodes in a tmap share the same frame in practice, so we use the
+        first node's ``parent_frame`` (default ``'map'``).
+        """
+        if self.tmap is not None:
+            for entry in self.tmap.get('nodes', []):
+                return entry.get('node', {}).get('parent_frame', 'map')
+        return 'map'
+
+    def _rebuild_static_markers(self, clear_first: bool = False):
         """Re-publish static MarkerArray only (no interactive markers)."""
         if self.tmap is None:
             return
 
         self._refresh_visual_cache()
-        marker_array = self._build_full_static_marker_array()
+        marker_array = self._build_full_static_marker_array(
+            clear_first=clear_first,
+        )
         self.map_marker_pub.publish(marker_array)
 
-    def _build_full_static_marker_array(self) -> MarkerArray:
-        """Build the full static marker set and refresh marker IDs."""
+    def _build_full_static_marker_array(
+        self, clear_first: bool = False,
+    ) -> MarkerArray:
+        """Build the static marker set for the whole map (per node).
+
+        Each node owns its own markers so a single dragged node can be
+        republished on its own (see
+        :meth:`_publish_incremental_node_update`) instead of rebuilding the
+        entire map. Per namespace a node contributes at most one marker,
+        all sharing the node's index as a stable id:
+
+        * node sphere -> ns ``/nodes``  (one per node)
+        * label       -> ns ``/names``  (one per node, optional)
+        * zone        -> ns ``/zones``  (one per node with a polygon)
+        * edges       -> ns ``/edges``  (one ``LINE_LIST`` of the node's
+          outgoing edges, optional)
+        * legend      -> ns ``/legend`` (one ``TEXT`` per action)
+
+        The assigned ids are cached in ``self._marker_ids`` so incremental
+        updates reuse them. When *clear_first* is set a ``DELETEALL`` is
+        prepended so stale markers (toggled-off layers or deleted nodes)
+        are removed cleanly.
+        """
         marker_array = MarkerArray()
+        if clear_first:
+            clear = Marker()
+            clear.action = Marker.DELETEALL
+            marker_array.markers.append(clear)
+
+        # Reset the id cache — full rebuilds reassign ids by node order.
         self._marker_ids = {
             'nodes': {},
             'names': {},
@@ -980,119 +1307,203 @@ class TopologicalMapVisualiser(Node):
             'edges': {},
             'legend': {},
         }
-        idn = 0
 
-        for entry in self.tmap.get('nodes', []):
+        show_labels = getattr(self, 'show_node_labels', True)
+        show_zones = getattr(self, 'show_zones', True)
+        show_edges = getattr(self, 'show_edges', True)
+
+        nodes = self.tmap.get('nodes', [])
+        for i, entry in enumerate(nodes):
             node = entry['node']
-            node_name = node['name']
+            name = node['name']
+            frame = node.get('parent_frame', 'map')
 
-            self._marker_ids['nodes'][node_name] = idn
-            marker_array.markers.append(self._mk_node(node, idn))
-            idn += 1
-
-            self._marker_ids['names'][node_name] = idn
-            marker_array.markers.append(self._mk_name(node, idn))
-            idn += 1
-
-            if node.get('verts'):
-                self._marker_ids['zones'][node_name] = idn
-                marker_array.markers.append(self._mk_zone(node, idn))
-                idn += 1
-
-            for edge in node.get('edges', []):
-                m = self._mk_edge(node, edge)
-                if m is None:
-                    continue
-                edge_key = self._edge_key(node_name, edge)
-                self._marker_ids['edges'][edge_key] = idn
-                m.id = idn
-                marker_array.markers.append(m)
-                idn += 1
-
-        for row, action_name in enumerate(self._action_names):
-            self._marker_ids['legend'][action_name] = idn
             marker_array.markers.append(
-                self._mk_legend(action_name, row, idn)
+                self._mk_node_sphere(node, i, frame)
             )
-            idn += 1
+            self._marker_ids['nodes'][name] = i
+
+            if show_labels:
+                marker_array.markers.append(self._mk_name(node, i))
+                self._marker_ids['names'][name] = i
+
+            if show_zones:
+                zone_marker = self._mk_node_zone(node, i, frame)
+                if zone_marker is not None:
+                    marker_array.markers.append(zone_marker)
+                    self._marker_ids['zones'][name] = i
+
+            if show_edges:
+                edge_marker = self._mk_node_edges(node, i, frame)
+                if edge_marker is not None:
+                    marker_array.markers.append(edge_marker)
+                    self._marker_ids['edges'][name] = i
+
+        # Legend -> one TEXT marker per action.
+        for row, action_name in enumerate(self._action_names):
+            marker_array.markers.append(
+                self._mk_legend(action_name, row, row)
+            )
+            self._marker_ids['legend'][action_name] = row
 
         return marker_array
 
-    def _publish_incremental_node_update(self, node_name: str):
-        """Publish only the markers affected by a dragged node."""
-        node = self._node_entries_by_name.get(node_name)
+    def _publish_incremental_node_update(self, name: str):
+        """Republish only the markers affected when *name* moves.
+
+        Touches the node's own sphere, label, zone, and outgoing-edge
+        markers, plus the edge markers of any node with an edge that
+        terminates at *name* (so the moved endpoint follows). Relies solely
+        on the cached lookups, so it never scans the whole node list. Falls
+        back to a full static rebuild if the node has no cached marker id
+        yet (e.g. a node added since the last full rebuild).
+        """
+        node = self._node_entries_by_name.get(name)
         if node is None:
+            return
+
+        node_id = self._marker_ids['nodes'].get(name)
+        if node_id is None:
             self._rebuild_static_markers()
             return
+
+        show_labels = getattr(self, 'show_node_labels', True)
+        show_zones = getattr(self, 'show_zones', True)
+        show_edges = getattr(self, 'show_edges', True)
+        frame = node.get('parent_frame', 'map')
 
         marker_array = MarkerArray()
-        marker_ids = self._marker_ids
-        seen_edges = set()
+        marker_array.markers.append(
+            self._mk_node_sphere(node, node_id, frame)
+        )
 
-        node_id = marker_ids['nodes'].get(node_name)
-        name_id = marker_ids['names'].get(node_name)
-        if node_id is None or name_id is None:
-            self._rebuild_static_markers()
-            return
+        if show_labels:
+            label_id = self._marker_ids['names'].get(name, node_id)
+            marker_array.markers.append(self._mk_name(node, label_id))
 
-        marker_array.markers.append(self._mk_node(node, node_id))
-        marker_array.markers.append(self._mk_name(node, name_id))
+        if show_zones:
+            zone_id = self._marker_ids['zones'].get(name, node_id)
+            zone_marker = self._mk_node_zone(node, zone_id, frame)
+            if zone_marker is not None:
+                marker_array.markers.append(zone_marker)
 
-        zone_id = marker_ids['zones'].get(node_name)
-        if node.get('verts') and zone_id is not None:
-            marker_array.markers.append(self._mk_zone(node, zone_id))
+        if show_edges:
+            edge_id = self._marker_ids['edges'].get(name, node_id)
+            edge_marker = self._mk_node_edges(node, edge_id, frame)
+            if edge_marker is not None:
+                marker_array.markers.append(edge_marker)
 
-        for edge in node.get('edges', []):
-            edge_key = self._edge_key(node_name, edge)
-            edge_id = marker_ids['edges'].get(edge_key)
-            if edge_id is None:
-                continue
-            marker = self._mk_edge(node, edge)
-            if marker is None:
-                continue
-            marker.id = edge_id
-            marker_array.markers.append(marker)
-            seen_edges.add(edge_key)
-
-        for source_node, edge in self._incoming_edges_by_target.get(node_name, []):
-            source_name = source_node['name']
-            edge_key = self._edge_key(source_name, edge)
-            if edge_key in seen_edges:
-                continue
-            edge_id = marker_ids['edges'].get(edge_key)
-            if edge_id is None:
-                continue
-            marker = self._mk_edge(source_node, edge)
-            if marker is None:
-                continue
-            marker.id = edge_id
-            marker_array.markers.append(marker)
-            seen_edges.add(edge_key)
+            # Redraw the edge markers belonging to nodes that point *at*
+            # this one so their endpoint tracks the move.
+            for src_name in self._incoming_edges_by_target.get(name, []):
+                if src_name == name:
+                    continue
+                src_node = self._node_entries_by_name.get(src_name)
+                src_id = self._marker_ids['edges'].get(src_name)
+                if src_node is None or src_id is None:
+                    continue
+                src_frame = src_node.get('parent_frame', 'map')
+                src_marker = self._mk_node_edges(src_node, src_id, src_frame)
+                if src_marker is not None:
+                    marker_array.markers.append(src_marker)
 
         self.map_marker_pub.publish(marker_array)
 
-        if self._route_nodes and node_name in self._route_nodes:
-            self._publish_route_markers()
-
     # ──────────────────────────────────────────────────────────────
-    #  Marker factory helpers
+    #  Marker factory helpers (per node)
     # ──────────────────────────────────────────────────────────────
-    def _mk_node(self, node: dict, idn: int) -> Marker:
+    def _mk_node_sphere(self, node: dict, idn: int, frame: str) -> Marker:
+        """Build a single ``SPHERE`` marker for one node."""
         m = Marker()
         m.id = idn
-        m.header.frame_id = node.get('parent_frame', 'map')
+        m.ns = '/nodes'
+        m.header.frame_id = frame
         m.type = Marker.SPHERE
-        s = self.marker_scale
-        m.scale.x = s * 0.4
-        m.scale.y = s * 0.4
-        m.scale.z = s * 0.4
-        m.color.a = 0.4
+        m.action = Marker.ADD
+        m.pose = _node2pose(node['pose'])
+        m.pose.position.z += 0.1
+        s = self.marker_scale * 0.4
+        m.scale.x = s
+        m.scale.y = s
+        m.scale.z = s
+        m.color.a = 0.6
         m.color.r = 0.2
         m.color.g = 0.2
         m.color.b = 0.7
-        m.pose = _node2pose(node['pose'])
-        m.pose.position.z += 0.1
-        m.ns = '/nodes'
+        return m
+
+    def _mk_node_zone(self, node: dict, idn: int, frame: str):
+        """Build a ``LINE_LIST`` marker for one node's influence zone.
+
+        Returns ``None`` when the node has no usable polygon.
+        """
+        verts = node.get('verts') or []
+        if len(verts) < 2:
+            return None
+        bx, by, bz = _node_xyz(node)
+        points = []
+        for v in verts:
+            try:
+                points.append((bx + float(v['x']), by + float(v['y']), bz))
+            except (KeyError, TypeError, ValueError):
+                return None
+        if len(points) < 2:
+            return None
+        m = Marker()
+        m.id = idn
+        m.ns = '/zones'
+        m.header.frame_id = frame
+        m.type = Marker.LINE_LIST
+        m.action = Marker.ADD
+        m.pose.orientation.w = 1.0
+        m.scale.x = max(self.marker_scale * 0.06, 0.02)
+        m.color.a = 0.8
+        m.color.r = 0.7
+        m.color.g = 0.1
+        m.color.b = 0.2
+        for i in range(len(points)):
+            p1 = points[i]
+            p2 = points[(i + 1) % len(points)]
+            m.points.append(Point(x=p1[0], y=p1[1], z=p1[2]))
+            m.points.append(Point(x=p2[0], y=p2[1], z=p2[2]))
+        return m
+
+    def _mk_node_edges(self, node: dict, idn: int, frame: str):
+        """Build a ``LINE_LIST`` of one node's outgoing edges.
+
+        Edges whose target is missing from the map are skipped, and the
+        marker colour follows the first valid edge's action. Returns
+        ``None`` when the node has no drawable outgoing edge.
+        """
+        src = _node_xyz(node, z_offset=0.1)
+        segments = []
+        colour_action = ''
+        for edge in node.get('edges', []) or []:
+            target = edge.get('node')
+            tnode = self._node_entries_by_name.get(target)
+            if tnode is None:
+                continue
+            segments.append((src, _node_xyz(tnode, z_offset=0.1)))
+            if not colour_action:
+                colour_action = edge.get('action', '') or ''
+        if not segments:
+            return None
+        col = _colour(self._action_index.get(colour_action, idn))
+        m = Marker()
+        m.id = idn
+        m.ns = '/edges'
+        m.header.frame_id = frame
+        m.type = Marker.LINE_LIST
+        m.action = Marker.ADD
+        m.pose.orientation.w = 1.0
+        m.scale.x = max(self.marker_scale * 0.06, 0.02)
+        m.color.a = 0.6
+        m.color.r = float(col[0])
+        m.color.g = float(col[1])
+        m.color.b = float(col[2])
+        for p1, p2 in segments:
+            m.points.append(Point(x=p1[0], y=p1[1], z=p1[2]))
+            m.points.append(Point(x=p2[0], y=p2[1], z=p2[2]))
         return m
 
     def _mk_name(self, node: dict, idn: int) -> Marker:
@@ -1109,73 +1520,6 @@ class TopologicalMapVisualiser(Node):
         m.color.g = 0.3
         m.color.b = 0.3
         m.ns = '/names'
-        return m
-
-    def _mk_zone(self, node: dict, idn: int) -> Marker:
-        m = Marker()
-        m.id = idn
-        m.header.frame_id = node.get('parent_frame', 'map')
-        m.type = Marker.LINE_STRIP
-        m.pose.orientation.w = 1.0
-        m.scale.x = self.marker_scale * 0.06
-        m.color.a = 0.8
-        m.color.r = 0.7
-        m.color.g = 0.1
-        m.color.b = 0.2
-
-        px = float(node['pose']['position']['x'])
-        py = float(node['pose']['position']['y'])
-        pz = float(node['pose']['position']['z'])
-
-        for v in node['verts']:
-            pt = Point()
-            pt.x = px + float(v['x'])
-            pt.y = py + float(v['y'])
-            pt.z = pz
-            m.points.append(pt)
-
-        # Close the polygon
-        first = node['verts'][0]
-        pt = Point()
-        pt.x = px + float(first['x'])
-        pt.y = py + float(first['y'])
-        pt.z = pz
-        m.points.append(pt)
-        m.ns = '/zones'
-        return m
-
-    def _mk_edge(
-        self, node: dict, edge: dict
-    ) -> Marker | None:
-        to_node = self._node_entries_by_name.get(edge['node'])
-        if to_node is None:
-            self.get_logger().warn(
-                f"Edge target node '{edge['node']}' not found"
-            )
-            return None
-
-        action = edge.get('action', '')
-        col_idx = self._action_index.get(action, 0)
-        col = _colour(col_idx)
-
-        m = Marker()
-        m.header.frame_id = node.get('parent_frame', 'map')
-        m.type = Marker.LINE_LIST
-
-        v1 = _node2pose(node['pose']).position
-        v1.z += 0.1
-        v2 = _node2pose(to_node['pose']).position
-        v2.z += 0.1
-
-        m.pose.orientation.w = 1.0
-        m.scale.x = self.marker_scale * 0.06
-        m.color.a = 0.5
-        m.color.r = float(col[0])
-        m.color.g = float(col[1])
-        m.color.b = float(col[2])
-        m.points.append(v1)
-        m.points.append(v2)
-        m.ns = '/edges'
         return m
 
     def _mk_legend(

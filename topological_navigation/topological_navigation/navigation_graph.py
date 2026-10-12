@@ -252,6 +252,22 @@ class ActionSegment:
         """Number of edges in this segment."""
         return len(self.edge_ids)
 
+    @property
+    def parameters(self) -> Dict[str, Any]:
+        """Parameters (edge properties) for this segment.
+
+        Returns the first non-empty ``properties`` dict found across
+        all edges in the segment.  Edges with empty or absent
+        properties are transparent -- they inherit the segment's
+        parameters.  Returns an empty dict when no edge in the segment
+        carries any properties.
+        """
+        for edge in self.edge_data:
+            p = edge.get('properties', {}) or {}
+            if p:
+                return p
+        return {}
+
 
 # ==============================================================================
 # Route Planning
@@ -377,6 +393,11 @@ def get_route_edges(
     return edges
 
 
+def _edge_params(edge: Dict[str, Any]) -> Dict[str, Any]:
+    """Return edge ``properties`` normalised to an empty dict when absent."""
+    return edge.get('properties', {}) or {}
+
+
 def merge_action_segments(
     route_edges: List[Dict[str, Any]],
     map_actions: Optional[Dict[str, Any]] = None,
@@ -396,6 +417,15 @@ def merge_action_segments(
 
     If ``map_actions`` is *None* (legacy maps without an ``actions``
     section), all edges are merged by action name as before.
+
+    **Parameter consistency**: edges may only be merged into the same
+    segment when their non-empty ``properties`` dicts are equal.
+    Edges with empty or absent properties are *transparent* -- they
+    are freely merged into any segment regardless of the segment's
+    parameters.  Two edges that each carry different non-empty
+    properties force a split.  The segment's effective parameters
+    come from the first edge in the segment (in any position) that
+    carries non-empty properties.
 
     Args:
         route_edges: Edge data dicts from :func:`get_route_edges`.
@@ -423,12 +453,22 @@ def merge_action_segments(
         if map_actions and action in map_actions:
             composable = map_actions[action].get('composable', True)
 
-        # Start a new segment when the action changes *or* when
-        # the action is explicitly non-composable.
+        # Edge parameters for consistency check
+        edge_p = _edge_params(edge)
+        current_p = current.parameters if current is not None else {}
+
+        # Start a new segment when:
+        #   • no current segment exists, OR
+        #   • the action type changed, OR
+        #   • the action is explicitly non-composable, OR
+        #   • both this edge and the current segment carry non-empty
+        #     parameters that differ (empty properties are transparent
+        #     and never force a split).
         if (
             current is None
             or current.action_type != action
             or not composable
+            or (edge_p and current_p and edge_p != current_p)
         ):
             if current is not None:
                 segments.append(current)

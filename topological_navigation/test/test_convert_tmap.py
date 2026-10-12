@@ -1,40 +1,17 @@
 """Tests for convert_tmap module.
 
-Covers _normalise_action_type, _map_action_name, _discover_actions,
-_build_actions_section, _build_definitions, _convert_node,
-_convert_transformation, and convert_tmap.
+Covers _map_action_name, _convert_node, _convert_transformation, and
+convert_tmap.
 """
 
 import pytest
 
 from topological_navigation.convert_tmap import (
-    _normalise_action_type,
     _map_action_name,
-    _discover_actions,
-    _build_actions_section,
-    _build_definitions,
     _convert_node,
     _convert_transformation,
     convert_tmap,
-    _BUILTIN_BT_DEFS,
 )
-
-
-# ---------- _normalise_action_type ------------------------------------
-
-class TestNormaliseActionType:
-    """Tests for slash-to-dot conversion."""
-
-    def test_slash_to_dot(self):
-        assert _normalise_action_type("nav2_msgs/action/NavigateToPose") == \
-               "nav2_msgs.action.NavigateToPose"
-
-    def test_already_dotted(self):
-        assert _normalise_action_type("nav2_msgs.action.NavigateToPose") == \
-               "nav2_msgs.action.NavigateToPose"
-
-    def test_empty_string(self):
-        assert _normalise_action_type("") == ""
 
 
 # ---------- _map_action_name ------------------------------------------
@@ -59,116 +36,6 @@ class TestMapActionName:
     def test_unknown_single_word(self):
         """Single-word names stay lowercase."""
         assert _map_action_name("stop") == "stop"
-
-
-# ---------- _discover_actions -----------------------------------------
-
-class TestDiscoverActions:
-    """Tests for action discovery from edge data."""
-
-    def _nodes(self, *actions):
-        """Build minimal node list with the given edge actions."""
-        return [
-            {
-                "node": {
-                    "edges": [
-                        {"action": a, "action_type": "nav2_msgs/action/NavigateToPose"}
-                        for a in actions
-                    ]
-                }
-            }
-        ]
-
-    def test_discovers_known_action(self):
-        discovered = _discover_actions(self._nodes("NavigateToPose"))
-        assert "navigate_to_pose" in discovered
-
-    def test_deduplicates(self):
-        nodes = self._nodes("NavigateToPose", "NavigateToPose")
-        discovered = _discover_actions(nodes)
-        assert len([k for k in discovered if k == "navigate_to_pose"]) == 1
-
-    def test_multiple_actions(self):
-        nodes = self._nodes("NavigateToPose", "RowOperation")
-        discovered = _discover_actions(nodes)
-        assert "navigate_to_pose" in discovered
-        assert "row_traversal" in discovered
-
-    def test_empty_nodes(self):
-        assert _discover_actions([]) == {}
-
-    def test_unknown_action_uses_normalised_edge_type(self):
-        """Unknown actions fall back to the edge-level action_type."""
-        nodes = [{"node": {"edges": [
-            {"action": "MyCustomAction", "action_type": "my_pkg/action/Custom"}
-        ]}}]
-        disc = _discover_actions(nodes)
-        assert "my_custom_action" in disc
-        assert disc["my_custom_action"] == "my_pkg.action.Custom"
-
-    def test_missing_action_type_defaults(self):
-        """Missing edge action_type defaults to NavigateToPose."""
-        nodes = [{"node": {"edges": [{"action": "SomeUnknown"}]}}]
-        disc = _discover_actions(nodes)
-        assert disc["some_unknown"] == "nav2_msgs.action.NavigateToPose"
-
-
-# ---------- _build_actions_section ------------------------------------
-
-class TestBuildActionsSection:
-    """Tests for building the top-level actions dict."""
-
-    def test_structure(self):
-        discovered = {"navigate_to_pose": "nav2_msgs.action.NavigateToPose"}
-        actions = _build_actions_section(discovered, _BUILTIN_BT_DEFS)
-        assert "navigate_to_pose" in actions
-        entry = actions["navigate_to_pose"]
-        assert "composable" in entry
-        assert "action_type" in entry
-        assert "action_server" in entry
-        assert "action_goal_template" in entry
-
-    def test_single_pose_action_template(self):
-        """Single-pose actions get a 'pose' key, not 'poses'."""
-        discovered = {"navigate_to_pose": "nav2_msgs.action.NavigateToPose"}
-        section = _build_actions_section(discovered, _BUILTIN_BT_DEFS)
-        tpl = section["navigate_to_pose"]["action_goal_template"]
-        assert "pose" in tpl
-        assert "poses" not in tpl
-
-    def test_multi_pose_action_template(self):
-        """Multi-pose actions get a 'poses' key."""
-        discovered = {"row_traversal": "nav2_msgs.action.NavigateThroughPoses"}
-        section = _build_actions_section(discovered, _BUILTIN_BT_DEFS)
-        tpl = section["row_traversal"]["action_goal_template"]
-        assert "poses" in tpl
-
-    def test_bt_reference_added(self):
-        """behavior_tree reference is added when definition exists."""
-        discovered = {"navigate_to_pose": "nav2_msgs.action.NavigateToPose"}
-        section = _build_actions_section(discovered, _BUILTIN_BT_DEFS)
-        tpl = section["navigate_to_pose"]["action_goal_template"]
-        assert "behavior_tree" in tpl
-
-
-# ---------- _build_definitions ----------------------------------------
-
-class TestBuildDefinitions:
-    """Tests for building the definitions section."""
-
-    def test_builtin_definitions_used(self):
-        discovered = {"navigate_to_pose": "nav2_msgs.action.NavigateToPose"}
-        defs = _build_definitions(discovered, None, _BUILTIN_BT_DEFS)
-        assert "default_bt" in defs
-
-    def test_row_traversal_bt_included(self):
-        discovered = {"row_traversal": "nav2_msgs.action.NavigateThroughPoses"}
-        defs = _build_definitions(discovered, None, _BUILTIN_BT_DEFS)
-        assert "row_traversal_bt" in defs
-
-    def test_empty_discovered(self):
-        defs = _build_definitions({}, None, _BUILTIN_BT_DEFS)
-        assert isinstance(defs, dict)
 
 
 # ---------- _convert_node ---------------------------------------------
@@ -340,24 +207,19 @@ class TestConvertTmap:
     def test_top_level_keys(self, old_map):
         """Converted map has expected top-level keys."""
         result = convert_tmap(old_map)
-        for key in ("meta", "transformation", "definitions", "actions", "nodes"):
+        for key in ("meta", "transformation", "nodes"):
             assert key in result
+
+    def test_no_top_level_actions_or_definitions(self, old_map):
+        """The current converter does not emit action configuration."""
+        result = convert_tmap(old_map)
+        assert "actions" not in result
+        assert "definitions" not in result
 
     def test_transformation_converted(self, old_map):
         """Transformation block has topo_frame_id."""
         result = convert_tmap(old_map)
         assert "topo_frame_id" in result["transformation"]
-
-    def test_actions_discovered(self, old_map):
-        """Both navigate_to_pose and row_traversal should be discovered."""
-        result = convert_tmap(old_map)
-        assert "navigate_to_pose" in result["actions"]
-        assert "row_traversal" in result["actions"]
-
-    def test_definitions_present(self, old_map):
-        """Definitions section should contain BT XML."""
-        result = convert_tmap(old_map)
-        assert len(result["definitions"]) > 0
 
     def test_node_count_preserved(self, old_map):
         """All nodes are carried over."""

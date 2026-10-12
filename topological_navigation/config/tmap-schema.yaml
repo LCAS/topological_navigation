@@ -14,7 +14,6 @@ properties:
     properties:
       last_updated:
         type: string
-        pattern: ^[0-9]{2}-[0-9]{2}-[0-9]{4}_[0-9]{2}-[0-9]{2}-[0-9]{2}$
     required:
       - last_updated
     additionalProperties: true
@@ -24,7 +23,10 @@ properties:
     type: string
   navigation_config_file:
     type: string
-    description: Optional path to a sidecar YAML file containing the top-level definitions and actions sections.
+    description: >
+      Optional path to a sidecar YAML file, conventionally named
+      topological_navigation_config.yaml, containing the top-level definitions
+      and actions sections.
   nodes:
     type: array
     items:
@@ -71,6 +73,21 @@ properties:
                     type: object
                     additionalProperties: true
                     description: Flexible dictionary of application-specific edge properties (e.g., max_speed, priority, surface_type)
+                    properties:
+                      set_ros_params:
+                        description: >-
+                          ROS 2 parameters applied while this edge's segment executes and
+                          restored afterwards. Overrides the action-level 'set_ros_params'
+                          per node/parameter. Accepts {node: {param: value}},
+                          {param: value} (goal-checker node), or a list of
+                          {node, param, value} / {node, params} entries.
+                        oneOf:
+                          - type: object
+                            additionalProperties: true
+                          - type: array
+                            items:
+                              type: object
+                              additionalProperties: true
             name:
               type: string
             parent_frame:

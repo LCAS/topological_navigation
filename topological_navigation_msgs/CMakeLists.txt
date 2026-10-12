@@ -17,12 +17,12 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(actionlib_msgs REQUIRED)
+find_package(action_msgs REQUIRED)
 set(msg_deps
   builtin_interfaces
   std_msgs
   geometry_msgs
-  actionlib_msgs
+  action_msgs
 )
 
 
@@ -66,6 +66,7 @@ set(srv_files
   "srv/LoadTopoNavTestScenario.srv"
   "srv/RunTopoNavTestScenario.srv"
   "srv/ReconfAtEdges.srv"
+  "srv/LoadTmap.srv"
 )
 
 
@@ -76,6 +77,7 @@ set(action_files
     "action/GotoNode.action"
     "action/ExecutePolicyMode.action"
     "action/BuildTopPrediction.action"
+    "action/RecordMap.action"
 )
 
 

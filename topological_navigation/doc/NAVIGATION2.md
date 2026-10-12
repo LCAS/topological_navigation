@@ -60,7 +60,11 @@ Typical launch order (see `launch/topological_navigation.launch.py`): map manage
 ## Service client
 
 - `/<goal_checker_node>/set_parameters` (`rcl_interfaces/srv/SetParameters`)
-  - Used to push per-target `xy_goal_tolerance` and `yaw_goal_tolerance`
+  - Used to push per-segment ROS 2 parameters (goal tolerances, action
+    parameters) and restore previous values after segment completion
+- `/<goal_checker_node>/get_parameters` (`rcl_interfaces/srv/GetParameters`)
+  - Used to query current ROS 2 parameter values so they can be saved and
+    restored around each segment
 
 ---
 
@@ -111,6 +115,15 @@ Creates both action servers and transitions state machine to `READY`.
 
 ## Route Planning and Execution Flow
 
+Before either action entry point can plan or execute a route, the robot pose
+must be available in the coarse main-map frame and occupy a known-free (`0`)
+cell in the published main occupancy grid. Unknown (`-1`), occupied (`100`),
+and out-of-grid positions are outside. This check fails closed: the server
+does not plan a route, generate `/topo_map_route_segment`, or send a Nav2 goal
+when the pose cannot be proven to be inside the main map. The latched operation
+status is set to `OUTSIDE_MAIN_MAP`, `ROBOT_POSE_UNAVAILABLE`, or
+`MAIN_MAP_UNAVAILABLE`, as appropriate.
+
 ## Goal entry points
 
 - `GotoNode`: plan from current estimated origin to target
@@ -140,6 +153,10 @@ From planned nodes:
 1. `get_route_edges()` to expand node list into edge dicts
 2. `merge_action_segments()` to group consecutive compatible edges
    - Controlled by map action config `composable`
+   - Edges with empty or absent `properties` are *transparent*: they merge freely
+     into any segment regardless of that segment's parameters
+   - Two edges that each carry different non-empty `properties` force a split,
+     ensuring each resulting segment has a consistent parameter set
 
 ## Segment execution
 
@@ -147,11 +164,13 @@ For each segment:
 
 - Transition to action-specific execution state (`ACTION_TO_STATE`)
 - Publish boundary polygon when boundary properties exist
-- Set Nav2 goal tolerances from target node properties
+- Apply ROS 2 parameters at segment entrance and restore them after exit (`_apply_segment_parameters` / `_restore_segment_parameters`), on the goal-checker node and on any node named by `set_ros_params`
 - Build goal dynamically from map template (`_build_segment_goal`)
 - Dispatch goal with `_send_nav2_goal`
 - Publish move status + nav statistics
 - Fail/cancel handling updates state machine and feedback
+- Parameters are restored in a `try/finally` block, so they are always
+  undone regardless of segment outcome (success, failure, cancellation)
 
 ---
 
@@ -205,12 +224,14 @@ Although validation is performed upstream in map manager, `navigation2.py` expec
 - `actions` dictionary with per-action config
 - Optional `definitions` dictionary for inline BT XML
 - Optional `navigation_config_file` path pointing at a second YAML file
-  that contains the top-level `definitions` and/or `actions` sections
+  that contains the top-level `definitions` and `actions` sections
 - `transformation.topo_frame_id` (or fallback) for pose frame defaults
 
-When `navigation_config_file` is present, the main map file is still the only
-file passed to launch or CLI tools. The sidecar path is resolved relative to
-that main map file unless an absolute path is provided.
+The recommended sidecar name is `topological_navigation_config.yaml`. It can
+be referenced from the map with `navigation_config_file` or passed explicitly
+to launch/CLI tools with `navigation_config_file` /
+`--navigation-config-file`. Relative sidecar paths are resolved against the
+main map file.
 
 Action config shape (typical):
 
@@ -227,6 +248,153 @@ actions:
         pose: ${node.pose}
       behavior_tree: ${definitions.default_bt}
 ```
+
+The optional `ros_parameters` key in an action config maps **edge property
+names** to **ROS 2 parameter names** on the goal-checker node.  When a segment
+is entered the navigation server reads the current parameter values, applies the
+values from the segment's edge properties, and restores the originals after the
+segment exits — regardless of whether the segment succeeded, failed, or was
+cancelled.
+
+```yaml
+actions:
+  row_traversal:
+    composable: true
+    action_type: nav2_msgs.action.NavigateThroughPoses
+    action_server: /navigate_through_poses
+    ros_parameters:
+      # edge property name → ROS 2 parameter path on goal_checker_node
+      max_speed: FollowPath.max_robot_speed
+    action_goal_template:
+      poses:
+        - header:
+            frame_id: ${node.nav_frame}
+          pose: ${node.pose}
+      behavior_tree: ${definitions.row_traversal_bt}
+```
+
+With this config, an edge that carries `properties: {max_speed: 0.3}` will
+cause the server to set `FollowPath.max_robot_speed = 0.3` before executing the
+segment and restore the previous value afterwards.
+
+Edge `properties` are optional on every edge.  Edges without properties (or
+with empty properties `{}`) are *transparent* from a parameter perspective —
+they inherit the effective parameters of the segment they are merged into.  This
+means you only need to set parameters on the **first edge of an aisle** and they
+will apply for the entire aisle segment:
+
+```yaml
+# Entry edge – carries the speed limit for the whole aisle
+- edge_id: N3_N4
+  action: row_traversal
+  node: N4
+  properties:
+    max_speed: 0.3   # applied for the whole N3→N4→N5 segment
+
+# Subsequent edge – no properties, inherits max_speed: 0.3
+- edge_id: N4_N5
+  action: row_traversal
+  node: N5
+  # properties: {}  (absent or empty — transparent)
+```
+
+---
+
+## Dynamic ROS 2 Parameter Binding
+
+`navigation2.py` applies two categories of ROS 2 parameters at segment
+entrance and restores them after exit.
+
+### Node-level goal tolerances
+
+If the **target node** of a segment carries `xy_goal_tolerance` or
+`yaw_goal_tolerance` in its `properties`, those values are pushed to the
+goal-checker node before the segment executes:
+
+```yaml
+nodes:
+  - node:
+      name: TightDockingNode
+      properties:
+        xy_goal_tolerance: 0.02
+        yaw_goal_tolerance: 0.01
+```
+
+The node-level parameters that receive these values are configurable:
+
+- `xy_tolerance_param` (default `goal_checker.xy_goal_tolerance`)
+- `yaw_tolerance_param` (default `goal_checker.yaw_goal_tolerance`)
+
+### Edge-level action parameters
+
+Any edge property listed in an action's `ros_parameters` map is pushed before
+the segment runs.  The mapping is `{edge_property_name: ros2_param_name}`.
+Only properties actually present in the segment's effective parameters (see
+segment merging rules) are applied.
+
+### Arbitrary node parameters — `set_ros_params`
+
+`ros_parameters` can only target the goal-checker node and only forwards values
+that come from an edge property.  `set_ros_params` lifts both restrictions: it
+sets **constant values** on **any node**, for the duration of the segment.
+
+Declare it on the action to apply it to every edge using that action:
+
+```yaml
+actions:
+  row_traversal:
+    composable: true
+    action_type: nav2_msgs.action.NavigateThroughPoses
+    action_server: /navigate_through_poses
+    set_ros_params:
+      collision_monitor:
+        FootprintApproach.enabled: false
+    action_goal_template: ...
+```
+
+…and/or on an individual edge to override the action-level value.  The merge is
+per node **and** per parameter, so an edge can flip one parameter while keeping
+the rest of the action's defaults:
+
+```yaml
+- edge_id: N3_N4
+  action: row_traversal
+  node: N4
+  properties:
+    set_ros_params:
+      collision_monitor:
+        FootprintApproach.enabled: true   # override just for this segment
+```
+
+Three authoring styles are accepted in both places:
+
+| Style | Example |
+|---|---|
+| Node-keyed mapping | `{collision_monitor: {FootprintApproach.enabled: false}}` |
+| Flat mapping (goal-checker node) | `{FollowPath.max_robot_speed: 0.3}` |
+| List of entries | `[{node: collision_monitor, param: FootprintApproach.enabled, value: false}]` |
+
+List entries accept either `param` + `value` or a `params` mapping, and the
+`node` may be written with or without a leading `/`.  Values may be `bool`,
+`int`, `float` or `str`.
+
+Parameter clients for non-goal-checker nodes are created on first use and
+cached.  As with the other sources, the previous values are read back before the
+change and restored when the segment exits.  The precedence order when several
+sources set the same parameter is:
+
+1. node goal tolerances → 2. `ros_parameters` → 3. action `set_ros_params` →
+4. edge `set_ros_params` (highest).
+
+Worked examples: [SET_ROS_PARAMS.md](SET_ROS_PARAMS.md).
+
+### Save / restore guarantee
+
+Before any parameter is changed, its current value is queried via
+`GetParameters`.  After the segment exits (in a `try/finally`), the saved
+values are restored via `SetParameters`.  Both operations are best-effort:
+if the parameter service is unavailable the segment still executes with the
+currently configured values and no restoration is attempted.
 
 ---
 
@@ -352,7 +520,46 @@ Safe extension points:
 
 4. **Goal tolerance policies**
    - Provide per-node tolerances in node `properties`
-   - map to correct Nav2 parameter names
+   - map to correct Nav2 parameter names via `xy_tolerance_param` / `yaw_tolerance_param`
+
+5. **Dynamic ROS 2 parameters per segment**
+   - Add a `ros_parameters` key to the relevant action config
+   - Map edge property names to ROS 2 parameter paths on the goal-checker node
+   - Set the desired property on the entry edge of each aisle / segment
+   - Edges without properties are transparent and inherit the segment's values
+
+6. **Parameters on other nodes (e.g. disabling a collision-monitor polygon)**
+   - Add `set_ros_params` to the action config for the global default
+   - Override it in an edge's `properties` where a specific segment differs
+
+---
+
+## Backward Compatibility with Existing Topological Maps
+
+This release is **fully backward compatible**.  Existing maps that do not use
+edge `properties` or the `ros_parameters` action key will behave identically
+to previous versions:
+
+| Map feature | Behaviour |
+|---|---|
+| Edges with no `properties` key | Treated as empty (`{}`); transparent — always merge with adjacent same-action edges |
+| Edges with `properties: {}` | Same as above |
+| Edges with `properties: null` | Normalised to `{}`; same as above |
+| `ros_parameters` absent from action config | No dynamic parameters are applied or restored |
+| `set_ros_params` absent from action config and edge properties | No dynamic parameters are applied or restored |
+| Node `properties` without `xy_goal_tolerance` / `yaw_goal_tolerance` | No tolerance change |
+
+**No changes to map YAML files are required.**
+
+The only behaviour change relative to the *prior* implementation is that the
+old `_set_goal_tolerances` / `_tolerance_set_cb` pair (which only set, never
+restored) has been replaced by `_apply_segment_parameters` /
+`_restore_segment_parameters`, which additionally saves the previous values and
+restores them after each segment.  For maps that relied on goal tolerances
+being *permanent* (i.e. set once and left) this means tolerances now reset to
+their pre-segment values after each segment.  If you want a tolerance to
+persist across segments, either set it identically on every relevant node or
+configure it as the static default in your Nav2 controller configuration.
 
 ---
 
@@ -377,4 +584,4 @@ Safe extension points:
 
 ---
 
-Last Updated: 2026-03-09
+Last Updated: 2026-09-02

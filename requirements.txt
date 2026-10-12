@@ -1,0 +1,7 @@
+pyyaml
+jsonschema
+networkx
+scipy
+numpy
+pyproj
+pytest

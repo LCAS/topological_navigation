@@ -10,9 +10,13 @@ import textwrap
 import pytest
 import yaml
 
-from topological_navigation.tmap_utils import NAVIGATION_CONFIG_FILE_KEY
+from topological_navigation.tmap_utils import (
+    DEFAULT_NAVIGATION_CONFIG_FILENAME,
+    NAVIGATION_CONFIG_FILE_KEY,
+)
 from topological_navigation.validate_map import (
     find_schema_file,
+    find_navigation_config_schema_file,
     load_yaml_file,
     validate_map,
 )
@@ -23,6 +27,7 @@ from topological_navigation.validate_map import (
 _FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
 _CONFIG = os.path.join(os.path.dirname(__file__), os.pardir, "config")
 _SCHEMA = os.path.join(_CONFIG, "tmap-schema.yaml")
+_NAV_CONFIG_SCHEMA = os.path.join(_CONFIG, "navigation-config-schema.yaml")
 _SIMPLE_MAP = os.path.join(_FIXTURES, "simple_map.yaml")
 _COMPLEX_MAP = os.path.join(_FIXTURES, "complex_map.yaml")
 
@@ -50,6 +55,11 @@ class TestFindSchemaFile:
         result = find_schema_file()
         if result is not None:
             assert os.path.isfile(result)
+
+    def test_navigation_config_schema_exists_if_found(self):
+        """The sidecar schema is discoverable in local/package installs."""
+        result = find_navigation_config_schema_file()
+        assert result is None or os.path.isfile(result)
 
 
 # ---------- load_yaml_file ---------------------------------------------
@@ -172,7 +182,7 @@ class TestValidateMap:
 
     def test_split_map_valid(self, tmp_path):
         """A main map can validate when actions/definitions live in a sidecar file."""
-        config_path = tmp_path / "nav_config.yaml"
+        config_path = tmp_path / DEFAULT_NAVIGATION_CONFIG_FILENAME
         config_path.write_text(
             yaml.safe_dump(
                 {
@@ -182,6 +192,9 @@ class TestValidateMap:
                             "action_type": "nav2_msgs.action.NavigateToPose",
                             "action_server": "/navigate_to_pose",
                             "composable": False,
+                            "action_goal_template": {
+                                "behavior_tree": "${definitions.default_bt}",
+                            },
                         }
                     },
                 }
@@ -192,7 +205,7 @@ class TestValidateMap:
         main_path.write_text(
             yaml.safe_dump(
                 {
-                    NAVIGATION_CONFIG_FILE_KEY: "nav_config.yaml",
+                    NAVIGATION_CONFIG_FILE_KEY: DEFAULT_NAVIGATION_CONFIG_FILENAME,
                     "meta": {"last_updated": "01-01-2026_00-00-00"},
                     "metric_map": "test_map",
                     "name": "test_map",
@@ -204,5 +217,89 @@ class TestValidateMap:
         )
 
         is_valid, msg = validate_map(str(main_path), _SCHEMA)
+
+        assert is_valid, msg
+
+    def test_split_map_rejects_invalid_navigation_config(self, tmp_path):
+        """The actions/definitions sidecar is validated against its own schema."""
+        config_path = tmp_path / DEFAULT_NAVIGATION_CONFIG_FILENAME
+        config_path.write_text(
+            yaml.safe_dump(
+                {
+                    "definitions": {"default_bt": "<root/>"},
+                    "actions": {
+                        "navigate_to_pose": {
+                            "action_server": "/navigate_to_pose",
+                            "action_goal_template": {},
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        main_path = tmp_path / "split_map.tmap2.yaml"
+        main_path.write_text(
+            yaml.safe_dump(
+                {
+                    NAVIGATION_CONFIG_FILE_KEY: DEFAULT_NAVIGATION_CONFIG_FILENAME,
+                    "meta": {"last_updated": "01-01-2026_00-00-00"},
+                    "metric_map": "test_map",
+                    "name": "test_map",
+                    "pointset": "test_map",
+                    "nodes": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        is_valid, msg = validate_map(
+            str(main_path),
+            _SCHEMA,
+            navigation_config_schema_file=_NAV_CONFIG_SCHEMA,
+        )
+
+        assert not is_valid
+        assert "Navigation config validation failed" in msg
+
+    def test_split_map_accepts_explicit_navigation_config(self, tmp_path):
+        """Validation accepts a sidecar path passed separately from the map."""
+        config_path = tmp_path / DEFAULT_NAVIGATION_CONFIG_FILENAME
+        config_path.write_text(
+            yaml.safe_dump(
+                {
+                    "definitions": {"default_bt": "<root/>"},
+                    "actions": {
+                        "navigate_to_pose": {
+                            "action_type": "nav2_msgs.action.NavigateToPose",
+                            "action_server": "/navigate_to_pose",
+                            "action_goal_template": {
+                                "behavior_tree": "${definitions.default_bt}",
+                            },
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        main_path = tmp_path / "split_map.tmap2.yaml"
+        main_path.write_text(
+            yaml.safe_dump(
+                {
+                    "meta": {"last_updated": "01-01-2026_00-00-00"},
+                    "metric_map": "test_map",
+                    "name": "test_map",
+                    "pointset": "test_map",
+                    "nodes": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        is_valid, msg = validate_map(
+            str(main_path),
+            _SCHEMA,
+            navigation_config_file=str(config_path),
+            navigation_config_schema_file=_NAV_CONFIG_SCHEMA,
+        )
 
         assert is_valid, msg

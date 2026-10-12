@@ -1,0 +1,76 @@
+name: Map Analyser
+
+on:
+  push:
+    branches: [ humble, main ]
+    tags:
+      - '*'
+  pull_request:
+    branches: [ humble, main ]
+
+permissions:
+  contents: read
+
+jobs:
+  analyse_maps:
+    name: Analyse topological maps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml jsonschema networkx scipy numpy
+
+      - name: Discover topological map files
+        id: discover
+        working-directory: topological_navigation
+        run: |
+          # Real tmap2 map files, plus the standalone test fixture maps.
+          find config -iname '*tmap2*.yaml' -o -iname '*.tmap2.yaml' > /tmp/maps.txt
+          find test/fixtures -iname '*.yaml' ! -iname 'README*' >> /tmp/maps.txt
+          sort -u -o /tmp/maps.txt /tmp/maps.txt
+          echo "Maps to analyse:"
+          cat /tmp/maps.txt
+
+      - name: Run map analyser on every map
+        working-directory: topological_navigation
+        env:
+          PYTHONPATH: ${{ github.workspace }}/topological_navigation
+        run: |
+          mkdir -p /tmp/map-analyser-svgs
+          status=0
+          while IFS= read -r map_file; do
+            [ -z "$map_file" ] && continue
+            name="$(basename "$map_file" .yaml)"
+            echo "::group::Analysing $map_file"
+            python3 -m topological_navigation.map_analyser analyse "$map_file" \
+              --svg "/tmp/map-analyser-svgs/${name}.svg" || true
+            echo "::endgroup::"
+
+            echo "::group::Check $map_file"
+            if ! python3 -m topological_navigation.map_analyser check "$map_file"; then
+              echo "::warning file=${map_file}::Map failed validity check (see log above)"
+              status=1
+            fi
+            echo "::endgroup::"
+          done < /tmp/maps.txt
+
+          # The maps shipped in this repository are known to contain
+          # intentional "start" nodes with no incoming edges, so a failed
+          # check is only surfaced as a warning and does not fail the build.
+          echo "Overall map check status (informational only): $status"
+
+      - name: Upload generated SVG maps
+        uses: actions/upload-artifact@v4
+        with:
+          name: topological-map-svgs
+          path: /tmp/map-analyser-svgs/*.svg
+          if-no-files-found: warn

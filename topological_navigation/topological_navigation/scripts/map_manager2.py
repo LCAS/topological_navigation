@@ -75,6 +75,9 @@ class map_manager_2(rclpy.node.Node):
 
         # Schema path for validation
         self.schema_path = str(os.path.join(package_path, 'config', 'tmap-schema.yaml'))
+        self.navigation_config_schema_path = str(
+            os.path.join(package_path, 'config', 'navigation-config-schema.yaml')
+        )
 
         # Declare parameters
         self.declare_parameter('cache_topological_maps', False)
@@ -95,6 +98,9 @@ class map_manager_2(rclpy.node.Node):
 
         # Load the schema once
         self.schema = self._load_schema(self.schema_path)
+        self.navigation_config_schema = self._load_schema(
+            self.navigation_config_schema_path
+        )
 
         # Initialise an empty tmap dict
         self.tmap = self._empty_tmap()
@@ -144,6 +150,36 @@ class map_manager_2(rclpy.node.Node):
             msg.data = yaml.safe_dump(self.schema, default_flow_style=False)
             self.schema_pub.publish(msg)
             self.get_logger().info("Published schema on /topological_map_schema")
+
+    def _validate_navigation_config_file(self, config_path):
+        """Validate a split actions/definitions YAML file against its schema."""
+        if not config_path:
+            return
+        if self.navigation_config_schema is None:
+            self.get_logger().warning(
+                "Navigation config schema unavailable -- skipping sidecar validation"
+            )
+            return
+        if jsonschema is None:
+            self.get_logger().warning(
+                "jsonschema not installed -- skipping sidecar validation"
+            )
+            return
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_data = yaml.safe_load(f)
+            jsonschema.validate(
+                instance=config_data,
+                schema=self.navigation_config_schema,
+            )
+            self.get_logger().info(
+                f"Navigation config validated successfully: {config_path}"
+            )
+        except jsonschema.exceptions.ValidationError as e:
+            raise MapValidationError(
+                f"Navigation config schema validation failed: {e.message}"
+            ) from e
 
     # ------------------------------------------------------------------
     # Empty map template
@@ -218,7 +254,7 @@ class map_manager_2(rclpy.node.Node):
     # ------------------------------------------------------------------
     # Load / Save
     # ------------------------------------------------------------------
-    def load_map(self, filename):
+    def load_map(self, filename, navigation_config_file=None):
         """Load a topological map YAML file, validate, and sync state."""
         self.get_logger().info(f"Loading topological map: {filename}")
         try:
@@ -226,6 +262,10 @@ class map_manager_2(rclpy.node.Node):
                 filename,
                 logger=self.get_logger(),
                 return_layout=True,
+                navigation_config_file=navigation_config_file,
+            )
+            self._validate_navigation_config_file(
+                self._tmap_io_layout.get("config_path")
             )
             self.tmap = loaded
             self.validate()
@@ -272,7 +312,8 @@ class map_manager_2(rclpy.node.Node):
     # Map initialisation
     # ------------------------------------------------------------------
     def init_map(self, name="new_map", metric_map="map_2d", pointset="new_map",
-                 transformation="default", filepath=None, load=True):
+                 transformation="default", filepath=None, load=True,
+                 navigation_config_file=None):
 
         if transformation == "default":
             self.transformation = {
@@ -285,7 +326,7 @@ class map_manager_2(rclpy.node.Node):
             self.transformation = transformation
 
         if load:
-            self.load_map(filepath)
+            self.load_map(filepath, navigation_config_file=navigation_config_file)
         else:
             self.tmap = self._empty_tmap()
             self.tmap["name"] = name
@@ -430,10 +471,11 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s my_map.yaml              Load an existing map
-  %(prog)s -n new_map.yaml          Create a new empty map
-  %(prog)s --test                   Load the default test map
-  %(prog)s -v my_map.yaml           Load map with verbose logging
+  %(prog)s my_map.yaml
+  %(prog)s my_map.yaml --navigation-config-file topological_navigation_config.yaml
+  %(prog)s -n new_map.yaml
+  %(prog)s --test
+  %(prog)s -v my_map.yaml
 """,
     )
     parser.add_argument('map_file', nargs='?', default=None,
@@ -444,6 +486,15 @@ Examples:
                         help='Load the default test map')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose logging')
+    parser.add_argument(
+        '--navigation-config-file',
+        '--nav-config',
+        default=None,
+        help=(
+            'Optional path to a YAML file containing the top-level actions '
+            'and definitions sections'
+        ),
+    )
 
     # Use parse_known_args to ignore ROS2 --ros-args passed by launch files
     args, _ = parser.parse_known_args()
@@ -467,13 +518,29 @@ Examples:
         print(f"Error: Map file not found: {map_file}")
         sys.exit(1)
 
-    return map_file, not args.new, args.verbose
+    navigation_config_file = args.navigation_config_file or None
+    if (
+        navigation_config_file
+        and map_file
+        and not os.path.exists(
+            navigation_config_file
+            if os.path.isabs(navigation_config_file)
+            else os.path.join(
+                os.path.dirname(os.path.abspath(map_file)),
+                navigation_config_file,
+            )
+        )
+    ):
+        print(f"Error: Navigation config file not found: {navigation_config_file}")
+        sys.exit(1)
+
+    return map_file, not args.new, args.verbose, navigation_config_file
 
 
 def main(args=None):
     manager = None
     try:
-        map_file, load, verbose = parse_arguments()
+        map_file, load, verbose, navigation_config_file = parse_arguments()
         rclpy.init(args=args)
 
         manager = map_manager_2(advertise_srvs=True)
@@ -485,7 +552,11 @@ def main(args=None):
         manager.get_logger().info("Topological Map Manager 2 -- Starting")
         manager.get_logger().info("=" * 60)
 
-        manager.init_map(filepath=map_file, load=load)
+        manager.init_map(
+            filepath=map_file,
+            load=load,
+            navigation_config_file=navigation_config_file,
+        )
         manager.get_logger().info(
             f"Map ready -- name={manager.tmap.get('name')}, "
             f"nodes={len(manager.tmap.get('nodes', []))}"

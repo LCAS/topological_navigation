@@ -56,6 +56,18 @@ actions:
           pose: '${node.pose}'
       behavior_tree: '${definitions.default_bt}'
 
+  navigate_through_poses:
+    composable: true
+    action_type: nav2_msgs.action.NavigateThroughPoses
+    action_server: /navigate_through_poses
+    action_goal_template:
+      poses:
+        - header:
+            frame_id: '${node.nav_frame}'
+          pose: '${node.pose}'
+      behavior_tree: '${definitions.default_bt}'
+
+
   goal_align:
     composable: false
     action_type: nav2_msgs.action.NavigateToPose

@@ -14,7 +14,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config/', glob('config/*', recursive=True)),
         ('share/' + package_name + '/config/',
-            glob('test/fixtures/mixed_actions_map.yaml')),
+            glob('test/fixtures/*.yaml')),
         ('share/' + package_name + '/launch/', glob('launch/*', recursive=True)),
         ('share/' + package_name + '/rviz/', glob('rviz/*', recursive=True)),
     ],

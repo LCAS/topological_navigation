@@ -3,17 +3,16 @@
 # Licensed under the MIT License.
 """Launch the full topological navigation stack with simulation.
 
-Launches (in order):
+Launches (some components start in parallel):
     1. Map Manager -- loads and publishes the topological map
-    2. Localisation -- determines current/closest node
-    3. Fake Nav2 simulator -- virtual robot + fake action servers
-    4. Topological map visualiser -- RViz markers
-    5. RViz -- with a pre-configured display layout
-    6. Topological web app -- browser UI on http://localhost:8083/
+    2. Localisation and fake Nav2 simulator
+    3. Topological navigation server
+    4. Topological map visualiser
+    5. RViz and topological web app
 
 Usage
 -----
-Default (mixed_actions_map)::
+Default (Riseholme map)::
 
     ros2 launch topological_navigation topological_navigation.launch.py
 
@@ -83,7 +82,9 @@ def generate_launch_description():
     launch_args = [
         DeclareLaunchArgument(
             'map_path', default_value=default_map,
-            description='Absolute path to a .tmap2.yaml topological map',
+            description=(
+                'Absolute path to a .tmap2.yaml or .tmap3.yaml topological map'
+            ),
         ),
         DeclareLaunchArgument(
             'navigation_config_file',
@@ -263,12 +264,13 @@ def generate_launch_description():
             'port': ParameterValue(
                 LaunchConfiguration('web_app_port'), value_type=int,
             ),
+            'base_frame': LaunchConfiguration('base_frame'),
         }],
     )
 
     # =================================================================
-    # Sequencing: start each node once the previous one has actually
-    # started its process, instead of relying on fixed-duration timers.
+    # Process-start events order the launches; they do not wait for the
+    # preceding node's ROS interfaces or other prerequisites to be ready.
     # =================================================================
     event_handlers = [
         RegisterEventHandler(

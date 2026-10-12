@@ -245,30 +245,30 @@ Launch the complete topological navigation system with a virtual robot (no real 
 ros2 launch topological_navigation topological_navigation.launch.py
 ```
 
-This starts the following nodes in sequence, each one launched as soon as
-the previous node's process has actually started (via launch event
-handlers, not fixed timers):
+Launch event handlers start processes when the preceding process starts;
+they do not wait for ROS interfaces or other prerequisites to be ready.
+Localisation and the fake Nav2 server start in parallel:
 
-| Order | Node | Description |
-|-------|------|-------------|
-| 0 s | `topological_map_manager_2` | Loads and publishes the topological map |
-| 2 s | `topological_localisation` | Starts localisation |
-| 2 s | `fake_nav2_server` | Virtual robot + fake Nav2 action servers |
-| 3 s | `topological_navigation` | Navigation action server |
-| 4 s | `topological_map_visualiser` | Interactive RViz map editor |
-| 4 s | `topological_web_app` | Web app on http://localhost:8083/ (if `web_app:=true`) |
-| 5 s | `rviz2` | RViz with pre-configured display layout |
+| Launch trigger | Node | Description |
+|---------------|------|-------------|
+| Initially | `topological_map_manager_2` | Loads and publishes the topological map |
+| After map manager process starts | `topological_localisation` | Starts localisation |
+| After map manager process starts | `fake_nav2_server` | Virtual robot + fake Nav2 action servers |
+| After localisation process starts | `topological_navigation` | Navigation action server |
+| After navigation process starts | `topological_map_visualiser` | Interactive RViz map editor |
+| After visualiser process starts | `topological_web_app` | Web app on http://localhost:8083/ (if `web_app:=true`) |
+| After visualiser process starts | `rviz2` | RViz with pre-configured display layout |
 
 **Launch arguments:**
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `map_path` | `<share>/config/mixed_actions_map.yaml` | Absolute path to a `.tmap2.yaml` topological map |
+| `map_path` | `<share>/config/riseholme.tmap3.yaml` | Absolute path to a `.tmap2.yaml` or `.tmap3.yaml` topological map |
 | `rviz_config` | `<share>/rviz/topological_navigation.rviz` | Path to the RViz config file |
 | `rviz` | `true` | Launch RViz (`true`/`false`) |
 | `fake_nav2` | `true` | Launch the fake Nav2 simulator server (`true`/`false`) |
-| `robot_speed` | `0.8` | Simulated robot linear speed (m/s) |
-| `angular_speed` | `1.5` | Simulated robot angular speed (rad/s) |
+| `robot_speed` | `1.5` | Simulated robot linear speed (m/s) |
+| `angular_speed` | `4.0` | Simulated robot angular speed (rad/s) |
 | `goal_tolerance` | `0.15` | Distance tolerance for reaching goals (m) |
 | `update_rate` | `30.0` | TF and marker publish rate (Hz) |
 | `web_app` | `true` | Launch the topological navigation web app (`true`/`false`) |

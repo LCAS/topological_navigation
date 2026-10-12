@@ -241,16 +241,18 @@ Launch the complete topological navigation system with a virtual robot (no real 
 ros2 launch topological_navigation topological_navigation.launch.py
 ```
 
-This starts (in order with delays for dependency readiness):
+This starts the following nodes in sequence, each one launched as soon as
+the previous node's process has actually started (via launch event
+handlers, not fixed timers):
 
-| Delay | Node | Description |
+| Order | Node | Description |
 |-------|------|-------------|
-| 0 s | `topological_map_manager_2` | Loads and publishes the topological map |
-| 2 s | `topological_localisation` | Starts localisation |
-| 2 s | `fake_nav2_server` | Virtual robot + fake Nav2 action servers |
-| 3 s | `topological_navigation` | Navigation action server |
-| 4 s | `topological_map_visualiser` | Interactive RViz map editor |
-| 5 s | `rviz2` | RViz with pre-configured display layout |
+| 1 | `topological_map_manager_2` | Loads and publishes the topological map |
+| 2 | `topological_localisation` | Starts localisation |
+| 2 | `fake_nav2_server` | Virtual robot + fake Nav2 action servers |
+| 3 | `topological_navigation` | Navigation action server |
+| 4 | `topological_map_visualiser` | Interactive RViz map editor |
+| 5 | `rviz2` | RViz with pre-configured display layout |
 
 **Launch arguments:**
 
@@ -260,9 +262,16 @@ This starts (in order with delays for dependency readiness):
 | `rviz_config` | `<share>/rviz/topological_navigation.rviz` | Path to the RViz config file |
 | `rviz` | `true` | Launch RViz (`true`/`false`) |
 | `fake_nav2` | `true` | Launch the fake Nav2 simulator server (`true`/`false`) |
+| `robot_speed` | `0.8` | Simulated robot linear speed (m/s) |
+| `angular_speed` | `1.5` | Simulated robot angular speed (rad/s) |
+| `goal_tolerance` | `0.15` | Distance tolerance for reaching goals (m) |
+| `update_rate` | `30.0` | TF and marker publish rate (Hz) |
 | `initial_x` | `0.0` | Initial robot X position (metres) |
 | `initial_y` | `0.0` | Initial robot Y position (metres) |
 | `initial_yaw` | `0.0` | Initial robot yaw (radians) |
+| `map_frame` | `map` | Map TF frame |
+| `odom_frame` | `odom` | Odometry TF frame |
+| `base_frame` | `base_link` | Robot base TF frame |
 
 **Example with a custom map:**
 
@@ -270,6 +279,13 @@ This starts (in order with delays for dependency readiness):
 ros2 launch topological_navigation topological_navigation.launch.py \
     map_path:=/path/to/my_map.tmap2.yaml \
     initial_x:=5.0 initial_y:=3.0
+```
+
+**Example configuring the simulated robot speed:**
+
+```bash
+ros2 launch topological_navigation topological_navigation.launch.py \
+    robot_speed:=1.2 angular_speed:=2.0
 ```
 
 ### Standalone Simulator

@@ -39,6 +39,11 @@ jobs:
             --ignore=test/test_navigation2.py \
             -v --tb=short
 
+      - name: Run topological_navigation_visual web app unit tests
+        working-directory: topological_navigation_visual
+        run: |
+          python -m pytest test/test_web_state.py test/test_web_server.py -v --tb=short
+
       - name: Run topological_nav_simulator unit tests
         working-directory: topological_nav_simulator
         run: |

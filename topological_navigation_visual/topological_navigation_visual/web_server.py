@@ -22,7 +22,7 @@ import os
 import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Callable, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 from urllib.parse import unquote, urlparse
 
 from topological_navigation_visual.web_state import WebAppState
@@ -35,22 +35,43 @@ MAX_BODY_BYTES = 4096
 ActionCallback = Callable[..., Tuple[bool, str]]
 
 
-def resolve_static_path(web_root: str, url_path: str) -> Optional[str]:
-    """Map a URL path to a file under ``web_root``.
+_CONTENT_TYPES = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.txt': 'text/plain; charset=utf-8',
+    '.json': 'application/json',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.ico': 'image/x-icon',
+}
 
-    Returns None if the file does not exist or the path would escape the
-    web root (directory traversal).
+
+def index_static_files(web_root: str) -> Dict[str, Tuple[str, str]]:
+    """Index the files below ``web_root``.
+
+    Returns ``{relative_url_path: (absolute_path, content_type)}``.  Only
+    files in this index are ever served, so request paths are never used to
+    build filesystem paths (no directory traversal possible).
     """
-    rel = unquote(url_path).lstrip('/')
-    if rel == '':
-        rel = 'index.html'
+    files: Dict[str, Tuple[str, str]] = {}
     root = os.path.realpath(web_root)
-    full = os.path.realpath(os.path.join(root, rel))
-    if os.path.commonpath([root, full]) != root:
-        return None
-    if not os.path.isfile(full):
-        return None
-    return full
+    for dirpath, _dirnames, filenames in os.walk(root):
+        for name in filenames:
+            full = os.path.join(dirpath, name)
+            rel = os.path.relpath(full, root).replace(os.sep, '/')
+            ext = os.path.splitext(name)[1].lower()
+            ctype = _CONTENT_TYPES.get(ext) \
+                or mimetypes.guess_type(name)[0] or 'application/octet-stream'
+            files[rel] = (full, ctype)
+    return files
+
+
+def resolve_static_path(static_files: Dict[str, Tuple[str, str]],
+                        url_path: str) -> Optional[Tuple[str, str]]:
+    """Look up a URL path in the static file index (None if not found)."""
+    rel = unquote(url_path).lstrip('/') or 'index.html'
+    return static_files.get(rel)
 
 
 class WebAppServer:
@@ -65,6 +86,7 @@ class WebAppServer:
         self.on_goto = on_goto
         self.on_cancel = on_cancel
         self.web_root = web_root
+        self.static_files = index_static_files(web_root)
         self.min_interval = float(min_interval)
         self.keepalive = float(keepalive)
         self.logger = logger
@@ -156,13 +178,11 @@ def _make_handler(server: WebAppServer):
                 self._serve_static(path)
 
         def _serve_static(self, path):
-            full = resolve_static_path(server.web_root, path)
-            if full is None:
+            entry = resolve_static_path(server.static_files, path)
+            if entry is None:
                 self._send_json({'error': 'not found'}, HTTPStatus.NOT_FOUND)
                 return
-            ctype = mimetypes.guess_type(full)[0] or 'application/octet-stream'
-            if full.endswith('.js'):
-                ctype = 'application/javascript'
+            full, ctype = entry
             with open(full, 'rb') as fh:
                 body = fh.read()
             self.send_response(HTTPStatus.OK)

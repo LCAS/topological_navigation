@@ -4,27 +4,39 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Topological Navigation</title>
-  <script>
-    // All URLs in this app are relative so it can be served under any URL
-    // prefix behind a reverse proxy.  Ensure the page URL ends with "/" so
-    // relative paths resolve below the prefix (e.g. /robot1/topo -> /robot1/topo/).
-    (function () {
-      var p = window.location.pathname;
-      if (p.charAt(p.length - 1) !== '/' && p.slice(-5) !== '.html') {
-        window.location.replace(p + '/' + window.location.search + window.location.hash);
-      }
-    }());
-  </script>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="root"></div>
   <noscript>This web app requires JavaScript.</noscript>
-  <!-- All libraries are bundled locally so the app works offline. -->
-  <script src="vendor/react.production.min.js"></script>
-  <script src="vendor/react-dom.production.min.js"></script>
-  <script src="vendor/htm.umd.js"></script>
-  <script src="vendor/cytoscape.min.js"></script>
-  <script src="app.js"></script>
+  <script>
+    // All URLs in this app are relative, so it can be served under any URL
+    // prefix behind a reverse proxy (e.g. served as /robot1/topo/).  The
+    // page URL must end with "/" for relative paths to resolve below the
+    // prefix, so redirect first and only then load the (locally bundled,
+    // offline) assets.
+    (function () {
+      var p = window.location.pathname;
+      if (p.charAt(p.length - 1) !== '/' && !/\.html$/.test(p)) {
+        window.location.replace(p + '/' + window.location.search + window.location.hash);
+        return;
+      }
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'style.css';
+      document.head.appendChild(css);
+      [
+        'vendor/react.production.min.js',
+        'vendor/react-dom.production.min.js',
+        'vendor/htm.umd.js',
+        'vendor/cytoscape.min.js',
+        'app.js',
+      ].forEach(function (src) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false;  // preserve execution order
+        document.body.appendChild(s);
+      });
+    }());
+  </script>
 </body>
 </html>

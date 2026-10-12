@@ -274,6 +274,19 @@
     `;
   }
 
+  function ConfirmModal({ message, onConfirm, onCancel }) {
+    return html`
+      <div class="modal-backdrop" onClick=${onCancel}>
+        <div class="modal" onClick=${(e) => e.stopPropagation()}>
+          <p>${message}</p>
+          <div class="modal-actions">
+            <button class="btn" onClick=${onCancel}>Cancel</button>
+            <button class="btn danger" onClick=${onConfirm}>Confirm</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function NodeTooltip({ node, x, y, outgoing }) {
     const props = node.properties || {};
     const hasProps = Object.keys(props).length > 0;
@@ -372,15 +385,16 @@
     const { mapSnap, state, connected } = useServerState();
     const cyRef = useRef(null);
     const [notice, setNotice] = useState(null);
+    const [confirmTarget, setConfirmTarget] = useState(null);
 
     const report = (promise) => promise
       .then((d) => setNotice({ text: d.message, error: false }))
       .catch((err) => setNotice({ text: err.message, error: true }));
 
-    const onNodeClick = (name) => {
-      if (window.confirm('Send the robot to node "' + name + '"?')) {
-        report(postJson('api/goto', { node: name }));
-      }
+    const onNodeClick = (name) => setConfirmTarget(name);
+    const confirmGoto = () => {
+      report(postJson('api/goto', { node: confirmTarget }));
+      setConfirmTarget(null);
     };
     const onCancel = () => report(postJson('api/cancel', {}));
 
@@ -404,6 +418,9 @@
         </div>
         <${SidePanel} mapSnap=${mapSnap} state=${state} connected=${connected}
           notice=${notice} onCancel=${onCancel} />
+        ${confirmTarget && html`<${ConfirmModal}
+          message=${'Send the robot to node "' + confirmTarget + '"?'}
+          onConfirm=${confirmGoto} onCancel=${() => setConfirmTarget(null)} />`}
       </div>`;
   }
 

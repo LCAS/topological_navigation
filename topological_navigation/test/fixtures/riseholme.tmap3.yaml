@@ -1,0 +1,4530 @@
+meta:
+  last_updated: 07-15-2026_13-26-26
+  origin:
+    latitude: 53.268642038
+    longitude: -0.524509505881
+    altitude: 0
+metric_map: riseholme
+name: riseholme
+pointset: riseholme
+transformation:
+  topo_frame_id: riseholme
+  parent: map
+  rotation:
+    w: 1
+    x: 0
+    y: 0
+    z: 0
+  translation:
+    x: 0
+    y: 0
+    z: 0
+nodes:
+  - meta:
+      map: riseholme
+      node: t1-a4-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-c0_t1-a4-cb
+          node: t1-a4-cb
+        - action: row_traversal
+          edge_id: t1-a4-c0_t1-a4-c1
+          node: t1-a4-c1
+      name: t1-a4-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 23.133585
+          y: -15.683673
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-c0
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-c0_t1-a3-cb
+          node: t1-a3-cb
+        - action: row_traversal
+          edge_id: t1-a3-c0_t1-a3-c1
+          node: t1-a3-c1
+      name: t1-a3-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 24.441082
+          y: -15.486186
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-c0
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-c0_t1-a2-cb
+          node: t1-a2-cb
+        - action: row_traversal
+          edge_id: t1-a2-c0_t1-a2-c1
+          node: t1-a2-c1
+      name: t1-a2-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 25.753578
+          y: -15.2862
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-c0
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-c0_t1-a1-cb
+          node: t1-a1-cb
+        - action: row_traversal
+          edge_id: t1-a1-c0_t1-a1-c1
+          node: t1-a1-c1
+      name: t1-a1-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 27.078575
+          y: -15.088714
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-c0
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t2-a4-cb_t2-a4-ca
+          node: t2-a4-ca
+        - action: row_traversal
+          edge_id: t2-a4-cb_t2-a4-c0
+          node: t2-a4-c0
+      name: t2-a4-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614282
+          x: 0
+          y: 0
+          z: -0.653861475
+        position:
+          x: 14.589253426
+          y: -12.49104023
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-cb
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t2-a3-cb_t2-a3-ca
+          node: t2-a3-ca
+        - action: row_traversal
+          edge_id: t2-a3-cb_t2-a3-c0
+          node: t2-a3-c0
+      name: t2-a3-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614282
+          x: 0
+          y: 0
+          z: -0.653861475
+        position:
+          x: 15.911572456
+          y: -12.285264969
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-cb
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t2-a2-cb_t2-a2-ca
+          node: t2-a2-ca
+        - action: row_traversal
+          edge_id: t2-a2-cb_t2-a2-c0
+          node: t2-a2-c0
+      name: t2-a2-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614282
+          x: 0
+          y: 0
+          z: -0.653861475
+        position:
+          x: 17.253984451
+          y: -12.133831024
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-cb
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t2-a1-cb_t2-a1-ca
+          node: t2-a1-ca
+        - action: row_traversal
+          edge_id: t2-a1-cb_t2-a1-c0
+          node: t2-a1-c0
+      name: t2-a1-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614282
+          x: 0
+          y: 0
+          z: -0.653861475
+        position:
+          x: 18.582494736
+          y: -11.977831841
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: t2-a1-cb
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t1-a4-cb_t1-a4-ca
+          node: t1-a4-ca
+        - action: row_traversal
+          edge_id: t1-a4-cb_t1-a4-c0
+          node: t1-a4-c0
+      name: t1-a4-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.75708681
+          x: 0
+          y: 0
+          z: -0.65331429
+        position:
+          x: 22.475885391
+          y: -11.188367844
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-cb
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t1-a3-cb_t1-a3-ca
+          node: t1-a3-ca
+        - action: row_traversal
+          edge_id: t1-a3-cb_t1-a3-c0
+          node: t1-a3-c0
+      name: t1-a3-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.75708681
+          x: 0
+          y: 0
+          z: -0.65331429
+        position:
+          x: 23.78515625
+          y: -11.02477169
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-cb
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t1-a2-cb_t1-a2-ca
+          node: t1-a2-ca
+        - action: row_traversal
+          edge_id: t1-a2-cb_t1-a2-c0
+          node: t1-a2-c0
+      name: t1-a2-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.75708681
+          x: 0
+          y: 0
+          z: -0.65331429
+        position:
+          x: 25.083076477
+          y: -10.840136528
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-cb
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-cb
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: t1-a1-cb_t1-a1-ca
+          node: t1-a1-ca
+        - action: row_traversal
+          edge_id: t1-a1-cb_t1-a1-c0
+          node: t1-a1-c0
+      name: t1-a1-cb
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.75708681
+          x: 0
+          y: 0
+          z: -0.65331429
+        position:
+          x: 26.406053543
+          y: -10.638991356
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-cb
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-ca_t2-a4-cb
+          node: t2-a4-cb
+        - action: navigate_through_poses
+          edge_id: t2-a4-ca_WayPoint10
+          node: WayPoint10
+      name: t2-a4-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 14.258127
+          y: -10.248433
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.8
+        yaw_goal_tolerance: 0.150
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-ca
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-ca_t2-a3-cb
+          node: t2-a3-cb
+        - action: navigate_through_poses
+          edge_id: t2-a3-ca_WayPoint9
+          node: WayPoint9
+      name: t2-a3-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 15.580926
+          y: -10.061266
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.8
+        yaw_goal_tolerance: 0.150
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-ca
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-ca_t2-a2-cb
+          node: t2-a2-cb
+        - action: navigate_through_poses
+          edge_id: t2-a2-ca_WayPoint8
+          node: WayPoint8
+      name: t2-a2-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 16.920899
+          y: -9.87591
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.8
+        yaw_goal_tolerance: 0.150
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-ca
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-ca_t2-a1-cb
+          node: t2-a1-cb
+        - action: navigate_through_poses
+          edge_id: t2-a1-ca_WayPoint7
+          node: WayPoint7
+      name: t2-a1-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 18.252456
+          y: -9.69496
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-ca
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-ca_t1-a4-cb
+          node: t1-a4-cb
+        - action: navigate_through_poses
+          edge_id: t1-a4-ca_WayPoint6
+          node: WayPoint6
+      name: t1-a4-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 22.175374
+          y: -9.131892
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-ca
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-ca_t1-a3-cb
+          node: t1-a3-cb
+        - action: navigate_through_poses
+          edge_id: t1-a3-ca_WayPoint5
+          node: WayPoint5
+      name: t1-a3-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 23.477533
+          y: -8.939823
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.8
+        yaw_goal_tolerance: 0.150
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-ca
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-ca_t1-a2-cb
+          node: t1-a2-cb
+        - action: navigate_through_poses
+          edge_id: t1-a2-ca_WayPoint4
+          node: WayPoint4
+      name: t1-a2-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 24.77209
+          y: -8.752772
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-ca
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-ca
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-ca_t1-a1-cb
+          node: t1-a1-cb
+        - action: navigate_through_poses
+          edge_id: t1-a1-ca_WayPoint3
+          node: WayPoint3
+      name: t1-a1-ca
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 26.097917
+          y: -8.565163
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-ca
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: WayPoint10
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint10_WayPoint9
+          node: WayPoint9
+        - action: navigate_through_poses
+          edge_id: WayPoint10_t2-a4-ca
+          node: t2-a4-ca
+      name: WayPoint10
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 13.857959
+          y: -7.512923
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: WayPoint63
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.426953971
+          y: -1.5827564
+        - x: 0.954951286
+          y: -1.366716743
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+  - meta:
+      map: riseholme
+      node: WayPoint9
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint9_WayPoint10
+          node: WayPoint10
+        - action: navigate_through_poses
+          edge_id: WayPoint9_t2-a3-ca
+          node: t2-a3-ca
+        - action: navigate_through_poses
+          edge_id: WayPoint9_WayPoint8
+          node: WayPoint8
+      name: WayPoint9
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 15.204028
+          y: -7.310899
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        # This is a connector hand-off, not a requested terminal pose. The
+        # incoming and outgoing aisle paths require a direction change that a
+        # 4WS Ackermann base cannot complete in-place at this coordinate.
+        yaw_goal_tolerance: 0.150
+        roboflow:
+          enabled: false
+          roboflow_name: WayPoint56
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.504145145
+          y: -1.528110743
+        - x: 1.005795956
+          y: -1.267529964
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+  - meta:
+      map: riseholme
+      node: WayPoint7
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint7_t2-a1-ca
+          node: t2-a1-ca
+        - action: navigate_through_poses
+          edge_id: WayPoint7_WayPoint8
+          node: WayPoint8
+        - action: navigate_through_poses
+          edge_id: WayPoint7_QC
+          node: QC
+      name: WayPoint7
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 17.838252
+          y: -6.92087
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: WayPoint66
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.654149175
+          y: -1.57640636
+        - x: 0.991357863
+          y: -1.315243483
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+  - meta:
+      map: riseholme
+      node: WayPoint5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint5_WayPoint6
+          node: WayPoint6
+        - action: navigate_through_poses
+          edge_id: WayPoint5_t1-a3-ca
+          node: t1-a3-ca
+        - action: navigate_through_poses
+          edge_id: WayPoint5_WayPoint4
+          node: WayPoint4
+      name: WayPoint5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 23.080998
+          y: -6.13956
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: WayPoint73
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.567866266
+          y: -1.618186355
+        - x: 0.967507243
+          y: -1.308015347
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+  - meta:
+      map: riseholme
+      node: WayPoint6
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint6_WayPoint5
+          node: WayPoint5
+        - action: navigate_through_poses
+          edge_id: WayPoint6_t1-a4-ca
+          node: t1-a4-ca
+        - action: navigate_through_poses
+          edge_id: WayPoint6_QC
+          node: QC
+      name: WayPoint6
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 21.711411
+          y: -6.31297
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: WayPoint74
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.639209645
+          y: -1.63174519
+        - x: 0.936634523
+          y: -1.359887451
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+  - meta:
+      map: riseholme
+      node: WayPoint3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint3_t1-a1-ca
+          node: t1-a1-ca
+        - action: navigate_through_poses
+          edge_id: WayPoint3_WayPoint2
+          node: WayPoint2
+        - action: navigate_through_poses
+          edge_id: WayPoint3_WayPoint4
+          node: WayPoint4
+      name: WayPoint3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 25.684737
+          y: -5.736575
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: false
+          roboflow_name: WayPoint67
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.639109969
+          y: -1.664310575
+        - x: 0.955555677
+          y: -1.475649238
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+  - meta:
+      map: riseholme
+      node: WayPoint2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint2_WayPoint3
+          node: WayPoint3
+        - action: navigate_through_poses
+          edge_id: WayPoint2_WayPoint1
+          node: WayPoint1
+      name: WayPoint2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.689354695
+          x: 0
+          y: 0
+          z: -0.724423981
+        position:
+          x: 25.999985
+          y: -2.800142
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: WayPoint144
+      verts:
+        - x: 0.689999998
+          y: 0.287
+        - x: 0.287
+          y: 0.689999998
+        - x: -0.287
+          y: 0.689999998
+        - x: -0.689999998
+          y: 0.287
+        - x: -0.689999998
+          y: -0.287
+        - x: -0.287
+          y: -0.689999998
+        - x: 0.287
+          y: -0.689999998
+        - x: 0.689999998
+          y: -0.287
+  - meta:
+      map: riseholme
+      node: Office
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: Office_WayPoint1
+          node: WayPoint1
+      name: Office
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.707106781
+          x: 0
+          y: 0
+          z: -0.707106781
+        position:
+          x: 25.750015
+          y: 2.799861
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Office Drop Off
+      verts:
+        - x: -0.268447876
+          y: 0.700840473
+        - x: -1.017343521
+          y: 0.270284176
+        - x: -1.08588028
+          y: -0.547501802
+        - x: -0.496746063
+          y: -1.165823936
+        - x: 0.359563828
+          y: -1.040766954
+        - x: 0.839046478
+          y: -0.11228919
+        - x: 0.823705673
+          y: 0.478964329
+        - x: 0.357343674
+          y: 0.90849781
+  - meta:
+      map: riseholme
+      node: t2-a4-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-cz_t2-a4-cy
+          node: t2-a4-cy
+      name: t2-a4-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 18.324196
+          y: -37.834181
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-cz
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-cz_t2-a3-cy
+          node: t2-a3-cy
+      name: t2-a3-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 19.663886
+          y: -37.623867
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-cz
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-cz_t2-a2-cy
+          node: t2-a2-cy
+      name: t2-a2-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 20.986401
+          y: -37.411743
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-cz
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-cz_t2-a1-cy
+          node: t2-a1-cy
+      name: t2-a1-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 22.254832
+          y: -37.225214
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-cz
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-cz_t1-a4-cy
+          node: t1-a4-cy
+      name: t1-a4-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 26.201704
+          y: -36.600476
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-cz
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-cz_t1-a3-cy
+          node: t1-a3-cy
+      name: t1-a3-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 27.517034
+          y: -36.400073
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-cz
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-cz_t1-a2-cy
+          node: t1-a2-cy
+      name: t1-a2-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 28.842467
+          y: -36.209653
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-cz
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-cz
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-cz_t1-a1-cy
+          node: t1-a1-cy
+      name: t1-a1-cz
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 30.16413
+          y: -36.034792
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-cz
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-cy_t2-a4-c5
+          node: t2-a4-c5
+        - action: row_traversal
+          edge_id: t2-a4-cy_t2-a4-cz
+          node: t2-a4-cz
+      name: t2-a4-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 17.799872
+          y: -34.272567
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 2 - Aisle 4
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-cy_t2-a3-c5
+          node: t2-a3-c5
+        - action: row_traversal
+          edge_id: t2-a3-cy_t2-a3-cz
+          node: t2-a3-cz
+      name: t2-a3-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 19.137363
+          y: -34.062577
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 2 - Aisle 3
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-cy_t2-a2-c5
+          node: t2-a2-c5
+        - action: row_traversal
+          edge_id: t2-a2-cy_t2-a2-cz
+          node: t2-a2-cz
+      name: t2-a2-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 20.462354
+          y: -33.850088
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 2 - Aisle 2
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-cy_t2-a1-c5
+          node: t2-a1-c5
+        - action: row_traversal
+          edge_id: t2-a1-cy_t2-a1-cz
+          node: t2-a1-cz
+      name: t2-a1-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 21.737346
+          y: -33.662599
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 2 - Aisle 1
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-cy_t1-a4-c5
+          node: t1-a4-c5
+        - action: row_traversal
+          edge_id: t1-a4-cy_t1-a4-cz
+          node: t1-a4-cz
+      name: t1-a4-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 25.678483
+          y: -33.038699
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 1 - Aisle 4
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-cy_t1-a3-c5
+          node: t1-a3-c5
+        - action: row_traversal
+          edge_id: t1-a3-cy_t1-a3-cz
+          node: t1-a3-cz
+      name: t1-a3-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 26.990975
+          y: -32.838714
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 1 - Aisle 3
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-cy_t1-a2-c5
+          node: t1-a2-c5
+        - action: row_traversal
+          edge_id: t1-a2-cy_t1-a2-cz
+          node: t1-a2-cz
+      name: t1-a2-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 28.313467
+          y: -32.648729
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 1 - Aisle 2
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-cy
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-cy_t1-a1-c5
+          node: t1-a1-c5
+        - action: row_traversal
+          edge_id: t1-a1-cy_t1-a1-cz
+          node: t1-a1-cz
+      name: t1-a1-cy
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 29.635959
+          y: -32.473745
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.12
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Tunnel 1 - Aisle 1
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-c5_t2-a4-c4
+          node: t2-a4-c4
+        - action: row_traversal
+          edge_id: t2-a4-c5_t2-a4-cy
+          node: t2-a4-cy
+      name: t2-a4-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 17.402384
+          y: -31.575064
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-c5
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-c5_t2-a3-c4
+          node: t2-a3-c4
+        - action: row_traversal
+          edge_id: t2-a3-c5_t2-a3-cy
+          node: t2-a3-cy
+      name: t2-a3-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 18.729876
+          y: -31.362574
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-c5
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-c5_t2-a2-c4
+          node: t2-a2-c4
+        - action: row_traversal
+          edge_id: t2-a2-c5_t2-a2-cy
+          node: t2-a2-cy
+      name: t2-a2-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 20.049869
+          y: -31.150085
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: t2-a2-c5
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-c5_t2-a1-c4
+          node: t2-a1-c4
+        - action: row_traversal
+          edge_id: t2-a1-c5_t2-a1-cy
+          node: t2-a1-cy
+      name: t2-a1-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 21.349861
+          y: -30.962596
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-c5
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-c5_t1-a4-c4
+          node: t1-a4-c4
+        - action: row_traversal
+          edge_id: t1-a4-c5_t1-a4-cy
+          node: t1-a4-cy
+      name: t1-a4-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 25.2885
+          y: -30.363695
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-c5
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-c5_t1-a3-c4
+          node: t1-a3-c4
+        - action: row_traversal
+          edge_id: t1-a3-c5_t1-a3-cy
+          node: t1-a3-cy
+      name: t1-a3-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 26.615992
+          y: -30.176209
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-c5
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-c5_t1-a2-c4
+          node: t1-a2-c4
+        - action: row_traversal
+          edge_id: t1-a2-c5_t1-a2-cy
+          node: t1-a2-cy
+      name: t1-a2-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 27.938485
+          y: -29.986224
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-c5
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-c5
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-c5_t1-a1-c4
+          node: t1-a1-c4
+        - action: row_traversal
+          edge_id: t1-a1-c5_t1-a1-cy
+          node: t1-a1-cy
+      name: t1-a1-c5
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 29.263478
+          y: -29.81124
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-c5
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-c4_t2-a4-c3
+          node: t2-a4-c3
+        - action: row_traversal
+          edge_id: t2-a4-c4_t2-a4-c5
+          node: t2-a4-c5
+      name: t2-a4-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 16.989897
+          y: -28.702561
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-c4
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-c4_t2-a3-c3
+          node: t2-a3-c3
+        - action: row_traversal
+          edge_id: t2-a3-c4_t2-a3-c5
+          node: t2-a3-c5
+      name: t2-a3-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 18.31739
+          y: -28.505071
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-c4
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-c4_t2-a2-c3
+          node: t2-a2-c3
+        - action: row_traversal
+          edge_id: t2-a2-c4_t2-a2-c5
+          node: t2-a2-c5
+      name: t2-a2-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 19.637383
+          y: -28.305081
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-c4
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-c4_t2-a1-c3
+          node: t2-a1-c3
+        - action: row_traversal
+          edge_id: t2-a1-c4_t2-a1-c5
+          node: t2-a1-c5
+      name: t2-a1-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 20.942376
+          y: -28.112592
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-c4
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-c4_t1-a4-c3
+          node: t1-a4-c3
+        - action: row_traversal
+          edge_id: t1-a4-c4_t1-a4-c5
+          node: t1-a4-c5
+      name: t1-a4-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 24.878517
+          y: -27.52119
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-c4
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-c4_t1-a3-c3
+          node: t1-a3-c3
+        - action: row_traversal
+          edge_id: t1-a3-c4_t1-a3-c5
+          node: t1-a3-c5
+      name: t1-a3-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 26.201011
+          y: -27.326205
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-c4
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-c4_t1-a2-c3
+          node: t1-a2-c3
+        - action: row_traversal
+          edge_id: t1-a2-c4_t1-a2-c5
+          node: t1-a2-c5
+      name: t1-a2-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 27.526004
+          y: -27.15122
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-c4
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-c4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-c4_t1-a1-c3
+          node: t1-a1-c3
+        - action: row_traversal
+          edge_id: t1-a1-c4_t1-a1-c5
+          node: t1-a1-c5
+      name: t1-a1-c4
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 28.850998
+          y: -26.976235
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-c4
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-c3_t2-a4-c2
+          node: t2-a4-c2
+        - action: row_traversal
+          edge_id: t2-a4-c3_t2-a4-c4
+          node: t2-a4-c4
+      name: t2-a4-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 16.56241
+          y: -25.725058
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-c3
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-c3_t2-a3-c2
+          node: t2-a3-c2
+        - action: row_traversal
+          edge_id: t2-a3-c3_t2-a3-c4
+          node: t2-a3-c4
+      name: t2-a3-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 17.887404
+          y: -25.530067
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-c3
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-c3_t2-a2-c2
+          node: t2-a2-c2
+        - action: row_traversal
+          edge_id: t2-a2-c3_t2-a2-c4
+          node: t2-a2-c4
+      name: t2-a2-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 19.212398
+          y: -25.340078
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-c3
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-c3_t2-a1-c2
+          node: t2-a1-c2
+        - action: row_traversal
+          edge_id: t2-a1-c3_t2-a1-c4
+          node: t2-a1-c4
+      name: t2-a1-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 20.517391
+          y: -25.147589
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-c3
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-c3_t1-a4-c2
+          node: t1-a4-c2
+        - action: row_traversal
+          edge_id: t1-a4-c3_t1-a4-c4
+          node: t1-a4-c4
+      name: t1-a4-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 24.443535
+          y: -24.546186
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-c3
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-c3_t1-a3-c2
+          node: t1-a3-c2
+        - action: row_traversal
+          edge_id: t1-a3-c3_t1-a3-c4
+          node: t1-a3-c4
+      name: t1-a3-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 25.751029
+          y: -24.3512
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-c3
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-c3_t1-a2-c2
+          node: t1-a2-c2
+        - action: row_traversal
+          edge_id: t1-a2-c3_t1-a2-c4
+          node: t1-a2-c4
+      name: t1-a2-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 27.076024
+          y: -24.176214
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-c3
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-c3
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-c3_t1-a1-c2
+          node: t1-a1-c2
+        - action: row_traversal
+          edge_id: t1-a1-c3_t1-a1-c4
+          node: t1-a1-c4
+      name: t1-a1-c3
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 28.398518
+          y: -23.97623
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-c3
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-c2_t2-a4-c1
+          node: t2-a4-c1
+        - action: row_traversal
+          edge_id: t2-a4-c2_t2-a4-c3
+          node: t2-a4-c3
+      name: t2-a4-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 16.124923
+          y: -22.762555
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-c2
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-c2_t2-a3-c1
+          node: t2-a3-c1
+        - action: row_traversal
+          edge_id: t2-a3-c2_t2-a3-c3
+          node: t2-a3-c3
+      name: t2-a3-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 17.442417
+          y: -22.552564
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-c2
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-c2_t2-a2-c1
+          node: t2-a2-c1
+        - action: row_traversal
+          edge_id: t2-a2-c2_t2-a2-c3
+          node: t2-a2-c3
+      name: t2-a2-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 18.767412
+          y: -22.375074
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-c2
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-c2_t2-a1-c1
+          node: t2-a1-c1
+        - action: row_traversal
+          edge_id: t2-a1-c2_t2-a1-c3
+          node: t2-a1-c3
+      name: t2-a1-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 20.074906
+          y: -22.172585
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-c2
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-c2_t1-a4-c1
+          node: t1-a4-c1
+        - action: row_traversal
+          edge_id: t1-a4-c2_t1-a4-c3
+          node: t1-a4-c3
+      name: t1-a4-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 23.998552
+          y: -21.583681
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-c2
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-c2_t1-a3-c1
+          node: t1-a3-c1
+        - action: row_traversal
+          edge_id: t1-a3-c2_t1-a3-c3
+          node: t1-a3-c3
+      name: t1-a3-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 25.301047
+          y: -21.401195
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-c2
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-c2_t1-a2-c1
+          node: t1-a2-c1
+        - action: row_traversal
+          edge_id: t1-a2-c2_t1-a2-c3
+          node: t1-a2-c3
+      name: t1-a2-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 26.626042
+          y: -21.211209
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-c2
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-c2
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-c2_t1-a1-c1
+          node: t1-a1-c1
+        - action: row_traversal
+          edge_id: t1-a1-c2_t1-a1-c3
+          node: t1-a1-c3
+      name: t1-a1-c2
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 27.948538
+          y: -20.998725
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-c2
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-c1_t2-a4-c0
+          node: t2-a4-c0
+        - action: row_traversal
+          edge_id: t2-a4-c1_t2-a4-c2
+          node: t2-a4-c2
+      name: t2-a4-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 15.677435
+          y: -19.772552
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-c1
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-c1_t2-a3-c0
+          node: t2-a3-c0
+        - action: row_traversal
+          edge_id: t2-a3-c1_t2-a3-c2
+          node: t2-a3-c2
+      name: t2-a3-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 16.99493
+          y: -19.562561
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-c1
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-c1_t2-a2-c0
+          node: t2-a2-c0
+        - action: row_traversal
+          edge_id: t2-a2-c1_t2-a2-c2
+          node: t2-a2-c2
+      name: t2-a2-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 18.329925
+          y: -19.377571
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-c1
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-c1_t2-a1-c0
+          node: t2-a1-c0
+        - action: row_traversal
+          edge_id: t2-a1-c1_t2-a1-c2
+          node: t2-a1-c2
+      name: t2-a1-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 19.644921
+          y: -19.187581
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-c1
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t1-a4-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a4-c1_t1-a4-c0
+          node: t1-a4-c0
+        - action: row_traversal
+          edge_id: t1-a4-c1_t1-a4-c2
+          node: t1-a4-c2
+      name: t1-a4-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 23.553569
+          y: -18.631177
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r4.5-c1
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a3-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a3-c1_t1-a3-c0
+          node: t1-a3-c0
+        - action: row_traversal
+          edge_id: t1-a3-c1_t1-a3-c2
+          node: t1-a3-c2
+      name: t1-a3-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 24.863565
+          y: -18.43619
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r3.5-c1
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a2-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a2-c1_t1-a2-c0
+          node: t1-a2-c0
+        - action: row_traversal
+          edge_id: t1-a2-c1_t1-a2-c2
+          node: t1-a2-c2
+      name: t1-a2-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 26.188561
+          y: -18.233705
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r2.5-c1
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t1-a1-c1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t1-a1-c1_t1-a1-c0
+          node: t1-a1-c0
+        - action: row_traversal
+          edge_id: t1-a1-c1_t1-a1-c2
+          node: t1-a1-c2
+      name: t1-a1-c1
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.757086808
+          x: 0
+          y: 0
+          z: -0.653314293
+        position:
+          x: 27.513557
+          y: -18.036219
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r1.5-c1
+      verts:
+        - x: 0.384898373
+          y: -0.640564001
+        - x: 0.526728899
+          y: -0.212192546
+        - x: 0.44271776
+          y: 0.355626201
+        - x: 0.182920374
+          y: 0.72457514
+        - x: -0.384898373
+          y: 0.640564001
+        - x: -0.526728899
+          y: 0.212192546
+        - x: -0.44271776
+          y: -0.355626201
+        - x: -0.182920374
+          y: -0.72457514
+  - meta:
+      map: riseholme
+      node: t2-a4-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a4-c0_t2-a4-cb
+          node: t2-a4-cb
+        - action: row_traversal
+          edge_id: t2-a4-c0_t2-a4-c1
+          node: t2-a4-c1
+      name: t2-a4-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 15.229946
+          y: -16.770049
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r9.5-c0
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a3-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a3-c0_t2-a3-cb
+          node: t2-a3-cb
+        - action: row_traversal
+          edge_id: t2-a3-c0_t2-a3-c1
+          node: t2-a3-c1
+      name: t2-a3-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 16.557442
+          y: -16.582558
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r8.5-c0
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a2-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a2-c0_t2-a2-cb
+          node: t2-a2-cb
+        - action: row_traversal
+          edge_id: t2-a2-c0_t2-a2-c1
+          node: t2-a2-c1
+      name: t2-a2-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 17.897438
+          y: -16.400067
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r7.5-c0
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: t2-a1-c0
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: t2-a1-c0_t2-a1-cb
+          node: t2-a1-cb
+        - action: row_traversal
+          edge_id: t2-a1-c0_t2-a1-c1
+          node: t2-a1-c1
+      name: t2-a1-c0
+      nav_frame: ${transformation.topo_frame_id}
+      pose:
+        orientation:
+          w: 0.756614274
+          x: 0
+          y: 0
+          z: -0.653861484
+        position:
+          x: 19.217434
+          y: -16.225078
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: r6.5-c0
+      verts:
+        - x: 0.383971736
+          y: -0.641119882
+        - x: 0.526421525
+          y: -0.212953957
+        - x: 0.443231521
+          y: 0.354985674
+        - x: 0.183967895
+          y: 0.724309886
+        - x: -0.383971736
+          y: 0.641119882
+        - x: -0.526421525
+          y: 0.212953957
+        - x: -0.443231521
+          y: -0.354985674
+        - x: -0.183967895
+          y: -0.724309886
+  - meta:
+      map: riseholme
+      node: WayPoint4
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint4_WayPoint3
+          node: WayPoint3
+        - action: navigate_through_poses
+          edge_id: WayPoint4_WayPoint5
+          node: WayPoint5
+        - action: navigate_through_poses
+          edge_id: WayPoint4_t1-a2-ca
+          node: t1-a2-ca
+      name: WayPoint4
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 24.350278
+          y: -5.946787
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: ''
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.639109969
+          y: -1.664310575
+        - x: 0.955555677
+          y: -1.475649238
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+      nav_frame: ${transformation.topo_frame_id}
+  - meta:
+      map: riseholme
+      node: WayPoint8
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint8_WayPoint7
+          node: WayPoint7
+        - action: navigate_through_poses
+          edge_id: WayPoint8_WayPoint9
+          node: WayPoint9
+        - action: navigate_through_poses
+          edge_id: WayPoint8_t2-a2-ca
+          node: t2-a2-ca
+      name: WayPoint8
+      pose:
+        orientation:
+          w: 0.737277337
+          x: 0
+          y: 0
+          z: -0.675590208
+        position:
+          x: 16.514982
+          y: -7.094865
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: ''
+      verts:
+        - x: -0.389276952
+          y: 0.637912571
+        - x: -0.725811064
+          y: 0.17795302
+        - x: -0.637912571
+          y: -0.389276952
+        - x: -0.639109969
+          y: -1.664310575
+        - x: 0.955555677
+          y: -1.475649238
+        - x: 0.725811064
+          y: -0.17795302
+        - x: 0.637912571
+          y: 0.389276952
+        - x: 0.17795302
+          y: 0.725811064
+      nav_frame: ${transformation.topo_frame_id}
+  - meta:
+      map: riseholme
+      node: WayPoint1
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: WayPoint1_Office
+          node: Office
+        - action: navigate_through_poses
+          edge_id: WayPoint1_WayPoint2
+          node: WayPoint2
+      name: WayPoint1
+      pose:
+        orientation:
+          w: 0.722700862
+          x: 0
+          y: 0
+          z: -0.691160954
+        position:
+          x: 25.86562
+          y: 0.209999
+          z: 0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.20
+        roboflow:
+          enabled: false
+          roboflow_name: ''
+      verts:
+        - x: 0.638
+          y: 0.562
+        - x: 0.054
+          y: 0.848
+        - x: -0.562
+          y: 0.638
+        - x: -0.848
+          y: 0.054
+        - x: -0.638
+          y: -0.562
+        - x: -0.054
+          y: -0.848
+        - x: 0.562
+          y: -0.638
+        - x: 0.848
+          y: -0.054
+      nav_frame: ${transformation.topo_frame_id}
+  - meta:
+      map: riseholme
+      node: QC
+      pointset: riseholme
+      tag:
+        - node_semantic::indoor
+    node:
+      edges:
+        - action: navigate_through_poses
+          edge_id: QC_WayPoint6
+          node: WayPoint6
+        - action: navigate_through_poses
+          edge_id: QC_WayPoint7
+          node: WayPoint7
+      name: QC
+      pose:
+        orientation:
+          w: 0.077762377
+          x: 0
+          y: 0
+          z: -0.996971922
+        position:
+          x: 19.59994
+          y: -6.64437
+          z: 0
+      properties:
+        # Live Ackermann approaches converge repeatably at 0.15-0.19 m from
+        # this pose while satisfying the strict heading. A 0.12 m checker
+        # causes indefinite multi-arc corrections at the QC boundary.
+        xy_goal_tolerance: 0.20
+        yaw_goal_tolerance: 0.08
+        roboflow:
+          enabled: true
+          roboflow_name: Quality Control
+      verts:
+        - x: 0.638
+          y: 0.562
+        - x: 0.054
+          y: 0.848
+        - x: -0.562
+          y: 0.638
+        - x: -0.848
+          y: 0.054
+        - x: -0.638
+          y: -0.562
+        - x: -0.054
+          y: -0.848
+        - x: 0.562
+          y: -0.638
+        - x: 0.848
+          y: -0.054
+      nav_frame: ${transformation.topo_frame_id}

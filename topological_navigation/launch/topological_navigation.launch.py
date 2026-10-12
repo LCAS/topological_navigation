@@ -67,10 +67,14 @@ def generate_launch_description():
 
     # --- Default paths ---
     default_map = os.path.join(
-        topo_nav_share, 'config', 'mixed_actions_map.yaml',
+        topo_nav_share, 'config', 'riseholme.tmap3.yaml',
     )
     default_rviz = os.path.join(
         topo_nav_share, 'rviz', 'topological_navigation.rviz',
+    )
+
+    default_navigation_config_file = os.path.join(
+        topo_nav_share, 'config', 'topological_navigation_config.yaml',
     )
 
     # =================================================================
@@ -83,7 +87,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'navigation_config_file',
-            default_value='',
+            default_value=default_navigation_config_file,
             description=(
                 'Optional path to topological_navigation_config.yaml containing '
                 'the actions and definitions sections'
@@ -104,11 +108,11 @@ def generate_launch_description():
         # --- Fake Nav2 simulator parameters (passed through to
         # topological_nav_simulator/fake_nav2_server) ---
         DeclareLaunchArgument(
-            'robot_speed', default_value='0.8',
+            'robot_speed', default_value='1.5',
             description='Simulated robot linear speed (m/s)',
         ),
         DeclareLaunchArgument(
-            'angular_speed', default_value='1.5',
+            'angular_speed', default_value='4.0',
             description='Simulated robot angular speed (rad/s)',
         ),
         DeclareLaunchArgument(
@@ -128,11 +132,11 @@ def generate_launch_description():
             description='HTTP port of the topological navigation web app',
         ),
         DeclareLaunchArgument(
-            'initial_x', default_value='0.0',
+            'initial_x', default_value='25.75',
             description='Initial robot X position',
         ),
         DeclareLaunchArgument(
-            'initial_y', default_value='0.0',
+            'initial_y', default_value='2.8',
             description='Initial robot Y position',
         ),
         DeclareLaunchArgument(

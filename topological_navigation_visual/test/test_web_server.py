@@ -7,7 +7,7 @@ import os
 import pytest
 
 from topological_navigation_visual.web_server import (
-    DEFAULT_WEB_ROOT, WebAppServer, resolve_static_path,
+    DEFAULT_WEB_ROOT, WebAppServer, index_static_files, resolve_static_path,
 )
 from topological_navigation_visual.web_state import WebAppState
 
@@ -84,11 +84,18 @@ def test_index_uses_only_relative_urls():
 
 def test_resolve_static_path_blocks_traversal(tmp_path):
     (tmp_path / 'index.html').write_text('x')
-    assert resolve_static_path(str(tmp_path), '/') == \
-        os.path.realpath(str(tmp_path / 'index.html'))
-    assert resolve_static_path(str(tmp_path), '/../etc/passwd') is None
-    assert resolve_static_path(str(tmp_path), '/%2e%2e/etc/passwd') is None
-    assert resolve_static_path(str(tmp_path), '/missing.js') is None
+    (tmp_path / 'vendor').mkdir()
+    (tmp_path / 'vendor' / 'lib.js').write_text('y')
+    files = index_static_files(str(tmp_path))
+    index_path = os.path.realpath(str(tmp_path / 'index.html'))
+    assert resolve_static_path(files, '/') == \
+        (index_path, 'text/html; charset=utf-8')
+    assert resolve_static_path(files, '/vendor/lib.js')[1] == \
+        'application/javascript'
+    assert resolve_static_path(files, '/../etc/passwd') is None
+    assert resolve_static_path(files, '/%2e%2e/etc/passwd') is None
+    assert resolve_static_path(files, '/vendor/../index.html') is None
+    assert resolve_static_path(files, '/missing.js') is None
 
 
 def test_serves_index_and_vendor(server):

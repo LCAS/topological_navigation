@@ -139,7 +139,9 @@ front of it.
 
 Edit `web/app.js`, `web/style.css` or `web/index.html` directly; there is no
 build step. With `colcon build --symlink-install`, reloading the browser is
-enough to pick up changes. The backend is split into ROS-independent modules
+enough to pick up edits to existing files. New files are only served after a
+node restart, because the server indexes the allowed static files at startup
+and never maps request paths directly onto the filesystem. The backend is split into ROS-independent modules
 that can be tested with plain `pytest`:
 
 - `web_state.py`: thread-safe state store and map conversion

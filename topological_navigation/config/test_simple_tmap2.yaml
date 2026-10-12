@@ -1,0 +1,266 @@
+meta:
+  last_updated: 08-03-2026_12-00-00
+  origin:
+    latitude: 53.268642038
+    longitude: -0.524509505881
+    altitude: 0
+
+metric_map: test_map
+name: test_map
+pointset: test_map
+
+transformation:
+  topo_frame_id: test_map
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+definitions:
+  default_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+  goal_align_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+  row_traversal_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+
+actions:
+  navigate_to_pose:
+    composable: false
+    action_type: nav2_msgs.action.NavigateToPose
+    action_server: /navigate_to_pose
+    action_goal_template:
+      pose: # Nested to match geometry_msgs/PoseStamped
+        header:
+          frame_id: '${node.nav_frame}'
+        pose: '${node.pose}'
+      behavior_tree: '${definitions.default_bt}'
+
+  goal_align:
+    composable: false
+    action_type: nav2_msgs.action.NavigateToPose
+    action_server: /navigate_to_pose
+    action_goal_template:
+      pose: # Nested to match geometry_msgs/PoseStamped
+        header:
+          frame_id: '${node.nav_frame}'
+        pose: '${node.pose}'
+      behavior_tree: '${definitions.goal_align_bt}'
+
+  row_traversal:
+    composable: true
+    action_type: nav2_msgs.action.NavigateThroughPoses
+    action_server: /navigate_through_poses
+    action_goal_template:
+      poses: # Needs to be an array of PoseStamped objects
+        - header:
+            frame_id: '${node.nav_frame}'
+          pose: '${node.pose}'
+      behavior_tree: '${definitions.row_traversal_bt}'
+
+nodes:
+  - meta:
+      map: test_map
+      node: node0
+      pointset: test_map
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: node0_node1
+          node: node1
+          properties:
+            boundary_left: 0.4
+            boundary_right: 0.6
+      name: node0
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 0.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 6.28
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  - meta:
+      map: test_map
+      node: node1
+      pointset: test_map
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: node1_node2
+          node: node2
+          properties:
+            boundary_left: 0.4
+            boundary_right: 0.6
+      name: node1
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 2.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 6.28
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  - meta:
+      map: test_map
+      node: node2
+      pointset: test_map
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: node2_node3
+          node: node3
+          properties:
+            boundary_left: 0.4
+            boundary_right: 0.6
+      name: node2
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 4.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 6.28
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  - meta:
+      map: test_map
+      node: node3
+      pointset: test_map
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: node3_node4
+          node: node4
+          properties:
+            boundary_left: 0.4
+            boundary_right: 0.6
+      name: node3
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 6.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 6.28
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  - meta:
+      map: test_map
+      node: node4
+      pointset: test_map
+    node:
+      edges: []
+      name: node4
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 8.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 6.28
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5

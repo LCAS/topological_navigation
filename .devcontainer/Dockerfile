@@ -1,25 +1,25 @@
-FROM lcas.lincoln.ac.uk/lcas/ros:humble
+FROM ros:humble
 
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y upgrade \
-    && apt-get -y install --no-install-recommends ros-humble-desktop ros-humble-simulation bash-completion python3-colcon-common-extensions \
-        nano syslog-ng \
-        build-essential \
-        curl \
-        swig \
+RUN rm -rf /var/lib/apt/lists/* \
+    && apt-get update --fix-missing \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends --fix-missing \
+        ros-humble-desktop \
+        bash-completion \
+        python3-colcon-common-extensions \
         python3-pip \
-        ros-humble-rviz2 \
-        python3-rosinstall-generator \
-        wget
+        python3-vcstool \
+        python3-rosdep \
+        nano \
+        git \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -rm -d /home/lcas -s /bin/bash -g root -G sudo -u 1001 lcas
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/lcas/.bashrc
 
-RUN pip3 install bloom
-
-COPY *repos *.sh /tmp/.devcontainer/
+COPY *.sh /tmp/.devcontainer/
 RUN bash /tmp/.devcontainer/install.sh
 
 RUN mkdir -p /home/lcas/ws/src && ln -s /workspaces /home/lcas/ws/src/workspaces

@@ -1,9 +1,0 @@
-#string map_name
-string pointset
-string meta_category
----
-string[] name
-string[] description
-string[] goto_node
-string[] node_type
-bool[]   at_node

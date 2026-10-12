@@ -1,0 +1,1252 @@
+# =============================================================================
+# Complex topological map for comprehensive navigation testing.
+#
+# Layout (top-down view):
+#
+#  TopicNode                                                  Isolated
+#   (-5,0)                                                     (30,0)
+#     |
+#  Charging ──nav──► HN1 ──nav_poses──► HN2 ──nav_poses──► HN3 ──nav──► WP_E
+#   (0,0)          (5,0)              (10,0)              (15,0)        (20,0)
+#     ▲              │ ▲                │ ▲                │ ▲            │
+#     │             nav nav            nav nav            nav nav        nav
+#     │              ▼  │               ▼  │               ▼  │          │
+#     │           RowA0 │            RowB0  │           RowC0  │          ▼
+#     │           (5,-3)│           (10,-3) │          (15,-3) │      AlignDock
+#     │              │  │               │   │              │   │      (20,-10)
+#     │             row  │             row   │            row   │
+#     │              │  │               │   │              │   │
+#     │              ▼  │               ▼   │              ▼   │
+#     │           RowA1 │            RowB1  │           RowC1  │
+#     │           (5,-8)│           (10,-8) │          (15,-8) │
+#     │              │  │               │   │              │   │
+#     │             row  │             row   │            row   │
+#     │              │  │               │   │              │   │
+#     │              ▼  │               ▼   │              ▼   │
+#     │           RowA2 │            RowB2  │           RowC2  │
+#     │          (5,-13)│          (10,-13) │         (15,-13) │
+#     │              │  │               │   │              │   │
+#     │             row  │             row   │            row   │
+#     │              │  │               │   │              │   │
+#     │              ▼  │               ▼   │              ▼   │
+#     │           RowA3 │            RowB3  │           RowC3  │
+#     │          (5,-18)│          (10,-18) │         (15,-18) │
+#     │              │                 │                   │          NoGo
+#     │            align             align               align      (25,-10)
+#     │              ▼                 ▼                   ▼
+#     │            HS1 ──nav_poses──► HS2 ──nav_poses──► HS3 ──nav──► WP_SE
+#     │           (5,-20)           (10,-20)           (15,-20)      (20,-20)
+#     │              │                                                  │
+#     └──────nav─────┘                                                  │
+#                                          ◄────────────nav─────────────┘
+#
+# Edge types used:
+#   navigate_to_pose  (non-composable) – headland links, junctions
+#   navigate_to_poses (composable)     – headland traversals, multi-waypoint
+#   row_traversal     (composable)     – crop row segments with boundaries
+#   goal_align        (non-composable) – precision docking / row exit alignment
+#
+# Bidirectional edges: HN1↔HN2, HN2↔HN3, HS1↔HS2, HS2↔HS3,
+#                      HN1↔RowA0, HN2↔RowB0, HN3↔RowC0,
+#                      WP_E↔WP_SE, Charging↔HN1
+# Unidirectional edges: row traversals (southward only),
+#                       align exits (row end → headland south),
+#                       HN3→WP_E, WP_E→AlignDock, HS1→Charging,
+#                       WP_SE→Charging
+#
+# Special nodes:
+#   Isolated     – disconnected (connectivity test)
+#   NoGo         – no_go: true (restricted area)
+#   TopicNode    – localise_by_topic (topic-based localisation)
+#   AlignDock    – dead-end precision docking target
+# =============================================================================
+
+meta:
+  last_updated: 09-03-2026_12-00-00
+  origin:
+    latitude: 53.268642038
+    longitude: -0.524509505881
+    altitude: 0
+
+metric_map: complex_nav_test
+name: complex_nav_test
+pointset: complex_nav_test
+
+transformation:
+  topo_frame_id: complex_nav_test
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Definitions – behaviour trees referenced by actions
+# ─────────────────────────────────────────────────────────────────────────────
+definitions:
+  default_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+  goal_align_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+  row_traversal_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Actions – all four action types
+# ─────────────────────────────────────────────────────────────────────────────
+actions:
+  navigate_to_pose:
+    composable: false
+    action_type: nav2_msgs.action.NavigateToPose
+    action_server: /navigate_to_pose
+    action_goal_template:
+      pose:
+        header:
+          frame_id: '${node.nav_frame}'
+        pose: '${node.pose}'
+      behavior_tree: '${definitions.default_bt}'
+
+  navigate_to_poses:
+    composable: true
+    action_type: nav2_msgs.action.NavigateThroughPoses
+    action_server: /navigate_through_poses
+    action_goal_template:
+      poses:
+        - header:
+            frame_id: '${node.nav_frame}'
+          pose: '${node.pose}'
+      behavior_tree: '${definitions.default_bt}'
+
+  goal_align:
+    composable: false
+    action_type: nav2_msgs.action.NavigateToPose
+    action_server: /navigate_to_pose
+    action_goal_template:
+      pose:
+        header:
+          frame_id: '${node.nav_frame}'
+        pose: '${node.pose}'
+      behavior_tree: '${definitions.goal_align_bt}'
+
+  row_traversal:
+    composable: true
+    action_type: nav2_msgs.action.NavigateThroughPoses
+    action_server: /navigate_through_poses
+    action_goal_template:
+      poses:
+        - header:
+            frame_id: '${node.nav_frame}'
+          pose: '${node.pose}'
+      behavior_tree: '${definitions.row_traversal_bt}'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Nodes
+# ─────────────────────────────────────────────────────────────────────────────
+nodes:
+
+  # ========================= Charging Station ================================
+  - meta:
+      map: complex_nav_test
+      node: Charging
+      pointset: complex_nav_test
+      tag: ['charging_station', 'home']
+    node:
+      edges:
+        # Bidirectional: Charging <-> HN1
+        - action: navigate_to_pose
+          edge_id: Charging_HN1
+          node: HN1
+          properties:
+            max_speed: 1.0
+      name: Charging
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 0.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.1
+        yaw_goal_tolerance: 0.05
+        semantics: charging_station
+        priority: 10
+      verts:
+        - x: -1.5
+          y: -1.5
+        - x: 1.5
+          y: -1.5
+        - x: 1.5
+          y: 1.5
+        - x: -1.5
+          y: 1.5
+
+  # ==================== Headland North =======================================
+  - meta:
+      map: complex_nav_test
+      node: HN1
+      pointset: complex_nav_test
+      tag: ['headland', 'junction']
+    node:
+      edges:
+        # Bidirectional: HN1 <-> Charging
+        - action: navigate_to_pose
+          edge_id: HN1_Charging
+          node: Charging
+          properties:
+            max_speed: 1.0
+        # Bidirectional: HN1 <-> HN2 (composable navigate_to_poses)
+        - action: navigate_to_poses
+          edge_id: HN1_HN2
+          node: HN2
+          properties:
+            max_speed: 0.8
+        # Unidirectional: HN1 -> RowA0 (enter row A from north)
+        - action: navigate_to_pose
+          edge_id: HN1_RowA0
+          node: RowA0
+          properties:
+            max_speed: 0.5
+      name: HN1
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 5.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: headland_junction
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  - meta:
+      map: complex_nav_test
+      node: HN2
+      pointset: complex_nav_test
+      tag: ['headland', 'junction']
+    node:
+      edges:
+        # Bidirectional: HN2 <-> HN1
+        - action: navigate_to_poses
+          edge_id: HN2_HN1
+          node: HN1
+          properties:
+            max_speed: 0.8
+        # Bidirectional: HN2 <-> HN3
+        - action: navigate_to_poses
+          edge_id: HN2_HN3
+          node: HN3
+          properties:
+            max_speed: 0.8
+        # Unidirectional: HN2 -> RowB0 (enter row B from north)
+        - action: navigate_to_pose
+          edge_id: HN2_RowB0
+          node: RowB0
+          properties:
+            max_speed: 0.5
+      name: HN2
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 10.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: headland_junction
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  - meta:
+      map: complex_nav_test
+      node: HN3
+      pointset: complex_nav_test
+      tag: ['headland', 'junction']
+    node:
+      edges:
+        # Bidirectional: HN3 <-> HN2
+        - action: navigate_to_poses
+          edge_id: HN3_HN2
+          node: HN2
+          properties:
+            max_speed: 0.8
+        # Unidirectional: HN3 -> RowC0 (enter row C from north)
+        - action: navigate_to_pose
+          edge_id: HN3_RowC0
+          node: RowC0
+          properties:
+            max_speed: 0.5
+        # Unidirectional: HN3 -> WP_E
+        - action: navigate_to_pose
+          edge_id: HN3_WP_E
+          node: WP_E
+          properties:
+            max_speed: 0.8
+      name: HN3
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 15.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: headland_junction
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  # ========================= Row A (x=5) ====================================
+  - meta:
+      map: complex_nav_test
+      node: RowA0
+      pointset: complex_nav_test
+      tag: ['row_entry']
+    node:
+      edges:
+        # Bidirectional: RowA0 -> HN1 (return to headland)
+        - action: navigate_to_pose
+          edge_id: RowA0_HN1
+          node: HN1
+          properties:
+            max_speed: 0.5
+        # Unidirectional: RowA0 -> RowA1 (row traversal south)
+        - action: row_traversal
+          edge_id: RowA0_RowA1
+          node: RowA1
+          properties:
+            boundary_left: 0.4
+            boundary_right: 0.4
+            max_speed: 0.3
+            row_type: vineyard
+      name: RowA0
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 5.0
+          y: -3.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.05
+        semantics: row_entry
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  - meta:
+      map: complex_nav_test
+      node: RowA1
+      pointset: complex_nav_test
+      tag: ['row_mid']
+    node:
+      edges:
+        # Unidirectional: RowA1 -> RowA2 (continue row traversal)
+        - action: row_traversal
+          edge_id: RowA1_RowA2
+          node: RowA2
+          properties:
+            boundary_left: 0.4
+            boundary_right: 0.4
+            max_speed: 0.3
+            row_type: vineyard
+      name: RowA1
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 5.0
+          y: -8.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.1
+        semantics: row_mid
+      verts:
+        - x: -0.4
+          y: -0.4
+        - x: 0.4
+          y: -0.4
+        - x: 0.4
+          y: 0.4
+        - x: -0.4
+          y: 0.4
+
+  - meta:
+      map: complex_nav_test
+      node: RowA2
+      pointset: complex_nav_test
+      tag: ['row_mid']
+    node:
+      edges:
+        # Unidirectional: RowA2 -> RowA3 (continue row traversal)
+        - action: row_traversal
+          edge_id: RowA2_RowA3
+          node: RowA3
+          properties:
+            boundary_left: 0.4
+            boundary_right: 0.4
+            max_speed: 0.3
+            row_type: vineyard
+      name: RowA2
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 5.0
+          y: -13.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.1
+        semantics: row_mid
+      verts:
+        - x: -0.4
+          y: -0.4
+        - x: 0.4
+          y: -0.4
+        - x: 0.4
+          y: 0.4
+        - x: -0.4
+          y: 0.4
+
+  - meta:
+      map: complex_nav_test
+      node: RowA3
+      pointset: complex_nav_test
+      tag: ['row_exit']
+    node:
+      edges:
+        # Unidirectional: RowA3 -> HS1 (goal_align exit to south headland)
+        - action: goal_align
+          edge_id: RowA3_HS1
+          node: HS1
+      name: RowA3
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 5.0
+          y: -18.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.1
+        yaw_goal_tolerance: 0.05
+        semantics: row_exit
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  # ========================= Row B (x=10) ===================================
+  - meta:
+      map: complex_nav_test
+      node: RowB0
+      pointset: complex_nav_test
+      tag: ['row_entry']
+    node:
+      edges:
+        # Bidirectional: RowB0 -> HN2
+        - action: navigate_to_pose
+          edge_id: RowB0_HN2
+          node: HN2
+          properties:
+            max_speed: 0.5
+        # Unidirectional: RowB0 -> RowB1
+        - action: row_traversal
+          edge_id: RowB0_RowB1
+          node: RowB1
+          properties:
+            boundary_left: 0.5
+            boundary_right: 0.5
+            max_speed: 0.25
+            row_type: orchard
+            roboflow:
+              enabled: true
+              confidence: 0.7
+      name: RowB0
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 10.0
+          y: -3.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.05
+        semantics: row_entry
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  - meta:
+      map: complex_nav_test
+      node: RowB1
+      pointset: complex_nav_test
+      tag: ['row_mid']
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: RowB1_RowB2
+          node: RowB2
+          properties:
+            boundary_left: 0.5
+            boundary_right: 0.5
+            max_speed: 0.25
+            row_type: orchard
+            roboflow:
+              enabled: true
+              confidence: 0.7
+      name: RowB1
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 10.0
+          y: -8.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.1
+        semantics: row_mid
+      verts:
+        - x: -0.4
+          y: -0.4
+        - x: 0.4
+          y: -0.4
+        - x: 0.4
+          y: 0.4
+        - x: -0.4
+          y: 0.4
+
+  - meta:
+      map: complex_nav_test
+      node: RowB2
+      pointset: complex_nav_test
+      tag: ['row_mid']
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: RowB2_RowB3
+          node: RowB3
+          properties:
+            boundary_left: 0.5
+            boundary_right: 0.5
+            max_speed: 0.25
+            row_type: orchard
+      name: RowB2
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 10.0
+          y: -13.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.1
+        semantics: row_mid
+      verts:
+        - x: -0.4
+          y: -0.4
+        - x: 0.4
+          y: -0.4
+        - x: 0.4
+          y: 0.4
+        - x: -0.4
+          y: 0.4
+
+  - meta:
+      map: complex_nav_test
+      node: RowB3
+      pointset: complex_nav_test
+      tag: ['row_exit']
+    node:
+      edges:
+        - action: goal_align
+          edge_id: RowB3_HS2
+          node: HS2
+      name: RowB3
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 10.0
+          y: -18.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.1
+        yaw_goal_tolerance: 0.05
+        semantics: row_exit
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  # ========================= Row C (x=15) ===================================
+  - meta:
+      map: complex_nav_test
+      node: RowC0
+      pointset: complex_nav_test
+      tag: ['row_entry']
+    node:
+      edges:
+        # Bidirectional: RowC0 -> HN3
+        - action: navigate_to_pose
+          edge_id: RowC0_HN3
+          node: HN3
+          properties:
+            max_speed: 0.5
+        # Unidirectional: RowC0 -> RowC1
+        - action: row_traversal
+          edge_id: RowC0_RowC1
+          node: RowC1
+          properties:
+            boundary_left: 0.6
+            boundary_right: 0.6
+            max_speed: 0.2
+            row_type: crop_row
+      name: RowC0
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 15.0
+          y: -3.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.05
+        semantics: row_entry
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  - meta:
+      map: complex_nav_test
+      node: RowC1
+      pointset: complex_nav_test
+      tag: ['row_mid']
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: RowC1_RowC2
+          node: RowC2
+          properties:
+            boundary_left: 0.6
+            boundary_right: 0.6
+            max_speed: 0.2
+            row_type: crop_row
+      name: RowC1
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 15.0
+          y: -8.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.1
+        semantics: row_mid
+      verts:
+        - x: -0.4
+          y: -0.4
+        - x: 0.4
+          y: -0.4
+        - x: 0.4
+          y: 0.4
+        - x: -0.4
+          y: 0.4
+
+  - meta:
+      map: complex_nav_test
+      node: RowC2
+      pointset: complex_nav_test
+      tag: ['row_mid']
+    node:
+      edges:
+        - action: row_traversal
+          edge_id: RowC2_RowC3
+          node: RowC3
+          properties:
+            boundary_left: 0.6
+            boundary_right: 0.6
+            max_speed: 0.2
+            row_type: crop_row
+      name: RowC2
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 15.0
+          y: -13.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.15
+        yaw_goal_tolerance: 0.1
+        semantics: row_mid
+      verts:
+        - x: -0.4
+          y: -0.4
+        - x: 0.4
+          y: -0.4
+        - x: 0.4
+          y: 0.4
+        - x: -0.4
+          y: 0.4
+
+  - meta:
+      map: complex_nav_test
+      node: RowC3
+      pointset: complex_nav_test
+      tag: ['row_exit']
+    node:
+      edges:
+        - action: goal_align
+          edge_id: RowC3_HS3
+          node: HS3
+      name: RowC3
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 15.0
+          y: -18.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.1
+        yaw_goal_tolerance: 0.05
+        semantics: row_exit
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  # ==================== Headland South =======================================
+  - meta:
+      map: complex_nav_test
+      node: HS1
+      pointset: complex_nav_test
+      tag: ['headland', 'junction']
+    node:
+      edges:
+        # Bidirectional: HS1 <-> HS2 (composable navigate_to_poses)
+        - action: navigate_to_poses
+          edge_id: HS1_HS2
+          node: HS2
+          properties:
+            max_speed: 0.8
+        # Unidirectional: HS1 -> Charging (return home shortcut)
+        - action: navigate_to_pose
+          edge_id: HS1_Charging
+          node: Charging
+          properties:
+            max_speed: 1.0
+      name: HS1
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 5.0
+          y: -20.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: headland_junction
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  - meta:
+      map: complex_nav_test
+      node: HS2
+      pointset: complex_nav_test
+      tag: ['headland', 'junction']
+    node:
+      edges:
+        # Bidirectional: HS2 <-> HS1
+        - action: navigate_to_poses
+          edge_id: HS2_HS1
+          node: HS1
+          properties:
+            max_speed: 0.8
+        # Bidirectional: HS2 <-> HS3
+        - action: navigate_to_poses
+          edge_id: HS2_HS3
+          node: HS3
+          properties:
+            max_speed: 0.8
+      name: HS2
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 10.0
+          y: -20.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: headland_junction
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  - meta:
+      map: complex_nav_test
+      node: HS3
+      pointset: complex_nav_test
+      tag: ['headland', 'junction']
+    node:
+      edges:
+        # Bidirectional: HS3 <-> HS2
+        - action: navigate_to_poses
+          edge_id: HS3_HS2
+          node: HS2
+          properties:
+            max_speed: 0.8
+        # Unidirectional: HS3 -> WP_SE
+        - action: navigate_to_pose
+          edge_id: HS3_WP_SE
+          node: WP_SE
+          properties:
+            max_speed: 0.8
+      name: HS3
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 15.0
+          y: -20.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: headland_junction
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  # ==================== Eastern Waypoints ====================================
+  - meta:
+      map: complex_nav_test
+      node: WP_E
+      pointset: complex_nav_test
+      tag: ['waypoint']
+    node:
+      edges:
+        # Bidirectional: WP_E <-> WP_SE
+        - action: navigate_to_pose
+          edge_id: WP_E_WP_SE
+          node: WP_SE
+          properties:
+            max_speed: 0.8
+        # Unidirectional: WP_E -> AlignDock (precision docking)
+        - action: goal_align
+          edge_id: WP_E_AlignDock
+          node: AlignDock
+      name: WP_E
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 20.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: waypoint
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  - meta:
+      map: complex_nav_test
+      node: WP_SE
+      pointset: complex_nav_test
+      tag: ['waypoint']
+    node:
+      edges:
+        # Bidirectional: WP_SE <-> WP_E
+        - action: navigate_to_pose
+          edge_id: WP_SE_WP_E
+          node: WP_E
+          properties:
+            max_speed: 0.8
+        # Unidirectional: WP_SE -> Charging (long return path)
+        - action: navigate_to_pose
+          edge_id: WP_SE_Charging
+          node: Charging
+          properties:
+            max_speed: 1.0
+      name: WP_SE
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 20.0
+          y: -20.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+        semantics: waypoint
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  # ========================= AlignDock (dead-end) ============================
+  - meta:
+      map: complex_nav_test
+      node: AlignDock
+      pointset: complex_nav_test
+      tag: ['docking_station']
+    node:
+      edges:
+        # Unidirectional: AlignDock -> WP_E (undock and leave)
+        - action: navigate_to_pose
+          edge_id: AlignDock_WP_E
+          node: WP_E
+          properties:
+            max_speed: 0.3
+      name: AlignDock
+      nav_frame: map  # override: use 'map' frame instead of topo_frame_id
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: -0.707
+        position:
+          x: 20.0
+          y: -10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.02
+        yaw_goal_tolerance: 0.01
+        semantics: docking_station
+        dock_type: precision
+      verts:
+        - x: -0.3
+          y: -0.3
+        - x: 0.3
+          y: -0.3
+        - x: 0.3
+          y: 0.3
+        - x: -0.3
+          y: 0.3
+
+  # ========================= Isolated node (disconnected) ====================
+  - meta:
+      map: complex_nav_test
+      node: Isolated
+      pointset: complex_nav_test
+      tag: ['isolated', 'test']
+    node:
+      edges: []
+      name: Isolated
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 30.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 6.28
+        semantics: isolated
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5
+
+  # ========================= No-Go Zone (restricted) ========================
+  - meta:
+      map: complex_nav_test
+      node: NoGo
+      pointset: complex_nav_test
+      tag: ['no_go']
+    node:
+      edges: []
+      name: NoGo
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 25.0
+          y: -10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 6.28
+        no_go: true
+        semantics: restricted_area
+      verts:
+        - x: -2.0
+          y: -2.0
+        - x: 2.0
+          y: -2.0
+        - x: 2.0
+          y: 2.0
+        - x: -2.0
+          y: 2.0
+
+  # ========================= Topic Localisation Node =========================
+  - meta:
+      map: complex_nav_test
+      node: TopicNode
+      pointset: complex_nav_test
+      tag: ['topic_localise']
+    node:
+      edges:
+        # Unidirectional: TopicNode -> Charging
+        - action: navigate_to_pose
+          edge_id: TopicNode_Charging
+          node: Charging
+          properties:
+            max_speed: 0.5
+      localise_by_topic: '{"topic": "/special_zone", "field": "data", "val": "active", "localise_anywhere": true, "persistency": 5}'
+      name: TopicNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: -5.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.5
+        yaw_goal_tolerance: 6.28
+        semantics: special_zone
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0

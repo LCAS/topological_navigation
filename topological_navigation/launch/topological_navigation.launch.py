@@ -9,6 +9,7 @@ Launches (in order):
     3. Fake Nav2 simulator -- virtual robot + fake action servers
     4. Topological map visualiser -- RViz markers
     5. RViz -- with a pre-configured display layout
+    6. Topological web app -- browser UI on http://localhost:8083/
 
 Usage
 -----
@@ -31,6 +32,13 @@ Disable RViz and/or the fake Nav2 server::
 
     ros2 launch topological_navigation topological_navigation.launch.py \
         rviz:=false fake_nav2:=false
+
+Disable the web app or change its port::
+
+    ros2 launch topological_navigation topological_navigation.launch.py \
+        web_app:=false
+    ros2 launch topological_navigation topological_navigation.launch.py \
+        web_app_port:=8090
 """
 
 import os
@@ -41,6 +49,7 @@ from launch.actions import DeclareLaunchArgument, TimerAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -81,6 +90,14 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'fake_nav2', default_value='true',
             description='Launch the fake Nav2 simulator server (true/false)',
+        ),
+        DeclareLaunchArgument(
+            'web_app', default_value='true',
+            description='Launch the topological navigation web app (true/false)',
+        ),
+        DeclareLaunchArgument(
+            'web_app_port', default_value='8083',
+            description='HTTP port of the topological navigation web app',
         ),
         DeclareLaunchArgument(
             'initial_x', default_value='0.0',
@@ -202,6 +219,27 @@ def generate_launch_description():
                     arguments=[
                         '-d', LaunchConfiguration('rviz_config'),
                     ],
+                ),
+            ],
+        ),
+
+        # =============================================================
+        # 7. Topological web app (delayed 4 s)
+        # =============================================================
+        TimerAction(
+            period=4.0,
+            condition=IfCondition(LaunchConfiguration('web_app')),
+            actions=[
+                Node(
+                    package='topological_navigation_visual',
+                    executable='topological_web_app.py',
+                    name='topological_web_app',
+                    output='screen',
+                    parameters=[{
+                        'port': ParameterValue(
+                            LaunchConfiguration('web_app_port'), value_type=int,
+                        ),
+                    }],
                 ),
             ],
         ),

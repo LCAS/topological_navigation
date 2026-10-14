@@ -5,12 +5,16 @@
 	"workspaceFolder": "/workspace/src",
 	"updateRemoteUserUID": true,
 	
-	"forwardPorts": ["vnc:5801"],
+	"forwardPorts": [8083, "vnc:5801"],
 	"portsAttributes": {
+		"8083": { "label": "Topological Navigation web app", "onAutoForward": "notify" },
 		"vnc:5801": { "label": "novnc" }
 	},	
 
 	"customizations": {
+		"codespaces": {
+			"openFiles": ["ROSCON26.md"]
+		},
 		"vscode": {
 			"extensions": [
 				"ms-python.python",

@@ -6,6 +6,8 @@ Originally developed for the [STRANDS](https://strands-project.eu/) long-term au
 
 > **ROS 2 Only** — version 4.0.0+ is ROS 2 exclusive (Humble / Iron). For ROS 1 support use version 3.x or earlier.
 
+> **ROSCon UK 2026 workshop?** To try topological navigation in your browser with nothing to install, follow [ROSCON26.md](ROSCON26.md) (GitHub Codespaces, branch `roscon26`).
+
 ---
 
 ## Table of Contents

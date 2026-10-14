@@ -21,8 +21,7 @@ services:
       - ../:/workspace/src:cached
     stdin_open: true
     tty: true
-    networks:
-      - ros_net
+    network_mode: service:vnc
     depends_on: 
       - vnc
     environment:

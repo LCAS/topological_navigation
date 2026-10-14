@@ -89,7 +89,7 @@ Useful launch arguments (all optional):
 
 | Argument | Default | Meaning |
 |---|---|---|
-| `map_path` | Riseholme map | Absolute path to a `.tmap2.yaml` or `.tmap3.yaml` map |
+| `map_path` | Riseholme map [google maps](https://maps.app.goo.gl/Cha3CtPmiAZJW1iX7)| Absolute path to a `.tmap2.yaml` or `.tmap3.yaml` map |
 | `rviz` | `true` | Start RViz (shown on the noVNC desktop, port 5801) |
 | `web_app` | `true` | Start the web app |
 | `web_app_port` | `8083` | Port of the web app |

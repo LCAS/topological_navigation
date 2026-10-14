@@ -36,7 +36,6 @@ LABEL org.opencontainers.image.target="deps_installed"
 
 COPY --from=pkg_xmls_only /tmp/pkg-only /tmp/pkg-only
 
-# runs rosdep and uses JABAS_PLATFORM and JABAS_HARDWARE_INTERFACE to install only the correct dependencies for the platform, resolving dependencies recursively from the top-level package navstack_bringup. This is done in a separate stage so that the rosdep cache is only invalidated when package.xml files change, not on every source-tree modification.
 RUN echo "Installing dependencies" && \
     cd /tmp/pkg-only && \
     echo "Running rosdep update..."  && \

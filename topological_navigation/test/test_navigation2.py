@@ -1054,8 +1054,13 @@ def test_execute_segment_exception_logs_failure_and_returns_false():
     server._publish_current_edge = lambda *_a, **_kw: None
     server._publish_segment_boundary = lambda *_a, **_kw: None
     server._goal_reached = False
+    status_events = []
+    server._publish_move_status = lambda *args: status_events.append(
+        ('status', args),
+    )
 
     def _raise(*_a, **_kw):
+        status_events.append(('dispatch', None))
         raise RuntimeError('nav2 client exploded')
 
     server._send_nav2_goal = _raise
@@ -1064,6 +1069,10 @@ def test_execute_segment_exception_logs_failure_and_returns_false():
 
     assert result is False
     assert server._pending_segment is None
+    assert status_events == [
+        ('status', ('WP2', 'NavigateToPose', 'EXECUTING')),
+        ('dispatch', None),
+    ]
     assert len(server._published) == 1
     assert server._published[0].status == 'failed'
     assert 'nav2 client exploded' in server._published[0].failure_reason

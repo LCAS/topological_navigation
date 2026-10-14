@@ -2686,6 +2686,9 @@ class TopologicalNavServer(rclpy.node.Node):
         info = self._action_clients.get(action)
         client = info['client'] if info else None
         try:
+            self._publish_move_status(
+                segment.last_target or "?", action, "EXECUTING",
+            )
             try:
                 status = self._send_nav2_goal(goal, action_client=client)
             finally:

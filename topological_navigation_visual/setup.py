@@ -8,6 +8,10 @@ setup(
     name=package_name,
     version='1.0.0',
     packages=find_packages(),
+    # Bundled (offline) web front end for topological_web_app.py
+    package_data={
+        package_name: ['web/*.html', 'web/*.js', 'web/*.css', 'web/vendor/*'],
+    },
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -29,6 +33,9 @@ setup(
 
             # Route and occupancy visualization
             'topological_visual.py = topological_navigation_visual.scripts.topological_visual:main',
+
+            # Web app (map, robot position, route, goals) on port 8083
+            'topological_web_app.py = topological_navigation_visual.scripts.topological_web_app:main',
 
             # Policy visualization
             'policy_marker.py = topological_navigation_visual.policy_marker:main',

@@ -4,7 +4,7 @@ A ROS 2 framework for **graph-based topological navigation** of autonomous mobil
 
 Originally developed for the [STRANDS](https://strands-project.eu/) long-term autonomy project, this framework is actively used in agricultural robotics for autonomous navigation in vineyards, orchards, and crop rows.
 
-> **ROS 2 Only** — version 4.0.0+ is ROS 2 exclusive (Humble / Iron). For ROS 1 support use version 3.x or earlier.
+> **ROS 2 Only** — version 4.0.0+ is ROS 2 exclusive (CI-tested on Humble and Jazzy). For ROS 1 support use version 3.x or earlier.
 
 > **ROSCon UK 2026 workshop?** To try topological navigation in your browser with nothing to install, follow [ROSCON26.md](ROSCON26.md) (GitHub Codespaces, branch `roscon26`).
 
@@ -127,12 +127,16 @@ Originally developed for the [STRANDS](https://strands-project.eu/) long-term au
 | `scripts/map_manager2.py` | Loads `.tmap2.yaml` maps, validates them against JSON schema, publishes to ROS topics |
 | `scripts/manual_topomapping.py` | Joystick-driven waypoint recording for field mapping |
 | `scripts/map_recorder.py` | ROS 2 action-driven topological map recorder with loop closure, latched `/recorded_tmap` preview, and load/save services |
+| `scripts/topo_stats.py` | CLI for inspecting, merging and reporting on the SQLite navigation statistics database (see [doc/TOPO_STATS.md](topological_navigation/doc/TOPO_STATS.md)) |
+| `nav_stats_db.py` | SQLite persistence of per-edge traversal statistics (enabled via the `stats_db_path` parameter of `navigation2.py`) |
+| `coverage_analysis.py` | Route sign-off coverage analysis of recorded traversal statistics (used by `topo_stats.py coverage`) |
+| `topomap_to_map_image.py` | Generate a Nav2 map image (PNG + YAML) from a topological map by buffering its edges |
 | `map_recorder_utils.py` | Pure-Python map-building core used by `map_recorder.py` (node/edge creation, loop closure, bidirectional edges) |
 | `networkx_utils.py` | NetworkX graph construction, KD-tree spatial indexing, point-in-polygon, edge distance calculations |
 | `navigation_graph.py` | Navigation state machine, route planning, segment merging |
 | `tmap_utils.py` | YAML map loading utilities |
 | `validate_map.py` | CLI tool for topological map validation against schema |
-| `convert_tmap.py` | Convert between topological map format versions |
+| `convert_tmap.py` | Convert legacy topological maps to the tmap3 format |
 | `map_analyser.py` | Standalone CLI (`analyse`/`check`/`svg`/`minify`/`merge`) for analysing, validating, rendering, minifying, and merging topological maps — runs without ROS 2 |
 | `map_merger.py` | Core logic for merging multiple topological maps into one schema-valid map, with GPS-based reprojection and name deduplication (used by `map_analyser.py merge`) |
 
@@ -144,7 +148,7 @@ Originally developed for the [STRANDS](https://strands-project.eu/) long-term au
 | **Version** | 3.0.5 |
 | **Purpose** | ROS 2 message, service, and action interface definitions |
 
-Defines 16 message types, 9 service types, and 3 action types used across the navigation stack. See [Custom Message, Service & Action Definitions](#custom-message-service--action-definitions) below for full details.
+Defines 17 message types, 10 service types, and 4 action types used across the navigation stack. See [Custom Message, Service & Action Definitions](#custom-message-service--action-definitions) below for full details.
 
 ### topological_navigation_visual
 
@@ -179,8 +183,8 @@ Provides `NavigateToPose`, `NavigateThroughPoses`, and `FollowWaypoints` action 
 
 ### Prerequisites
 
-- **ROS 2** Humble or Iron
-- **Python 3.8+**
+- **ROS 2** Humble or Jazzy
+- **Python 3.10+**
 - **Nav2** (for real robot deployment; the simulator replaces it for testing)
 
 ### Build from Source
@@ -208,8 +212,10 @@ source install/setup.bash
 | `networkx` | 2.5 | Graph data structures and algorithms |
 | `scipy` | 1.5 | KD-tree spatial indexing |
 | `numpy` | 1.19 | Numerical operations |
+| `pyyaml` | — | Map loading and saving |
 | `jsonschema` | — | Map schema validation |
 | `pyproj` | — | Geodetic (lat/long) to local ENU projection, used by `map_analyser.py merge` |
+| `Pillow` | — | Image output of `topomap_to_map_image.py` (declared in `setup.py` / `package.xml`, not in `requirements.txt`) |
 
 All pure-Python dependencies are also listed in [requirements.txt](requirements.txt) at the repository root.
 
@@ -266,6 +272,7 @@ Localisation and the fake Nav2 server start in parallel:
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `map_path` | `<share>/config/riseholme.tmap3.yaml` | Absolute path to a `.tmap2.yaml` or `.tmap3.yaml` topological map |
+| `navigation_config_file` | `<share>/config/topological_navigation_config.yaml` | YAML file with the `actions` and `definitions` sections, passed to the map manager as `--navigation-config-file` |
 | `rviz_config` | `<share>/rviz/topological_navigation.rviz` | Path to the RViz config file |
 | `rviz` | `true` | Launch RViz (`true`/`false`) |
 | `fake_nav2` | `true` | Launch the fake Nav2 simulator server (`true`/`false`) |
@@ -275,12 +282,12 @@ Localisation and the fake Nav2 server start in parallel:
 | `update_rate` | `30.0` | TF and marker publish rate (Hz) |
 | `web_app` | `true` | Launch the topological navigation web app (`true`/`false`) |
 | `web_app_port` | `8083` | HTTP port of the web app |
-| `initial_x` | `0.0` | Initial robot X position (metres) |
-| `initial_y` | `0.0` | Initial robot Y position (metres) |
+| `initial_x` | `25.75` | Initial robot X position (metres), matches the default Riseholme map |
+| `initial_y` | `2.8` | Initial robot Y position (metres) |
 | `initial_yaw` | `0.0` | Initial robot yaw (radians) |
 | `map_frame` | `map` | Map TF frame |
 | `odom_frame` | `odom` | Odometry TF frame |
-| `base_frame` | `base_link` | Robot base TF frame |
+| `base_frame` | `base_link` | Robot base TF frame (also passed to the web app) |
 
 **Example with a custom map:**
 
@@ -389,7 +396,7 @@ When using a real robot with Nav2, launch the navigation stack without the simul
 # 1. Start Nav2 (robot-specific)
 ros2 launch <your_robot_pkg> navigation.launch.py
 
-# 2. Start the map manager
+# 2. Start the map manager (add --navigation-config-file <file> to supply `actions`/`definitions`)
 ros2 run topological_navigation map_manager2.py /path/to/map.tmap2.yaml
 
 # 3. Start localisation
@@ -425,16 +432,26 @@ ros2 action send_goal /topological_navigation \
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `max_dist_to_closest_edge` | double | `1.0` | Maximum distance (m) to consider an edge as valid origin for navigation |
-| `default_boundary_left` | double | `0.5` | Default left boundary offset for row corridor polygons |
-| `default_boundary_right` | double | `0.5` | Default right boundary offset for row corridor polygons |
-| `route_algorithm` | string | `"astar"` | Path planning algorithm: `"astar"` or `"dijkstra"` |
-| `route_weight_attr` | string | `"weight"` | Edge attribute used as cost for path planning |
+| `max_dist_to_closest_edge` | double | `1.0` | Maximum distance (m) to consider an edge as valid origin for navigation *(reconfigurable)* |
+| `route_algorithm` | string | `"astar"` | Path planning algorithm: `"astar"` or `"dijkstra"` *(reconfigurable)* |
+| `route_weight_attr` | string | `"weight"` | Edge attribute used as cost for path planning *(reconfigurable)* |
+| `route_white_extension_m` | double | `2.0` | Default corridor half-width (m) used for boundary polygons and the fine route map when an edge has no `boundary_left`/`boundary_right` *(reconfigurable)* |
+| `coarse_white_extension_m` | double | `4.0` | Corridor half-width (m) of the coarse full-map occupancy grid published on `/map` *(reconfigurable)* |
+| `metric_map_resolution` | double | `1.0` | Resolution (m/cell) of the coarse `/map` grid, must be > 0 *(reconfigurable)* |
+| `route_segment_resolution` | double | `0.05` | Resolution (m/cell) of the `/topo_map_route_segment` grid, must be > 0 *(reconfigurable)* |
+| `route_segment_border_width` | double | `0.25` | Border width (m) around route corridors in the occupancy grids *(reconfigurable)* |
+| `route_segment_padding` | double | `0.0` | Extra padding (m) around the route segment grid *(reconfigurable)* |
+| `route_segment_settle_time` | double | `0.0` | Delay (s) after publishing the route segment map so Nav2's global costmap can ingest it, before the segment goal is sent. *Start-up only.* |
+| `base_frame` | string | `"base_link"` | Robot TF frame used as the start of the route map. *Start-up only.* |
+| `goal_checker_node` | string | `"controller_server"` | Nav2 node whose goal-checker parameters are set from node/edge tolerances. *Start-up only.* |
+| `xy_tolerance_param` | string | `"goal_checker.xy_goal_tolerance"` | Goal-checker parameter name for the XY tolerance. *Start-up only.* |
+| `yaw_tolerance_param` | string | `"goal_checker.yaw_goal_tolerance"` | Goal-checker parameter name for the yaw tolerance. *Start-up only.* |
+| `stats_db_path` | string | `""` | Path of the SQLite statistics database (empty = statistics persistence disabled). *Start-up only.* |
 
-> All five parameters above are **dynamically reconfigurable** — change them
-> at runtime with `ros2 param set` and the new value is used on the next
-> planned route (no restart needed). Invalid values (e.g. an unknown
-> `route_algorithm`) are rejected. Example:
+> Parameters marked *(reconfigurable)* can be changed at runtime with
+> `ros2 param set` and the new value is used on the next planned route (no
+> restart needed). Invalid values (e.g. an unknown `route_algorithm`, or a
+> negative extension) are rejected. Example:
 >
 > ```bash
 > ros2 param set /topological_navigation route_algorithm dijkstra
@@ -482,7 +499,7 @@ ros2 action send_goal /topological_navigation \
 | `pointset` | string | `"recorded_map"` | Name/pointset given to the recorded map |
 | `site_name` | string | `"map"` | Site name / metric map used for map meta data and TF frame |
 | `tmap_dir` | string | `""` | Default directory used to resolve relative filenames for the save/load services |
-| `pose_topic` | string | `"/odometry/filtered"` | `nav_msgs/Odometry` topic used as the robot pose source while recording |
+| `pose_topic` | string | `"/odometry/global"` | `nav_msgs/Odometry` topic used as the robot pose source while recording |
 | `source_tmap_topic` | string | `"/topological_map_2"` | Topic to inherit map meta data (transformation, actions, definitions) from when starting a fresh recording |
 
 ### topological_map_visualiser (topological_map_visualiser.py)
@@ -547,7 +564,7 @@ ros2 action send_goal /topological_navigation \
 
 | Topic | Type | Publisher Node | Description |
 |-------|------|---------------|-------------|
-| `/topological_map_2` | `std_msgs/String` | Map Manager | Full topological map as a JSON string (latched) |
+| `/topological_map_2` | `std_msgs/String` | Map Manager, Manual Mapping, Map Visualiser | Full topological map as a string (latched) |
 | `/topological_map_schema` | `std_msgs/String` | Map Manager | JSON schema for map validation (latched) |
 | `/current_node` | `std_msgs/String` | Localisation | Name of the node the robot is currently inside (influence zone). `"none"` if outside all zones |
 | `/closest_node` | `std_msgs/String` | Localisation | Name of the nearest node by Euclidean distance |
@@ -560,6 +577,9 @@ ros2 action send_goal /topological_navigation \
 | `topological_navigation/move_action_status` | `std_msgs/String` | Navigation | Status of the current Nav2 move action |
 | `/boundary_checker` | `geometry_msgs/PolygonStamped` | Navigation | Row corridor boundary polygon for agricultural operations |
 | `/robot_operation_current_status` | `std_msgs/String` | Navigation | Current robot operation status |
+| `/map` | `nav_msgs/OccupancyGrid` | Navigation | Coarse occupancy grid covering the topological map corridors (latched) |
+| `/topo_map_route_segment` | `nav_msgs/OccupancyGrid` | Navigation | Fine occupancy grid of the route segment being executed (latched) |
+| `topological_policy_markers/vis` | `visualization_msgs/MarkerArray` | Policy Marker | Policy arrow markers |
 | `/virtual_robot/markers` | `visualization_msgs/MarkerArray` | Fake Nav2 | Virtual robot body visualisation in RViz |
 | `/odometry/global` | `nav_msgs/Odometry` | Fake Nav2 | Simulated global odometry |
 | `/virtual_robot/pose` | `geometry_msgs/PoseStamped` | Fake Nav2 | Simulated robot pose |
@@ -577,13 +597,16 @@ ros2 action send_goal /topological_navigation \
 | `/current_node` | `std_msgs/String` | Navigation, Visualiser | Current node for navigation state |
 | `/closest_node` | `std_msgs/String` | Navigation, Visualiser | Closest node for route origin |
 | `/closest_edges` | `topological_navigation_msgs/ClosestEdges` | Navigation | Edge proximity for navigation decisions |
-| `/initialpose` | `geometry_msgs/PoseStamped` | Fake Nav2 | Set the virtual robot's pose (e.g., from RViz **2D Pose Estimate**) |
+| `/initialpose` | `geometry_msgs/PoseStamped` | Fake Nav2 | Teleport the virtual robot to the given pose |
 | `topological_navigation/Route` | `topological_navigation_msgs/TopologicalRoute` | Route Visualiser | Route to highlight |
 | `/topological_navigation/occupied_node` | `topological_navigation_msgs/TopologicalOccupiedNode` | Occupancy Visualiser | Nodes occupied by other robots |
 | `/joy` | `sensor_msgs/Joy` | Manual Mapping | Joystick input for waypoint recording |
-| `/odometry/filtered` | `nav_msgs/Odometry` | Map Recorder | Robot pose used to trigger automatic node recording |
+| `/gps_base/odometry` | `nav_msgs/Odometry` | Manual Mapping | Robot pose (parameter `topic_pose`) |
+| `/gps_base/yaw` | `sensor_msgs/Imu` | Manual Mapping | Robot heading (parameter `topic_imu`) |
+| `/odometry/global` | `nav_msgs/Odometry` | Map Recorder | Robot pose used to trigger automatic node recording (parameter `pose_topic`) |
 | `/topological_map_2` | `std_msgs/String` | Map Recorder | Source map to inherit meta data (transformation, actions) from when starting a new recording |
 | `mdp_plan_exec/current_policy_mode` | `topological_navigation_msgs/NavRoute` | Policy Marker | Policy route for arrow rendering |
+| `/topological_map_2`, `/current_node`, `/closest_node`, `/topological_navigation/Route`, `/current_edge`, `/topological_navigation/move_action_status`, `/robot_operation_current_status`, `<action>/_action/status` | various | Web App | State pushed to the browser |
 
 ### TF Broadcasts
 
@@ -802,7 +825,7 @@ props = node["node"].get("properties", {})
 tolerance = props.get("xy_goal_tolerance", 0.5)
 ```
 
-See [doc/PROPERTIES.md](topological_navigation/doc/PROPERTIES.md) for full documentation.
+Further documentation is in [topological_navigation/doc/](topological_navigation/doc/): [NAVIGATION2.md](topological_navigation/doc/NAVIGATION2.md), [SET_ROS_PARAMS.md](topological_navigation/doc/SET_ROS_PARAMS.md), [MAP_ANALYSER.md](topological_navigation/doc/MAP_ANALYSER.md), [TOPO_STATS.md](topological_navigation/doc/TOPO_STATS.md) and [WEB_APP.md](topological_navigation/doc/WEB_APP.md).
 
 ### Recording Maps
 
@@ -828,7 +851,9 @@ ros2 run topological_navigation validate_map.py /path/to/map.tmap2.yaml -v
 | Command | Description |
 |---------|-------------|
 | `ros2 run topological_navigation validate_map.py <map.yaml> -v` | Validate a map against the JSON schema |
-| `ros2 run topological_navigation convert_tmap.py <args>` | Convert between topological map format versions |
+| `ros2 run topological_navigation convert_tmap.py <in.yaml> -o <out.tmap3.yaml>` | Convert a legacy map to the tmap3 format |
+| `ros2 run topological_navigation topo_stats.py <database> <subcommand>` | Inspect, merge and report on the navigation statistics database (see [doc/TOPO_STATS.md](topological_navigation/doc/TOPO_STATS.md)) |
+| `ros2 run topological_navigation topomap_to_map_image.py <map.yaml> -o out.png --map-yaml out.yaml` | Generate a Nav2 map image from a topological map |
 | `map_analyser.py analyse <map.yaml> [--svg out.svg]` | Full analysis report (schema, orphaned nodes, disconnected sub-maps, influence-zone overlaps, statistics), optionally with SVG rendering |
 | `map_analyser.py check <map.yaml>` | CI-friendly validity check; exit code reflects the result |
 | `map_analyser.py svg <map.yaml> -o out.svg` | Render the map to an SVG image |

@@ -1,11 +1,3 @@
-<!--
-DRAFT for review (not committed). Facts to confirm after a rehearsal from a fresh GitHub account:
-- how long the first start takes, and whether a larger machine type is worth recommending
-- whether the notification for port 8083 appears and the web app updates live through the Codespaces port proxy
-- the address and any password for the noVNC desktop on port 5801
-- the free Codespaces allowance wording (GitHub changes it; the guide deliberately gives no numbers)
--->
-
 # Try Topological Navigation in Your Browser
 
 **ROSCon UK 2026, workshop "ROS in the Field"**

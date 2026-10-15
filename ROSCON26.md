@@ -38,6 +38,28 @@ The terminal starts in `/workspace/src` (this repository). ROS 2 and the pre-bui
 
 **About cost and tidying up.** Codespaces use your own GitHub account's monthly free allowance; see GitHub's billing page for the current figures. A Codespace stops by itself after a period of inactivity. When you are finished, stop or delete it at <https://github.com/codespaces> so that it does not use up storage or hours.
 
+### Alternative: run it locally in VS Code
+
+If you prefer not to use Codespaces, you can run the same environment in VS Code on your own machine.
+
+**You need:** [Docker](https://docs.docker.com/get-docker/) (running), [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), and Git.
+
+1. Clone the `roscon26` branch and open it in VS Code:
+   ```bash
+   git clone -b roscon26 https://github.com/LCAS/topological_navigation.git
+   code topological_navigation
+   ```
+2. When VS Code offers **Reopen in Container**, accept. Otherwise press <kbd>F1</kbd> and run **Dev Containers: Reopen in Container**.
+3. Wait for the container to build. **The first build takes several minutes**, and later starts are much faster.
+4. Open a terminal in VS Code (**Terminal, New Terminal**). It runs inside the container, in `/workspace/src`, with ROS 2 sourced.
+5. Continue with step 2 below. The ports are forwarded to your machine:
+   - web app: <http://localhost:8083/>
+   - RViz desktop (novnc): forwarded port **5801**; open it from the **Ports** tab if the address does not work directly.
+
+If a forwarded port does not respond, remove and re-add it in the **Ports** tab as described under Troubleshooting.
+
+Alternatively, to use your local VS Code with a Codespace that is already running, install the [GitHub Codespaces extension](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces), press <kbd>F1</kbd>, run **Codespaces: Connect to Codespace**, and pick it. The ports are then forwarded to `localhost` as well.
+
 ## 2. Launch the stack
 
 In the terminal:
@@ -133,28 +155,6 @@ If the page for port **8083** (web app) or **5801** (novnc, the RViz desktop) sh
 3. Click **Forward a Port**, type `8083`, and press <kbd>Enter</kbd>. Repeat for `5801`.
 4. Open each port again with the globe icon. Optionally set the labels back to `Topological Navigation web app` (8083) and `novnc` (5801) with right-click, **Set Port Label**.
 5. Keep both ports **private**. If a 502 persists on 5801, right-click the port, choose **Change Port Protocol**, and try **HTTPS** instead of **HTTP** (or the other way round).
-
-## Prefer to run it locally?
-
-You can run the same environment in VS Code on your own machine, without Codespaces.
-
-**You need:** [Docker](https://docs.docker.com/get-docker/) (running), [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), and Git.
-
-1. Clone the `roscon26` branch and open it in VS Code:
-   ```bash
-   git clone -b roscon26 https://github.com/LCAS/topological_navigation.git
-   code topological_navigation
-   ```
-2. When VS Code offers **Reopen in Container**, accept. Otherwise press <kbd>F1</kbd> and run **Dev Containers: Reopen in Container**.
-3. Wait for the container to build. **The first build takes several minutes**, and later starts are much faster.
-4. Open a terminal in VS Code (**Terminal, New Terminal**). It runs inside the container, in `/workspace/src`, with ROS 2 sourced.
-5. Continue from step 2 above. The ports are forwarded to your machine:
-   - web app: <http://localhost:8083/>
-   - RViz desktop (novnc): forwarded port **5801**; open it from the **Ports** tab if the address does not work directly.
-
-If a forwarded port does not respond, remove and re-add it in the **Ports** tab as described above.
-
-Alternatively, to use your local VS Code with a Codespace that is already running, install the [GitHub Codespaces extension](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces), press <kbd>F1</kbd>, run **Codespaces: Connect to Codespace**, and pick it. The ports are then forwarded to `localhost` as well.
 
 ## Learn more
 

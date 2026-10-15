@@ -10,7 +10,7 @@ def main():
     broadcaster = tf2_ros.StaticTransformBroadcaster(node)
 
     static_transform_stamped = TransformStamped()
-    static_transform_stamped.header.frame_id = 'topo_map' 
+    static_transform_stamped.header.frame_id = 'simple_test_map'
     static_transform_stamped.child_frame_id = 'base_link'
 
     static_transform_stamped.transform.translation.x = 0.0 

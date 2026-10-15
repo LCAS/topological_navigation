@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
 
 # C extensions
 *.so
@@ -68,3 +69,7 @@ coverage.xml
 **/*.*~
 **/*.*.swp
 .DS_Store
+
+install/*
+log/*
+test.py

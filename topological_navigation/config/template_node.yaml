@@ -1,0 +1,30 @@
+meta:
+  map: map_2d
+  node: NodeName
+  pointset: PointSet
+node:
+  edges: []
+  name: NodeName
+  nav_frame: map
+  pose:
+    orientation:
+      w: 1.0
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    position:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+  properties:
+    xy_goal_tolerance: 0.3
+    yaw_goal_tolerance: 6.29
+  verts:
+    - x: -0.5
+      y: -0.5
+    - x: 0.5
+      y: -0.5
+    - x: 0.5
+      y: 0.5
+    - x: -0.5
+      y: 0.5

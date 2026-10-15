@@ -1,0 +1,56 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: Topological Navigation Config Schema
+description: Schema for a sidecar YAML file containing topological action and definition configuration.
+type: object
+required:
+  - definitions
+  - actions
+additionalProperties: false
+properties:
+  definitions:
+    type: object
+    description: Named reusable values referenced from action templates, commonly Behaviour Tree XML strings.
+    additionalProperties:
+      type: string
+  actions:
+    type: object
+    description: Named edge action configurations used by the topological navigation map.
+    minProperties: 1
+    additionalProperties:
+      type: object
+      required:
+        - action_type
+        - action_server
+        - action_goal_template
+      additionalProperties: true
+      properties:
+        composable:
+          type: boolean
+          description: Whether consecutive edges with this action can be composed into one goal.
+        action_type:
+          type: string
+          minLength: 1
+          pattern: ^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$
+          description: Dotted Python import path for the ROS 2 action type.
+        action_server:
+          type: string
+          minLength: 1
+          description: ROS 2 action server name.
+        set_ros_params:
+          description: >-
+            ROS 2 parameters applied while this action executes and restored afterwards.
+            Either a node-keyed mapping ({node: {param: value}}), a flat {param: value}
+            mapping targeting the goal-checker node, or a list of
+            {node, param, value} / {node, params} entries. Edge-level 'set_ros_params'
+            overrides these per node/parameter.
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: array
+              items:
+                type: object
+                additionalProperties: true
+        action_goal_template:
+          type: object
+          description: Goal template matching the selected action goal structure.
+          additionalProperties: true

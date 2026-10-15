@@ -1,0 +1,21 @@
+# Start recording a topological map while the robot is driven around.
+#
+# Recording keeps running (adding a node every time the robot has moved
+# `node_distance` metres from the previously recorded node) until the goal is
+# cancelled. Loop closure is applied automatically: if the robot re-enters the
+# influence zone of an already recorded node, that existing node is reused and
+# linked to the previous one instead of creating a duplicate node.
+
+# goal definition
+string map_name        # Name/pointset for the recorded map. Empty = keep current default.
+float64 node_distance   # Minimum distance (m) between recorded nodes. 0 = use the node's configured default.
+---
+# result definition
+bool success
+string message
+int32 num_nodes
+---
+# feedback
+int32 num_nodes
+string last_node
+string status

@@ -1,0 +1,113 @@
+meta:
+  last_updated: 01-01-2026_00-00-00
+  origin:
+    latitude: 0.0
+    longitude: 0.0
+    altitude: 0.0
+
+metric_map: simple_test_map
+name: simple_test_map
+pointset: simple_test_map
+
+transformation:
+  topo_frame_id: simple_test_map
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+definitions:
+  default_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+
+actions:
+  navigate_to_pose:
+    composable: false
+    action_type: nav2_msgs.action.NavigateToPose
+    action_server: /navigate_to_pose
+    action_goal_template:
+      pose:
+        header:
+          frame_id: '${node.nav_frame}'
+        pose: '${node.pose}'
+      behavior_tree: '${definitions.default_bt}'
+
+nodes:
+  - meta:
+      map: simple_test_map
+      node: WP1
+      pointset: simple_test_map
+    node:
+      edges:
+        - action: navigate_to_pose
+          edge_id: WP1_WP2
+          node: WP2
+          properties:
+            max_speed: 0.5
+      name: WP1
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 0.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+      verts:
+        - x: -1.0
+          y: -1.0
+        - x: 1.0
+          y: -1.0
+        - x: 1.0
+          y: 1.0
+        - x: -1.0
+          y: 1.0
+
+  - meta:
+      map: simple_test_map
+      node: WP2
+      pointset: simple_test_map
+    node:
+      edges: []
+      name: WP2
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 0.707
+          x: 0.0
+          y: 0.0
+          z: 0.707
+        position:
+          x: 5.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.5
+      verts:
+        - x: -0.5
+          y: -0.5
+        - x: 0.5
+          y: -0.5
+        - x: 0.5
+          y: 0.5
+        - x: -0.5
+          y: 0.5

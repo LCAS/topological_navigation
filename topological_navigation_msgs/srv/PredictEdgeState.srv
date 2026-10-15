@@ -1,5 +1,0 @@
-builtin_interfaces/Time epoch
----
-string[] edge_ids
-float64[] probs
-builtin_interfaces/Duration[] durations

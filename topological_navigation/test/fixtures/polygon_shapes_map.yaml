@@ -1,0 +1,372 @@
+meta:
+  last_updated: 01-01-2026_00-00-00
+  origin:
+    latitude: 0.0
+    longitude: 0.0
+    altitude: 0.0
+
+metric_map: polygon_shapes_test_map
+name: polygon_shapes_test_map
+pointset: polygon_shapes_test_map
+
+transformation:
+  topo_frame_id: polygon_shapes_test_map
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+definitions:
+  default_bt: |
+    <root main_tree_to_execute="MainTree">
+      <BehaviorTree ID="MainTree">
+        <PipelineSequence name="NavigateWithReplanning">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+        </PipelineSequence>
+      </BehaviorTree>
+    </root>
+
+actions:
+  navigate_to_pose:
+    composable: false
+    action_type: nav2_msgs.action.NavigateToPose
+    action_server: /navigate_to_pose
+    action_goal_template:
+      pose:
+        header:
+          frame_id: '${node.nav_frame}'
+        pose: '${node.pose}'
+      behavior_tree: '${definitions.default_bt}'
+
+nodes:
+  # Triangle polygon
+  - meta:
+      map: polygon_shapes_test_map
+      node: TriangleNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: TriangleNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 0.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts:
+        - x: 0.0
+          y: 2.0
+        - x: -1.732
+          y: -1.0
+        - x: 1.732
+          y: -1.0
+
+  # Pentagon polygon
+  - meta:
+      map: polygon_shapes_test_map
+      node: PentagonNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: PentagonNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 10.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts:
+        - x: 0.0
+          y: 2.0
+        - x: 1.902
+          y: 0.618
+        - x: 1.176
+          y: -1.618
+        - x: -1.176
+          y: -1.618
+        - x: -1.902
+          y: 0.618
+
+  # Hexagon polygon
+  - meta:
+      map: polygon_shapes_test_map
+      node: HexagonNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: HexagonNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 20.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts:
+        - x: 1.0
+          y: 0.0
+        - x: 0.5
+          y: 0.866
+        - x: -0.5
+          y: 0.866
+        - x: -1.0
+          y: 0.0
+        - x: -0.5
+          y: -0.866
+        - x: 0.5
+          y: -0.866
+
+  # L-shaped (concave) polygon
+  - meta:
+      map: polygon_shapes_test_map
+      node: LShapeNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: LShapeNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 0.0
+          y: 10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts:
+        - x: 0.0
+          y: 0.0
+        - x: 2.0
+          y: 0.0
+        - x: 2.0
+          y: 1.0
+        - x: 1.0
+          y: 1.0
+        - x: 1.0
+          y: 3.0
+        - x: 0.0
+          y: 3.0
+
+  # Irregular polygon (asymmetric)
+  - meta:
+      map: polygon_shapes_test_map
+      node: IrregularNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: IrregularNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 10.0
+          y: 10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts:
+        - x: 0.0
+          y: 0.0
+        - x: 3.0
+          y: 0.5
+        - x: 2.5
+          y: 2.0
+        - x: 1.0
+          y: 2.5
+        - x: -0.5
+          y: 1.5
+
+  # Very small polygon (stress test)
+  - meta:
+      map: polygon_shapes_test_map
+      node: TinyNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: TinyNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 20.0
+          y: 10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.05
+      verts:
+        - x: -0.1
+          y: -0.1
+        - x: 0.1
+          y: -0.1
+        - x: 0.1
+          y: 0.1
+        - x: -0.1
+          y: 0.1
+
+  # Large polygon (stress test)
+  - meta:
+      map: polygon_shapes_test_map
+      node: LargeNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: LargeNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 0.0
+          y: -10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 2.0
+      verts:
+        - x: -10.0
+          y: -10.0
+        - x: 10.0
+          y: -10.0
+        - x: 10.0
+          y: 10.0
+        - x: -10.0
+          y: 10.0
+
+  # Rectangle (non-square)
+  - meta:
+      map: polygon_shapes_test_map
+      node: RectangleNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: RectangleNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 10.0
+          y: -10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts:
+        - x: -3.0
+          y: -1.0
+        - x: 3.0
+          y: -1.0
+        - x: 3.0
+          y: 1.0
+        - x: -3.0
+          y: 1.0
+
+  # Empty verts (edge case for testing)
+  - meta:
+      map: polygon_shapes_test_map
+      node: EmptyVertsNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: EmptyVertsNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 20.0
+          y: -10.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts: []
+
+  # Star-shaped polygon (complex concave)
+  - meta:
+      map: polygon_shapes_test_map
+      node: StarNode
+      pointset: polygon_shapes_test_map
+    node:
+      edges: []
+      name: StarNode
+      nav_frame: '${transformation.topo_frame_id}'
+      pose:
+        orientation:
+          w: 1.0
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        position:
+          x: 30.0
+          y: 0.0
+          z: 0.0
+      properties:
+        xy_goal_tolerance: 0.3
+      verts:
+        - x: 0.0
+          y: 2.0
+        - x: 0.588
+          y: 0.618
+        - x: 1.902
+          y: 0.618
+        - x: 0.951
+          y: -0.191
+        - x: 1.176
+          y: -1.618
+        - x: 0.0
+          y: -0.809
+        - x: -1.176
+          y: -1.618
+        - x: -0.951
+          y: -0.191
+        - x: -1.902
+          y: 0.618
+        - x: -0.588
+          y: 0.618
+

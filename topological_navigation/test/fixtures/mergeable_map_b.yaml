@@ -1,0 +1,68 @@
+meta:
+  last_updated: 02-02-2026_00-00-00
+  origin:
+    latitude: 51.5010000
+    longitude: -0.0990000
+    altitude: 15.0
+  fields:
+    - name: boundary_b
+      field_number: 1
+      gnss_fence_coords:
+        - - 51.5010000
+          - -0.0990000
+        - - 51.5011000
+          - -0.0990000
+
+metric_map: mergeable_map_b
+name: mergeable_map_b
+pointset: mergeable_map_b
+
+transformation:
+  topo_frame_id: map_b_frame
+  parent: map
+  rotation:
+    w: 1.0
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  translation:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+nodes:
+  - meta:
+      map: mergeable_map_b
+      node: WP1
+      pointset: mergeable_map_b
+    node:
+      name: WP1
+      nav_frame: map
+      pose:
+        orientation: {w: 1.0, x: 0.0, y: 0.0, z: 0.0}
+        position: {x: 0.0, y: 0.0, z: 0.0}
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+      edges:
+        - edge_id: WP1_WP2
+          node: WP2
+          action: navigate_to_pose
+          action_type: nav2_msgs/action/NavigateToPose
+          properties:
+            max_speed: 0.5
+
+  - meta:
+      map: mergeable_map_b
+      node: WP2
+      pointset: mergeable_map_b
+    node:
+      name: WP2
+      nav_frame: map
+      pose:
+        orientation: {w: 1.0, x: 0.0, y: 0.0, z: 0.0}
+        position: {x: 0.0, y: 5.0, z: 0.0}
+      properties:
+        xy_goal_tolerance: 0.3
+        yaw_goal_tolerance: 0.1
+      edges: []

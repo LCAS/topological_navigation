@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Topological Navigation</title>
+</head>
+<body>
+  <div id="root"></div>
+  <noscript>This web app requires JavaScript.</noscript>
+  <script>
+    // All URLs in this app are relative, so it can be served under any URL
+    // prefix behind a reverse proxy (e.g. served as /robot1/topo/).  The
+    // page URL must end with "/" for relative paths to resolve below the
+    // prefix, so redirect first and only then load the (locally bundled,
+    // offline) assets.
+    (function () {
+      var p = window.location.pathname;
+      if (p.charAt(p.length - 1) !== '/' && !/\.html$/.test(p)) {
+        window.location.replace(p + '/' + window.location.search + window.location.hash);
+        return;
+      }
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'style.css';
+      document.head.appendChild(css);
+      [
+        'vendor/react.production.min.js',
+        'vendor/react-dom.production.min.js',
+        'vendor/htm.umd.js',
+        'vendor/cytoscape.min.js',
+        'app.js',
+      ].forEach(function (src) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false;  // preserve execution order
+        document.body.appendChild(s);
+      });
+    }());
+  </script>
+</body>
+</html>

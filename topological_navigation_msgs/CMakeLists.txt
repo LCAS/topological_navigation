@@ -17,12 +17,12 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(actionlib_msgs REQUIRED)
+find_package(action_msgs REQUIRED)
 set(msg_deps
   builtin_interfaces
   std_msgs
   geometry_msgs
-  actionlib_msgs
+  action_msgs
 )
 
 
@@ -58,44 +58,15 @@ set(msg_files
 # Declare the custom service files
 set(srv_files
   "srv/WriteTopologicalMap.srv"
-  "srv/UpdateEdgeConfig.srv"
-  "srv/UpdateRestrictions.srv"
-  "srv/UpdateEdge.srv"
-  "srv/UpdateAction.srv"
-  "srv/RestrictMap.srv"
   "srv/EvaluateNode.srv"
   "srv/EvaluateEdge.srv"
-  "srv/AddDatum.srv"
-  "srv/GetTaggedNodes.srv"
-  "srv/GetTags.srv"
-  "srv/GetNodeTags.srv"
-  "srv/NodeMetadata.srv"
-  "srv/GetEdgesBetweenNodes.srv"
-  "srv/AddNode.srv"
-  "srv/RmvNode.srv"
-  "srv/AddEdge.srv"
-  "srv/AddEdgeRviz.srv"
-  "srv/AddContent.srv"
-  "srv/UpdateNodeName.srv"
-  "srv/UpdateNodeTolerance.srv"
-  "srv/ModifyTag.srv"
-  "srv/AddTag.srv"
-  "srv/GetTopologicalMap.srv"
-  "srv/UpdateEdgeLegacy.srv"
   "srv/LocalisePose.srv"
   "srv/GetRouteTo.srv"
   "srv/GetRouteBetween.srv"
-  "srv/EstimateTravelTime.srv"
-  "srv/PredictEdgeState.srv"
-  "srv/UpdateFailPolicy.srv"
-  "srv/ReconfAtEdges.srv"
   "srv/LoadTopoNavTestScenario.srv"
   "srv/RunTopoNavTestScenario.srv"
-  "srv/SetInfluenceZone.srv"
-  "srv/AddEdgeArray.srv"
-  "srv/AddNodeArray.srv"
-  "srv/SetInfluenceZoneArray.srv"
-  "srv/UpdateEdgeConfigArray.srv"
+  "srv/ReconfAtEdges.srv"
+  "srv/LoadTmap.srv"
 )
 
 
@@ -106,6 +77,7 @@ set(action_files
     "action/GotoNode.action"
     "action/ExecutePolicyMode.action"
     "action/BuildTopPrediction.action"
+    "action/RecordMap.action"
 )
 
 

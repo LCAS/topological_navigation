@@ -1,0 +1,57 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Displays:
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Update Interval: 0
+      Frame Timeout: 15
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Virtual Robot
+      Enabled: true
+      Topic:
+        Value: /virtual_robot/markers
+        Depth: 5
+        Reliability Policy: Reliable
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Line Style:
+        Value: Lines
+      Cell Size: 1
+      Color: 160; 160; 164
+      Plane: XY
+      Plane Cell Count: 50
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: map
+    Frame Rate: 30
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic:
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Value: /goal_pose
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 30
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Name: TopDown
+      Pitch: 1.5707
+      Yaw: 0
+Window Geometry:
+  Width: 1200
+  Height: 800

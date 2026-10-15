@@ -1,0 +1,7 @@
+# Load a (partial) topological map file into the map recorder so that it can
+# be extended with further recording.
+string filename   # Path to the tmap2 YAML file to load.
+---
+bool success
+string message
+int32 num_nodes

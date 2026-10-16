@@ -12,6 +12,8 @@ You will:
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LCAS/topological_navigation/tree/roscon26)
 
+*(you are advised to use a "4-core" Machine Type for better performance)*
+
 Direct link: <https://codespaces.new/LCAS/topological_navigation/tree/roscon26>
 
 Repository and branch: <https://github.com/LCAS/topological_navigation/tree/roscon26>

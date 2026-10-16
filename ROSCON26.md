@@ -150,6 +150,12 @@ If the page for port **8083** (web app) or **5801** (novnc, the RViz desktop) sh
 4. Open each port again with the globe icon. Optionally set the labels back to `Topological Navigation web app` (8083) and `novnc` (5801) with right-click, **Set Port Label**.
 5. Keep both ports **private**. If a 502 persists on 5801, right-click the port, choose **Change Port Protocol**, and try **HTTPS** instead of **HTTP** (or the other way round).
 
+## Video
+
+https://github.com/user-attachments/assets/cb64f6c1-a070-45da-bb45-27ce596de6d0
+
+
+
 ## Learn more
 
 - [README.md](README.md): overview, architecture, map format and all launch arguments

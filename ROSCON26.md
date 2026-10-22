@@ -1,11 +1,3 @@
-<!--
-DRAFT for review (not committed). Facts to confirm after a rehearsal from a fresh GitHub account:
-- how long the first start takes, and whether a larger machine type is worth recommending
-- whether the notification for port 8083 appears and the web app updates live through the Codespaces port proxy
-- the address and any password for the noVNC desktop on port 5801
-- the free Codespaces allowance wording (GitHub changes it; the guide deliberately gives no numbers)
--->
-
 # Try Topological Navigation in Your Browser
 
 **ROSCon UK 2026, workshop "ROS in the Field"**
@@ -19,6 +11,8 @@ You will:
 3. click on the map in your browser to send the robot to a node.
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/LCAS/topological_navigation/tree/roscon26)
+
+*(you are advised to use a "4-core" Machine Type for better performance)*
 
 Direct link: <https://codespaces.new/LCAS/topological_navigation/tree/roscon26>
 
@@ -37,6 +31,28 @@ Repository and branch: <https://github.com/LCAS/topological_navigation/tree/rosc
 The terminal starts in `/workspace/src` (this repository). ROS 2 and the pre-built workspace are already sourced in every new terminal.
 
 **About cost and tidying up.** Codespaces use your own GitHub account's monthly free allowance; see GitHub's billing page for the current figures. A Codespace stops by itself after a period of inactivity. When you are finished, stop or delete it at <https://github.com/codespaces> so that it does not use up storage or hours.
+
+### Alternative: run it locally in VS Code
+
+If you prefer not to use Codespaces, you can run the same environment in VS Code on your own machine.
+
+**You need:** [Docker](https://docs.docker.com/get-docker/) (running), [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), and Git.
+
+1. Clone the `roscon26` branch and open it in VS Code:
+   ```bash
+   git clone -b roscon26 https://github.com/LCAS/topological_navigation.git
+   code topological_navigation
+   ```
+2. When VS Code offers **Reopen in Container**, accept. Otherwise press <kbd>F1</kbd> and run **Dev Containers: Reopen in Container**.
+3. Wait for the container to build. **The first build takes several minutes**, and later starts are much faster.
+4. Open a terminal in VS Code (**Terminal, New Terminal**). It runs inside the container, in `/workspace/src`, with ROS 2 sourced.
+5. Continue with step 2 below. The ports are forwarded to your machine:
+   - web app: <http://localhost:8083/>
+   - RViz desktop (novnc): forwarded port **5801**; open it from the **Ports** tab if the address does not work directly.
+
+If a forwarded port does not respond, remove and re-add it in the **Ports** tab as described under Troubleshooting.
+
+Alternatively, to use your local VS Code with a Codespace that is already running, install the [GitHub Codespaces extension](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces), press <kbd>F1</kbd>, run **Codespaces: Connect to Codespace**, and pick it. The ports are then forwarded to `localhost` as well.
 
 ## 2. Launch the stack
 
@@ -58,19 +74,26 @@ This starts, in order:
 | Topological navigation server | Plans routes over the graph and runs the action on each edge |
 | RViz | Visualises the map and robot on the noVNC desktop (port 5801) |
 | Web app | Browser interface on port **8083** |
+| RViz | Visualisation, shown on the remote desktop on port **5801** |
 
 The virtual robot starts on the `Office` node. Leave this terminal running. Stop everything with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 
-## 3. Open the web app
+## 3. Open the web app and RViz
 
-1. Open the **Ports** tab at the bottom of VS Code (or click **Open in Browser** in the notification that appears when the web app starts).
-2. Find the row **Topological Navigation web app** (port 8083) and click the globe icon, or copy the forwarded address into a new browser tab.
+Open the **Ports** tab at the bottom of VS Code. Two ports are forwarded:
 
-Keep the port **private** (the default). The web app has no authentication, so anyone who could open it could move your robot.
+| Port | Label | What it shows |
+|---|---|---|
+| **8083** | Topological Navigation web app | The browser interface: the map, the robot, and the controls to send goals |
+| **5801** | novnc | A remote desktop in your browser, showing RViz with the map, the robot and the planned route |
+
+For each, click the globe icon (**Open in Browser**) in its row, or copy the forwarded address into a new browser tab. The notification that appears when the stack starts offers the same.
+
+Keep both ports **private** (the default). The web app has no authentication, so anyone who could open it could move your robot.
 
 ## 4. Things to try
 
-- **Explore the map.** Zoom with the mouse wheel, drag to pan, use **Fit map** and **Centre on robot**. Hover over a node to see its pose, its outgoing edges with their actions, and its `properties`. Green nodes have `roboflow.enabled: true`.
+- **Explore the map.** Zoom with the mouse wheel, drag to pan, use **Fit map** and **Centre on robot**. Hover over a node to see its pose, its outgoing edges with their actions, and its `properties`. Compare the properties of different nodes and edges to see what metadata the map carries.
 - **Send the robot.** Click the node `QC`, then confirm. The planned route turns orange, the edge being traversed turns red, and the dark disc with an arrow is the robot.
 - **Go further, then cancel.** Send the robot to `t1-a1-cz` (the far end of a row), and press **Cancel goal** half way.
 - **Use the command line.** Open a second terminal and send a goal. The browser follows along:
@@ -79,12 +102,12 @@ Keep the port **private** (the default). The web app has no authentication, so a
       topological_navigation_msgs/action/GotoNode "{target: 'WayPoint10'}"
   ```
 - **Open a second browser tab.** Every tab shows the same robot, goal and route, because all state lives in the backend.
-- **See RViz.** Open the forwarded port **5801** (labelled `novnc`) to see the remote desktop with RViz.
+- **Watch RViz alongside the web app.** Open the forwarded port **5801** (labelled `novnc`) in a second tab to see the remote desktop with RViz, and compare it with the web app while the robot moves.
 - **Change the map.** Copy the example map, edit a node property or an edge action, and launch with your copy:
   ```bash
   cp topological_navigation/test/fixtures/riseholme.tmap3.yaml my_map.tmap3.yaml
   ros2 launch topological_navigation topological_navigation.launch.py \
-      rviz:=false map_path:=/workspace/src/my_map.tmap3.yaml
+      map_path:=/workspace/src/my_map.tmap3.yaml
   ```
   The edge actions (`row_traversal`, `navigate_through_poses`) and their behaviour trees are defined in `topological_navigation/config/topological_navigation_config.yaml`, which the launch file loads by default (argument `navigation_config_file`).
 
@@ -93,7 +116,7 @@ Useful launch arguments (all optional):
 | Argument | Default | Meaning |
 |---|---|---|
 | `map_path` | Riseholme map [google maps](https://maps.app.goo.gl/Cha3CtPmiAZJW1iX7)| Absolute path to a `.tmap2.yaml` or `.tmap3.yaml` map |
-| `rviz` | `true` | Start RViz (shown on the noVNC desktop, port 5801) |
+| `rviz` | `true` | Start RViz (shown on the noVNC desktop, port 5801); use `rviz:=false` to switch it off |
 | `web_app` | `true` | Start the web app |
 | `web_app_port` | `8083` | Port of the web app |
 | `robot_speed` | `1.5` | Simulated speed in m/s |
@@ -112,22 +135,29 @@ source /workspace/install/setup.bash
 
 | Symptom | What to check |
 |---|---|
+| Port 8083 or 5801 shows **502 Bad Gateway** (or another error) | See "Forwarded ports show a 502 error" below |
 | Nothing appears on port 8083 | Is the launch command still running in a terminal? Look for errors in its output, then reload the page |
+| RViz does not appear on port 5801 | Check that the stack was launched without `rviz:=false`, then reload the noVNC tab |
 | The map shows but clicking a node does nothing | Run `ros2 action list` in a second terminal. `/topological_navigation` should be listed. If not, restart the launch |
 | The page looks stale | Reload the browser tab; the live connection reconnects by itself |
 | The environment build failed | Choose **Codespaces: View Creation Log** from the command palette (<kbd>F1</kbd>) and send us the end of the log |
 | "Port already in use" | An earlier launch is still running. Stop it with <kbd>Ctrl</kbd>+<kbd>C</kbd>, or use `web_app_port:=8090` |
 
-## Prefer to run it locally?
+### Forwarded ports show a 502 error
 
-With Docker and VS Code (Dev Containers extension) installed:
+If the page for port **8083** (web app) or **5801** (novnc, the RViz desktop) shows **502 Bad Gateway**, the port forwarding has gone stale. Remove and re-add the ports:
 
-```bash
-git clone -b roscon26 https://github.com/LCAS/topological_navigation.git
-code topological_navigation
-```
+1. Make sure the launch command from step 2 is running in a terminal.
+2. Open the **Ports** tab, right-click each of the rows for 8083 and 5801, and choose **Stop Forwarding Port** (or click the bin icon).
+3. Click **Forward a Port**, type `8083`, and press <kbd>Enter</kbd>. Repeat for `5801`.
+4. Open each port again with the globe icon. Optionally set the labels back to `Topological Navigation web app` (8083) and `novnc` (5801) with right-click, **Set Port Label**.
+5. Keep both ports **private**. If a 502 persists on 5801, right-click the port, choose **Change Port Protocol**, and try **HTTPS** instead of **HTTP** (or the other way round).
 
-Then choose **Reopen in Container** and continue from step 2. The web app is forwarded to <http://localhost:8083/>.
+## Video
+
+https://github.com/user-attachments/assets/cb64f6c1-a070-45da-bb45-27ce596de6d0
+
+
 
 ## Learn more
 

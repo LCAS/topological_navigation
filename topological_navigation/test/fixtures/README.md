@@ -1,6 +1,6 @@
 # Test Fixture YAML Files
 
-This directory contains topological map YAML fixtures for testing the localisation system.
+This directory contains topological map YAML fixtures used by the localisation, graph, map analyser and map merger tests. The `*.yaml` files are also installed into the package's `config/` share directory (see `setup.py`).
 
 ## Files
 
@@ -27,11 +27,11 @@ This directory contains topological map YAML fixtures for testing the localisati
 
 **Characteristics:**
 - **Nodes:** 10 (Entry, Junction1, Junction2, Row1Start, Row1End, Row2Start, Row2End, Exit, NoGoZone, TopicLocaliseNode)
-- **Edges:** Multiple edges forming a connected graph
+- **Edges:** 10, forming a connected graph (Exit, NoGoZone and TopicLocaliseNode have no outgoing edges)
 - **Polygon shapes:** Square influence zones (various sizes)
 - **Features:**
-  - Multiple edge types (NavigateToPose, RowOperation)
-  - Agricultural navigation patterns (row operations)
+  - Multiple edge actions (`navigate_to_pose`, `row_traversal`)
+  - Agricultural navigation patterns (row traversal)
   - Node tags (entry_point, row_entry, row_exit, exit_point, no_go)
   - No-go node (NoGoZone with no_go: true property)
   - Topic-based localization (TopicLocaliseNode with localise_by_topic JSON config)
@@ -72,6 +72,29 @@ This directory contains topological map YAML fixtures for testing the localisati
 - Irregular polygon testing
 - Ray-casting algorithm correctness verification
 
+### 4. mixed_actions_map.yaml
+**Purpose:** Route planning and action segment merging with several action types
+
+**Characteristics:**
+- **Nodes:** 6 (N1 to N6), square influence zones
+- **Edges:** 10, using `navigate_to_pose`, `row_traversal` and `goal_align` actions
+
+**Use cases:** `navigation_graph` tests (route planning, segment merging, boundary polygons)
+
+### 5. mergeable_map_a.yaml / mergeable_map_b.yaml
+**Purpose:** Map merging tests
+
+**Characteristics:**
+- **Nodes:** 2 each (WP1, WP2), no influence-zone vertices
+- **Edges:** 1 each (WP1 to WP2, `navigate_to_pose`)
+
+**Use cases:** `map_merger` / `map_analyser merge` tests (name deduplication, reprojection)
+
+### 6. riseholme.tmap3.yaml
+**Purpose:** Real-world map (92 nodes, 182 edges) of the Riseholme site, also the default map of `topological_navigation.launch.py`
+
+**Use cases:** Large-map tests and the default demo map
+
 ## Testing Guidelines
 
 ### Unit Tests
@@ -80,6 +103,7 @@ When writing unit tests, use these fixtures as follows:
 1. **simple_map.yaml** - For basic functionality tests where you need minimal complexity
 2. **complex_map.yaml** - For integration tests and realistic scenarios
 3. **polygon_shapes_map.yaml** - For point-in-polygon specific tests
+4. **mixed_actions_map.yaml**, **mergeable_map_a/b.yaml**, **riseholme.tmap3.yaml** - For graph, merge and large-map tests (see above)
 
 ### Example Usage
 
@@ -127,38 +151,20 @@ When adding new fixtures:
 1. Follow the existing YAML structure
 2. Use descriptive node names
 3. Document the purpose in this README
-4. Ensure valid topological map format (schema2.json compliant)
+4. Ensure valid topological map format (compliant with `topological_navigation/config/tmap-schema.yaml`)
 5. Add corresponding test cases
 
 ## Validation
 
-All fixtures should validate against `topological_navigation/config/schema2.json`.
+All fixtures should validate against `topological_navigation/config/tmap-schema.yaml`.
 
-To validate manually:
+To validate manually (requires `pyyaml` and `jsonschema`):
 ```bash
-# Install jsonschema if needed
-pip install jsonschema pyyaml
-
-# Validate fixture
-python -c "
-import yaml
-import json
-from jsonschema import validate
-
-with open('topological_navigation/config/schema2.json') as f:
-    schema = json.load(f)
-    
-with open('topological_navigation/test/fixtures/simple_map.yaml') as f:
-    data = yaml.safe_load(f)
-    
-validate(instance=data, schema=schema)
-print('Valid!')
-"
+python3 topological_navigation/topological_navigation/validate_map.py \
+    topological_navigation/test/fixtures/simple_map.yaml
 ```
 
 ## References
 
-- Requirements: `/home/ibrahim/.kiro/specs/localisation-networkx-refactor/requirements.md`
-- Design: `/home/ibrahim/.kiro/specs/localisation-networkx-refactor/design.md`
-- Schema: `topological_navigation/config/schema2.json`
+- Schema: `topological_navigation/config/tmap-schema.yaml`
 - AGENTS.md: Project development guidelines

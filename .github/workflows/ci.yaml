@@ -2,7 +2,7 @@ name: ros CI
 
 on:
   push:
-    branches: [ humble, main ]
+    branches: [ main ]
     tags:     # Also run CI on tags.
       - '*'
   pull_request:

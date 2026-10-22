@@ -2,6 +2,12 @@
 
 **ROSCon UK 2026, workshop "ROS in the Field"**
 
+## Slide deck
+
+https://github.com/LCAS/topological_navigation/wiki/ROSCon-UK-2026
+
+## Topological Navigation
+
 This page lets you run the complete topological navigation stack, with a simulated robot on a real farm map, in a GitHub Codespace. You need a web browser and a free GitHub account. Nothing is installed on your own machine, and no robot is needed.
 
 You will:

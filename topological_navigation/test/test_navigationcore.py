@@ -12,7 +12,7 @@ from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPo
 from std_msgs.msg import String
 
 @launch_pytest.fixture
-def generate_test_description():
+def launch_description():
     path_to_test = Path(__file__).parent
     return launch.LaunchDescription([
         launch_ros.actions.Node(
@@ -46,7 +46,7 @@ def generate_test_description():
     ])
 
 
-@pytest.mark.launch(fixture=generate_test_description)
+@pytest.mark.launch(fixture=launch_description)
 def test_check_if_topological_map_is_published():
     rclpy.init()
     try:
@@ -60,7 +60,7 @@ def test_check_if_topological_map_is_published():
         except (RuntimeError, rclpy._rclpy_pybind11.RCLError):
             pass
 
-@pytest.mark.launch(fixture=generate_test_description)
+@pytest.mark.launch(fixture=launch_description)
 def test_check_if_closest_node_is_published():
     rclpy.init()
     try:
@@ -74,7 +74,7 @@ def test_check_if_closest_node_is_published():
         except (RuntimeError, rclpy._rclpy_pybind11.RCLError):
             pass
 
-@pytest.mark.launch(fixture=generate_test_description)
+@pytest.mark.launch(fixture=launch_description)
 def test_check_if_current_node_is_published():
     rclpy.init()
     try:

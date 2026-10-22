@@ -43,8 +43,10 @@ The terminal starts in `/workspace/src` (this repository). ROS 2 and the pre-bui
 In the terminal:
 
 ```bash
-ros2 launch topological_navigation topological_navigation.launch.py rviz:=false
+ros2 launch topological_navigation topological_navigation.launch.py
 ```
+
+RViz starts by default and is available on the noVNC desktop at port **5801**. If your Codespace has limited resources (for example, a 2-core machine), you can disable RViz by adding `rviz:=false` to the launch command.
 
 This starts, in order:
 
@@ -54,6 +56,7 @@ This starts, in order:
 | Localisation | Works out the current and closest node from the robot pose |
 | Fake Nav2 and virtual robot | Stand in for the real navigation stack and robot |
 | Topological navigation server | Plans routes over the graph and runs the action on each edge |
+| RViz | Visualises the map and robot on the noVNC desktop (port 5801) |
 | Web app | Browser interface on port **8083** |
 
 The virtual robot starts on the `Office` node. Leave this terminal running. Stop everything with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
@@ -76,7 +79,7 @@ Keep the port **private** (the default). The web app has no authentication, so a
       topological_navigation_msgs/action/GotoNode "{target: 'WayPoint10'}"
   ```
 - **Open a second browser tab.** Every tab shows the same robot, goal and route, because all state lives in the backend.
-- **See RViz as well.** Stop the stack, relaunch without `rviz:=false`, then open the forwarded port **5801** (labelled `novnc`) to see the remote desktop with RViz.
+- **See RViz.** Open the forwarded port **5801** (labelled `novnc`) to see the remote desktop with RViz.
 - **Change the map.** Copy the example map, edit a node property or an edge action, and launch with your copy:
   ```bash
   cp topological_navigation/test/fixtures/riseholme.tmap3.yaml my_map.tmap3.yaml

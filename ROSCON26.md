@@ -128,7 +128,6 @@ The repository is mounted at `/workspace/src`. After changing code, rebuild with
 
 ```bash
 build
-source /workspace/install/setup.bash
 ```
 
 ## Troubleshooting

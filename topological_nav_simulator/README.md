@@ -9,7 +9,7 @@ When developing and testing topological navigation behaviour (route planning, ed
 - Accept the same Nav2 action goals  
 - Simulate robot movement at configurable speed  
 - Publish TF (`map → odom → base_link`) so `localisation2` works  
-- Publish `/odometry/global` so `edge_action_manager2` works  
+- Publish `/odometry/global` so the web app, map recorder and other odometry consumers work  
 - Show a **virtual robot marker** in RViz (cube + direction arrow + breadcrumb trail)  
 - Support cancel / preemption  
 
@@ -31,7 +31,7 @@ When developing and testing topological navigation behaviour (route planning, ed
 │    /virtual_robot/pose    (PoseStamped)        │
 │                                               │
 │  Subscribers:                                 │
-│    /initialpose  (teleport from RViz)         │
+│    /initialpose  (PoseStamped, teleport)      │
 └──────────────────────────────────────────────┘
 ```
 
@@ -69,13 +69,20 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 ## RViz Visualization
 
 The virtual robot appears as:
-- **Blue cube** — robot body  
-- **Red arrow** — heading direction  
+- **Cyan-blue cube** — robot body  
+- **Orange-red arrow** — heading direction  
 - **Green ring** — footprint  
 - **Blue trail** — breadcrumb path  
 - **🤖 Sim Robot** — floating label  
 
-Use the **2D Pose Estimate** tool in RViz to teleport the robot to any location.
+To teleport the robot, publish a `geometry_msgs/PoseStamped` to `/initialpose`:
+
+```bash
+ros2 topic pub --once /initialpose geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: 'map'}, pose: {position: {x: 5.0, y: 3.0}, orientation: {w: 1.0}}}"
+```
+
+> The subscriber uses `PoseStamped`, whereas RViz's **2D Pose Estimate** tool publishes `PoseWithCovarianceStamped`, so that tool does not teleport the robot.
 
 An RViz config is provided:
 ```bash
@@ -84,7 +91,7 @@ rviz2 -d $(ros2 pkg prefix topological_nav_simulator)/share/topological_nav_simu
 
 ## Usage with Topological Navigation
 
-Launch the full topological navigation stack, replacing the real Nav2 with this simulator:
+Run the topological navigation nodes against the simulator instead of the real Nav2. To start everything at once, use `ros2 launch topological_navigation topological_navigation.launch.py`.
 
 ```bash
 # Terminal 1: Fake Nav2
@@ -92,7 +99,7 @@ ros2 launch topological_nav_simulator fake_nav2.launch.py \
     initial_x:=10.5 initial_y:=5.2
 
 # Terminal 2: Map manager + localisation + navigation
-ros2 run topological_navigation map_manager2.py --ros-args -p topological_map2_name:=my_map
+ros2 run topological_navigation map_manager2.py /path/to/map.tmap2.yaml
 ros2 run topological_navigation localisation2.py
 ros2 run topological_navigation navigation2.py
 

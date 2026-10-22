@@ -8,7 +8,7 @@
 	"forwardPorts": [8083, 5801],
 	"portsAttributes": {
 		"8083": { "label": "Topological Navigation web app", "onAutoForward": "notify" },
-		"5801": { "label": "novnc", "protocol": "https", "onAutoForward": "notify" }
+		"5801": { "label": "novnc", "onAutoForward": "notify" }
 	},	
 
 	"customizations": {
